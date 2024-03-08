@@ -875,8 +875,7 @@ class FileExtractor:
                                 float(card[value]) * 100.0, 2) if card[value] else 0.0
                         elif ((key == constants.DATA_FIELD_ATA) or
                               (key == constants.DATA_FIELD_ALSA)):
-                            color_data[colors][key] = round(
-                                float(card[value]), 2)
+                            color_data[colors][key] = round(float(card[value] if card[value] else 0.0), 2)
                         else:
                             color_data[colors][key] = int(card[value])
 
