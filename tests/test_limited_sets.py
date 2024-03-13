@@ -6,24 +6,24 @@ from src.limited_sets import LimitedSets, SetInfo, SetDictionary
 # Test data
 SETS_FILE_LOCATION = os.path.join(os.getcwd(), "Temp", "unit_test_sets.json")
 CHECKED_SETS_COMBINED = {
-    "March of the Machine" : SetInfo(arena=["MOM", "MUL"],scryfall=["MOM", "MUL"],seventeenlands=["MOM"]),
-    "March of the Machine: The Aftermath": SetInfo(arena=["MUL", "MOM", "MAT"],scryfall=["MUL", "MOM", "MAT"],seventeenlands=["MAT"]),
-    "Shadows over Innistrad Remastered": SetInfo(arena=["SIR", "SIS"],scryfall=["SIR", "SIS"],seventeenlands=["SIR"]),
-    "Phyrexia: All Will Be One": SetInfo(arena=["ONE"],scryfall=["ONE"],seventeenlands=["ONE"]), 
-    "Alchemy: Phyrexia": SetInfo(arena=["ONE"],scryfall=["YONE", "ONE"],seventeenlands=["Y23ONE"]), 
-    "The Brothers' War": SetInfo(arena=["BRO", "BRR", "BOT"],scryfall=["BRO", "BRR", "BOT"],seventeenlands=["BRO"]), 
-    "Alchemy: The Brothers' War": SetInfo(arena=["BRO", "BRR", "BOT"],scryfall=["YBRO", "BRO", "BRR", "BOT"],seventeenlands=["Y23BRO"]),
+    "March of the Machine" : SetInfo(arena=["ALL"],scryfall=[],seventeenlands=["MOM"]),
+    "March of the Machine: The Aftermath": SetInfo(arena=["ALL"],scryfall=[],seventeenlands=["MAT"]),
+    "Shadows over Innistrad Remastered": SetInfo(arena=["ALL"],scryfall=[],seventeenlands=["SIR"]),
+    "Phyrexia: All Will Be One": SetInfo(arena=["ALL"],scryfall=[],seventeenlands=["ONE"]), 
+    "Alchemy: Phyrexia": SetInfo(arena=["ALL"],sscryfall=[],seventeenlands=["Y23ONE"]), 
+    "The Brothers' War": SetInfo(arena=["ALL"],scryfall=[],seventeenlands=["BRO"]), 
+    "Alchemy: The Brothers' War": SetInfo(arena=["ALL"],scryfall=[],seventeenlands=["Y23BRO"]),
     "CORE": SetInfo(arena=["ALL"],scryfall=[],seventeenlands=["CORE"],start_date="2021-03-26"),
 }
 
 CHECKED_SETS_SCRYFALL = {
-    "March of the Machine" : SetInfo(arena=["MOM", "MUL"],scryfall=["MOM", "MUL"],seventeenlands=["MOM"]),
-    "March of the Machine: The Aftermath": SetInfo(arena=["MUL", "MOM", "MAT"],scryfall=["MUL", "MOM", "MAT"],seventeenlands=["MAT"]),
-    "Shadows over Innistrad Remastered": SetInfo(arena=["SIR", "SIS"],scryfall=["SIR", "SIS"],seventeenlands=["SIR"]),
-    "Phyrexia: All Will Be One": SetInfo(arena=["ONE"],scryfall=["ONE"],seventeenlands=["ONE"]), 
-    "Alchemy: Phyrexia": SetInfo(arena=["ONE"],scryfall=["YONE", "ONE"],seventeenlands=["Y23ONE"]), 
-    "The Brothers' War": SetInfo(arena=["BRO", "BRR", "BOT"],scryfall=["BRO", "BRR", "BOT"],seventeenlands=["BRO"]), 
-    "Alchemy: The Brothers' War": SetInfo(arena=["BRO", "BRR", "BOT"],scryfall=["YBRO", "BRO", "BRR", "BOT"],seventeenlands=["Y23BRO"]),
+    "March of the Machine" : SetInfo(arena=["ALL"],scryfall=[],seventeenlands=["MOM"]),
+    "March of the Machine: The Aftermath": SetInfo(arena=["ALL"],scryfall=[],seventeenlands=["MAT"]),
+    "Shadows over Innistrad Remastered": SetInfo(arena=["ALL"],scryfall=[],seventeenlands=["SIR"]),
+    "Phyrexia: All Will Be One": SetInfo(arena=["ALL"],scryfall=[],seventeenlands=["ONE"]), 
+    "Alchemy: Phyrexia": SetInfo(arena=["ALL"],scryfall=[],seventeenlands=["Y23ONE"]), 
+    "The Brothers' War": SetInfo(arena=["ALL"],scryfall=[],seventeenlands=["BRO"]), 
+    "Alchemy: The Brothers' War": SetInfo(arena=["ALL"],scryfall=[],seventeenlands=["Y23BRO"]),
 }
 
 CHECKED_SETS_17LANDS = {

@@ -26,9 +26,9 @@ class SetDictionary(BaseModel):
 
 
 CUSTOM_SETS = {
-    "dbl": SetInfo(arena=["VOW", "MID"], scryfall=["VOW", "MID"], seventeenlands=["DBL"]),
-    "sir": SetInfo(arena=["SIR", "SIS"], scryfall=["SIR", "SIS"], seventeenlands=["SIR"]),
-    "mat": SetInfo(arena=["MUL", "MOM", "MAT"], scryfall=["MUL", "MOM", "MAT"], seventeenlands=["MAT"]),
+    "dbl": SetInfo(arena=[constants.SET_SELECTION_ALL], scryfall=[], seventeenlands=["DBL"]),
+    "sir": SetInfo(arena=[constants.SET_SELECTION_ALL], scryfall=[], seventeenlands=["SIR"]),
+    "mat": SetInfo(arena=[constants.SET_SELECTION_ALL], scryfall=[], seventeenlands=["MAT"]),
 }
 
 TOTAL_SCRYFALL_SETS = 50
@@ -290,8 +290,7 @@ class LimitedSets:
                         continue
                     else:
                         self.sets_scryfall.data[set_name] = SetInfo(
-                            arena=[set_code.upper()],
-                            scryfall=[set_code.upper()],
+                            arena=[constants.SET_SELECTION_ALL],
                             seventeenlands=[set_code.upper()]
                         )
                     counter += 1
@@ -306,16 +305,6 @@ class LimitedSets:
 
             except Exception as error:
                 logger.error(error)
-
-        # Add side sets
-        for card_sets in self.sets_scryfall.data.values():
-            try:
-                card_set = card_sets.arena[0]
-                if card_set in side_sets:
-                    card_sets.arena.extend(side_sets[card_set])
-                    card_sets.scryfall.extend(side_sets[card_set])
-            except Exception:
-                pass
 
         # Insert the cube set
         self.sets_scryfall.data["Arena Cube"] = SetInfo(
@@ -332,9 +321,7 @@ class LimitedSets:
         '''Process Scryfall sets for Alchemy specific information'''
         set_entry = SetInfo()
         if ("parent_set_code" in data) and ("block_code" in data):
-            set_entry.arena = [data["parent_set_code"].upper()]
-            set_entry.scryfall = [
-                set_code.upper(), data["parent_set_code"].upper()]
+            set_entry.arena = [constants.SET_SELECTION_ALL]
             set_entry.seventeenlands = [
                 f"{data['block_code'].upper()}{data['parent_set_code'].upper()}"]
 
@@ -343,21 +330,18 @@ class LimitedSets:
                 r"^[yY](\w{3})$", set_code, re.DOTALL)
 
             if parent_code:
-                set_entry.arena = [parent_code[0].upper()]
+                set_entry.arena = [constants.SET_SELECTION_ALL]
                 set_entry.seventeenlands = [
                     f"{data['block_code'].upper()}{parent_code[0].upper()}"]
-                set_entry.scryfall = [set_code.upper(), parent_code[0].upper()]
 
             else:
                 set_entry = SetInfo(
-                    arena=[set_code.upper()],
-                    scryfall=[set_code.upper()],
+                    arena=[constants.SET_SELECTION_ALL],
                     seventeenlands=[set_code.upper()]
                 )
         else:
             set_entry = SetInfo(
-                arena=[set_code.upper()],
-                scryfall=[set_code.upper()],
+                arena=[constants.SET_SELECTION_ALL],
                 seventeenlands=[set_code.upper()]
             )
         return set_entry
