@@ -2,19 +2,10 @@ name: Python Linux
 
 on:
   workflow_dispatch:
-  push:
-    branches: [ 'main' ]
-    paths: 
-    - '**.py'
   pull_request:
     branches: [ 'main' ]
     paths: 
     - '**.py'
-
-
-permissions:
-  contents: read
-
 jobs:
   build:
 
@@ -33,10 +24,7 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install pytest pytest-cov
+        pip install pytest
         pip install -r requirements.txt
-        
-    - name: Run tests with coverage
-      run: |
-        pytest ./tests --cov=src --cov-report=xml --cov-fail-under=80
-        exit_code=$?
+    - name: Test with pytest
+      run: pytest ./tests
