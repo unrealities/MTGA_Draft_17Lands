@@ -287,7 +287,7 @@ class AutocompleteEntry(tkinter.Entry):
                 self.autocomplete()
             return "break"
 
-        if event.keysym in ('Right'):
+        if event.keysym == 'Right':
             if self.select_present():
                 self.selection_clear()
                 self.icursor(tkinter.END)
