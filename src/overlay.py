@@ -268,7 +268,7 @@ class AutocompleteEntry(tkinter.Entry):
         return
 
     def act_on_press(self, event):
-        if event.keysym in ('Left'):
+        if event.keysym == 'Left':
             if self.autocompleted:
                 self.remove_autocompletion()
                 return "break"
