@@ -1,0 +1,31 @@
+name: Javascript Tier Scraper
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches: [ 'main' ]
+    paths: 
+    - '**.js'
+
+jobs:
+  test:
+    name: Unit Tests
+    timeout-minutes: 2
+    runs-on: ubuntu-latest
+        
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm install --save-dev jest-environment-jsdom
+        working-directory: ./Tools/TierScraper17Lands
+
+      - name: Run Jest tests
+        run: npm test
+        working-directory: ./Tools/TierScraper17Lands
