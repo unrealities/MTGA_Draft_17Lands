@@ -3239,11 +3239,8 @@ class CreateCardToolTip(ScaledWindow):
                                       wraplength=tt_width,)
                 comment_label.grid(column=0, row=0, sticky=tkinter.NSEW)
 
-                font = ImageFont.truetype('times.ttf', 12)
-                font_size = font.getsize(comment)
-                font_rows = math.ceil(font_size[0] / tt_width) + 2
-                font_height = font_rows * font_size[1]
-                tt_height += self._scale_value(font_height)
+                #Removed broken code that was used to calculate the comment height in pixels
+                
                 row_count += 1
 
             note_label.grid(column=0, row=row_count,
