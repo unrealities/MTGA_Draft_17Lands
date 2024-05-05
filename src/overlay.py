@@ -11,6 +11,7 @@ import math
 import argparse
 import webbrowser
 from dataclasses import dataclass
+from hdpitkinter import HdpiTk
 from ttkwidgets.autocomplete import AutocompleteEntry
 from pynput.keyboard import Listener, KeyCode
 from PIL import Image, ImageTk, ImageFont
@@ -386,7 +387,7 @@ class Overlay(ScaledWindow):
 
     def __init__(self, args):
         super().__init__()
-        self.root = tkinter.Tk()
+        self.root = HdpiTk()
         self.root.title(f"Version {APPLICATION_VERSION:2.2f}")
         self.configuration, _ = read_configuration()
         self.root.resizable(False, False)
@@ -3209,7 +3210,7 @@ class CreateCardToolTip(ScaledWindow):
                             raw_data = urllib.request.urlopen(
                                 image_request).read()
                             im = Image.open(io.BytesIO(raw_data))
-                            im.thumbnail(size, Image.ANTIALIAS)
+                            im.thumbnail(size, Image.Resampling.LANCZOS)
                             image = ImageTk.PhotoImage(im)
                             image_label = Label(tt_frame, image=image)
                             image_label.grid(

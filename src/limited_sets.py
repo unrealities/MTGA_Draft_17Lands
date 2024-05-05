@@ -63,7 +63,8 @@ class LimitedSets:
         self.limited_sets: SetDictionary()
         self.sets_scryfall = SetDictionary()
         self.sets_17lands = SetDictionary()
-        self.context: ssl.SSLContext = ssl.SSLContext()
+        self.context: ssl.SSLContext = ssl.SSLContext(protocol=ssl.PROTOCOL_TLS_CLIENT)
+        self.context.load_default_certs()
 
     def retrieve_limited_sets(self) -> SetDictionary:
         '''Retrieve a list of sets from 17Lands and Scryfall

@@ -1,7 +1,8 @@
 pyinstaller==5.5; sys_platform == 'win32'
 pywin32==306 ; sys_platform == 'win32'
-Pillow==9.5.0
+Pillow==10.2.0
 pynput==1.7.6
 ttkwidgets==0.13.0
-numpy==1.24.4
+numpy==1.26.4
 pydantic==1.10.12
+hdpitkinter==1.0.3
