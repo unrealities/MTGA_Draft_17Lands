@@ -278,6 +278,7 @@ class FileExtractor:
         self.session = ""
         self.start_date = ""
         self.end_date = ""
+        self.user_group = ""
         self.directory = directory
         self.context = ssl.SSLContext()
         self.card_ratings = {}
@@ -319,6 +320,15 @@ class FileExtractor:
             self.end_date = end_date
             self.combined_data["meta"]["end_date"] = self.end_date
         return result
+    
+    def set_user_group(self, user_group):
+        '''Sets the user_group filter in a set file (all/bottom/middle/top)'''
+        print(user_group)
+        print(constants.LIMITED_GROUPS_LIST)
+        if user_group in constants.LIMITED_GROUPS_LIST:
+            self.user_group = user_group
+        else:
+            self.user_group = "all"           
 
     def set_version(self, version):
         '''Sets the version in a set file'''
@@ -412,6 +422,8 @@ class FileExtractor:
             if constants.LOCAL_DATA_FOLDER_PATH_LINUX:
                 directory = constants.LOCAL_DATA_FOLDER_PATH_LINUX
                 paths = [os.path.join(directory, constants.LOCAL_DOWNLOADS_DATA)]
+            else:
+                paths = [] # program was giving errors on WSL without this
         else:
             if not self.directory:
                 path_list = [constants.WINDOWS_DRIVES, constants.WINDOWS_PROGRAM_FILES, [
@@ -795,8 +807,12 @@ class FileExtractor:
                     try:
                         status.set(f"Collecting {color} 17Lands Data")
                         root.update()
-                        url = f"https://www.17lands.com/card_ratings/data?expansion={set_code}&format={self.draft}&start_date={self.start_date}&end_date={self.end_date}"
-
+                        if self.user_group == "all":
+                            user_group = ""
+                        else:
+                            user_group = "&user_group=" + self.user_group
+                        url = f"https://www.17lands.com/card_ratings/data?expansion={set_code}&format={self.draft}&start_date={self.start_date}&end_date={self.end_date}{user_group}"
+                        print(url)
                         if color != constants.FILTER_OPTION_ALL_DECKS:
                             url += "&colors=" + color
                         url_data = urllib.request.urlopen(
@@ -877,7 +893,7 @@ class FileExtractor:
                               (key == constants.DATA_FIELD_ALSA)):
                             color_data[colors][key] = round(float(card[value] if card[value] else 0.0), 2)
                         else:
-                            color_data[colors][key] = int(card[value])
+                            color_data[colors][key] = int(card[value] if card[value] else 0)
 
                 card_name = card[constants.DATA_FIELD_NAME]
 
