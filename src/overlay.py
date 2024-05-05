@@ -1777,7 +1777,7 @@ class Overlay(ScaledWindow):
                        "DRAFT": {"width": .20, "anchor": tkinter.CENTER},
                        "START DATE": {"width": .20, "anchor": tkinter.CENTER},
                        "END DATE": {"width": .20, "anchor": tkinter.CENTER},
-                       "USR GROUP": {"width": .20, "anchor": tkinter.CENTER}}
+                       "USER GROUP": {"width": .20, "anchor": tkinter.CENTER}}
 
             list_box_frame = tkinter.Frame(popup)
             list_box_scrollbar = tkinter.Scrollbar(
@@ -1838,7 +1838,7 @@ class Overlay(ScaledWindow):
             menu = self.root.nametowidget(set_entry['menu'])
             menu.config(font=self.fonts_dict["All.TMenubutton"])
 
-            set_value.trace("w", lambda *args, start=start_entry, selection=set_value,
+            set_value.trace_add("write", lambda *args, start=start_entry, selection=set_value,
                             set_list=sets: self.__update_set_start_date(start, selection, set_list, *args))
 
             draft_groups = constants.LIMITED_GROUPS_LIST
@@ -1866,8 +1866,12 @@ class Overlay(ScaledWindow):
             event_separator = Separator(popup, orient='vertical')
             set_separator = Separator(popup, orient='vertical')
 
-            notice_label.grid(row=0, column=0, columnspan=10, sticky='nsew')
-            list_box_frame.grid(row=1, column=0, columnspan=10, sticky='nsew')
+            notice_label.grid(row=0, column=0, columnspan=12, sticky='nsew')
+            list_box_frame.grid(row=1, column=0, columnspan=12, sticky='nsew')
+            add_button.grid(row=3, column=0, columnspan=12, sticky='nsew')
+            progress.grid(row=4, column=0, columnspan=12, sticky='nsew')
+            status_label.grid(row=5, column=0, columnspan=12, sticky='nsew')
+            
             set_label.grid(row=2, column=0, sticky='nsew')
             set_entry.grid(row=2, column=1, sticky='nsew')
             set_separator.grid(row=2, column=2, sticky='nsew')
@@ -1880,9 +1884,6 @@ class Overlay(ScaledWindow):
             end_entry.grid(row=2, column=9, sticky='nsew')
             group_label.grid(row=2, column=10, sticky='nsew')
             group_entry.grid(row=2, column=11, sticky='nsew')
-            add_button.grid(row=3, column=0, columnspan=10, sticky='nsew')
-            progress.grid(row=4, column=0, columnspan=10, sticky='nsew')
-            status_label.grid(row=5, column=0, columnspan=10, sticky='nsew')
 
             list_box.pack(expand=True, fill="both")
 

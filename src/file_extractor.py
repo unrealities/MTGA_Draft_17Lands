@@ -84,11 +84,11 @@ def retrieve_local_set_list(sets):
         try:
             name_segments = file.split("_")
             if len(name_segments) == 3:
-
                 if ((name_segments[0].upper() in main_sets) and
                     (name_segments[1] in constants.LIMITED_TYPES_DICT) and
-                        (name_segments[2] == constants.SET_FILE_SUFFIX)):
-
+                    (name_segments[2] == constants.SET_FILE_SUFFIX)):
+                    # (name_segments[2] in constants.LIMITED_GROUPS_LIST) and
+                    
                     set_name = list(sets.keys())[list(
                         main_sets).index(name_segments[0].upper())]
                     result, json_data = check_file_integrity(
@@ -101,10 +101,9 @@ def retrieve_local_set_list(sets):
                             start_date = json_data["meta"]["start_date"]
                             end_date = json_data["meta"]["end_date"]
                         file_list.append(
-                            (set_name, name_segments[1], start_date, end_date))
+                                (set_name, name_segments[1], start_date, end_date))
         except Exception as error:
             logger.error(error)
-
     return file_list
 
 
@@ -323,8 +322,6 @@ class FileExtractor:
     
     def set_user_group(self, user_group):
         '''Sets the user_group filter in a set file (all/bottom/middle/top)'''
-        print(user_group)
-        print(constants.LIMITED_GROUPS_LIST)
         if user_group in constants.LIMITED_GROUPS_LIST:
             self.user_group = user_group
         else:
@@ -812,7 +809,6 @@ class FileExtractor:
                         else:
                             user_group = "&user_group=" + self.user_group
                         url = f"https://www.17lands.com/card_ratings/data?expansion={set_code}&format={self.draft}&start_date={self.start_date}&end_date={self.end_date}{user_group}"
-                        print(url)
                         if color != constants.FILTER_OPTION_ALL_DECKS:
                             url += "&colors=" + color
                         url_data = urllib.request.urlopen(
@@ -858,7 +854,11 @@ class FileExtractor:
     def retrieve_17lands_color_ratings(self):
         '''Use 17Lands endpoint to collect the data from the color_ratings page'''
         try:
-            url = f"https://www.17lands.com/color_ratings/data?expansion={self.selected_sets.seventeenlands[0]}&event_type={self.draft}&start_date={self.start_date}&end_date={self.end_date}&combine_splash=true"
+            if self.user_group == "all":
+                user_group = ""
+            else:
+                user_group = "&user_group=" + self.user_group
+            url = f"https://www.17lands.com/color_ratings/data?expansion={self.selected_sets.seventeenlands[0]}&event_type={self.draft}&start_date={self.start_date}&end_date={self.end_date}{user_group}&combine_splash=true"
             url_data = urllib.request.urlopen(url, context=self.context).read()
 
             color_json_data = json.loads(url_data)
