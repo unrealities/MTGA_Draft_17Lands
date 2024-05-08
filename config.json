@@ -1,0 +1,93 @@
+{
+    "settings": {
+        "table_width": 270,
+        "column_2": "gihwr",
+        "column_3": "disabled",
+        "column_4": "disabled",
+        "column_5": "disabled",
+        "column_6": "disabled",
+        "column_7": "disabled",
+        "deck_filter": "Auto",
+        "filter_format": "Colors",
+        "result_format": "Percentage",
+        "ui_size": "100%",
+        "card_colors_enabled": true,
+        "missing_enabled": true,
+        "stats_enabled": false,
+        "auto_highest_enabled": true,
+        "curve_bonus_enabled": false,
+        "color_bonus_enabled": false,
+        "bayesian_average_enabled": true,
+        "draft_log_enabled": true,
+        "color_identity_enabled": false,
+        "current_draft_enabled": true,
+        "data_source_enabled": true,
+        "deck_filter_enabled": true,
+        "refresh_button_enabled": true,
+        "taken_alsa_enabled": false,
+        "taken_ata_enabled": false,
+        "taken_gpwr_enabled": false,
+        "taken_ohwr_enabled": false,
+        "taken_gdwr_enabled": false,
+        "taken_gndwr_enabled": false,
+        "taken_iwd_enabled": false,
+        "arena_log_location": "/Users/tomszymanski/Library/Logs/Wizards of the Coast/MTGA/Player.log"
+    },
+    "card_logic": {
+        "minimum_creatures": 9,
+        "minimum_noncreatures": 6,
+        "ratings_threshold": 500,
+        "alsa_weight": 0.0,
+        "iwd_weight": 0.0,
+        "deck_mid": {
+            "distribution": [
+                0,
+                0,
+                4,
+                3,
+                2,
+                1,
+                0
+            ],
+            "maximum_card_count": 23,
+            "recommended_creature_count": 15,
+            "cmc_average": 3.04
+        },
+        "deck_aggro": {
+            "distribution": [
+                0,
+                2,
+                5,
+                3,
+                0,
+                0,
+                0
+            ],
+            "maximum_card_count": 24,
+            "recommended_creature_count": 17,
+            "cmc_average": 2.4
+        },
+        "deck_control": {
+            "distribution": [
+                0,
+                0,
+                3,
+                2,
+                2,
+                1,
+                0
+            ],
+            "maximum_card_count": 22,
+            "recommended_creature_count": 10,
+            "cmc_average": 3.68
+        }
+    },
+    "features": {
+        "override_scale_factor": 0.0,
+        "hotkey_enabled": false,
+        "images_enabled": true
+    },
+    "card_data": {
+        "database_size": 0
+    }
+}
