@@ -1,3 +1,14 @@
+# Ignore files created by the app
+config.json
+
+# Ignore folders created by the app
+Debug/
+Downloads/
+Logs/
+Sets/
+Temp/
+Tier/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
