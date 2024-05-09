@@ -1,6 +1,7 @@
 ===================== RELEASE NOTES 3.11 =====================
-* Forked as previous owner has archived their repo
-* App was no longer loading results after OTJ Alchemy release on May 7, 2024
+* Forked as previous owner has archived the repo
+* Updated to Python 3.12
+* OTJ Alchemy release on May 7, 2024 moved "Payload" to top-level
 
 ===================== RELEASE NOTES 3.10 =====================
 * Application updates will no longer reset the settings

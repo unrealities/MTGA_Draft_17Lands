@@ -172,8 +172,7 @@ class ArenaScanner:
         try:
             draft_id = event_data["id"]
             request_data = json.loads(event_data["request"])
-            payload_data = json.loads(request_data["Payload"])
-            event_name = payload_data["EventName"]
+            event_name = request_data["EventName"]
 
             logger.info("Event found %s", event_name)
 
@@ -277,12 +276,11 @@ class ArenaScanner:
                         self.draft_log.info(line)
                         draft_data = json.loads(line[start_offset:])
                         request_data = draft_data["request"]
-                        payload_data = json.loads(request_data)["Payload"]
 
                         pack_cards = []
                         try:
 
-                            card_data = json.loads(payload_data)
+                            card_data = json.loads(request_data)
                             cards = card_data["CardsInPack"]
 
                             for card in cards:
@@ -347,11 +345,10 @@ class ArenaScanner:
                             draft_data = json.loads(line[start_offset:])
 
                             request_data = json.loads(draft_data["request"])
-                            param_data = json.loads(request_data["Payload"])
 
-                            pack = int(param_data["Pack"])
-                            pick = int(param_data["Pick"])
-                            card = str(param_data["GrpId"])
+                            pack = int(request_data["Pack"])
+                            pick = int(request_data["Pick"])
+                            card = str(request_data["GrpId"])
 
                             pack_index = (pick - 1) % 8
 
@@ -582,9 +579,8 @@ class ArenaScanner:
                         start_offset = line.find("{\"CurrentModule\"")
                         self.draft_log.info(line)
                         draft_data = json.loads(line[start_offset:])
-                        payload_data = json.loads(draft_data["Payload"])
-                        pack_data = payload_data["DraftPack"]
-                        draft_status = payload_data["DraftStatus"]
+                        pack_data = draft_data["DraftPack"]
+                        draft_status = draft_data["DraftStatus"]
 
                         if draft_status == "PickNext":
                             pack_cards = []
@@ -595,8 +591,8 @@ class ArenaScanner:
                                 for card in cards:
                                     pack_cards.append(str(card))
 
-                                pack = payload_data["PackNumber"] + 1
-                                pick = payload_data["PickNumber"] + 1
+                                pack = draft_data["PackNumber"] + 1
+                                pick = draft_data["PickNumber"] + 1
                                 pack_index = (pick - 1) % 8
 
                                 if self.current_pack != pack:
@@ -650,8 +646,7 @@ class ArenaScanner:
                                 line[string_offset+len(draft_string):])
 
                             request_data = json.loads(draft_data["request"])
-                            payload_data = json.loads(request_data["Payload"])
-                            pick_data = payload_data["PickInfo"]
+                            pick_data = request_data["PickInfo"]
 
                             pack = pick_data["PackNumber"] + 1
                             pick = pick_data["PickNumber"] + 1
@@ -704,12 +699,11 @@ class ArenaScanner:
                         self.draft_log.info(line)
                         draft_data = json.loads(line[start_offset:])
                         request_data = draft_data["request"]
-                        payload_data = json.loads(request_data)["Payload"]
 
                         pack_cards = []
                         try:
 
-                            card_data = json.loads(payload_data)
+                            card_data = json.loads(request_data)
                             cards = card_data["CardsInPack"]
 
                             for card in cards:
@@ -774,11 +768,10 @@ class ArenaScanner:
                             draft_data = json.loads(line[start_offset:])
 
                             request_data = json.loads(draft_data["request"])
-                            param_data = json.loads(request_data["Payload"])
 
-                            pack = int(param_data["Pack"])
-                            pick = int(param_data["Pick"])
-                            card = str(param_data["GrpId"])
+                            pack = int(request_data["Pack"])
+                            pick = int(request_data["Pick"])
+                            card = str(request_data["GrpId"])
 
                             pack_index = (pick - 1) % 8
 
@@ -890,8 +883,7 @@ class ArenaScanner:
                         self.draft_log.info(line)
                         # Identify the pack
                         draft_data = json.loads(line[start_offset:])
-                        payload_data = json.loads(draft_data["Payload"])
-                        changes = payload_data["Changes"]
+                        changes = draft_data["Changes"]
                         try:
                             card_pool = []
                             for change in changes:

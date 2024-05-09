@@ -23,9 +23,8 @@ class CustomFormatter(logging.Formatter):
         # Remember the original format
         format_orig = self._style._fmt
 
-        # TODO: Debugging
-        # if record.levelno == logging.ERROR:
-        self._style._fmt = "%(asctime)s - %(levelname)s - %(module)s.%(funcName)s - %(message)s"
+        if record.levelno == logging.ERROR:
+            self._style._fmt = "%(asctime)s - %(levelname)s - %(module)s.%(funcName)s - %(message)s"
 
         # Calling the original formatter once the style has changed
         result = logging.Formatter.format(self, record)
