@@ -5,7 +5,7 @@ Magic: The Gathering Arena draft tool that utilizes 17Lands data.
 
 **Supported Events:** Premier Draft, Traditional Draft, Quick Draft, Sealed, and Traditional Sealed
   
-![Premier_Draft](https://github.com/bstaple1/MTGA_Draft_17Lands/assets/96687942/9d7283ff-cb8b-46f9-8d72-7bf531d707b1)
+![Premier_Draft](https://github.com/unrealities/MTGA_Draft_17Lands/assets/96687942/9d7283ff-cb8b-46f9-8d72-7bf531d707b1)
 
 # Table of Contents
 
@@ -21,7 +21,7 @@ Magic: The Gathering Arena draft tool that utilizes 17Lands data.
 
 
 ## Run Steps: Windows Executable (Windows Only)
-- **Step 1:** Download the latest zip file from the [releases page](https://github.com/bstaple1/MTGA_Draft_17Lands/releases).
+- **Step 1:** Download the latest zip file from the [releases page](https://github.com/unrealities/MTGA_Draft_17Lands/releases).
 
 - **Step 2:** Unzip and double-click the exe file to start the installation. 
 
@@ -48,8 +48,8 @@ Magic: The Gathering Arena draft tool that utilizes 17Lands data.
 
 
 ## Run Steps: Python (Windows/Mac/Linux)
-- **Step 1:** [Download](https://github.com/bstaple1/MTGA_Draft_17Lands/archive/refs/heads/main.zip) and unzip the `MTGA_Draft_17Lands-main.zip` file or clone the repository.
-    - Some recent Python-related bug fixes have been made since the 3.10 release. Please download the code from the [main branch](https://github.com/bstaple1/MTGA_Draft_17Lands/archive/refs/heads/main.zip) instead of the 3.10 release.
+- **Step 1:** [Download](https://github.com/unrealities/MTGA_Draft_17Lands/archive/refs/heads/main.zip) and unzip the `MTGA_Draft_17Lands-main.zip` file or clone the repository.
+    - Some recent Python-related bug fixes have been made since the 3.10 release. Please download the code from the [main branch](https://github.com/unrealities/MTGA_Draft_17Lands/archive/refs/heads/main.zip) instead of the 3.10 release.
 
 - **Step 2:** Download and install Python 3.12.
     - [Windows](https://www.python.org/downloads/windows/).
@@ -144,8 +144,8 @@ Magic: The Gathering Arena draft tool that utilizes 17Lands data.
 
 ## Menu Features
 
-![Settings_Dark](https://github.com/bstaple1/MTGA_Draft_17Lands/assets/96687942/642a0795-e407-410e-b8d6-6332f3083ac7)
-![Settings_Colors](https://github.com/bstaple1/MTGA_Draft_17Lands/assets/96687942/90c6b3df-0ade-4f32-a1be-b2ef40cedc32)
+![Settings_Dark](https://github.com/unrealities/MTGA_Draft_17Lands/assets/96687942/642a0795-e407-410e-b8d6-6332f3083ac7)
+![Settings_Colors](https://github.com/unrealities/MTGA_Draft_17Lands/assets/96687942/90c6b3df-0ade-4f32-a1be-b2ef40cedc32)
 
 
 - **Read Draft Logs:** Read the log file from a draft by selecting `File->Open`. Select a file that has the following naming scheme `DraftLog_<Set>_<Draft Type>_<Draft_ID>.log` file to read the file.
@@ -174,7 +174,7 @@ Magic: The Gathering Arena draft tool that utilizes 17Lands data.
 
 - **Top-Level Window:** The main application window, and subsequent windows, will act as an overlay and remain above all other windows, including the Arena screen.
 
-- **Tier List:** A tier list can be added to the drop-downs by following the instructions in [tier list README](https://github.com/bstaple1/MTGA_Draft_17Lands/tree/main/Tools/TierScraper17Lands#tier-list-download-extension).
+- **Tier List:** A tier list can be added to the drop-downs by following the instructions in [tier list README](https://github.com/unrealities/MTGA_Draft_17Lands/tree/main/Tools/TierScraper17Lands#tier-list-download-extension).
 
 - **Card Tooltips:** Clicking on any card row will display a tooltip that contains the card images (back and front) and the 17Lands data.
 	
@@ -236,7 +236,7 @@ Magic: The Gathering Arena draft tool that utilizes 17Lands data.
 - **Win Rate Ratings:** The application will calculate the mean and standard deviation to identify an upper and lower limit (-1.67 to 2.00 standard deviations from the mean) and perform the following calculation to determine a card's rating: `((card_gihwr - lower_limit) / (upper_limit - lower_limit)) * 5.0`
     - Example: If the calculated mean and standard deviation for a set are 56.8% and 4.68, then the upper limit will be `56.8 + 2.00 * 4.68 = 66.16%`, the lower limit will be `56.8 - 1.67 * 4.68 = 48.98%`, and the resulting rating for a card with a win rate of 62% will be `(((62 - 48.98) / (66.16 - 48.98)) * 5.0 = 3.7)`
 
-- <a id="bayesian-average">**Bayesian Average:** When this feature is activated, the win rate data is subjected to a Bayesian average calculation that takes into account specific assumptions  (e.g., an anticipated range of 40-60% with a mean of 50%). This Bayesian average considers both prior assumptions and observed data, providing a more reliable estimation of the win rate, particularly in cases where sample sizes are small (less than 200 samples) or data availability is limited. A comprehensive explanation can be found [here](https://github.com/bstaple1/MTGA_Draft_17Lands/issues/5#issuecomment-1075193138).</a>
+- <a id="bayesian-average">**Bayesian Average:** When this feature is activated, the win rate data is subjected to a Bayesian average calculation that takes into account specific assumptions  (e.g., an anticipated range of 40-60% with a mean of 50%). This Bayesian average considers both prior assumptions and observed data, providing a more reliable estimation of the win rate, particularly in cases where sample sizes are small (less than 200 samples) or data availability is limited. A comprehensive explanation can be found [here](https://github.com/unrealities/MTGA_Draft_17Lands/issues/5#issuecomment-1075193138).</a>
     - Enabled: The application will apply this calculation to all win rate data. However, the adjustment made by the calculation will gradually diminish as the sample count, such as the number of games in hand for the Games in Hand Win Rate, reaches 200. As the sample size increases, the Bayesian average will be more influenced by the observed data rather than the prior assumptions, resulting in a more reliable estimation of the win rate.
     - Disabled: The application will not apply this calculation to the win rate data.
     - **As of September 2023, this feature has become obsolete. The 17Lands endpoint no longer provides win rate data for cards with fewer than 500 samples.**
@@ -276,7 +276,7 @@ Magic: The Gathering Arena draft tool that utilizes 17Lands data.
 
 - **My sealed card pool is missing after restarting Arena:** Arena creates a new player log after every restart, so you will need to open up your sealed event session log by clicking `File->Open` and selecting the `DraftLog_<Set>_Sealed` file if you want to see your sealed card pool. Keep in mind that opening a log file will prevent the application from reading the Arena player log. Therefore, if you wish to initiate a new Arena event, you'll need to restart the application.
 
-- **The tables are displaying a win rate of 0% or NA:** The application will display a card win rate value of 0% or NA if that win rate field has fewer than 500* samples (e.g., GIHWR will be 0% or NA if the number of games in hand is less than 500*). Users should consider using the premier draft dataset or downloading a [tier list](https://github.com/bstaple1/MTGA_Draft_17Lands/tree/main/Tools/TierScraper17Lands#tier-list-download-extension) for events that have a low player count.
+- **The tables are displaying a win rate of 0% or NA:** The application will display a card win rate value of 0% or NA if that win rate field has fewer than 500* samples (e.g., GIHWR will be 0% or NA if the number of games in hand is less than 500*). Users should consider using the premier draft dataset or downloading a [tier list](https://github.com/unrealities/MTGA_Draft_17Lands/tree/main/Tools/TierScraper17Lands#tier-list-download-extension) for events that have a low player count.
   - ***As of September 2023, the 17Lands endpoint no longer provides win rate data for cards with fewer than 500 samples.**
 
 - **CTRL+G doesn't do anything:** If you're a Mac user, then this shortcut isn't available. If you're a Windows user, then you need to run the application as an administrator.

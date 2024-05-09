@@ -2599,7 +2599,7 @@ class Overlay(ScaledWindow):
 
             github_url = Label(
                 popup,
-                text="https://github.com/bstaple1/MTGA_Draft_17Lands",
+                text="https://github.com/unrealities/MTGA_Draft_17Lands",
                 style="MainSections.TLabel",
                 anchor="c",
                 foreground="#0066CC",
@@ -2931,10 +2931,10 @@ class Overlay(ScaledWindow):
                                 0, "open", output_location, None, None, 10)
                         else:
                             message_box = tkinter.messagebox.showerror(
-                                title="Download Failed", message="Visit https://github.com/bstaple1/MTGA_Draft_17Lands/releases to manually download the new version.")
+                                title="Download Failed", message="Visit https://github.com/unrealities/MTGA_Draft_17Lands/releases to manually download the new version.")
 
                 else:
-                    message_string = f"Update {new_version} is now available.\n\nCheck https://github.com/bstaple1/MTGA_Draft_17Lands/releases for more details."
+                    message_string = f"Update {new_version} is now available.\n\nCheck https://github.com/unrealities/MTGA_Draft_17Lands/releases for more details."
                     message_box = tkinter.messagebox.showinfo(
                         title="Update", message=message_string)
         except Exception as error:
