@@ -51,13 +51,13 @@ Magic: The Gathering Arena draft tool that utilizes 17Lands data.
 - **Step 1:** [Download](https://github.com/bstaple1/MTGA_Draft_17Lands/archive/refs/heads/main.zip) and unzip the `MTGA_Draft_17Lands-main.zip` file or clone the repository.
     - Some recent Python-related bug fixes have been made since the 3.10 release. Please download the code from the [main branch](https://github.com/bstaple1/MTGA_Draft_17Lands/archive/refs/heads/main.zip) instead of the 3.10 release.
 
-- **Step 2:** Download and install Python 3.11.
+- **Step 2:** Download and install Python 3.12.
     - [Windows](https://www.python.org/downloads/windows/).
     - [Mac](https://www.python.org/downloads/macos/).
     - [Linux](https://wiki.python.org/moin/BeginnersGuide/Download#Linux).
 
 
-- **Step 3:** Confirm that you're running Python 3.11 by opening the terminal, entering ```python --version```, and checking for a ```Python 3.11.*``` result.
+- **Step 3:** Confirm that you're running Python 3.12 by opening the terminal, entering ```python --version```, and checking for a ```Python 3.12.*``` result.
 
 - **Step 4:** Install the Python package installer Pip by entering ```python -m ensurepip --upgrade```.
 
@@ -95,7 +95,7 @@ Magic: The Gathering Arena draft tool that utilizes 17Lands data.
 
 
 ## Build Steps: setup.exe (Windows Only)
-- **Step 1:** Download and install Python 3.11.
+- **Step 1:** Download and install Python 3.12.
 
 - **Step 2:** Install the Python package installer Pip by opening the terminal and entering ```python -m ensurepip --upgrade```.
 
@@ -103,8 +103,9 @@ Magic: The Gathering Arena draft tool that utilizes 17Lands data.
 
 - **Step 4:** [Download Inno Setup](https://jrsoftware.org/isdl.php#stable)
 
-- **Step 5:** Build MTGA_Draft_Tool.exe by opening the terminal and entering ```pyinstaller main.py --onefile --noconsole -n MTGA_Draft_Tool --clean```
+- **Step 5:** Build MTGA_Draft_Tool.exe by opening the terminal and entering ```python -m PyInstaller  main.py --onefile --noconsole -n MTGA_Draft_Tool --clean```
     - Move the `MTGA_Draft_Tool.exe` file from the `dist` folder to the main `MTGA_Draft_17Lands` folder.
+    - If this fails to build, you probably need to add an exclusion in your Windows virus & threat protection.
     
 - **Step 6:** Open `Installer.iss` in Inno Setup and click Build->Compile.
     - In the `{app}` folder, rename the mysetup.exe file to `setup.exe` and move the file to the main `MTGA_Draft_17Lands` folder.
