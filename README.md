@@ -5,7 +5,7 @@ Magic: The Gathering Arena draft tool that utilizes 17Lands data.
 
 **Supported Events:** Premier Draft, Traditional Draft, Quick Draft, Sealed, and Traditional Sealed
   
-![Premier_Draft](https://github.com/unrealities/MTGA_Draft_17Lands/assets/96687942/9d7283ff-cb8b-46f9-8d72-7bf531d707b1)
+![Premier_Draft](https://github.com/unrealities/MTGA_Draft_17Lands/blob/main/assets/96687942/9d7283ff-cb8b-46f9-8d72-7bf531d707b1.png)
 
 # Table of Contents
 
