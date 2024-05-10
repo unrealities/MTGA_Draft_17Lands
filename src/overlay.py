@@ -3208,7 +3208,7 @@ class CreateCardToolTip(ScaledWindow):
                             raw_data = urllib.request.urlopen(
                                 image_request).read()
                             im = Image.open(io.BytesIO(raw_data))
-                            im.thumbnail(size, Image.ANTIALIAS)
+                            im.thumbnail(size, Image.LANCZOS)
                             image = ImageTk.PhotoImage(im)
                             image_label = Label(tt_frame, image=image)
                             image_label.grid(
