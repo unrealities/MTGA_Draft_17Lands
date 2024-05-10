@@ -579,8 +579,9 @@ class ArenaScanner:
                         start_offset = line.find("{\"CurrentModule\"")
                         self.draft_log.info(line)
                         draft_data = json.loads(line[start_offset:])
-                        pack_data = draft_data["DraftPack"]
-                        draft_status = draft_data["DraftStatus"]
+                        payload_data = json.loads(draft_data["Payload"])
+                        pack_data = payload_data["DraftPack"]
+                        draft_status = payload_data["DraftStatus"]
 
                         if draft_status == "PickNext":
                             pack_cards = []
@@ -591,8 +592,8 @@ class ArenaScanner:
                                 for card in cards:
                                     pack_cards.append(str(card))
 
-                                pack = draft_data["PackNumber"] + 1
-                                pick = draft_data["PickNumber"] + 1
+                                pack = payload_data["PackNumber"] + 1
+                                pick = payload_data["PickNumber"] + 1
                                 pack_index = (pick - 1) % 8
 
                                 if self.current_pack != pack:

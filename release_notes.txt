@@ -1,3 +1,6 @@
+===================== RELEASE NOTES 3.12 =====================
+* Re-added code for QuickDraft that was unnecessarily modified
+
 ===================== RELEASE NOTES 3.11 =====================
 * Forked as previous owner has archived the repo
 * Updated to Python 3.12
