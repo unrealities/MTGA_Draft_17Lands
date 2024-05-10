@@ -1,7 +1,7 @@
 """This module encompasses functions for reading from, writing to, and resetting the configuration file"""
 import json
 import os
-from pydantic import BaseModel, validator, Field
+from pydantic import BaseModel, field_validator, Field
 from typing import Tuple
 from src import constants
 from src.logger import create_logger
@@ -55,36 +55,32 @@ class Settings(BaseModel):
     taken_iwd_enabled: bool = False
     arena_log_location: str = ""
 
-    @validator('deck_filter')
-    def validate_deck_filter(cls, value, field):
+    @field_validator('deck_filter')
+    def validate_deck_filter(cls, value, info):
         allowed_values = constants.DECK_FILTERS  # List of options
-        field_name = field.name
         if value not in allowed_values:
-            return cls.__fields__[field_name].default
+            return cls.model_fields[info.field_name].default
         return value
 
-    @validator('filter_format')
-    def validate_filter_format(cls, value, field):
+    @field_validator('filter_format')
+    def validate_filter_format(cls, value, info):
         allowed_values = constants.DECK_FILTER_FORMAT_LIST  # List of options
-        field_name = field.name
         if value not in allowed_values:
-            return cls.__fields__[field_name].default
+            return cls.model_fields[info.field_name].default
         return value
 
-    @validator('result_format')
-    def validate_result_format(cls, value, field):
+    @field_validator('result_format')
+    def validate_result_format(cls, value, info):
         allowed_values = constants.RESULT_FORMAT_LIST  # List of options
-        field_name = field.name
         if value not in allowed_values:
-            return cls.__fields__[field_name].default
+            return cls.model_fields[info.field_name].default
         return value
 
-    @validator('ui_size')
-    def validate_ui_size(cls, value, field):
+    @field_validator('ui_size')
+    def validate_ui_size(cls, value, info):
         allowed_values = constants.UI_SIZE_DICT  # List of options
-        field_name = field.name
         if value not in allowed_values:
-            return cls.__fields__[field_name].default
+            return cls.model_fields[info.field_name].default
         return value
 
 
@@ -132,7 +128,7 @@ def read_configuration(file_location: str = CONFIG_FILE) -> Tuple[Configuration,
         with open(file_location, 'r', encoding="utf8", errors="replace") as data:
             config_data = json.loads(data.read())
 
-        config_object = Configuration.parse_obj(config_data)
+        config_object = Configuration.model_validate(config_data)
         success = True
     except (FileNotFoundError, json.JSONDecodeError) as error:
         logger.error(error)
@@ -146,7 +142,7 @@ def write_configuration(config_object: Configuration, file_location: str = CONFI
 
     try:
         with open(file_location, 'w', encoding="utf8", errors="replace") as data:
-            json.dump(config_object.dict(), data, ensure_ascii=False, indent=4)
+            json.dump(config_object.model_dump(), data, ensure_ascii=False, indent=4)
         success = True
     except (FileNotFoundError, TypeError, OSError) as error:
         logger.error(error)
@@ -160,7 +156,7 @@ def reset_configuration(file_location: str = CONFIG_FILE) -> bool:
     success = False
     try:
         with open(file_location, 'w', encoding="utf8", errors="replace") as data:
-            json.dump(config_object.dict(), data, ensure_ascii=False, indent=4)
+            json.dump(config_object.model_dump(), data, ensure_ascii=False, indent=4)
         success = True
     except (FileNotFoundError, TypeError, OSError) as error:
         logger.error(error)
