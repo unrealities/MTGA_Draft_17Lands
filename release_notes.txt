@@ -1,3 +1,11 @@
+===================== RELEASE NOTES 3.12 =====================
+* Re-added code for QuickDraft that was unnecessarily modified
+
+===================== RELEASE NOTES 3.11 =====================
+* Forked as previous owner has archived the repo
+* Updated to Python 3.12
+* OTJ Alchemy release on May 7, 2024 moved "Payload" to top-level
+
 ===================== RELEASE NOTES 3.10 =====================
 * Application updates will no longer reset the settings
 * The visibility of the Current Draft display, Deck Source options, Deck filter options, and Refresh button can now be toggled in the settings menu
