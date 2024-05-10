@@ -36,17 +36,20 @@ def valid_input_url_exe():
 @pytest.fixture
 def output_filename():
     return "test_file.exe"
-    
+
+@pytest.mark.skipif(sys.platform == 'darwin', reason="Skipping on macOS because of Github API rate limiting")
 def test_retrieve_file_version_latest_success(app_update, valid_search_location_latest):
     version, file_location = app_update.retrieve_file_version(valid_search_location_latest)
     assert isinstance(version, str) and isinstance(float(version), float)
     assert isinstance(file_location, str)
     assert len(file_location) != 0
-    
+
+@pytest.mark.skipif(sys.platform == 'darwin', reason="Skipping on macOS because of Github API rate limiting")
 def test_retrieve_file_version_old_success(app_update, valid_search_location_old):
     version, file_location = app_update.retrieve_file_version(valid_search_location_old)
     assert version == EXPECTED_OLD_VERSION_STRING
-    
+
+@pytest.mark.skipif(sys.platform == 'darwin', reason="Skipping on macOS because of Github API rate limiting")
 def test_retrieve_file_version_failure(app_update, invalid_search_location):
     version, file_location = app_update.retrieve_file_version(invalid_search_location)
     assert version == ""
