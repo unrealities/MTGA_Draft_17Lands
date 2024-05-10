@@ -16,25 +16,10 @@ LOG_TYPE_DRAFT = "draftLog"
 
 logger = create_logger()
 
-
-def retrieve_card_data(set_data, card):
-    card_data = {}
-    if (set_data is not None) and (card in set_data["card_ratings"]):
-        card_data = set_data["card_ratings"][card]
-    else:
-        empty_dict = {constants.DATA_FIELD_NAME: card,
-                      constants.DATA_FIELD_MANA_COST: "",
-                      constants.DATA_FIELD_TYPES: [],
-                      constants.DATA_SECTION_IMAGES: []}
-        FE.initialize_card_data(empty_dict)
-        card_data = empty_dict
-    return card_data
-
-
 class ArenaScanner:
     '''Class that handles the processing of the information within Arena Player.log file'''
 
-    def __init__(self, filename, set_list, sets_location: str = constants.SETS_FOLDER, step_through: bool = False):
+    def __init__(self, filename, set_list, sets_location: str = constants.SETS_FOLDER, step_through: bool = False, retrieve_unknown: bool = False):
         self.arena_file = filename
         self.set_list = set_list
         self.draft_log = logging.getLogger(LOG_TYPE_DRAFT)
@@ -43,6 +28,9 @@ class ArenaScanner:
 
         self.logging_enabled = False
 
+        # The retrieve_card_data method will return cards that are not in the 17Lands dataset
+        self.retrieve_unknown = retrieve_unknown
+        
         self.step_through = step_through
         self.set_data = None
         self.draft_type = constants.LIMITED_TYPE_UNKNOWN
@@ -63,6 +51,20 @@ class ArenaScanner:
         self.file_size = 0
         self.data_source = "None"
         self.event_string = ""
+        
+
+    def retrieve_card_data(self, set_data, card):
+        card_data = []
+        if (set_data is not None) and (card in set_data["card_ratings"]):
+            card_data.append(set_data["card_ratings"][card])
+        elif self.retrieve_unknown:
+            empty_dict = {constants.DATA_FIELD_NAME: card,
+                        constants.DATA_FIELD_MANA_COST: "",
+                        constants.DATA_FIELD_TYPES: [],
+                        constants.DATA_SECTION_IMAGES: []}
+            FE.initialize_card_data(empty_dict)
+            card_data.append(empty_dict)
+        return card_data
 
     def set_arena_file(self, filename):
         '''Public function that's used for storing the location of the Player.log file'''
@@ -1056,8 +1058,7 @@ class ArenaScanner:
         if pack_index < len(self.picked_cards):
             for card in self.picked_cards[pack_index]:
                 try:
-                    pickeds_card.append(
-                        retrieve_card_data(self.set_data, card))
+                    pickeds_card.extend(self.retrieve_card_data(self.set_data, card))
                 except Exception as error:
                     logger.error(error)
 
@@ -1082,7 +1083,7 @@ class ArenaScanner:
             card_list = [
                 x for x in initial_pack_cards if x not in current_pack_cards]
             for card in card_list:
-                missing_cards.append(retrieve_card_data(self.set_data, card))
+                missing_cards.extend(self.retrieve_card_data(self.set_data, card))
         except Exception as error:
             logger.error(error)
 
@@ -1096,7 +1097,7 @@ class ArenaScanner:
 
         if pack_index < len(self.pack_cards):
             for card in self.pack_cards[pack_index]:
-                pack_cards.append(retrieve_card_data(self.set_data, card))
+                pack_cards.extend(self.retrieve_card_data(self.set_data, card))
 
         return pack_cards
 
@@ -1105,7 +1106,7 @@ class ArenaScanner:
         taken_cards = []
 
         for card in self.taken_cards:
-            taken_cards.append(retrieve_card_data(self.set_data, card))
+            taken_cards.extend(self.retrieve_card_data(self.set_data, card))
         return taken_cards
 
     def retrieve_tier_data(self, files):
