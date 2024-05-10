@@ -415,7 +415,15 @@ OTJ_TRAD_DRAFT_ENTRIES_2024_5_7 = [
 
 @pytest.fixture(name="test_scanner",scope="session")
 def fixture_test_scanner():
-    scanner = ArenaScanner(TEST_LOG_FILE_LOCATION, TEST_SETS, sets_location = TEST_LOG_DIRECTORY)
+    scanner = ArenaScanner(TEST_LOG_FILE_LOCATION, TEST_SETS, sets_location = TEST_LOG_DIRECTORY, retrieve_unknown = True)
+    scanner.log_enable(False)
+    yield scanner
+    if os.path.exists(TEST_LOG_FILE_LOCATION):
+        os.remove(TEST_LOG_FILE_LOCATION)
+        
+@pytest.fixture(name="test_scanner",scope="session")
+def fixture_test_scanner():
+    scanner = ArenaScanner(TEST_LOG_FILE_LOCATION, TEST_SETS, sets_location = TEST_LOG_DIRECTORY, retrieve_unknown = True)
     scanner.log_enable(False)
     yield scanner
     if os.path.exists(TEST_LOG_FILE_LOCATION):
