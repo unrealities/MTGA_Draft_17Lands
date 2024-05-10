@@ -1,7 +1,7 @@
 """This module contains the functions and classes that are used for building and handling the application UI"""
 import tkinter
 from tkinter.ttk import Progressbar, Treeview, Style, OptionMenu, Button, Checkbutton, Label, Separator, Entry
-from tkinter import filedialog, messagebox
+from tkinter import filedialog, messagebox, font
 from datetime import date
 import urllib
 import os
@@ -11,7 +11,6 @@ import math
 import argparse
 import webbrowser
 from dataclasses import dataclass
-from ttkwidgets.autocomplete import AutocompleteEntry
 from pynput.keyboard import Listener, KeyCode
 from PIL import Image, ImageTk, ImageFont
 from src.configuration import read_configuration, write_configuration, reset_configuration
