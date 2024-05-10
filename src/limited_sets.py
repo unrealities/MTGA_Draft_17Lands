@@ -156,7 +156,7 @@ class LimitedSets:
             with open(self.sets_file_location, 'r', encoding="utf-8", errors="replace") as json_file:
                 json_data = json.loads(json_file.read())
 
-            sets_object = SetDictionary.parse_obj(json_data)
+            sets_object = SetDictionary.model_validate(json_data)
 
             if not sets_object.data:
                 return self.limited_sets, success
@@ -189,7 +189,7 @@ class LimitedSets:
                 self.sets_file_location), exist_ok=True)
 
             with open(self.sets_file_location, 'w', encoding="utf-8", errors="replace") as file:
-                json.dump(sets_object.dict(), file,
+                json.dump(sets_object.model_dump(), file,
                           ensure_ascii=False, indent=4)
 
             success = True

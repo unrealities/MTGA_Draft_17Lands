@@ -1,7 +1,7 @@
 """This module contains the functions and classes that are used for building and handling the application UI"""
 import tkinter
 from tkinter.ttk import Progressbar, Treeview, Style, OptionMenu, Button, Checkbutton, Label, Separator, Entry
-from tkinter import filedialog, messagebox
+from tkinter import filedialog, messagebox, font
 from datetime import date
 import urllib
 import os
@@ -11,7 +11,6 @@ import math
 import argparse
 import webbrowser
 from dataclasses import dataclass
-from ttkwidgets.autocomplete import AutocompleteEntry
 from pynput.keyboard import Listener, KeyCode
 from PIL import Image, ImageTk, ImageFont
 from src.configuration import read_configuration, write_configuration, reset_configuration
@@ -3209,7 +3208,7 @@ class CreateCardToolTip(ScaledWindow):
                             raw_data = urllib.request.urlopen(
                                 image_request).read()
                             im = Image.open(io.BytesIO(raw_data))
-                            im.thumbnail(size, Image.ANTIALIAS)
+                            im.thumbnail(size, Image.LANCZOS)
                             image = ImageTk.PhotoImage(im)
                             image_label = Label(tt_frame, image=image)
                             image_label.grid(
