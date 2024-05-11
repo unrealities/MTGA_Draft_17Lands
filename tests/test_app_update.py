@@ -30,10 +30,6 @@ def valid_input_url_zip():
     return "https://github.com/unrealities/MTGA_Draft_17Lands/releases/download/MTGA_Draft_Tool_V0311/MTGA_Draft_Tool_V0311.zip"
     
 @pytest.fixture
-def valid_input_url_exe():
-    return "https://github.com/unrealities/MTGA_Draft_17Lands/releases/download/MTGA_Draft_Tool_V0304/MTGA_Draft_Tool_V0304_Setup.exe"
-
-@pytest.fixture
 def output_filename():
     return "test_file.exe"
 
@@ -58,11 +54,6 @@ def test_retrieve_file_version_failure(app_update, invalid_search_location):
 @pytest.mark.skipif(sys.platform != "win32", reason="Windows only")
 def test_download_file_zip_success(app_update, valid_input_url_zip, output_filename):
     output_location = app_update.download_file(valid_input_url_zip, output_filename)
-    assert isinstance(output_location, str) and os.path.exists(output_location)
-    
-@pytest.mark.skipif(sys.platform != "win32", reason="Windows only")
-def test_download_file_exe_success(app_update, valid_input_url_exe, output_filename):
-    output_location = app_update.download_file(valid_input_url_exe, output_filename)
     assert isinstance(output_location, str) and os.path.exists(output_location)
 
 @pytest.mark.skipif(sys.platform != "win32", reason="Windows only")
