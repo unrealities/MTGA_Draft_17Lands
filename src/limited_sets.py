@@ -29,6 +29,8 @@ CUSTOM_SETS = {
     "dbl": SetInfo(arena=["VOW", "MID"], scryfall=["VOW", "MID"], seventeenlands=["DBL"]),
     "sir": SetInfo(arena=["SIR", "SIS"], scryfall=["SIR", "SIS"], seventeenlands=["SIR"]),
     "mat": SetInfo(arena=["MUL", "MOM", "MAT"], scryfall=["MUL", "MOM", "MAT"], seventeenlands=["MAT"]),
+    "woe": SetInfo(arena=["WOE", "WOT"], scryfall=["WOE", "WOT"], seventeenlands=["WOE"]),
+    "otj": SetInfo(arena=["OTJ", "BIG", "OTP", "SPG"], scryfall=["OTJ", "BIG", "OTP", "SPG"], seventeenlands=["OTJ"])
 }
 
 TOTAL_SCRYFALL_SETS = 50

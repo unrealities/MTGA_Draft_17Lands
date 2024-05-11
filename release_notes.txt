@@ -1,3 +1,6 @@
+===================== RELEASE NOTES 3.13 =====================
+* Add recent bonus sheet sets (WOE, OTJ)
+
 ===================== RELEASE NOTES 3.12 =====================
 * Re-added code for QuickDraft that was unnecessarily modified
 
