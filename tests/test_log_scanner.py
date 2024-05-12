@@ -420,14 +420,6 @@ def fixture_test_scanner():
     yield scanner
     if os.path.exists(TEST_LOG_FILE_LOCATION):
         os.remove(TEST_LOG_FILE_LOCATION)
-        
-@pytest.fixture(name="test_scanner",scope="session")
-def fixture_test_scanner():
-    scanner = ArenaScanner(TEST_LOG_FILE_LOCATION, TEST_SETS, sets_location = TEST_LOG_DIRECTORY, retrieve_unknown = True)
-    scanner.log_enable(False)
-    yield scanner
-    if os.path.exists(TEST_LOG_FILE_LOCATION):
-        os.remove(TEST_LOG_FILE_LOCATION)
 
 def event_test_cases(test_scanner, event_label, entry_label, expected, entry_string):
     """Generic test cases for verifying the log events"""

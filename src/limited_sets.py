@@ -1,4 +1,3 @@
-import copy
 import datetime
 import json
 import re
@@ -22,15 +21,10 @@ class SetInfo(BaseModel):
 
 
 class SetDictionary(BaseModel):
+    version: int = 0
     data: Dict[str, SetInfo] = Field(default_factory=dict)
 
-
-CUSTOM_SETS = {
-    "dbl": SetInfo(arena=[constants.SET_SELECTION_ALL], scryfall=[], seventeenlands=["DBL"]),
-    "sir": SetInfo(arena=[constants.SET_SELECTION_ALL], scryfall=[], seventeenlands=["SIR"]),
-    "mat": SetInfo(arena=[constants.SET_SELECTION_ALL], scryfall=[], seventeenlands=["MAT"]),
-}
-
+LIMITED_SETS_VERSION = 1
 TOTAL_SCRYFALL_SETS = 50
 SET_ARENA_CUBE_START_OFFSET_DAYS = -25
 TEMP_LIMITED_SETS = os.path.join("Temp", "temp_set_list.json")
@@ -150,7 +144,7 @@ class LimitedSets:
 
     def read_sets_file(self) -> Tuple[SetDictionary, bool]:
         '''Read the sets file and build the sets object'''
-        self.limited_sets = SetDictionary()
+        temp_sets = SetDictionary(version=LIMITED_SETS_VERSION)
         success = False
         try:
             with open(self.sets_file_location, 'r', encoding="utf-8", errors="replace") as json_file:
@@ -158,12 +152,13 @@ class LimitedSets:
 
             sets_object = SetDictionary.model_validate(json_data)
 
-            if not sets_object.data:
-                return self.limited_sets, success
+            # Create a new file if one doesn't exist or if it's an older version
+            if not sets_object.data or sets_object.version < LIMITED_SETS_VERSION:
+                return temp_sets, success
 
             sets_to_remove = []
             for set_name, set_info in sets_object.data.items():
-                self.limited_sets.data[set_name] = set_info
+                temp_sets.data[set_name] = set_info
                 set_code = set_info.seventeenlands[0]
                 if set_code in self.sets_17lands.data:
                     sets_to_remove.append(set_code)
@@ -175,7 +170,7 @@ class LimitedSets:
         except (FileNotFoundError, json.JSONDecodeError) as error:
             logger.error(error)
 
-        return self.limited_sets, success
+        return temp_sets, success
 
     def write_sets_file(self, sets_object: SetDictionary) -> bool:
         '''Write the sets object data to a local file'''
@@ -202,20 +197,22 @@ class LimitedSets:
         '''Retrieve a stored set dataset and append any missing set that are listed on 17Lands'''
 
         # Retrieve a stored sets dataset from the Temp folder
-        self.limited_sets, _ = self.read_sets_file()
+        read_sets, _ = self.read_sets_file()
 
         if self.sets_17lands:
             # Add any missing sets to the dataset
-            self.limited_sets = self.__append_limited_sets()
+            self.limited_sets = self.__append_limited_sets(read_sets)
 
             # store the modified dataset in the Temp folder
             self.write_sets_file(self.limited_sets)
+        else:
+            self.limited_sets = read_sets
 
         return
 
-    def __append_limited_sets(self) -> SetDictionary:
+    def __append_limited_sets(self, read_sets: SetDictionary) -> SetDictionary:
         '''Create a list of sets using lists collected from 17Lands and Scryfall'''
-        temp_dict = SetDictionary()
+        temp_dict = SetDictionary(version=LIMITED_SETS_VERSION)
         if self.sets_scryfall.data and self.sets_17lands.data:
             set_codes_to_remove = []
             # If the application is able to collect the set list from Scryfall and 17Lands, then it will use the 17Lands list to filter the Scryfall list
@@ -233,7 +230,7 @@ class LimitedSets:
 
         # Insert any 17Lands sets that were not collected from Scryfall
         temp_dict.data.update(self.sets_17lands.data)
-        temp_dict.data.update(self.limited_sets.data)
+        temp_dict.data.update(read_sets.data)
 
         return temp_dict
 
@@ -273,14 +270,7 @@ class LimitedSets:
                 set_name = card_set["name"]
                 set_code = card_set["code"]
 
-                if set_code in CUSTOM_SETS:
-                    # Only retrieve the last X sets + CUBE
-                    if counter >= TOTAL_SCRYFALL_SETS:
-                        break
-                    counter += 1
-                    self.sets_scryfall.data[set_name] = copy.deepcopy(
-                        CUSTOM_SETS[set_code])
-                elif card_set["set_type"] in constants.SUPPORTED_SET_TYPES:
+                if card_set["set_type"] in constants.SUPPORTED_SET_TYPES:
                     # Only retrieve the last X sets + CUBE
                     if counter >= TOTAL_SCRYFALL_SETS:
                         break
