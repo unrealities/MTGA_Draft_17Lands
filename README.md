@@ -9,15 +9,17 @@ Magic: The Gathering Arena draft tool that utilizes 17Lands data.
 
 # Table of Contents
 
-- [Run Steps: Windows Executable](#run-steps-windows-executable-windows-only)
-- [Run Steps: Python (Windows/Mac/Linux)](#run-steps-python-windowsmaclinux)
-- [Build Steps: setup.exe](#build-steps-setupexe-windows-only)
-- [UI Features](#ui-features)
-- [Menu Features](#menu-features)
-- [Additional Features](#additional-features)
-- [Settings](#settings)
-- [Card Logic](#card-logic)
-- [Troubleshooting](#troubleshooting)
+- [MTGA\_Draft\_17Lands](#mtga_draft_17lands)
+- [Table of Contents](#table-of-contents)
+  - [Run Steps: Windows Executable (Windows Only)](#run-steps-windows-executable-windows-only)
+  - [Run Steps: Python (Windows/Mac/Linux)](#run-steps-python-windowsmaclinux)
+  - [Build Steps: setup.exe (Windows Only)](#build-steps-setupexe-windows-only)
+  - [UI Features](#ui-features)
+  - [Menu Features](#menu-features)
+  - [Additional Features](#additional-features)
+  - [Settings](#settings)
+  - [Card Logic](#card-logic)
+  - [Troubleshooting](#troubleshooting)
 
 
 ## Run Steps: Windows Executable (Windows Only)
@@ -282,3 +284,5 @@ Magic: The Gathering Arena draft tool that utilizes 17Lands data.
 - **CTRL+G doesn't do anything:** If you're a Mac user, then this shortcut isn't available. If you're a Windows user, then you need to run the application as an administrator.
 
 - **The set download process is taking 5+ minutes and I'm seeing _Collecting 17Lands Data - Request Failed_ multiple times:** If you attempt to download too many sets within a short period of time, 17Lands will impose rate-limiting on your connection. Therefore, when downloading multiple sets, it is advisable to wait at least 10 minutes between each set.
+
+- **SSL errors in log on MacOS: `ERROR - limited_sets.retrieve_scryfall_sets - <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1000)`** Install SSL certificates via /Applications/Python 3.12/Install Certificates.command

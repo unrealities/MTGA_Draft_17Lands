@@ -2,13 +2,9 @@
     "data": {
         "Outlaws of Thunder Junction": {
             "arena": [
-                "OTJ",
-                "OTP"
+                "ALL"
             ],
-            "scryfall": [
-                "OTJ",
-                "OTP"
-            ],
+            "scryfall": [],
             "seventeenlands": [
                 "OTJ"
             ],
@@ -16,14 +12,9 @@
         },
         "Alchemy: Outlaws of Thunder Junction": {
             "arena": [
-                "OTJ",
-                "OTP"
+                "ALL"
             ],
-            "scryfall": [
-                "YOTJ",
-                "OTJ",
-                "OTP"
-            ],
+            "scryfall": [],
             "seventeenlands": [
                 "Y24OTJ"
             ],
@@ -31,11 +22,9 @@
         },
         "Murders at Karlov Manor": {
             "arena": [
-                "MKM"
+                "ALL"
             ],
-            "scryfall": [
-                "MKM"
-            ],
+            "scryfall": [],
             "seventeenlands": [
                 "MKM"
             ],
@@ -43,12 +32,9 @@
         },
         "Alchemy: Murders at Karlov Manor ": {
             "arena": [
-                "MKM"
+                "ALL"
             ],
-            "scryfall": [
-                "YMKM",
-                "MKM"
-            ],
+            "scryfall": [],
             "seventeenlands": [
                 "Y24MKM"
             ],
@@ -56,13 +42,9 @@
         },
         "The Lost Caverns of Ixalan": {
             "arena": [
-                "LCI",
-                "REX"
+                "ALL"
             ],
-            "scryfall": [
-                "LCI",
-                "REX"
-            ],
+            "scryfall": [],
             "seventeenlands": [
                 "LCI"
             ],
@@ -70,14 +52,9 @@
         },
         "Alchemy: Ixalan": {
             "arena": [
-                "LCI",
-                "REX"
+                "ALL"
             ],
-            "scryfall": [
-                "YLCI",
-                "LCI",
-                "REX"
-            ],
+            "scryfall": [],
             "seventeenlands": [
                 "Y24LCI"
             ],
@@ -85,13 +62,9 @@
         },
         "Wilds of Eldraine": {
             "arena": [
-                "WOE",
-                "WOT"
+                "ALL"
             ],
-            "scryfall": [
-                "WOE",
-                "WOT"
-            ],
+            "scryfall": [],
             "seventeenlands": [
                 "WOE"
             ],
@@ -99,14 +72,9 @@
         },
         "Alchemy: Wilds of Eldraine": {
             "arena": [
-                "WOE",
-                "WOT"
+                "ALL"
             ],
-            "scryfall": [
-                "YWOE",
-                "WOE",
-                "WOT"
-            ],
+            "scryfall": [],
             "seventeenlands": [
                 "Y24WOE"
             ],
@@ -114,11 +82,9 @@
         },
         "The Lord of the Rings: Tales of Middle-earth": {
             "arena": [
-                "LTR"
+                "ALL"
             ],
-            "scryfall": [
-                "LTR"
-            ],
+            "scryfall": [],
             "seventeenlands": [
                 "LTR"
             ],
@@ -126,13 +92,9 @@
         },
         "March of the Machine": {
             "arena": [
-                "MOM",
-                "MUL"
+                "ALL"
             ],
-            "scryfall": [
-                "MOM",
-                "MUL"
-            ],
+            "scryfall": [],
             "seventeenlands": [
                 "MOM"
             ],
@@ -140,15 +102,9 @@
         },
         "March of the Machine: The Aftermath": {
             "arena": [
-                "MUL",
-                "MOM",
-                "MAT"
+                "ALL"
             ],
-            "scryfall": [
-                "MUL",
-                "MOM",
-                "MAT"
-            ],
+            "scryfall": [],
             "seventeenlands": [
                 "MAT"
             ],
@@ -156,13 +112,9 @@
         },
         "Shadows over Innistrad Remastered": {
             "arena": [
-                "SIR",
-                "SIS"
+                "ALL"
             ],
-            "scryfall": [
-                "SIR",
-                "SIS"
-            ],
+            "scryfall": [],
             "seventeenlands": [
                 "SIR"
             ],
@@ -170,11 +122,9 @@
         },
         "Phyrexia: All Will Be One": {
             "arena": [
-                "ONE"
+                "ALL"
             ],
-            "scryfall": [
-                "ONE"
-            ],
+            "scryfall": [],
             "seventeenlands": [
                 "ONE"
             ],
@@ -182,12 +132,9 @@
         },
         "Alchemy: Phyrexia": {
             "arena": [
-                "ONE"
+                "ALL"
             ],
-            "scryfall": [
-                "YONE",
-                "ONE"
-            ],
+            "scryfall": [],
             "seventeenlands": [
                 "Y23ONE"
             ],
@@ -195,15 +142,9 @@
         },
         "The Brothers' War": {
             "arena": [
-                "BRO",
-                "BRR",
-                "BOT"
+                "ALL"
             ],
-            "scryfall": [
-                "BRO",
-                "BRR",
-                "BOT"
-            ],
+            "scryfall": [],
             "seventeenlands": [
                 "BRO"
             ],
@@ -211,16 +152,9 @@
         },
         "Alchemy: The Brothers' War": {
             "arena": [
-                "BRO",
-                "BRR",
-                "BOT"
+                "ALL"
             ],
-            "scryfall": [
-                "YBRO",
-                "BRO",
-                "BRR",
-                "BOT"
-            ],
+            "scryfall": [],
             "seventeenlands": [
                 "Y23BRO"
             ],
@@ -228,11 +162,9 @@
         },
         "Dominaria United": {
             "arena": [
-                "DMU"
+                "ALL"
             ],
-            "scryfall": [
-                "DMU"
-            ],
+            "scryfall": [],
             "seventeenlands": [
                 "DMU"
             ],
@@ -240,12 +172,9 @@
         },
         "Alchemy: Dominaria": {
             "arena": [
-                "DMU"
+                "ALL"
             ],
-            "scryfall": [
-                "YDMU",
-                "DMU"
-            ],
+            "scryfall": [],
             "seventeenlands": [
                 "Y23DMU"
             ],
@@ -253,11 +182,9 @@
         },
         "Alchemy Horizons: Baldur's Gate": {
             "arena": [
-                "HBG"
+                "ALL"
             ],
-            "scryfall": [
-                "HBG"
-            ],
+            "scryfall": [],
             "seventeenlands": [
                 "HBG"
             ],
@@ -265,11 +192,9 @@
         },
         "Streets of New Capenna": {
             "arena": [
-                "SNC"
+                "ALL"
             ],
-            "scryfall": [
-                "SNC"
-            ],
+            "scryfall": [],
             "seventeenlands": [
                 "SNC"
             ],
@@ -277,12 +202,9 @@
         },
         "Alchemy: New Capenna": {
             "arena": [
-                "SNC"
+                "ALL"
             ],
-            "scryfall": [
-                "YSNC",
-                "SNC"
-            ],
+            "scryfall": [],
             "seventeenlands": [
                 "Y22SNC"
             ],
@@ -290,11 +212,9 @@
         },
         "Kamigawa: Neon Dynasty": {
             "arena": [
-                "NEO"
+                "ALL"
             ],
-            "scryfall": [
-                "NEO"
-            ],
+            "scryfall": [],
             "seventeenlands": [
                 "NEO"
             ],
@@ -302,13 +222,9 @@
         },
         "Innistrad: Double Feature": {
             "arena": [
-                "VOW",
-                "MID"
+                "ALL"
             ],
-            "scryfall": [
-                "VOW",
-                "MID"
-            ],
+            "scryfall": [],
             "seventeenlands": [
                 "DBL"
             ],
@@ -316,11 +232,9 @@
         },
         "Innistrad: Crimson Vow": {
             "arena": [
-                "VOW"
+                "ALL"
             ],
-            "scryfall": [
-                "VOW"
-            ],
+            "scryfall": [],
             "seventeenlands": [
                 "VOW"
             ],
@@ -328,11 +242,9 @@
         },
         "Innistrad: Midnight Hunt": {
             "arena": [
-                "MID"
+                "ALL"
             ],
-            "scryfall": [
-                "MID"
-            ],
+            "scryfall": [],
             "seventeenlands": [
                 "MID"
             ],
@@ -340,11 +252,9 @@
         },
         "Adventures in the Forgotten Realms": {
             "arena": [
-                "AFR"
+                "ALL"
             ],
-            "scryfall": [
-                "AFR"
-            ],
+            "scryfall": [],
             "seventeenlands": [
                 "AFR"
             ],
@@ -352,13 +262,9 @@
         },
         "Strixhaven: School of Mages": {
             "arena": [
-                "STX",
-                "STA"
+                "ALL"
             ],
-            "scryfall": [
-                "STX",
-                "STA"
-            ],
+            "scryfall": [],
             "seventeenlands": [
                 "STX"
             ],
@@ -366,11 +272,9 @@
         },
         "Kaldheim": {
             "arena": [
-                "KHM"
+                "ALL"
             ],
-            "scryfall": [
-                "KHM"
-            ],
+            "scryfall": [],
             "seventeenlands": [
                 "KHM"
             ],
@@ -378,11 +282,9 @@
         },
         "Kaladesh Remastered": {
             "arena": [
-                "KLR"
+                "ALL"
             ],
-            "scryfall": [
-                "KLR"
-            ],
+            "scryfall": [],
             "seventeenlands": [
                 "KLR"
             ],
@@ -390,13 +292,9 @@
         },
         "Zendikar Rising": {
             "arena": [
-                "ZNR",
-                "ZNE"
+                "ALL"
             ],
-            "scryfall": [
-                "ZNR",
-                "ZNE"
-            ],
+            "scryfall": [],
             "seventeenlands": [
                 "ZNR"
             ],
@@ -404,11 +302,9 @@
         },
         "Amonkhet Remastered": {
             "arena": [
-                "AKR"
+                "ALL"
             ],
-            "scryfall": [
-                "AKR"
-            ],
+            "scryfall": [],
             "seventeenlands": [
                 "AKR"
             ],
@@ -416,11 +312,9 @@
         },
         "Core Set 2021": {
             "arena": [
-                "M21"
+                "ALL"
             ],
-            "scryfall": [
-                "M21"
-            ],
+            "scryfall": [],
             "seventeenlands": [
                 "M21"
             ],
@@ -428,11 +322,9 @@
         },
         "Ikoria: Lair of Behemoths": {
             "arena": [
-                "IKO"
+                "ALL"
             ],
-            "scryfall": [
-                "IKO"
-            ],
+            "scryfall": [],
             "seventeenlands": [
                 "IKO"
             ],
@@ -440,11 +332,9 @@
         },
         "Theros Beyond Death": {
             "arena": [
-                "THB"
+                "ALL"
             ],
-            "scryfall": [
-                "THB"
-            ],
+            "scryfall": [],
             "seventeenlands": [
                 "THB"
             ],
@@ -452,11 +342,9 @@
         },
         "Throne of Eldraine": {
             "arena": [
-                "ELD"
+                "ALL"
             ],
-            "scryfall": [
-                "ELD"
-            ],
+            "scryfall": [],
             "seventeenlands": [
                 "ELD"
             ],
@@ -470,7 +358,7 @@
             "seventeenlands": [
                 "CUBE"
             ],
-            "start_date": "2024-04-13"
+            "start_date": "2024-04-17"
         },
         "RAVM": {
             "arena": [
@@ -500,7 +388,7 @@
             "seventeenlands": [
                 "RAVNICA"
             ],
-            "start_date": "2024-04-08"
+            "start_date": "2024-04-12"
         },
         "M20": {
             "arena": [
@@ -600,7 +488,7 @@
             "seventeenlands": [
                 "CHAOS"
             ],
-            "start_date": "2024-04-08"
+            "start_date": "2024-04-12"
         }
     }
 }
