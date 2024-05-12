@@ -1,7 +1,7 @@
 """This module contains the functions and classes that are used for building and handling the application UI"""
 import tkinter
-from tkinter.ttk import Progressbar, Treeview, Style, OptionMenu, Button, Checkbutton, Label, Separator
-from tkinter import filedialog, messagebox
+from tkinter.ttk import Progressbar, Treeview, Style, OptionMenu, Button, Checkbutton, Label, Separator, Entry
+from tkinter import filedialog, messagebox, font
 from datetime import date
 import urllib
 import os
@@ -11,7 +11,6 @@ import math
 import argparse
 import webbrowser
 from dataclasses import dataclass
-from ttkwidgets.autocomplete import AutocompleteEntry
 from pynput.keyboard import Listener, KeyCode
 from PIL import Image, ImageTk, ImageFont
 from src.configuration import read_configuration, write_configuration, reset_configuration
@@ -230,6 +229,69 @@ def disable_resizing(event, table):
 
 def url_callback(event):
     webbrowser.open_new(event.widget.cget("text"))
+
+class AutocompleteEntry(tkinter.Entry):
+    def initialize(self, completion_list):
+        self.completion_list = completion_list
+        self.hitsIndex = 0
+        self.hits = []
+        self.autocompleted = False
+        self.current = ""
+        self.bind('<KeyRelease>', self.act_on_release)
+        self.bind('<Key>', self.act_on_press)
+
+    def autocomplete(self):
+        self.current = self.get().lower()
+        self.hits = []
+        for item in self.completion_list:
+            if item.lower().startswith(self.current):
+                self.hits.append(item)
+        self.hitsIndex = 0
+        if self.hits:
+            self.display_autocompletion()
+
+    def remove_autocompletion(self):
+        cursor = self.index(tkinter.INSERT)
+        self.delete(cursor, tkinter.END)
+        self.autocompleted = False
+
+    def display_autocompletion(self):
+        cursor = self.index(tkinter.INSERT)
+        self.delete(0, tkinter.END)
+        self.insert(0, self.hits[self.hitsIndex])
+        self.select_range(cursor, tkinter.END)
+        self.icursor(cursor)
+        self.autocompleted = True
+
+    def act_on_release(self, event):
+        return
+
+    def act_on_press(self, event):
+        if event.keysym == 'Left':
+            if self.autocompleted:
+                self.remove_autocompletion()
+                return "break"
+
+        if event.keysym in ('Down', 'Up', 'Tab'):
+            if self.select_present():
+                cursor = self.index(tkinter.SEL_FIRST)
+                if len(self.hits) and self.current == self.get().lower()[0:cursor]:
+                    if event.keysym == 'Up':
+                        self.hitsIndex -= 1
+                    else:
+                        self.hitsIndex += 1
+                    self.hitsIndex %= len(self.hits)
+                    self.display_autocompletion()
+            else:
+                self.autocomplete()
+            return "break"
+
+        if event.keysym == 'Right':
+            if self.select_present():
+                self.selection_clear()
+                self.icursor(tkinter.END)
+                return "break"
+
 
 
 class ScaledWindow:
@@ -1861,11 +1923,6 @@ class Overlay(ScaledWindow):
                 set_card_names = [v[constants.DATA_FIELD_NAME]
                                   for k, v in set_data.items()]
 
-            card_entry = AutocompleteEntry(
-                card_frame,
-                completevalues=set_card_names
-            )
-
             headers = {"Column1": {"width": .46, "anchor": tkinter.W},
                        "Column2": {"width": .18, "anchor": tkinter.CENTER},
                        "Column3": {"width": .18, "anchor": tkinter.CENTER},
@@ -1891,6 +1948,10 @@ class Overlay(ScaledWindow):
             compare_table_frame.grid(row=2, column=0, sticky="nsew")
 
             self.compare_table.pack(expand=True, fill="both")
+
+            card_entry = AutocompleteEntry(card_frame)
+            card_entry.initialize(set_card_names)
+            card_entry.focus_set()
             card_entry.pack(side=tkinter.LEFT, expand=True, fill="both")
 
             card_entry.bind(
@@ -3147,7 +3208,7 @@ class CreateCardToolTip(ScaledWindow):
                             raw_data = urllib.request.urlopen(
                                 image_request).read()
                             im = Image.open(io.BytesIO(raw_data))
-                            im.thumbnail(size, Image.ANTIALIAS)
+                            im.thumbnail(size, Image.Resampling.LANCZOS)
                             image = ImageTk.PhotoImage(im)
                             image_label = Label(tt_frame, image=image)
                             image_label.grid(
@@ -3177,11 +3238,8 @@ class CreateCardToolTip(ScaledWindow):
                                       wraplength=tt_width,)
                 comment_label.grid(column=0, row=0, sticky=tkinter.NSEW)
 
-                font = ImageFont.truetype('times.ttf', 12)
-                font_size = font.getsize(comment)
-                font_rows = math.ceil(font_size[0] / tt_width) + 2
-                font_height = font_rows * font_size[1]
-                tt_height += self._scale_value(font_height)
+                #Removed broken code that was used to calculate the comment height in pixels
+                
                 row_count += 1
 
             note_label.grid(column=0, row=row_count,

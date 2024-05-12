@@ -28,7 +28,7 @@ def test_read_configuration_existing_file(tmp_path, example_configuration):
 
     # Write the example configuration to the temporary file
     with open(file_location, "w") as f:
-        json.dump(example_configuration.dict(), f)
+        json.dump(example_configuration.model_dump(), f)
 
     # Test reading the configuration from an existing file
     config, success = read_configuration(file_location)
@@ -70,7 +70,7 @@ def test_write_configuration(tmp_path, example_configuration):
         written_config = json.load(f)
 
     # Assert that the written configuration matches the example configuration
-    assert written_config == example_configuration.dict()
+    assert written_config == example_configuration.model_dump()
 
 
 def test_reset_configuration(tmp_path, example_configuration):
@@ -79,7 +79,7 @@ def test_reset_configuration(tmp_path, example_configuration):
 
     # Write the example configuration to the temporary file
     with open(file_location, "w") as f:
-        json.dump(example_configuration.dict(), f)
+        json.dump(example_configuration.model_dump(), f)
 
     # Test resetting the configuration
     success = reset_configuration(file_location)
@@ -95,4 +95,4 @@ def test_reset_configuration(tmp_path, example_configuration):
     empty_config = Configuration()
 
     # Assert that the reset configuration matches the empty Configuration object
-    assert reset_config == empty_config.dict()
+    assert reset_config == empty_config.model_dump()

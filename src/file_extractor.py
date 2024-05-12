@@ -279,7 +279,8 @@ class FileExtractor:
         self.start_date = ""
         self.end_date = ""
         self.directory = directory
-        self.context = ssl.SSLContext()
+        self.context: ssl.SSLContext = ssl.SSLContext(protocol=ssl.PROTOCOL_TLS_CLIENT)
+        self.context.load_default_certs()
         self.card_ratings = {}
         self.combined_data = {
             "meta": {"collection_date": str(datetime.datetime.now())}}
@@ -875,8 +876,7 @@ class FileExtractor:
                                 float(card[value]) * 100.0, 2) if card[value] else 0.0
                         elif ((key == constants.DATA_FIELD_ATA) or
                               (key == constants.DATA_FIELD_ALSA)):
-                            color_data[colors][key] = round(
-                                float(card[value]), 2)
+                            color_data[colors][key] = round(float(card[value] if card[value] else 0.0), 2)
                         else:
                             color_data[colors][key] = int(card[value])
 

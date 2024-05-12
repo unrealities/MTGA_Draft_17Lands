@@ -23,7 +23,8 @@ class AppUpdate:
     def __init__(self):
         self.version: str = ""
         self.file_location: str = ""
-        self.context: ssl.SSLContext = ssl.SSLContext()
+        self.context: ssl.SSLContext = ssl.SSLContext(protocol=ssl.PROTOCOL_TLS_CLIENT)
+        self.context.load_default_certs()
 
     def retrieve_file_version(self, search_location: str = UPDATE_LATEST_URL) -> Tuple[str, str]:
         '''Retrieve the file version'''
