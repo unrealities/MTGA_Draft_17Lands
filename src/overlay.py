@@ -385,7 +385,7 @@ class Overlay(ScaledWindow):
 
     def __init__(self, args):
         super().__init__()
-        self.root = Tk()
+        self.root = tkinter.Tk()
         self.root.title(f"Version {APPLICATION_VERSION:2.2f}")
         self.configuration, _ = read_configuration()
         self.root.resizable(False, False)
