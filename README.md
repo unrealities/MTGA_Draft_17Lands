@@ -264,7 +264,7 @@ Magic: The Gathering Arena draft tool that utilizes 17Lands data.
             - The average CMC of all of the creatures must be 3.68 or less.      
             - The deck has 18 lands.
     - Notes:
-        - The CMC average and land requirements were derived from this [article](https://strategy.channelfireball.com/all-strategy/mtg/channelmagic-articles/how-many-lands-do-you-need-to-consistently-hit-your-land-drops/).
+        - The CMC average and land requirements were derived from this [article](https://www.channelfireball.com/article/How-Many-Lands-Do-You-Need-in-Your-Deck-An-Updated-Analysis/cd1c1a24-d439-4a8e-b369-b936edb0b38a/).
         - The deck distribution and CMC requirements may occasionally lead to the inclusion of cards that have lower performance or are considered less effective.
             Example: If the user possesses a pool of white and blue cards and the available 3-drops are Acquisition Octopus (53.7% win rate for WU) and Guardians of Oboro (50.7% win rate for WU), the deck suggester will include both of these cards to meet the 3-drop requirement for each deck archetype.
         - The rating is determined by calculating the combined GIHWR of all the cards and then subtracting penalties for not meeting the deck requirements.
