@@ -279,7 +279,8 @@ class FileExtractor:
         self.end_date = ""
         self.user_group = ""
         self.directory = directory
-        self.context = ssl.SSLContext()
+        self.context: ssl.SSLContext = ssl.SSLContext(protocol=ssl.PROTOCOL_TLS_CLIENT)
+        self.context.load_default_certs()
         self.card_ratings = {}
         self.combined_data = {
             "meta": {"collection_date": str(datetime.datetime.now())}}

@@ -1,7 +1,7 @@
 """This module contains the functions and classes that are used for building and handling the application UI"""
 import tkinter
 from tkinter.ttk import Progressbar, Treeview, Style, OptionMenu, Button, Checkbutton, Label, Separator, Entry
-from tkinter import filedialog, messagebox
+from tkinter import filedialog, messagebox, font
 from datetime import date
 import urllib
 import os
@@ -11,8 +11,6 @@ import math
 import argparse
 import webbrowser
 from dataclasses import dataclass
-from hdpitkinter import HdpiTk
-from ttkwidgets.autocomplete import AutocompleteEntry
 from pynput.keyboard import Listener, KeyCode
 from PIL import Image, ImageTk, ImageFont
 from src.configuration import read_configuration, write_configuration, reset_configuration
@@ -29,7 +27,7 @@ try:
 except ImportError:
     pass
 
-APPLICATION_VERSION = 3.10
+APPLICATION_VERSION = 3.14
 
 HOTKEY_CTRL_G = '\x07'
 
@@ -387,7 +385,7 @@ class Overlay(ScaledWindow):
 
     def __init__(self, args):
         super().__init__()
-        self.root = HdpiTk()
+        self.root = Tk()
         self.root.title(f"Version {APPLICATION_VERSION:2.2f}")
         self.configuration, _ = read_configuration()
         self.root.resizable(False, False)
@@ -2677,7 +2675,7 @@ class Overlay(ScaledWindow):
 
             github_url = Label(
                 popup,
-                text="https://github.com/bstaple1/MTGA_Draft_17Lands",
+                text="https://github.com/unrealities/MTGA_Draft_17Lands",
                 style="MainSections.TLabel",
                 anchor="c",
                 foreground="#0066CC",
@@ -3010,10 +3008,10 @@ class Overlay(ScaledWindow):
                                 0, "open", output_location, None, None, 10)
                         else:
                             message_box = tkinter.messagebox.showerror(
-                                title="Download Failed", message="Visit https://github.com/bstaple1/MTGA_Draft_17Lands/releases to manually download the new version.")
+                                title="Download Failed", message="Visit https://github.com/unrealities/MTGA_Draft_17Lands/releases to manually download the new version.")
 
                 else:
-                    message_string = f"Update {new_version} is now available.\n\nCheck https://github.com/bstaple1/MTGA_Draft_17Lands/releases for more details."
+                    message_string = f"Update {new_version} is now available.\n\nCheck https://github.com/unrealities/MTGA_Draft_17Lands/releases for more details."
                     message_box = tkinter.messagebox.showinfo(
                         title="Update", message=message_string)
         except Exception as error:
@@ -3256,11 +3254,8 @@ class CreateCardToolTip(ScaledWindow):
                                       wraplength=tt_width,)
                 comment_label.grid(column=0, row=0, sticky=tkinter.NSEW)
 
-                font = ImageFont.truetype('times.ttf', 12)
-                font_size = font.getsize(comment)
-                font_rows = math.ceil(font_size[0] / tt_width) + 2
-                font_height = font_rows * font_size[1]
-                tt_height += self._scale_value(font_height)
+                #Removed broken code that was used to calculate the comment height in pixels
+                
                 row_count += 1
 
             note_label.grid(column=0, row=row_count,

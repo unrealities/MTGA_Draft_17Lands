@@ -78,9 +78,9 @@ class CardResult:
         """Retrieve tier list rating for this card"""
         result = "NA"
         try:
-            card_name = card[constants.DATA_FIELD_NAME].split(" // ")
-            if card_name[0] in self.tier_data[option][constants.DATA_SECTION_RATINGS]:
-                tier_data = self.tier_data[option][constants.DATA_SECTION_RATINGS][card_name[0]]
+            card_name = card[constants.DATA_FIELD_NAME].replace('///', '//')
+            if card_name in self.tier_data[option][constants.DATA_SECTION_RATINGS]:
+                tier_data = self.tier_data[option][constants.DATA_SECTION_RATINGS][card_name]
                 result = tier_data["rating"]
                 # Append an asterisk to denote a comment
                 result = "*" + result if tier_data["comment"] else result
