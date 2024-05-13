@@ -7,6 +7,7 @@ import src.constants as constants
 import src.card_logic as CL
 import src.file_extractor as FE
 from src.logger import create_logger
+from src.utils import process_json, json_find
 
 if not os.path.exists(constants.DRAFT_LOG_FOLDER):
     os.makedirs(constants.DRAFT_LOG_FOLDER)
@@ -15,25 +16,10 @@ LOG_TYPE_DRAFT = "draftLog"
 
 logger = create_logger()
 
-
-def retrieve_card_data(set_data, card):
-    card_data = {}
-    if (set_data is not None) and (card in set_data["card_ratings"]):
-        card_data = set_data["card_ratings"][card]
-    else:
-        empty_dict = {constants.DATA_FIELD_NAME: card,
-                      constants.DATA_FIELD_MANA_COST: "",
-                      constants.DATA_FIELD_TYPES: [],
-                      constants.DATA_SECTION_IMAGES: []}
-        FE.initialize_card_data(empty_dict)
-        card_data = empty_dict
-    return card_data
-
-
 class ArenaScanner:
     '''Class that handles the processing of the information within Arena Player.log file'''
 
-    def __init__(self, filename, set_list, sets_location: str = constants.SETS_FOLDER, step_through: bool = False):
+    def __init__(self, filename, set_list, sets_location: str = constants.SETS_FOLDER, step_through: bool = False, retrieve_unknown: bool = False):
         self.arena_file = filename
         self.set_list = set_list
         self.draft_log = logging.getLogger(LOG_TYPE_DRAFT)
@@ -42,6 +28,9 @@ class ArenaScanner:
 
         self.logging_enabled = False
 
+        # The retrieve_card_data method will return cards that are not in the 17Lands dataset
+        self.retrieve_unknown = retrieve_unknown
+        
         self.step_through = step_through
         self.set_data = None
         self.draft_type = constants.LIMITED_TYPE_UNKNOWN
@@ -62,6 +51,20 @@ class ArenaScanner:
         self.file_size = 0
         self.data_source = "None"
         self.event_string = ""
+        
+
+    def retrieve_card_data(self, set_data, card):
+        card_data = []
+        if (set_data is not None) and (card in set_data["card_ratings"]):
+            card_data.append(set_data["card_ratings"][card])
+        elif self.retrieve_unknown:
+            empty_dict = {constants.DATA_FIELD_NAME: card,
+                        constants.DATA_FIELD_MANA_COST: "",
+                        constants.DATA_FIELD_TYPES: [],
+                        constants.DATA_SECTION_IMAGES: []}
+            FE.initialize_card_data(empty_dict)
+            card_data.append(empty_dict)
+        return card_data
 
     def set_arena_file(self, filename):
         '''Public function that's used for storing the location of the Player.log file'''
@@ -146,10 +149,9 @@ class ArenaScanner:
                         if start_string in line:
                             self.draft_start_offset = offset
                             string_offset = line.find(start_string)
-                            event_data = json.loads(
-                                line[string_offset + len(start_string):])
-                            update, event_type, draft_id = self.__check_event(
-                                event_data)
+                            entry_string = line[string_offset + len(start_string):]
+                            event_data = process_json(entry_string)
+                            update, event_type, draft_id = self.__check_event(event_data)
                             event_line = line
 
             if update:
@@ -170,10 +172,8 @@ class ArenaScanner:
         event_type = ""
         draft_id = ""
         try:
-            draft_id = event_data["id"]
-            request_data = json.loads(event_data["request"])
-            payload_data = json.loads(request_data["Payload"])
-            event_name = payload_data["EventName"]
+            draft_id = json_find("id", event_data)
+            event_name = json_find("EventName", event_data)
 
             logger.info("Event found %s", event_name)
 
@@ -275,21 +275,18 @@ class ArenaScanner:
                         # Remove any prefix (e.g. log timestamp)
                         start_offset = line.find("{\"id\":")
                         self.draft_log.info(line)
-                        draft_data = json.loads(line[start_offset:])
-                        request_data = draft_data["request"]
-                        payload_data = json.loads(request_data)["Payload"]
+                        entry_string = line[start_offset:]
+                        draft_data = process_json(entry_string)
 
                         pack_cards = []
                         try:
-
-                            card_data = json.loads(payload_data)
-                            cards = card_data["CardsInPack"]
+                            cards = json_find("CardsInPack", draft_data)
 
                             for card in cards:
                                 pack_cards.append(str(card))
 
-                            pack = card_data["PackNumber"]
-                            pick = card_data["PickNumber"]
+                            pack = json_find("PackNumber", draft_data)
+                            pick = json_find("PickNumber", draft_data)
 
                             pack_index = (pick - 1) % 8
 
@@ -344,14 +341,12 @@ class ArenaScanner:
 
                         try:
                             # Identify the pack
-                            draft_data = json.loads(line[start_offset:])
+                            entry_string = line[start_offset:]
+                            draft_data = process_json(entry_string)
 
-                            request_data = json.loads(draft_data["request"])
-                            param_data = json.loads(request_data["Payload"])
-
-                            pack = int(param_data["Pack"])
-                            pick = int(param_data["Pick"])
-                            card = str(param_data["GrpId"])
+                            pack = int(json_find("Pack", draft_data))
+                            pick = int(json_find("Pick", draft_data))
+                            card = str(json_find("GrpId", draft_data))
 
                             pack_index = (pick - 1) % 8
 
@@ -401,16 +396,16 @@ class ArenaScanner:
                         self.draft_log.info(line)
                         pack_cards = []
                         # Identify the pack
-                        draft_data = json.loads(line[start_offset:])
+                        entry_string = line[start_offset:]
+                        draft_data = process_json(entry_string)
                         try:
-
-                            cards = draft_data["PackCards"].split(',')
+                            cards = str(json_find("PackCards", draft_data)).split(',')
 
                             for card in cards:
                                 pack_cards.append(str(card))
 
-                            pack = draft_data["SelfPack"]
-                            pick = draft_data["SelfPick"]
+                            pack = json_find("SelfPack", draft_data)
+                            pick = json_find("SelfPick", draft_data)
 
                             pack_index = (pick - 1) % 8
 
@@ -466,7 +461,7 @@ class ArenaScanner:
                         draft_data = json.loads(line[len(draft_string):])
                         try:
 
-                            cards = draft_data["PackCards"].split(',')
+                            cards = str(draft_data["PackCards"]).split(',')
 
                             for card in cards:
                                 pack_cards.append(str(card))
@@ -581,22 +576,22 @@ class ArenaScanner:
                         # Remove any prefix (e.g. log timestamp)
                         start_offset = line.find("{\"CurrentModule\"")
                         self.draft_log.info(line)
-                        draft_data = json.loads(line[start_offset:])
-                        payload_data = json.loads(draft_data["Payload"])
-                        pack_data = payload_data["DraftPack"]
-                        draft_status = payload_data["DraftStatus"]
+                        entry_string = line[start_offset:]
+                        draft_data = process_json(entry_string)
+                        
+                        draft_status = json_find("DraftStatus", draft_data)
 
                         if draft_status == "PickNext":
                             pack_cards = []
                             try:
-
-                                cards = pack_data
+                                cards = json_find("DraftPack", draft_data)
 
                                 for card in cards:
                                     pack_cards.append(str(card))
 
-                                pack = payload_data["PackNumber"] + 1
-                                pick = payload_data["PickNumber"] + 1
+                                pack = int(json_find("PackNumber", draft_data)) + 1
+                                pick = int(json_find("PickNumber", draft_data)) + 1
+                                
                                 pack_index = (pick - 1) % 8
 
                                 if self.current_pack != pack:
@@ -646,16 +641,12 @@ class ArenaScanner:
                         self.pick_offset = offset
                         try:
                             # Identify the pack
-                            draft_data = json.loads(
-                                line[string_offset+len(draft_string):])
+                            entry_string = line[string_offset+len(draft_string):]
+                            draft_data = process_json(entry_string)
 
-                            request_data = json.loads(draft_data["request"])
-                            payload_data = json.loads(request_data["Payload"])
-                            pick_data = payload_data["PickInfo"]
-
-                            pack = pick_data["PackNumber"] + 1
-                            pick = pick_data["PickNumber"] + 1
-                            card = pick_data["CardId"]
+                            pack = int(json_find("PackNumber", draft_data)) + 1
+                            pick = int(json_find("PickNumber", draft_data)) + 1
+                            card = str(json_find("CardId", draft_data))
 
                             pack_index = (pick - 1) % 8
 
@@ -702,21 +693,19 @@ class ArenaScanner:
                         # Remove any prefix (e.g. log timestamp)
                         start_offset = line.find("{\"id\":")
                         self.draft_log.info(line)
-                        draft_data = json.loads(line[start_offset:])
-                        request_data = draft_data["request"]
-                        payload_data = json.loads(request_data)["Payload"]
-
+                        entry_string = line[start_offset:]
+                        draft_data = process_json(entry_string)
+                        
                         pack_cards = []
                         try:
 
-                            card_data = json.loads(payload_data)
-                            cards = card_data["CardsInPack"]
+                            cards = json_find("CardsInPack", draft_data)
 
                             for card in cards:
                                 pack_cards.append(str(card))
 
-                            pack = card_data["PackNumber"]
-                            pick = card_data["PickNumber"]
+                            pack = json_find("PackNumber", draft_data)
+                            pick = json_find("PickNumber", draft_data)
 
                             pack_index = (pick - 1) % 8
 
@@ -771,14 +760,12 @@ class ArenaScanner:
 
                         try:
                             # Identify the pack
-                            draft_data = json.loads(line[start_offset:])
+                            entry_string = line[start_offset:]
+                            draft_data = process_json(entry_string)
 
-                            request_data = json.loads(draft_data["request"])
-                            param_data = json.loads(request_data["Payload"])
-
-                            pack = int(param_data["Pack"])
-                            pick = int(param_data["Pick"])
-                            card = str(param_data["GrpId"])
+                            pack = int(json_find("Pack", draft_data))
+                            pick = int(json_find("Pick", draft_data))
+                            card = str(json_find("GrpId", draft_data))
 
                             pack_index = (pick - 1) % 8
 
@@ -828,16 +815,16 @@ class ArenaScanner:
                         self.draft_log.info(line)
                         pack_cards = []
                         # Identify the pack
-                        draft_data = json.loads(line[start_offset:])
+                        entry_string = line[start_offset:]
+                        draft_data = process_json(entry_string)
                         try:
-
-                            cards = draft_data["PackCards"].split(',')
+                            cards = str(json_find("PackCards", draft_data)).split(',')
 
                             for card in cards:
                                 pack_cards.append(str(card))
 
-                            pack = draft_data["SelfPack"]
-                            pick = draft_data["SelfPick"]
+                            pack = json_find("SelfPack", draft_data)
+                            pick = json_find("SelfPick", draft_data)
 
                             pack_index = (pick - 1) % 8
 
@@ -890,8 +877,7 @@ class ArenaScanner:
                         self.draft_log.info(line)
                         # Identify the pack
                         draft_data = json.loads(line[start_offset:])
-                        payload_data = json.loads(draft_data["Payload"])
-                        changes = payload_data["Changes"]
+                        changes = draft_data["Changes"]
                         try:
                             card_pool = []
                             for change in changes:
@@ -1071,8 +1057,7 @@ class ArenaScanner:
         if pack_index < len(self.picked_cards):
             for card in self.picked_cards[pack_index]:
                 try:
-                    pickeds_card.append(
-                        retrieve_card_data(self.set_data, card))
+                    pickeds_card.extend(self.retrieve_card_data(self.set_data, card))
                 except Exception as error:
                     logger.error(error)
 
@@ -1097,7 +1082,7 @@ class ArenaScanner:
             card_list = [
                 x for x in initial_pack_cards if x not in current_pack_cards]
             for card in card_list:
-                missing_cards.append(retrieve_card_data(self.set_data, card))
+                missing_cards.extend(self.retrieve_card_data(self.set_data, card))
         except Exception as error:
             logger.error(error)
 
@@ -1111,7 +1096,7 @@ class ArenaScanner:
 
         if pack_index < len(self.pack_cards):
             for card in self.pack_cards[pack_index]:
-                pack_cards.append(retrieve_card_data(self.set_data, card))
+                pack_cards.extend(self.retrieve_card_data(self.set_data, card))
 
         return pack_cards
 
@@ -1120,7 +1105,7 @@ class ArenaScanner:
         taken_cards = []
 
         for card in self.taken_cards:
-            taken_cards.append(retrieve_card_data(self.set_data, card))
+            taken_cards.extend(self.retrieve_card_data(self.set_data, card))
         return taken_cards
 
     def retrieve_tier_data(self, files):
