@@ -1,0 +1,84 @@
+name: Bug Report
+description: Bug report template
+title: "[Bug]: "
+labels: ["bug"]
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        The report will be closed if a vague title is provided.
+        
+        The report will be ignored if detailed steps for reproducing the bug are not provided.
+        
+        Please check both open and closed bugs to ensure your problem hasn't already been reported. Duplicate bugs will be ignored.
+  - type: textarea
+    id: bug-description
+    attributes:
+      label: Describe the bug in detail
+      description: Provide a detailed description of the bug and the expected behavior
+      placeholder: "Some of the stats that appear on the 17Lands card data page are not showing up in this program. I was expecting the data displayed by the program to match the data on the 17Lands site."
+    validations:
+      required: true
+  - type: textarea
+    id: steps-reproduce
+    attributes:
+      label: Steps to reproduce this bug
+      description: Provide a list of steps that can be used to reproduce the bug.
+      placeholder: |
+        1. Add the MKM premier draft dataset for date range 2019-1-1 to 2024-2-08
+        2. Open the draft log for a completed MKM draft
+        3. Open the card compare window
+        4. Enter card name "Vein Ripper"
+        5. Click on the card row to open the card stats tooltip
+        6. Compare the displayed stats with the stats on 17Lands (https://www.17lands.com/card_data?expansion=MKM&format=PremierDraft&start=2024-02-06&end=2024-02-08&sort=ever_drawn_win_rate%2Cdesc)
+    validations:
+      required: true
+  - type: dropdown
+    id: operating-system
+    attributes:
+      label: Operating System
+      description: What operating system are you using?
+      options:
+        - Windows
+        - macOS
+        - Linux
+    validations:
+      required: true
+  - type: textarea
+    id: operating-system-version
+    attributes:
+      label: Operating System Version
+      description: What is the version of your operating system?
+      placeholder: "Windows 11"
+    validations:
+      required: true
+  - type: dropdown
+    id: run-type
+    attributes:
+      label: Run Type
+      description: In what form are you running this program?
+      options:
+        - Windows Executable
+        - Python Script
+    validations:
+      required: true
+  - type: textarea
+    id: python-version
+    attributes:
+      label: Python Version
+      description: "If you selected Python, which version of Python are you using?"
+      placeholder: "Python 3.12"
+  - type: textarea
+    id: debug-logs
+    attributes:
+      label: Debug Log Details
+      description: Please copy and paste relevant log entries from the debug.log file in the Debug folder. Provide any unique error entries from the log file.
+      placeholder: |
+        <2/15/2024 19:00:01> - ERROR - file_extractor._process_17lands_data
+  - type: textarea
+    id: possible-solution
+    attributes:
+      label: Possible Solution (optional)
+      description: If you have a possible solution or workaround, please describe it.
+      placeholder:
