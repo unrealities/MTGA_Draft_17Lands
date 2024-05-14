@@ -233,38 +233,47 @@ def url_callback(event):
 class AutocompleteEntry(tkinter.Entry):
     def initialize(self, completion_list):
         self.completion_list = completion_list
-        self.hitsIndex = 0
+        self.hitsIndex = -1
         self.hits = []
         self.autocompleted = False
         self.current = ""
         self.bind('<KeyRelease>', self.act_on_release)
-        self.bind('<Key>', self.act_on_press)
+        self.bind('<KeyPress>', self.act_on_press)
 
     def autocomplete(self):
         self.current = self.get().lower()
-        self.hits = []
-        for item in self.completion_list:
-            if item.lower().startswith(self.current):
-                self.hits.append(item)
-        self.hitsIndex = 0
+        self.hits = [item for item in self.completion_list if item.lower().startswith(self.current)]
         if self.hits:
+            self.hitsIndex = 0  # Start with the first hit
             self.display_autocompletion()
+        else:
+            self.hitsIndex = -1
+            self.remove_autocompletion()
 
     def remove_autocompletion(self):
-        cursor = self.index(tkinter.INSERT)
-        self.delete(cursor, tkinter.END)
         self.autocompleted = False
 
     def display_autocompletion(self):
-        cursor = self.index(tkinter.INSERT)
-        self.delete(0, tkinter.END)
-        self.insert(0, self.hits[self.hitsIndex])
-        self.select_range(cursor, tkinter.END)
-        self.icursor(cursor)
-        self.autocompleted = True
+        if self.hitsIndex == -1:
+            self.remove_autocompletion()  # Don't display anything if hitsIndex is -1
+            return
+        if self.hits:
+            cursor = self.index(tkinter.INSERT)
+            self.delete(0, tkinter.END)
+            self.insert(0, self.hits[self.hitsIndex])
+            self.select_range(cursor, tkinter.END)
+            self.icursor(cursor)
+            self.autocompleted = True
+        else:
+            self.autocompleted = False
 
     def act_on_release(self, event):
-        return
+        if event.keysym in ('BackSpace', 'Delete'):
+            self.autocompleted = False
+            return
+
+        if event.keysym not in ('Down', 'Up', 'Tab', 'Right', 'Left'):
+            self.autocomplete()
 
     def act_on_press(self, event):
         if event.keysym == 'Left':
@@ -275,12 +284,11 @@ class AutocompleteEntry(tkinter.Entry):
         if event.keysym in ('Down', 'Up', 'Tab'):
             if self.select_present():
                 cursor = self.index(tkinter.SEL_FIRST)
-                if len(self.hits) and self.current == self.get().lower()[0:cursor]:
+                if self.hits and self.current == self.get().lower()[0:cursor]:
                     if event.keysym == 'Up':
-                        self.hitsIndex -= 1
+                        self.hitsIndex = (self.hitsIndex - 1) % len(self.hits)
                     else:
-                        self.hitsIndex += 1
-                    self.hitsIndex %= len(self.hits)
+                        self.hitsIndex = (self.hitsIndex + 1) % len(self.hits)
                     self.display_autocompletion()
             else:
                 self.autocomplete()
@@ -292,7 +300,16 @@ class AutocompleteEntry(tkinter.Entry):
                 self.icursor(tkinter.END)
                 return "break"
 
+        if event.keysym in ('BackSpace', 'Delete'):
+            if self.autocompleted:
+                self.remove_autocompletion()
 
+    def select_present(self):
+        try:
+            self.index(tkinter.SEL_FIRST)
+            return True
+        except tkinter.TclError:
+            return False
 
 class ScaledWindow:
     def __init__(self):
@@ -717,7 +734,7 @@ class Overlay(ScaledWindow):
         if platform == constants.PLATFORM_ID_OSX:
             self.configuration.features.hotkey_enabled = False
         else:
-            self.root.tk.call("source", "dark_mode.tcl")
+            self.root.tkinter.call("source", "dark_mode.tcl")
         self.__adjust_overlay_scale()
         self.__configure_fonts(platform)
 
