@@ -83,11 +83,11 @@ def retrieve_local_set_list(sets):
     for file in os.listdir(constants.SETS_FOLDER):
         try:
             name_segments = file.split("_")
-            if len(name_segments) == 3:
+            if len(name_segments) == 4:
                 if ((name_segments[0].upper() in main_sets) and
                     (name_segments[1] in constants.LIMITED_TYPES_DICT) and
-                    (name_segments[2] == constants.SET_FILE_SUFFIX)):
-                    # (name_segments[2] in constants.LIMITED_GROUPS_LIST) and
+                    (name_segments[2] in constants.LIMITED_GROUPS_LIST) and
+                    (name_segments[3] == constants.SET_FILE_SUFFIX)):
                     
                     set_name = list(sets.keys())[list(
                         main_sets).index(name_segments[0].upper())]
@@ -101,7 +101,7 @@ def retrieve_local_set_list(sets):
                             start_date = json_data["meta"]["start_date"]
                             end_date = json_data["meta"]["end_date"]
                         file_list.append(
-                                (set_name, name_segments[1], start_date, end_date))
+                                (set_name, name_segments[1], start_date, end_date, name_segments[2]))
         except Exception as error:
             logger.error(error)
     return file_list
@@ -1039,7 +1039,7 @@ class FileExtractor:
         result = True
         try:
             output_file = "_".join(
-                (self.selected_sets.seventeenlands[0], self.draft, constants.SET_FILE_SUFFIX))
+                (self.selected_sets.seventeenlands[0], self.draft, self.user_group, constants.SET_FILE_SUFFIX))
             location = os.path.join(constants.SETS_FOLDER, output_file)
 
             with open(location, 'w', encoding="utf-8", errors="replace") as file:
