@@ -1,7 +1,7 @@
 name: Chrome Extension Bug Report
 description: Chrome extension bug report template
 title: "[Bug]: "
-labels: ["bug-ext"]
+labels: ["bug"]
 
 body:
   - type: markdown
