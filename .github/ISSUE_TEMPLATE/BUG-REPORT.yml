@@ -1,7 +1,7 @@
 name: Application Bug Report
 description: Application bug report template
 title: "[Bug]: "
-labels: ["bug-app"]
+labels: ["bug"]
 
 body:
   - type: markdown
