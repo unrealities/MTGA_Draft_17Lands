@@ -46,8 +46,8 @@ body:
       label: Logged-in
       description: Are you logged-in to 17Lands.com?
       options:
-        - Yes
-        - No
+        - "Yes"
+        - "No"
     validations:
       required: true
   - type: textarea
