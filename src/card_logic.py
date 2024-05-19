@@ -128,9 +128,9 @@ class CardResult:
                 self.pick_number = max(self.pick_number, 1)
                 alsa = card[constants.DATA_FIELD_DECK_COLORS][constants.FILTER_OPTION_ALL_DECKS][constants.DATA_FIELD_ALSA]
                 
-                #TODO: How are these coefficients derived/useful?
+                # TODO: How are these coefficients derived/useful?
                 coefficients = constants.WHEEL_COEFFICIENTS[self.pick_number - 1]
-                # Exclude ALSA values below 2
+                # Exclude ALSA values below 2. These should not be assumed to wheel
                 result = round(numpy.polyval(coefficients, alsa),
                                1) if alsa >= 2 else 0
                 result = max(result, 0)
