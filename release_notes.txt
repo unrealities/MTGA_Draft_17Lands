@@ -1,7 +1,7 @@
 ===================== RELEASE NOTES 3.15 =====================
 * Improve autocomplete on Card Compare
 * Add Git issues
-* Add Wheel Display Option (The code existed for this but was never implemented)
+* Re-Added Wheel Display Option
 
 ===================== RELEASE NOTES 3.14 =====================
 * Huge Improvements by FiYir && Truth-
