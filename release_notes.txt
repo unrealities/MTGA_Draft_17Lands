@@ -1,3 +1,6 @@
+===================== RELEASE NOTES 3.16 =====================
+* Fix broken Windows build
+
 ===================== RELEASE NOTES 3.15 =====================
 * Improve autocomplete on Card Compare
 * Add Git issues
