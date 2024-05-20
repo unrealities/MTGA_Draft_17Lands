@@ -15,7 +15,7 @@ def invalid_search_location():
 
 @pytest.fixture
 def valid_search_location_old():
-    return "https://api.github.com/repos/unrealities/MTGA_Draft_17Lands/releases/155407064"
+    return "https://api.github.com/repos/unrealities/MTGA_Draft_17Lands/releases/156511598"
 
 @pytest.fixture
 def valid_search_location_latest():
