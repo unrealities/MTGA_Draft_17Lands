@@ -101,7 +101,7 @@ class CardResult:
                 result = "".join(card[constants.DATA_FIELD_COLORS])
             else:
                 result = "".join(
-                    list(card_colors(card[constants.DATA_FIELD_MANA_COST]).keys()))
+                    list(get_card_colors(card[constants.DATA_FIELD_MANA_COST]).keys()))
         except Exception as error:
             logger.error(error)
 
@@ -276,7 +276,7 @@ def deck_card_search(deck, search_colors, card_types, include_types, include_col
     combined_cards = []
     for card in deck:
         try:
-            colors = list(card_colors(
+            colors = list(get_card_colors(
                 card[constants.DATA_FIELD_MANA_COST]).keys())
 
             if constants.CARD_TYPE_LAND in card[constants.DATA_FIELD_TYPES]:
@@ -319,7 +319,7 @@ def deck_card_search(deck, search_colors, card_types, include_types, include_col
     return combined_cards
 
 
-def deck_metrics(deck):
+def get_deck_metrics(deck):
     """This function determines the total CMC, count, and distribution of a collection of cards"""
     metrics = DeckMetrics()
     cmc_total = 0
@@ -363,7 +363,7 @@ def deck_metrics(deck):
     return metrics
 
 
-def option_filter(deck, option_selection, metrics, configuration):
+def filter_options(deck, option_selection, metrics, configuration):
     """This function returns a list of colors based on the deck filter option"""
     filtered_color_list = [option_selection]
     try:
@@ -533,7 +533,7 @@ def calculate_curve_factor(deck, color_filter, configuration):
             True,
             True,
             False)
-        deck_info = deck_metrics(filtered_cards)
+        deck_info = get_deck_metrics(filtered_cards)
         curve_level = curve_levels[int(
             min(index, len(curve_levels) - 1))]
 
@@ -563,7 +563,7 @@ def calculate_color_affinity(deck_cards, color_filter, threshold, configuration)
                                            card[constants.DATA_FIELD_DECK_COLORS][color_filter][constants.DATA_FIELD_GIH],
                                            configuration.settings.bayesian_average_enabled)
                 if gihwr > threshold:
-                    mana_colors = card_colors(
+                    mana_colors = get_card_colors(
                         card[constants.DATA_FIELD_MANA_COST])
                     for color in mana_colors:
                         if color not in colors:
@@ -576,7 +576,7 @@ def calculate_color_affinity(deck_cards, color_filter, threshold, configuration)
 
 def row_color_tag(mana_cost):
     """This function selects the color tag for a table row based on a card's mana cost"""
-    colors = list(card_colors(mana_cost).keys())
+    colors = list(get_card_colors(mana_cost).keys())
 
     row_tag = constants.CARD_ROW_COLOR_COLORLESS_TAG
     if len(colors) > 1:
@@ -851,7 +851,7 @@ def stack_cards(cards):
     return deck_list
 
 
-def card_colors(mana_cost):
+def get_card_colors(mana_cost):
     """The function parses a mana cost string and returns a list of mana symbols"""
     colors = {}
     try:
@@ -918,7 +918,7 @@ def mana_base(deck):
                                                               else 0)
             else:
                 # Increase count for abilities that are not part of the mana cost
-                mana_count = card_colors(card[constants.DATA_FIELD_MANA_COST])
+                mana_count = get_card_colors(card[constants.DATA_FIELD_MANA_COST])
                 # for color in card[constants.DATA_FIELD_COLORS]:
                 #    mana_count[color] = (
                 #        mana_count[color] + 1) if color in mana_count else 1

@@ -4,23 +4,35 @@ from tkinter.ttk import Progressbar, Treeview, Style, OptionMenu, Button, Checkb
 from tkinter import filedialog, messagebox, font
 from datetime import date
 import urllib
-import os
 import sys
 import io
 import math
 import argparse
 import webbrowser
+from os import stat
 from dataclasses import dataclass
 from pynput.keyboard import Listener, KeyCode
 from PIL import Image, ImageTk, ImageFont
 from src.configuration import read_configuration, write_configuration, reset_configuration
 from src.limited_sets import LimitedSets
 from src.log_scanner import ArenaScanner
-from src import file_extractor as FE
-from src import card_logic as CL
+from src.file_extractor import FileExtractor, search_arena_log_locations, retrieve_arena_directory, retrieve_local_set_list 
 from src import constants
 from src.logger import create_logger
 from src.app_update import AppUpdate
+from src.card_logic import (
+    CardResult,
+    copy_deck,
+    stack_cards,
+    row_color_tag,
+    field_process_sort,
+    filter_options,
+    deck_card_search,
+    get_card_colors,
+    get_deck_metrics,
+    suggest_deck,
+    calculate_win_rate
+)
 
 try:
     import win32api
@@ -48,9 +60,10 @@ def start_overlay():
     parser.add_argument('-d', '--data')
     parser.add_argument('--step', action='store_true')
 
-    args = parser.parse_args()
+    args = parser.parse_known_args()
 
-    overlay = Overlay(args)
+    # Ignore unknown arguments from ArgumentParser - pytest change
+    overlay = Overlay(args[0])
 
     overlay.main_loop()
 
@@ -121,7 +134,7 @@ def copy_suggested(deck_colors, deck, color_options):
     colors = color_options[deck_colors.get()]
     deck_string = ""
     try:
-        deck_string = CL.copy_deck(
+        deck_string = copy_deck(
             deck[colors]["deck_cards"], deck[colors]["sideboard_cards"])
         copy_clipboard(deck_string)
     except Exception as error:
@@ -133,8 +146,8 @@ def copy_taken(taken_cards):
     """Copy the card list from the Taken Cards window"""
     deck_string = ""
     try:
-        stacked_cards = CL.stack_cards(taken_cards)
-        deck_string = CL.copy_deck(
+        stacked_cards = stack_cards(taken_cards)
+        deck_string = copy_deck(
             stacked_cards, None)
         copy_clipboard(deck_string)
 
@@ -163,7 +176,7 @@ def identify_table_row_tag(colors_enabled, colors, index):
     tag = ""
 
     if colors_enabled:
-        tag = CL.row_color_tag(colors)
+        tag = row_color_tag(colors)
     else:
         tag = constants.BW_ROW_COLOR_ODD_TAG if index % 2 else constants.BW_ROW_COLOR_EVEN_TAG
 
@@ -374,7 +387,7 @@ class ScaledWindow:
             row_list = [(table.set(k, column), k)
                         for k in table.get_children('')]
 
-        row_list.sort(key=lambda x: CL.field_process_sort(
+        row_list.sort(key=lambda x: field_process_sort(
             x[0]), reverse=reverse)
 
         if row_list:
@@ -413,7 +426,7 @@ class Overlay(ScaledWindow):
             self.configuration.settings.table_width)
 
         self.listener = None
-        self.configuration.settings.arena_log_location = FE.search_arena_log_locations(
+        self.configuration.settings.arena_log_location = search_arena_log_locations(
             [args.file, self.configuration.settings.arena_log_location])
 
         if self.configuration.settings.arena_log_location:
@@ -421,14 +434,14 @@ class Overlay(ScaledWindow):
         self.arena_file = self.configuration.settings.arena_log_location
 
         if args.data is None:
-            self.data_file = FE.retrieve_arena_directory(self.arena_file)
+            self.data_file = retrieve_arena_directory(self.arena_file)
         else:
             self.data_file = args.file
         logger.info("Card Data Location: %s", self.data_file)
 
         self.step_through = args.step
 
-        self.extractor = FE.FileExtractor(self.data_file)
+        self.extractor = FileExtractor(self.data_file)
         self.limited_sets = LimitedSets().retrieve_limited_sets()
         self.draft = ArenaScanner(
             self.arena_file, self.limited_sets, step_through=self.step_through)
@@ -734,7 +747,7 @@ class Overlay(ScaledWindow):
         if platform == constants.PLATFORM_ID_OSX:
             self.configuration.features.hotkey_enabled = False
         else:
-            self.root.tkinter.call("source", "dark_mode.tcl")
+            self.root.tk.call("source", "dark_mode.tcl")
         self.__adjust_overlay_scale()
         self.__configure_fonts(platform)
 
@@ -860,7 +873,7 @@ class Overlay(ScaledWindow):
         try:
             #selected_option = self.deck_filter_selection.get()
             selected_color = self.deck_colors[selected_option]
-            filtered_colors = CL.option_filter(
+            filtered_colors = filter_options(
                 cards, selected_color, self.set_metrics, self.configuration)
 
             if selected_color == constants.FILTER_OPTION_AUTO:
@@ -880,7 +893,7 @@ class Overlay(ScaledWindow):
     def __update_pack_table(self, card_list, filtered_colors, fields):
         '''Update the table that lists the cards within the current pack'''
         try:
-            result_class = CL.CardResult(
+            result_class = CardResult(
                 self.set_metrics, self.tier_data, self.configuration, self.draft.current_pick)
             result_list = result_class.return_results(
                 card_list, filtered_colors, fields)
@@ -903,10 +916,10 @@ class Overlay(ScaledWindow):
             if self.table_info["pack_table"].column in visible_columns:
                 column_index = visible_columns[self.table_info["pack_table"].column]
                 direction = self.table_info["pack_table"].reverse
-                result_list = sorted(result_list, key=lambda d: CL.field_process_sort(
+                result_list = sorted(result_list, key=lambda d: field_process_sort(
                     d["results"][column_index]), reverse=direction)
             else:
-                result_list = sorted(result_list, key=lambda d: CL.field_process_sort(
+                result_list = sorted(result_list, key=lambda d: field_process_sort(
                     d["results"][last_field_index]), reverse=True)
 
             for count, card in enumerate(result_list):
@@ -942,7 +955,7 @@ class Overlay(ScaledWindow):
                     self.missing_table.config(height=0)
 
                 if list_length:
-                    result_class = CL.CardResult(
+                    result_class = CardResult(
                         self.set_metrics, self.tier_data, self.configuration, self.draft.current_pick)
                     result_list = result_class.return_results(
                         missing_cards, filtered_colors, fields)
@@ -950,10 +963,10 @@ class Overlay(ScaledWindow):
                     if self.table_info["missing_table"].column in visible_columns:
                         column_index = visible_columns[self.table_info["missing_table"].column]
                         direction = self.table_info["missing_table"].reverse
-                        result_list = sorted(result_list, key=lambda d: CL.field_process_sort(
+                        result_list = sorted(result_list, key=lambda d: field_process_sort(
                             d["results"][column_index]), reverse=direction)
                     else:
-                        result_list = sorted(result_list, key=lambda d: CL.field_process_sort(
+                        result_list = sorted(result_list, key=lambda d: field_process_sort(
                             d["results"][last_field_index]), reverse=True)
 
                     picked_card_names = [
@@ -1011,7 +1024,7 @@ class Overlay(ScaledWindow):
                     if cards:
                         self.compare_list.append(cards[0])
 
-            result_class = CL.CardResult(
+            result_class = CardResult(
                 self.set_metrics, self.tier_data, self.configuration, self.draft.current_pick)
             result_list = result_class.return_results(
                 self.compare_list, filtered_colors, fields)
@@ -1025,10 +1038,10 @@ class Overlay(ScaledWindow):
             if self.table_info["compare_table"].column in visible_columns:
                 column_index = visible_columns[self.table_info["compare_table"].column]
                 direction = self.table_info["compare_table"].reverse
-                result_list = sorted(result_list, key=lambda d: CL.field_process_sort(
+                result_list = sorted(result_list, key=lambda d: field_process_sort(
                     d["results"][column_index]), reverse=direction)
             else:
-                result_list = sorted(result_list, key=lambda d: CL.field_process_sort(
+                result_list = sorted(result_list, key=lambda d: field_process_sort(
                     d["results"][last_field_index]), reverse=True)
 
             list_length = len(result_list)
@@ -1097,19 +1110,19 @@ class Overlay(ScaledWindow):
                                            constants.CARD_TYPE_ENCHANTMENT,
                                            constants.CARD_TYPE_PLANESWALKER])
 
-                    taken_cards = CL.deck_card_search(taken_cards,
+                    taken_cards = deck_card_search(taken_cards,
                                                       constants.CARD_COLORS,
                                                       card_types,
                                                       True,
                                                       True,
                                                       True)
 
-                stacked_cards = CL.stack_cards(taken_cards)
+                stacked_cards = stack_cards(taken_cards)
 
                 for row in self.taken_table.get_children():
                     self.taken_table.delete(row)
 
-                result_class = CL.CardResult(
+                result_class = CardResult(
                     self.set_metrics, self.tier_data, self.configuration, self.draft.current_pick)
                 result_list = result_class.return_results(
                     stacked_cards, filtered_colors, fields)
@@ -1120,10 +1133,10 @@ class Overlay(ScaledWindow):
                 if self.table_info["taken_table"].column in visible_columns:
                     column_index = visible_columns[self.table_info["taken_table"].column]
                     direction = self.table_info["taken_table"].reverse
-                    result_list = sorted(result_list, key=lambda d: CL.field_process_sort(
+                    result_list = sorted(result_list, key=lambda d: field_process_sort(
                         d["results"][column_index]), reverse=direction)
                 else:
-                    result_list = sorted(result_list, key=lambda d: CL.field_process_sort(
+                    result_list = sorted(result_list, key=lambda d: field_process_sort(
                         d["results"][last_field_index]), reverse=True)
 
                 if result_list:
@@ -1174,7 +1187,7 @@ class Overlay(ScaledWindow):
                 if constants.CARD_TYPE_LAND in card[constants.DATA_FIELD_TYPES]:
                     card_colors = "".join(card[constants.DATA_FIELD_COLORS])
                 else:
-                    card_colors = "".join(list(CL.card_colors(card[constants.DATA_FIELD_MANA_COST]).keys())
+                    card_colors = "".join(list(get_card_colors(card[constants.DATA_FIELD_MANA_COST]).keys())
                                           if not self.configuration.settings.color_identity_enabled
                                           else card[constants.DATA_FIELD_COLORS])
 
@@ -1197,12 +1210,12 @@ class Overlay(ScaledWindow):
             colors_filtered = {}
             for color, symbol in constants.CARD_COLORS_DICT.items():
                 if symbol:
-                    card_colors_sorted = CL.deck_card_search(
+                    card_colors_sorted = deck_card_search(
                         taken_cards, symbol, card_types[0], card_types[1], card_types[2], card_types[3])
                 else:
-                    card_colors_sorted = CL.deck_card_search(
+                    card_colors_sorted = deck_card_search(
                         taken_cards, symbol, card_types[0], card_types[1], True, False)
-                card_metrics = CL.deck_metrics(card_colors_sorted)
+                card_metrics = get_deck_metrics(card_colors_sorted)
                 colors_filtered[color] = {}
                 colors_filtered[color]["symbol"] = symbol
                 colors_filtered[color]["total"] = card_metrics.total_cards
@@ -1721,7 +1734,7 @@ class Overlay(ScaledWindow):
     def __arena_log_check(self):
         '''Function that monitors the Arena log every 1000ms to determine if there's new draft data'''
         try:
-            self.current_timestamp = os.stat(self.arena_file).st_mtime
+            self.current_timestamp = stat(self.arena_file).st_mtime
 
             if self.current_timestamp != self.previous_timestamp:
                 self.previous_timestamp = self.current_timestamp
@@ -2222,7 +2235,7 @@ class Overlay(ScaledWindow):
         try:
             tkinter.Grid.rowconfigure(popup, 3, weight=1)
 
-            suggested_decks = CL.suggest_deck(
+            suggested_decks = suggest_deck(
                 self.draft.retrieve_taken_cards(), self.set_metrics, self.configuration)
 
             choices = ["None"]
@@ -2814,7 +2827,7 @@ class Overlay(ScaledWindow):
         for row in list_box.get_children():
             list_box.delete(row)
         self.root.update()
-        file_list = FE.retrieve_local_set_list(sets)
+        file_list = retrieve_local_set_list(sets)
 
         if file_list:
             list_box.config(height=min(len(file_list), 10))
@@ -2846,7 +2859,7 @@ class Overlay(ScaledWindow):
                                    and k in card[constants.DATA_FIELD_DECK_COLORS][color]:
                                     if k in constants.WIN_RATE_FIELDS_DICT:
                                         winrate_count = constants.WIN_RATE_FIELDS_DICT[k]
-                                        color_dict[color][k] = CL.calculate_win_rate(card[constants.DATA_FIELD_DECK_COLORS][color][k],
+                                        color_dict[color][k] = calculate_win_rate(card[constants.DATA_FIELD_DECK_COLORS][color][k],
                                                                                      card[constants.DATA_FIELD_DECK_COLORS][color][winrate_count],
                                                                                      self.configuration.settings.bayesian_average_enabled)
                                     else:
