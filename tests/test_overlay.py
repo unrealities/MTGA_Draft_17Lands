@@ -31,7 +31,7 @@ def fixture_mock_scanner():
     mock_instance.retrieve_current_limited_event.return_value = ("","")  
     yield mock_instance
     
-def test_overlay_tkinter_pass(mock_scanner):
+def test_start_overlay_pass(mock_scanner):
     """
     Verify that the app starts up without generating exceptions or logging errors.
     
