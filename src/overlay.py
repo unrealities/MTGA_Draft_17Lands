@@ -507,6 +507,7 @@ class Overlay(ScaledWindow):
         self.taken_ohwr_checkbox_value = tkinter.IntVar(self.root)
         self.taken_gndwr_checkbox_value = tkinter.IntVar(self.root)
         self.taken_iwd_checkbox_value = tkinter.IntVar(self.root)
+        self.taken_wheel_checkbox_value = tkinter.IntVar(self.root)
         self.taken_gdwr_checkbox_value = tkinter.IntVar(self.root)
         self.card_colors_checkbox_value = tkinter.IntVar(self.root)
         self.color_identity_checkbox_value = tkinter.IntVar(self.root)
@@ -1068,7 +1069,8 @@ class Overlay(ScaledWindow):
                           "Column8": (constants.DATA_FIELD_OHWR if self.taken_ohwr_checkbox_value.get() else constants.DATA_FIELD_DISABLED),
                           "Column9": (constants.DATA_FIELD_GDWR if self.taken_gdwr_checkbox_value.get() else constants.DATA_FIELD_DISABLED),
                           "Column10": (constants.DATA_FIELD_GNSWR if self.taken_gndwr_checkbox_value.get() else constants.DATA_FIELD_DISABLED),
-                          "Column11": constants.DATA_FIELD_GIHWR}
+                          "Column11": (constants.DATA_FIELD_GNSWR if self.taken_wheel_checkbox_value.get() else constants.DATA_FIELD_DISABLED),
+                          "Column12": constants.DATA_FIELD_GIHWR}
 
                 taken_cards = self.draft.retrieve_taken_cards()
 
@@ -1530,6 +1532,8 @@ class Overlay(ScaledWindow):
                 self.taken_gndwr_checkbox_value.get())
             self.configuration.settings.taken_gdwr_enabled = bool(
                 self.taken_gdwr_checkbox_value.get())
+            self.configuration.settings.taken_wheel_enabled = bool(
+                self.taken_wheel_checkbox_value.get())
             self.configuration.settings.card_colors_enabled = bool(
                 self.card_colors_checkbox_value.get())
             self.configuration.settings.current_draft_enabled = bool(
@@ -1611,6 +1615,8 @@ class Overlay(ScaledWindow):
                 self.configuration.settings.taken_gndwr_enabled)
             self.taken_iwd_checkbox_value.set(
                 self.configuration.settings.taken_iwd_enabled)
+            self.taken_wheel_checkbox_value.set(
+                self.configuration.settings.taken_wheel_enabled)
             self.card_colors_checkbox_value.set(
                 self.configuration.settings.card_colors_enabled)
             self.current_draft_checkbox_value.set(
@@ -2118,6 +2124,12 @@ class Overlay(ScaledWindow):
                                              variable=self.taken_iwd_checkbox_value,
                                              onvalue=1,
                                              offvalue=0)
+            taken_wheel_checkbox = Checkbutton(checkbox_frame,
+                                             text="WHEEL",
+                                             style="Taken.TCheckbutton",
+                                             variable=self.taken_wheel_checkbox_value,
+                                             onvalue=1,
+                                             offvalue=0)
 
             option_frame.grid(row=0, column=0, columnspan=7, sticky="nsew")
             type_checkbox_frame.grid(
@@ -2169,6 +2181,7 @@ class Overlay(ScaledWindow):
                 self.taken_ohwr_checkbox_value,
                 self.taken_gdwr_checkbox_value,
                 self.taken_gndwr_checkbox_value,
+                self.taken_wheel_checkbox_value
             ]
 
             for option in column_checkboxes:
@@ -2942,6 +2955,8 @@ class Overlay(ScaledWindow):
                 (self.taken_gndwr_checkbox_value, lambda: self.taken_gndwr_checkbox_value.trace(
                     "w", self.__update_settings_callback)),
                 (self.taken_iwd_checkbox_value, lambda: self.taken_iwd_checkbox_value.trace(
+                    "w", self.__update_settings_callback)),
+                (self.taken_wheel_checkbox_value, lambda: self.taken_wheel_checkbox_value.trace(
                     "w", self.__update_settings_callback)),
                 (self.taken_filter_selection, lambda: self.taken_filter_selection.trace(
                     "w", self.__update_settings_callback)),
