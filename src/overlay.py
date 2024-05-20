@@ -735,7 +735,7 @@ class Overlay(ScaledWindow):
         if platform == constants.PLATFORM_ID_OSX:
             self.configuration.features.hotkey_enabled = False
         else:
-            self.root.tkinter.call("source", "dark_mode.tcl")
+            self.root.tk.call("source", "dark_mode.tcl")
         self.__adjust_overlay_scale()
         self.__configure_fonts(platform)
 
