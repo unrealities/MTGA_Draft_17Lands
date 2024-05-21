@@ -37,7 +37,6 @@ def test_start_overlay_pass(mock_scanner):
     - Mock the mainloop function to exit the overlay after startup.
     - Mock AppUpdate and messagebox to prevent prompt windows from opening and blocking the test.
     - Mock functions interacting with external files as those files aren't available to Github runners.
-    - Mock Pyinput functions as they interact with hardware inaccessible to Github runners.
     """
     with (
         patch("tkinter.Tk.mainloop", return_value=None),
