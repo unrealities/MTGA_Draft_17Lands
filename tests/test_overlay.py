@@ -1,6 +1,5 @@
 import pytest
 import logging
-from src.overlay import start_overlay
 from unittest.mock import patch, MagicMock
 
 @pytest.fixture(autouse=True)
@@ -9,11 +8,10 @@ def catch_log_errors(caplog):
     Verify that the app is not generating any logging errors. 
     
     This function catches any logging errors in the app by checking log records. 
-    If any errors are found, it fails the test with a descriptive message.
     """
     yield
     errors = [record for record in caplog.get_records("call") if record.levelno >= logging.ERROR]
-    assert not errors, f"Log error detected - fix any errors that appear in the captured log call"
+    assert not errors, f"Log error detected - resolve any errors that appear in the captured log call"
             
 @pytest.fixture(name="mock_scanner")
 def fixture_mock_scanner():
@@ -34,10 +32,11 @@ def fixture_mock_scanner():
 def test_start_overlay_pass(mock_scanner):
     """
     Verify that the app starts up without generating exceptions or logging errors.
-    
-    This function will catch all exceptions that occur during startup. 
-    The mainloop function is mocked so that the overlay immediately exits after startup.
-    AppUpdate and messagebox are mocked to prevent the app from opening a window and blocking the test.
+
+    - Mock the mainloop function to exit the overlay after startup.
+    - Mock AppUpdate and messagebox to prevent prompt windows from opening and blocking the test.
+    - Mock functions interacting with external files as those files aren't available to Github runners.
+    - Mock Pyinput functions as they interact with hardware inaccessible to Github runners.
     """
     with (
         patch("tkinter.Tk.mainloop", return_value=None),
@@ -47,14 +46,23 @@ def test_start_overlay_pass(mock_scanner):
         patch("src.overlay.LimitedSets.retrieve_limited_sets", return_value=None),
         patch("src.overlay.AppUpdate.retrieve_file_version", return_value=("","")),
         patch("src.overlay.ArenaScanner", return_value=mock_scanner),
-        patch("src.overlay.FileExtractor", return_value=None),
+        patch("src.overlay.FileExtractor", return_value=MagicMock()),
         patch("src.overlay.filter_options", return_value=["All Decks"]),
         patch("src.overlay.retrieve_arena_directory", return_value="fake_location"),
         patch("src.overlay.search_arena_log_locations", return_value="fake_location"),
+        patch("src.overlay.Listener", return_value=MagicMock()) as mock_listener,
+        patch("src.overlay.KeyCode", return_value=MagicMock()) as mock_keycode,
     ):
         try:
+            """
+            The import should be placed within the 'with' statement to ensure that pyinput can be mocked before 
+             the pyinput functions are imported within overlay.py. This resolves an import error that occurs when 
+             this test is run using the GitHub Linux runner.
+            """
+            from src.overlay import start_overlay
             start_overlay()
         except Exception as e:
             pytest.fail(f"Exception occurred: {e}")
+            
 
 #TODO: create a test for CreateCardToolTip
