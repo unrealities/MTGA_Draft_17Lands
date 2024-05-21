@@ -270,6 +270,11 @@ Magic: The Gathering Arena draft tool that utilizes 17Lands data.
         - The rating is determined by calculating the combined GIHWR of all the cards and then subtracting penalties for not meeting the deck requirements.
         - The NEO creature sagas count as creatures.
 
+- **Wheel:** The "WHEEL" option intention is to show you the percentage likelihood of a specific card in a pack to be available the second time you see the pack (on the wheel).
+    - The logic in the code already existed and I do not know if a bug was found and it was not implemented, or if the creator wanted to simply improve upon it before releasing it.
+    - Only the first six packs are considered and cards with ALSA of <2 are automatically excluded.
+    - The math appears to follow closely what Sierkovitz published in this [article](https://mtgazone.com/how-to-wheel-in-drafts/)
+
 ## Troubleshooting
 
 - **Some cards are missing from the Taken Cards window:** Due to Arena creating a new player log after every restart, the application cannot track cards that were picked and seen prior to a restart. However, players who engage in drafting sessions spanning multiple days or sessions can still utilize this tool to access the current pack data. It should be noted that this application may not have access to information regarding previous packs and picks, resulting in some missing data.

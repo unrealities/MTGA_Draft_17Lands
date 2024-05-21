@@ -1,3 +1,11 @@
+===================== RELEASE NOTES 3.16 =====================
+* Fix broken Windows build
+
+===================== RELEASE NOTES 3.15 =====================
+* Improve autocomplete on Card Compare
+* Add Git issues
+* Re-Added Wheel Display Option
+
 ===================== RELEASE NOTES 3.14 =====================
 * Huge Improvements by FiYir && Truth-
 * FiYir added support for the new log events from the recent Arena update. My approach to this issue was a bit different from yours, and I decided to try to make the change backward compatible and potentially future-proof. WOTC has reverted changes in the past, so it's possible that they might revert these ones. I verified my changes for premier, quick, and traditional drafts (see tests/test_card_logic.py), but not sealed.
