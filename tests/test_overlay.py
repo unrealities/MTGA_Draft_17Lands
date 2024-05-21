@@ -1,6 +1,7 @@
 import pytest
 import logging
 from unittest.mock import patch, MagicMock
+from src.overlay import start_overlay
 
 @pytest.fixture(autouse=True)
 def catch_log_errors(caplog):
@@ -50,16 +51,8 @@ def test_start_overlay_pass(mock_scanner):
         patch("src.overlay.filter_options", return_value=["All Decks"]),
         patch("src.overlay.retrieve_arena_directory", return_value="fake_location"),
         patch("src.overlay.search_arena_log_locations", return_value="fake_location"),
-        patch("src.overlay.Listener", return_value=MagicMock()) as mock_listener,
-        patch("src.overlay.KeyCode", return_value=MagicMock()) as mock_keycode,
     ):
         try:
-            """
-            The import should be placed within the 'with' statement to ensure that pyinput can be mocked before 
-             the pyinput functions are imported within overlay.py. This resolves an import error that occurs when 
-             this test is run using the GitHub Linux runner.
-            """
-            from src.overlay import start_overlay
             start_overlay()
         except Exception as e:
             pytest.fail(f"Exception occurred: {e}")
