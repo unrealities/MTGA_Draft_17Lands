@@ -114,12 +114,16 @@ class CardResult:
         result = 0
 
         try:
+            # TODO: Adjust this if pack is a play booster and/or contains basic lands
+            # Only calculate if there is a possibility that you may see playable cards from this pack again
             if self.pick_number <= len(constants.WHEEL_COEFFICIENTS):
                 # 0 is treated as pick 1 for PremierDraft P1P1
                 self.pick_number = max(self.pick_number, 1)
                 alsa = card[constants.DATA_FIELD_DECK_COLORS][constants.FILTER_OPTION_ALL_DECKS][constants.DATA_FIELD_ALSA]
+                
+                # TODO: How are these coefficients derived/useful?
                 coefficients = constants.WHEEL_COEFFICIENTS[self.pick_number - 1]
-                # Exclude ALSA values below 2
+                # Exclude ALSA values below 2. These should not be assumed to wheel
                 result = round(numpy.polyval(coefficients, alsa),
                                1) if alsa >= 2 else 0
                 result = max(result, 0)

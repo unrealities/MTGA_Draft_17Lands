@@ -878,8 +878,7 @@ class ArenaScanner:
                         self.draft_log.info(line)
                         # Identify the pack
                         draft_data = json.loads(line[start_offset:])
-                        payload_data = json.loads(draft_data["Payload"])
-                        changes = payload_data["Changes"]
+                        changes = draft_data["Changes"]
                         try:
                             card_pool = []
                             for change in changes:

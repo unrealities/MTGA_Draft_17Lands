@@ -32,7 +32,7 @@ function createScraperContainer(){
     const tierButton = createButton('tier_button', 'Download Tier List', 'width:100%');
     const tierLabelBox = createTextarea('tier_label_box', 1, 'width:100%', 'Enter Label Here!');
 
-    const titleLink = createAnchorElement('https://github.com/FiYir/MTGA_Draft_17Lands/tree/main/Tools/TierScraper17Lands', 'MTGA_Draft_17Lands TierScraper');
+    const titleLink = createAnchorElement('https://github.com/unrealities/MTGA_Draft_17Lands/tree/main/Tools/TierScraper17Lands', 'MTGA_Draft_17Lands TierScraper');
     const containerTitle = document.createElement('div');
     containerTitle.id = 'title';
     containerTitle.appendChild(titleLink);

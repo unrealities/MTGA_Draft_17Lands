@@ -27,7 +27,7 @@ try:
 except ImportError:
     pass
 
-APPLICATION_VERSION = 3.10
+APPLICATION_VERSION = 3.16
 
 HOTKEY_CTRL_G = '\x07'
 
@@ -233,38 +233,47 @@ def url_callback(event):
 class AutocompleteEntry(tkinter.Entry):
     def initialize(self, completion_list):
         self.completion_list = completion_list
-        self.hitsIndex = 0
+        self.hitsIndex = -1
         self.hits = []
         self.autocompleted = False
         self.current = ""
         self.bind('<KeyRelease>', self.act_on_release)
-        self.bind('<Key>', self.act_on_press)
+        self.bind('<KeyPress>', self.act_on_press)
 
     def autocomplete(self):
         self.current = self.get().lower()
-        self.hits = []
-        for item in self.completion_list:
-            if item.lower().startswith(self.current):
-                self.hits.append(item)
-        self.hitsIndex = 0
+        self.hits = [item for item in self.completion_list if item.lower().startswith(self.current)]
         if self.hits:
+            self.hitsIndex = 0  # Start with the first hit
             self.display_autocompletion()
+        else:
+            self.hitsIndex = -1
+            self.remove_autocompletion()
 
     def remove_autocompletion(self):
-        cursor = self.index(tkinter.INSERT)
-        self.delete(cursor, tkinter.END)
         self.autocompleted = False
 
     def display_autocompletion(self):
-        cursor = self.index(tkinter.INSERT)
-        self.delete(0, tkinter.END)
-        self.insert(0, self.hits[self.hitsIndex])
-        self.select_range(cursor, tkinter.END)
-        self.icursor(cursor)
-        self.autocompleted = True
+        if self.hitsIndex == -1:
+            self.remove_autocompletion()  # Don't display anything if hitsIndex is -1
+            return
+        if self.hits:
+            cursor = self.index(tkinter.INSERT)
+            self.delete(0, tkinter.END)
+            self.insert(0, self.hits[self.hitsIndex])
+            self.select_range(cursor, tkinter.END)
+            self.icursor(cursor)
+            self.autocompleted = True
+        else:
+            self.autocompleted = False
 
     def act_on_release(self, event):
-        return
+        if event.keysym in ('BackSpace', 'Delete'):
+            self.autocompleted = False
+            return
+
+        if event.keysym not in ('Down', 'Up', 'Tab', 'Right', 'Left'):
+            self.autocomplete()
 
     def act_on_press(self, event):
         if event.keysym == 'Left':
@@ -275,12 +284,11 @@ class AutocompleteEntry(tkinter.Entry):
         if event.keysym in ('Down', 'Up', 'Tab'):
             if self.select_present():
                 cursor = self.index(tkinter.SEL_FIRST)
-                if len(self.hits) and self.current == self.get().lower()[0:cursor]:
+                if self.hits and self.current == self.get().lower()[0:cursor]:
                     if event.keysym == 'Up':
-                        self.hitsIndex -= 1
+                        self.hitsIndex = (self.hitsIndex - 1) % len(self.hits)
                     else:
-                        self.hitsIndex += 1
-                    self.hitsIndex %= len(self.hits)
+                        self.hitsIndex = (self.hitsIndex + 1) % len(self.hits)
                     self.display_autocompletion()
             else:
                 self.autocomplete()
@@ -292,7 +300,16 @@ class AutocompleteEntry(tkinter.Entry):
                 self.icursor(tkinter.END)
                 return "break"
 
+        if event.keysym in ('BackSpace', 'Delete'):
+            if self.autocompleted:
+                self.remove_autocompletion()
 
+    def select_present(self):
+        try:
+            self.index(tkinter.SEL_FIRST)
+            return True
+        except tkinter.TclError:
+            return False
 
 class ScaledWindow:
     def __init__(self):
@@ -490,6 +507,7 @@ class Overlay(ScaledWindow):
         self.taken_ohwr_checkbox_value = tkinter.IntVar(self.root)
         self.taken_gndwr_checkbox_value = tkinter.IntVar(self.root)
         self.taken_iwd_checkbox_value = tkinter.IntVar(self.root)
+        self.taken_wheel_checkbox_value = tkinter.IntVar(self.root)
         self.taken_gdwr_checkbox_value = tkinter.IntVar(self.root)
         self.card_colors_checkbox_value = tkinter.IntVar(self.root)
         self.color_identity_checkbox_value = tkinter.IntVar(self.root)
@@ -717,7 +735,7 @@ class Overlay(ScaledWindow):
         if platform == constants.PLATFORM_ID_OSX:
             self.configuration.features.hotkey_enabled = False
         else:
-            self.root.tk.call("source", "dark_mode.tcl")
+            self.root.call("source", "dark_mode.tcl")
         self.__adjust_overlay_scale()
         self.__configure_fonts(platform)
 
@@ -1051,7 +1069,8 @@ class Overlay(ScaledWindow):
                           "Column8": (constants.DATA_FIELD_OHWR if self.taken_ohwr_checkbox_value.get() else constants.DATA_FIELD_DISABLED),
                           "Column9": (constants.DATA_FIELD_GDWR if self.taken_gdwr_checkbox_value.get() else constants.DATA_FIELD_DISABLED),
                           "Column10": (constants.DATA_FIELD_GNSWR if self.taken_gndwr_checkbox_value.get() else constants.DATA_FIELD_DISABLED),
-                          "Column11": constants.DATA_FIELD_GIHWR}
+                          "Column11": (constants.DATA_FIELD_GNSWR if self.taken_wheel_checkbox_value.get() else constants.DATA_FIELD_DISABLED),
+                          "Column12": constants.DATA_FIELD_GIHWR}
 
                 taken_cards = self.draft.retrieve_taken_cards()
 
@@ -1514,6 +1533,8 @@ class Overlay(ScaledWindow):
                 self.taken_gndwr_checkbox_value.get())
             self.configuration.settings.taken_gdwr_enabled = bool(
                 self.taken_gdwr_checkbox_value.get())
+            self.configuration.settings.taken_wheel_enabled = bool(
+                self.taken_wheel_checkbox_value.get())
             self.configuration.settings.card_colors_enabled = bool(
                 self.card_colors_checkbox_value.get())
             self.configuration.settings.current_draft_enabled = bool(
@@ -1595,6 +1616,8 @@ class Overlay(ScaledWindow):
                 self.configuration.settings.taken_gndwr_enabled)
             self.taken_iwd_checkbox_value.set(
                 self.configuration.settings.taken_iwd_enabled)
+            self.taken_wheel_checkbox_value.set(
+                self.configuration.settings.taken_wheel_enabled)
             self.card_colors_checkbox_value.set(
                 self.configuration.settings.card_colors_enabled)
             self.current_draft_checkbox_value.set(
@@ -2102,6 +2125,12 @@ class Overlay(ScaledWindow):
                                              variable=self.taken_iwd_checkbox_value,
                                              onvalue=1,
                                              offvalue=0)
+            taken_wheel_checkbox = Checkbutton(checkbox_frame,
+                                             text="WHEEL",
+                                             style="Taken.TCheckbutton",
+                                             variable=self.taken_wheel_checkbox_value,
+                                             onvalue=1,
+                                             offvalue=0)
 
             option_frame.grid(row=0, column=0, columnspan=7, sticky="nsew")
             type_checkbox_frame.grid(
@@ -2153,6 +2182,7 @@ class Overlay(ScaledWindow):
                 self.taken_ohwr_checkbox_value,
                 self.taken_gdwr_checkbox_value,
                 self.taken_gndwr_checkbox_value,
+                self.taken_wheel_checkbox_value
             ]
 
             for option in column_checkboxes:
@@ -2661,7 +2691,7 @@ class Overlay(ScaledWindow):
 
             github_url = Label(
                 popup,
-                text="https://github.com/bstaple1/MTGA_Draft_17Lands",
+                text="https://github.com/unrealities/MTGA_Draft_17Lands",
                 style="MainSections.TLabel",
                 anchor="c",
                 foreground="#0066CC",
@@ -2927,6 +2957,8 @@ class Overlay(ScaledWindow):
                     "w", self.__update_settings_callback)),
                 (self.taken_iwd_checkbox_value, lambda: self.taken_iwd_checkbox_value.trace(
                     "w", self.__update_settings_callback)),
+                (self.taken_wheel_checkbox_value, lambda: self.taken_wheel_checkbox_value.trace(
+                    "w", self.__update_settings_callback)),
                 (self.taken_filter_selection, lambda: self.taken_filter_selection.trace(
                     "w", self.__update_settings_callback)),
                 (self.taken_type_selection, lambda: self.taken_type_selection.trace(
@@ -2993,10 +3025,10 @@ class Overlay(ScaledWindow):
                                 0, "open", output_location, None, None, 10)
                         else:
                             message_box = tkinter.messagebox.showerror(
-                                title="Download Failed", message="Visit https://github.com/bstaple1/MTGA_Draft_17Lands/releases to manually download the new version.")
+                                title="Download Failed", message="Visit https://github.com/unrealities/MTGA_Draft_17Lands/releases to manually download the new version.")
 
                 else:
-                    message_string = f"Update {new_version} is now available.\n\nCheck https://github.com/bstaple1/MTGA_Draft_17Lands/releases for more details."
+                    message_string = f"Update {new_version} is now available.\n\nCheck https://github.com/unrealities/MTGA_Draft_17Lands/releases for more details."
                     message_box = tkinter.messagebox.showinfo(
                         title="Update", message=message_string)
         except Exception as error:
