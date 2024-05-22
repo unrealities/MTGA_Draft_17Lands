@@ -1445,10 +1445,11 @@ class Overlay(ScaledWindow):
             self.tier_sources = self.draft.retrieve_tier_source()
             self.__update_data_source_options(True)
             self.__update_draft_data()
-            logger.info("%s, Mean: %.2f, Standard Deviation: %.2f",
+            mean, std = self.set_metrics.get_metrics(constants.FILTER_OPTION_ALL_DECKS, constants.DATA_FIELD_GIHWR)
+            logger.info("%s, Mean: %.1f, Standard Deviation: %.1f",
                         self.draft.draft_sets,
-                        self.set_metrics.mean,
-                        self.set_metrics.standard_deviation)
+                        mean,
+                        std)
 
         if self.draft.draft_data_search():
             update = True

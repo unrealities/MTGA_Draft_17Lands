@@ -8,6 +8,7 @@ import src.card_logic as CL
 import src.file_extractor as FE
 from src.logger import create_logger
 from src.utils import process_json, json_find
+from src.set_metrics import SetMetrics
 
 if not os.path.exists(constants.DRAFT_LOG_FOLDER):
     os.makedirs(constants.DRAFT_LOG_FOLDER)
@@ -1009,16 +1010,8 @@ class ArenaScanner:
 
     def retrieve_set_metrics(self, bayesian_enabled):
         '''Parse set data and calculate the mean and standard deviation for a set'''
-        set_metrics = CL.SetMetrics()
+        set_metrics = SetMetrics(self.set_data)
 
-        try:
-            if self.set_data:
-                set_metrics.mean = CL.calculate_mean(
-                    self.set_data["card_ratings"], bayesian_enabled)
-                set_metrics.standard_deviation = CL.calculate_standard_deviation(
-                    self.set_data["card_ratings"], set_metrics.mean, bayesian_enabled)
-        except Exception as error:
-            logger.error(error)
         return set_metrics
 
     def retrieve_color_win_rate(self, label_type):
