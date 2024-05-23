@@ -27,4 +27,7 @@ jobs:
         pip install pytest
         pip install -r requirements.txt
     - name: Test with pytest
-      run: pytest ./tests
+      run: |
+          export DISPLAY=:99
+          Xvfb :99 &
+          python -m pytest tests/
