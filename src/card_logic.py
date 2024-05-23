@@ -25,13 +25,6 @@ class DeckMetrics:
     distribution_all: list = field(
         default_factory=lambda: [0, 0, 0, 0, 0, 0, 0])
 
-
-@dataclass
-class SetMetrics:
-    mean: float = 0.0
-    standard_deviation: float = 0.0
-
-
 class CardResult:
     """This class processes a card list and produces results based on a list of fields (i.e., ALSA, GIHWR, COLORS, etc.)"""
 
@@ -203,11 +196,12 @@ class CardResult:
                                          card[constants.DATA_FIELD_DECK_COLORS][color][winrate_count],
                                          self.configuration.settings.bayesian_average_enabled)
 
+            mean, std = self.metrics.get_metrics(color, winrate_field)
             deviation_list = list(constants.GRADE_DEVIATION_DICT.values())
-            upper_limit = self.metrics.mean + \
-                self.metrics.standard_deviation * deviation_list[0]
-            lower_limit = self.metrics.mean + \
-                self.metrics.standard_deviation * deviation_list[-1]
+            upper_limit = mean + \
+                std * deviation_list[0]
+            lower_limit = mean + \
+                std * deviation_list[-1]
 
             if (winrate != 0) and (upper_limit != lower_limit):
                 result = round(
@@ -226,12 +220,12 @@ class CardResult:
             winrate = calculate_win_rate(card[constants.DATA_FIELD_DECK_COLORS][color][winrate_field],
                                          card[constants.DATA_FIELD_DECK_COLORS][color][winrate_count],
                                          self.configuration.settings.bayesian_average_enabled)
-
-            if ((winrate != 0) and (self.metrics.standard_deviation != 0)):
+            
+            mean, std = self.metrics.get_metrics(color, winrate_field)
+            if ((winrate != 0) and (std != 0)):
                 result = constants.LETTER_GRADE_F
                 for grade, deviation in constants.GRADE_DEVIATION_DICT.items():
-                    standard_score = (
-                        winrate - self.metrics.mean) / self.metrics.standard_deviation
+                    standard_score = (winrate - mean) / std
                     if standard_score >= deviation:
                         result = grade
                         break
@@ -239,7 +233,6 @@ class CardResult:
         except Exception as error:
             logger.error(error)
         return result
-
 
 def field_process_sort(field_value):
     """This function collects the numeric order of a letter grade for the purpose of sorting"""
@@ -384,7 +377,8 @@ def deck_colors(deck, colors_max, metrics, configuration):
     """This function determines the prominent colors for a collection of cards"""
     colors_result = {}
     try:
-        threshold = metrics.mean - 0.33 * metrics.standard_deviation
+        mean, std = metrics.get_metrics(constants.FILTER_OPTION_ALL_DECKS, constants.DATA_FIELD_GIHWR)
+        threshold = mean - 0.33 * std
         colors = calculate_color_affinity(
             deck, constants.FILTER_OPTION_ALL_DECKS, threshold, configuration)
 
@@ -443,7 +437,7 @@ def deck_colors(deck, colors_max, metrics, configuration):
         # Add All Decks as a baseline
         colors_result[constants.FILTER_OPTION_ALL_DECKS] = calculate_color_rating(deck,
                                                                                   constants.FILTER_OPTION_ALL_DECKS,
-                                                                                  metrics.mean,
+                                                                                  mean,
                                                                                   configuration)
         colors_result = dict(
             sorted(colors_result.items(), key=lambda item: item[1], reverse=True))
@@ -596,62 +590,6 @@ def row_color_tag(mana_cost):
     elif constants.CARD_COLOR_SYMBOL_GREEN in colors:
         row_tag = constants.CARD_ROW_COLOR_GREEN_TAG
     return row_tag
-
-
-def calculate_mean(cards, bayesian_enabled):
-    """The function calculates the mean win rate of a collection of cards"""
-    card_count = 0
-    card_sum = 0
-    mean = 0
-    for card in cards:
-        try:
-            winrate = calculate_win_rate(cards[card][constants.DATA_FIELD_DECK_COLORS][constants.FILTER_OPTION_ALL_DECKS][constants.DATA_FIELD_GIHWR],
-                                         cards[card][constants.DATA_FIELD_DECK_COLORS][constants.FILTER_OPTION_ALL_DECKS][constants.DATA_FIELD_GIH],
-                                         bayesian_enabled)
-
-            if winrate == 0:
-                continue
-
-            card_sum += winrate
-            card_count += 1
-
-        except Exception as error:
-            logger.error(error)
-
-    mean = float(card_sum / card_count) if card_count else 0
-
-    return mean
-
-
-def calculate_standard_deviation(cards, mean, bayesian_enabled):
-    """The function calculates the standard deviation from the win rate of a collection of cards"""
-    standard_deviation = 0
-    card_count = 0
-    sum_squares = 0
-    for card in cards:
-        try:
-            winrate = calculate_win_rate(cards[card][constants.DATA_FIELD_DECK_COLORS][constants.FILTER_OPTION_ALL_DECKS][constants.DATA_FIELD_GIHWR],
-                                         cards[card][constants.DATA_FIELD_DECK_COLORS][constants.FILTER_OPTION_ALL_DECKS][constants.DATA_FIELD_GIH],
-                                         bayesian_enabled)
-
-            if winrate == 0:
-                continue
-
-            squared_deviations = (winrate - mean) ** 2
-
-            sum_squares += squared_deviations
-            card_count += 1
-
-        except Exception as error:
-            logger.error(error)
-
-    # Find the variance
-    variance = (sum_squares / (card_count - 1)) if card_count > 2 else 0
-
-    standard_deviation = math.sqrt(variance)
-
-    return standard_deviation
-
 
 def ratings_limits(cards, bayesian_enabled):
     """The function identifies the upper and lower win rates from a collection of cards"""
@@ -990,7 +928,8 @@ def suggest_deck(taken_cards, metrics, configuration):
                 filtered_colors.append(color)
 
         decks = {}
-        threshold = metrics.mean - 0.33 * metrics.standard_deviation
+        mean, std = metrics.get_metrics(constants.FILTER_OPTION_ALL_DECKS, constants.DATA_FIELD_GIHWR)
+        threshold = mean - 0.33 * std
         for color in filtered_colors:
             for key, value in deck_types.items():
                 deck, sideboard_cards = build_deck(
@@ -1036,8 +975,8 @@ def build_deck(deck_type, cards, color, metrics, configuration):
                                                   configuration.settings.bayesian_average_enabled)]
 
         # identify a splashable color
-        splash_threshold = metrics.mean + \
-            2.33 * metrics.standard_deviation
+        mean, std = metrics.get_metrics(constants.FILTER_OPTION_ALL_DECKS, constants.DATA_FIELD_GIHWR)
+        splash_threshold = mean + 2.33 * std
         color += (color_splash(cards, color, splash_threshold, configuration))
 
         card_colors_sorted = deck_card_search(
@@ -1116,7 +1055,7 @@ def build_deck(deck_type, cards, color, metrics, configuration):
             if total_card_count >= maximum_deck_size:
                 break
 
-            if card["results"][0] >= metrics.mean - 0.33 * metrics.standard_deviation:
+            if card["results"][0] >= mean - 0.33 * std:
                 deck_list.append(card)
                 sideboard_list.remove(card)
                 total_card_count += 1
