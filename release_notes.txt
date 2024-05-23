@@ -1,5 +1,5 @@
 ===================== RELEASE NOTES 3.17 =====================
-* 
+* Fix Taken Cards not displaying
 
 ===================== RELEASE NOTES 3.16 =====================
 * Fix broken Windows build

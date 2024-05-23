@@ -1069,8 +1069,7 @@ class Overlay(ScaledWindow):
                           "Column8": (constants.DATA_FIELD_OHWR if self.taken_ohwr_checkbox_value.get() else constants.DATA_FIELD_DISABLED),
                           "Column9": (constants.DATA_FIELD_GDWR if self.taken_gdwr_checkbox_value.get() else constants.DATA_FIELD_DISABLED),
                           "Column10": (constants.DATA_FIELD_GNSWR if self.taken_gndwr_checkbox_value.get() else constants.DATA_FIELD_DISABLED),
-                          "Column11": (constants.DATA_FIELD_GNSWR if self.taken_wheel_checkbox_value.get() else constants.DATA_FIELD_DISABLED),
-                          "Column12": constants.DATA_FIELD_GIHWR}
+                          "Column11": constants.DATA_FIELD_GIHWR}
 
                 taken_cards = self.draft.retrieve_taken_cards()
 
