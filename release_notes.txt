@@ -1,5 +1,10 @@
 ===================== RELEASE NOTES 3.17 =====================
 * Fix Taken Cards not displaying
+* FiYir added overlay.py test to avoid similar error in the future
+* FiYir replaced some module imports with function-level imports to simplify mocking
+* FiYir updated the metrics calculation functions to use built-in functions from the Statistics library, relocating the previous code to a new 'set_metrics' module.
+* FiYir fixed a bug where duplicate cards were mistakenly included in the metrics computation; now, only unique cards are considered.
+* FiYir added a method in the new 'SetMetrics' class to compute card percentiles using a normal distribution
 
 ===================== RELEASE NOTES 3.16 =====================
 * Fix broken Windows build
