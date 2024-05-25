@@ -1,3 +1,41 @@
+===================== RELEASE NOTES 3.17 =====================
+* Fix Taken Cards not displaying
+* FiYir added overlay.py test to avoid similar error in the future
+* FiYir replaced some module imports with function-level imports to simplify mocking
+* FiYir updated the metrics calculation functions to use built-in functions from the Statistics library, relocating the previous code to a new 'set_metrics' module.
+* FiYir fixed a bug where duplicate cards were mistakenly included in the metrics computation; now, only unique cards are considered.
+* FiYir added a method in the new 'SetMetrics' class to compute card percentiles using a normal distribution
+
+===================== RELEASE NOTES 3.16 =====================
+* Fix broken Windows build
+
+===================== RELEASE NOTES 3.15 =====================
+* Improve autocomplete on Card Compare
+* Add Git issues
+* Re-Added Wheel Display Option
+
+===================== RELEASE NOTES 3.14 =====================
+* Huge Improvements by FiYir && Truth-
+* FiYir added support for the new log events from the recent Arena update. My approach to this issue was a bit different from yours, and I decided to try to make the change backward compatible and potentially future-proof. WOTC has reverted changes in the past, so it's possible that they might revert these ones. I verified my changes for premier, quick, and traditional drafts (see tests/test_card_logic.py), but not sealed.
+* FiYir fixed the Chrome plugin, which had stopped working a while ago. I also modified the UI change a bit to make it clearer that this is not part of the 17Lands site.
+* FiYir fixed some broken application code related to tier comments and split cards.
+* FiYir changed the limited_sets code so that when you download a set, you also download the bonus sheet, special guest, list, etc. This was an existing feature in the original project that I believe was used for downloading cube datasets. I just made the change for all of the sets. If you delete your old Temp/temp_set_list file, the app will create a new one with the modified set codes.
+* FiYir refactored the code so that the latest versions of PIL and Pydantic are supported.
+* FiYir added GitHub workflows for running the pytest test cases whenever a pull request is created. It includes workflows for Windows, macOS, and Ubuntu.
+* Truth- addressed an issue with the original tool where it wouldn't download card data if the ALSA or ATA values were null (below the confidence threshold).
+* Truth- Replaced the old card compare autocomplete with a custom version. You now use the up and down arrow keys to cycle through matches.
+
+===================== RELEASE NOTES 3.13 =====================
+* Add recent bonus sheet sets (WOE, OTJ)
+
+===================== RELEASE NOTES 3.12 =====================
+* Re-added code for QuickDraft that was unnecessarily modified
+
+===================== RELEASE NOTES 3.11 =====================
+* Forked as previous owner has archived the repo
+* Updated to Python 3.12
+* OTJ Alchemy release on May 7, 2024 moved "Payload" to top-level
+
 ===================== RELEASE NOTES 3.10 =====================
 * Application updates will no longer reset the settings
 * The visibility of the Current Draft display, Deck Source options, Deck filter options, and Refresh button can now be toggled in the settings menu
