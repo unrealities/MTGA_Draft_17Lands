@@ -13,7 +13,7 @@ SolidCompression=yes
 OutputDir={app}
 InfoAfterFile=..\release_notes.txt
 [Files]
-Source: "..\MTGA_Draft_Tool.exe"; DestDir: "{app}"
+Source: "..\dist\MTGA_Draft_Tool.exe"; DestDir: "{app}"
 Source: "..\README.md"; DestDir: "{app}"
 Source: "..\release_notes.txt"; DestDir: "{app}"
 Source: "..\dark_mode.tcl"; DestDir: "{app}"
