@@ -26,7 +26,7 @@ jobs:
       run: python -m PyInstaller  main.py --onefile --noconsole -n MTGA_Draft_Tool --clean
       
     - name: Build installer
-      run: iscc /OOutputDir /FOutputDir/setup.exe ./builder/Installer.iss
+      run: iscc ./builder/Installer.iss
       
     - name: Upload installer
       uses: actions/upload-artifact@v4
