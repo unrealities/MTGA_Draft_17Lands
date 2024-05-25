@@ -31,5 +31,5 @@ jobs:
     - name: Upload installer
       uses: actions/upload-artifact@v4
       with: 
-        name: setup.exe
-        path: ./dist
+        name: MTGA_Draft_17Lands_Installer
+        path: ./builder/output
