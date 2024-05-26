@@ -1,5 +1,5 @@
 ===================== RELEASE NOTES 3.18 =====================
-* 
+* Include Windows executable build to help avoid flagged windows builds
 
 ===================== RELEASE NOTES 3.17 =====================
 * Fix Taken Cards not displaying
