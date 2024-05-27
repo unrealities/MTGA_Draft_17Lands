@@ -16,7 +16,8 @@ from PIL import Image, ImageTk, ImageFont
 from src.configuration import read_configuration, write_configuration, reset_configuration
 from src.limited_sets import LimitedSets
 from src.log_scanner import ArenaScanner
-from src.file_extractor import FileExtractor, search_arena_log_locations, retrieve_arena_directory, retrieve_local_set_list 
+from src.file_extractor import FileExtractor, search_arena_log_locations, retrieve_arena_directory
+from src.utils import retrieve_local_set_list
 from src import constants
 from src.logger import create_logger
 from src.app_update import AppUpdate
@@ -1807,11 +1808,11 @@ class Overlay(ScaledWindow):
 
             sets = self.limited_sets.data
 
-            headers = {"SET": {"width": .20, "anchor": tkinter.W},
-                       "DRAFT": {"width": .20, "anchor": tkinter.CENTER},
+            headers = {"SET": {"width": .30, "anchor": tkinter.W},
+                       "EVENT": {"width": .20, "anchor": tkinter.CENTER},
+                       "USER GROUP": {"width": .10, "anchor": tkinter.CENTER},
                        "START DATE": {"width": .20, "anchor": tkinter.CENTER},
-                       "END DATE": {"width": .20, "anchor": tkinter.CENTER},
-                       "USER GROUP": {"width": .20, "anchor": tkinter.CENTER}}
+                       "END DATE": {"width": .20, "anchor": tkinter.CENTER}}
 
             list_box_frame = tkinter.Frame(popup)
             list_box_scrollbar = tkinter.Scrollbar(
@@ -1843,7 +1844,7 @@ class Overlay(ScaledWindow):
                               style="SetOptions.TLabel",
                               anchor="e")
             group_label = Label(popup,
-                                text="Group:",
+                                text="User Group:",
                                 style="SetOptions.TLabel",
                                 anchor="e")
             draft_choices = constants.LIMITED_TYPE_LIST
@@ -1899,12 +1900,13 @@ class Overlay(ScaledWindow):
 
             event_separator = Separator(popup, orient='vertical')
             set_separator = Separator(popup, orient='vertical')
+            group_separator = Separator(popup, orient='vertical')
 
-            notice_label.grid(row=0, column=0, columnspan=12, sticky='nsew')
-            list_box_frame.grid(row=1, column=0, columnspan=12, sticky='nsew')
-            add_button.grid(row=3, column=0, columnspan=12, sticky='nsew')
-            progress.grid(row=4, column=0, columnspan=12, sticky='nsew')
-            status_label.grid(row=5, column=0, columnspan=12, sticky='nsew')
+            notice_label.grid(row=0, column=0, columnspan=13, sticky='nsew')
+            list_box_frame.grid(row=1, column=0, columnspan=13, sticky='nsew')
+            add_button.grid(row=3, column=0, columnspan=13, sticky='nsew')
+            progress.grid(row=4, column=0, columnspan=13, sticky='nsew')
+            status_label.grid(row=5, column=0, columnspan=13, sticky='nsew')
             
             set_label.grid(row=2, column=0, sticky='nsew')
             set_entry.grid(row=2, column=1, sticky='nsew')
@@ -1912,12 +1914,13 @@ class Overlay(ScaledWindow):
             event_label.grid(row=2, column=3, sticky='nsew')
             event_entry.grid(row=2, column=4, sticky='nsew')
             event_separator.grid(row=2, column=5, sticky='nsew')
-            start_label.grid(row=2, column=6, sticky='nsew')
-            start_entry.grid(row=2, column=7, sticky='nsew')
-            end_label.grid(row=2, column=8, sticky='nsew')
-            end_entry.grid(row=2, column=9, sticky='nsew')
-            group_label.grid(row=2, column=10, sticky='nsew')
-            group_entry.grid(row=2, column=11, sticky='nsew')
+            group_label.grid(row=2, column=6, sticky='nsew')
+            group_entry.grid(row=2, column=7, sticky='nsew')
+            group_separator.grid(row=2, column=8, sticky='nsew')
+            start_label.grid(row=2, column=9, sticky='nsew')
+            start_entry.grid(row=2, column=10, sticky='nsew')
+            end_label.grid(row=2, column=11, sticky='nsew')
+            end_entry.grid(row=2, column=12, sticky='nsew')
 
             list_box.pack(expand=True, fill="both")
 
@@ -2856,7 +2859,12 @@ class Overlay(ScaledWindow):
         for row in list_box.get_children():
             list_box.delete(row)
         self.root.update()
-        file_list = retrieve_local_set_list(sets)
+        set_codes = [v.seventeenlands[0] for v in sets.values()]
+        set_names = sets.keys()
+        file_list, error_string = retrieve_local_set_list(set_codes, set_names)
+        
+        if error_string:
+            logger.error(error_string)
 
         if file_list:
             list_box.config(height=min(len(file_list), 10))
@@ -2864,7 +2872,7 @@ class Overlay(ScaledWindow):
             list_box.config(height=0)
 
         # Sort list by end date
-        file_list.sort(key=lambda x: x[3], reverse=True)
+        file_list.sort(key=lambda x: x[4], reverse=True)
 
         for count, file in enumerate(file_list):
             row_tag = identify_table_row_tag(False, "", count)
