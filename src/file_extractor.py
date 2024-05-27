@@ -83,12 +83,12 @@ def retrieve_local_set_list(sets):
     for file in os.listdir(constants.SETS_FOLDER):
         try:
             name_segments = file.split("_")
-            if len(name_segments) == 3:
-
+            if len(name_segments) == 4:
                 if ((name_segments[0].upper() in main_sets) and
                     (name_segments[1] in constants.LIMITED_TYPES_DICT) and
-                        (name_segments[2] == constants.SET_FILE_SUFFIX)):
-
+                    (name_segments[2] in constants.LIMITED_GROUPS_LIST) and
+                    (name_segments[3] == constants.SET_FILE_SUFFIX)):
+                    
                     set_name = list(sets.keys())[list(
                         main_sets).index(name_segments[0].upper())]
                     result, json_data = check_file_integrity(
@@ -101,10 +101,9 @@ def retrieve_local_set_list(sets):
                             start_date = json_data["meta"]["start_date"]
                             end_date = json_data["meta"]["end_date"]
                         file_list.append(
-                            (set_name, name_segments[1], start_date, end_date))
+                                (set_name, name_segments[1], start_date, end_date, name_segments[2]))
         except Exception as error:
             logger.error(error)
-
     return file_list
 
 
@@ -278,6 +277,7 @@ class FileExtractor:
         self.session = ""
         self.start_date = ""
         self.end_date = ""
+        self.user_group = ""
         self.directory = directory
         self.context: ssl.SSLContext = ssl.SSLContext(protocol=ssl.PROTOCOL_TLS_CLIENT)
         self.context.load_default_certs()
@@ -320,6 +320,13 @@ class FileExtractor:
             self.end_date = end_date
             self.combined_data["meta"]["end_date"] = self.end_date
         return result
+    
+    def set_user_group(self, user_group):
+        '''Sets the user_group filter in a set file (all/bottom/middle/top)'''
+        if user_group in constants.LIMITED_GROUPS_LIST:
+            self.user_group = user_group
+        else:
+            self.user_group = "all"           
 
     def set_version(self, version):
         '''Sets the version in a set file'''
@@ -413,6 +420,8 @@ class FileExtractor:
             if constants.LOCAL_DATA_FOLDER_PATH_LINUX:
                 directory = constants.LOCAL_DATA_FOLDER_PATH_LINUX
                 paths = [os.path.join(directory, constants.LOCAL_DOWNLOADS_DATA)]
+            else:
+                paths = [] # program was giving errors on WSL without this
         else:
             if not self.directory:
                 path_list = [constants.WINDOWS_DRIVES, constants.WINDOWS_PROGRAM_FILES, [
@@ -796,8 +805,11 @@ class FileExtractor:
                     try:
                         status.set(f"Collecting {color} 17Lands Data")
                         root.update()
-                        url = f"https://www.17lands.com/card_ratings/data?expansion={set_code}&format={self.draft}&start_date={self.start_date}&end_date={self.end_date}"
-
+                        if self.user_group == "all":
+                            user_group = ""
+                        else:
+                            user_group = "&user_group=" + self.user_group
+                        url = f"https://www.17lands.com/card_ratings/data?expansion={set_code}&format={self.draft}&start_date={self.start_date}&end_date={self.end_date}{user_group}"
                         if color != constants.FILTER_OPTION_ALL_DECKS:
                             url += "&colors=" + color
                         url_data = urllib.request.urlopen(
@@ -843,7 +855,11 @@ class FileExtractor:
     def retrieve_17lands_color_ratings(self):
         '''Use 17Lands endpoint to collect the data from the color_ratings page'''
         try:
-            url = f"https://www.17lands.com/color_ratings/data?expansion={self.selected_sets.seventeenlands[0]}&event_type={self.draft}&start_date={self.start_date}&end_date={self.end_date}&combine_splash=true"
+            if self.user_group == "all":
+                user_group = ""
+            else:
+                user_group = "&user_group=" + self.user_group
+            url = f"https://www.17lands.com/color_ratings/data?expansion={self.selected_sets.seventeenlands[0]}&event_type={self.draft}&start_date={self.start_date}&end_date={self.end_date}{user_group}&combine_splash=true"
             url_data = urllib.request.urlopen(url, context=self.context).read()
 
             color_json_data = json.loads(url_data)
@@ -878,7 +894,7 @@ class FileExtractor:
                               (key == constants.DATA_FIELD_ALSA)):
                             color_data[colors][key] = round(float(card[value] if card[value] else 0.0), 2)
                         else:
-                            color_data[colors][key] = int(card[value])
+                            color_data[colors][key] = int(card[value] if card[value] else 0)
 
                 card_name = card[constants.DATA_FIELD_NAME]
 
@@ -1023,7 +1039,7 @@ class FileExtractor:
         result = True
         try:
             output_file = "_".join(
-                (self.selected_sets.seventeenlands[0], self.draft, constants.SET_FILE_SUFFIX))
+                (self.selected_sets.seventeenlands[0], self.draft, self.user_group, constants.SET_FILE_SUFFIX))
             location = os.path.join(constants.SETS_FOLDER, output_file)
 
             with open(location, 'w', encoding="utf-8", errors="replace") as file:
