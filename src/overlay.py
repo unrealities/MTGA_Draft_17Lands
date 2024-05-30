@@ -16,7 +16,8 @@ from PIL import Image, ImageTk, ImageFont
 from src.configuration import read_configuration, write_configuration, reset_configuration
 from src.limited_sets import LimitedSets
 from src.log_scanner import ArenaScanner
-from src.file_extractor import FileExtractor, search_arena_log_locations, retrieve_arena_directory, retrieve_local_set_list 
+from src.file_extractor import FileExtractor, search_arena_log_locations, retrieve_arena_directory
+from src.utils import retrieve_local_set_list
 from src import constants
 from src.logger import create_logger
 from src.app_update import AppUpdate
@@ -1807,8 +1808,9 @@ class Overlay(ScaledWindow):
 
             sets = self.limited_sets.data
 
-            headers = {"SET": {"width": .40, "anchor": tkinter.W},
-                       "DRAFT": {"width": .20, "anchor": tkinter.CENTER},
+            headers = {"SET": {"width": .30, "anchor": tkinter.W},
+                       "EVENT": {"width": .20, "anchor": tkinter.CENTER},
+                       "USER GROUP": {"width": .10, "anchor": tkinter.CENTER},
                        "START DATE": {"width": .20, "anchor": tkinter.CENTER},
                        "END DATE": {"width": .20, "anchor": tkinter.CENTER}}
 
@@ -1841,6 +1843,10 @@ class Overlay(ScaledWindow):
                               text="End Date:",
                               style="SetOptions.TLabel",
                               anchor="e")
+            group_label = Label(popup,
+                                text="User Group:",
+                                style="SetOptions.TLabel",
+                                anchor="e")
             draft_choices = constants.LIMITED_TYPE_LIST
 
             status_text = tkinter.StringVar()
@@ -1867,8 +1873,14 @@ class Overlay(ScaledWindow):
             menu = self.root.nametowidget(set_entry['menu'])
             menu.config(font=self.fonts_dict["All.TMenubutton"])
 
-            set_value.trace("w", lambda *args, start=start_entry, selection=set_value,
+            set_value.trace_add("write", lambda *args, start=start_entry, selection=set_value,
                             set_list=sets: self.__update_set_start_date(start, selection, set_list, *args))
+
+            draft_groups = constants.LIMITED_GROUPS_LIST
+            group_value = tkinter.StringVar(self.root)
+            group_entry = OptionMenu(popup, group_value, draft_groups[0], *draft_groups)
+            menu = self.root.nametowidget(group_entry['menu'])
+            menu.config(font=self.fonts_dict["All.TMenubutton"])
 
             progress = Progressbar(
                 popup, orient=tkinter.HORIZONTAL, length=100, mode='determinate')
@@ -1878,6 +1890,7 @@ class Overlay(ScaledWindow):
                                                                       event_value,
                                                                       start_entry,
                                                                       end_entry,
+                                                                      group_value,
                                                                       add_button,
                                                                       progress,
                                                                       list_box,
@@ -1887,22 +1900,27 @@ class Overlay(ScaledWindow):
 
             event_separator = Separator(popup, orient='vertical')
             set_separator = Separator(popup, orient='vertical')
+            group_separator = Separator(popup, orient='vertical')
 
-            notice_label.grid(row=0, column=0, columnspan=10, sticky='nsew')
-            list_box_frame.grid(row=1, column=0, columnspan=10, sticky='nsew')
+            notice_label.grid(row=0, column=0, columnspan=13, sticky='nsew')
+            list_box_frame.grid(row=1, column=0, columnspan=13, sticky='nsew')
+            add_button.grid(row=3, column=0, columnspan=13, sticky='nsew')
+            progress.grid(row=4, column=0, columnspan=13, sticky='nsew')
+            status_label.grid(row=5, column=0, columnspan=13, sticky='nsew')
+            
             set_label.grid(row=2, column=0, sticky='nsew')
             set_entry.grid(row=2, column=1, sticky='nsew')
             set_separator.grid(row=2, column=2, sticky='nsew')
             event_label.grid(row=2, column=3, sticky='nsew')
             event_entry.grid(row=2, column=4, sticky='nsew')
             event_separator.grid(row=2, column=5, sticky='nsew')
-            start_label.grid(row=2, column=6, sticky='nsew')
-            start_entry.grid(row=2, column=7, sticky='nsew')
-            end_label.grid(row=2, column=8, sticky='nsew')
-            end_entry.grid(row=2, column=9, sticky='nsew')
-            add_button.grid(row=3, column=0, columnspan=10, sticky='nsew')
-            progress.grid(row=4, column=0, columnspan=10, sticky='nsew')
-            status_label.grid(row=5, column=0, columnspan=10, sticky='nsew')
+            group_label.grid(row=2, column=6, sticky='nsew')
+            group_entry.grid(row=2, column=7, sticky='nsew')
+            group_separator.grid(row=2, column=8, sticky='nsew')
+            start_label.grid(row=2, column=9, sticky='nsew')
+            start_entry.grid(row=2, column=10, sticky='nsew')
+            end_label.grid(row=2, column=11, sticky='nsew')
+            end_entry.grid(row=2, column=12, sticky='nsew')
 
             list_box.pack(expand=True, fill="both")
 
@@ -2763,7 +2781,7 @@ class Overlay(ScaledWindow):
         except Exception as error:
             logger.error(error)
 
-    def __add_set(self, popup, draft_set, draft, start, end, button, progress, list_box, sets, status, version):
+    def __add_set(self, popup, draft_set, draft, start, end, user_group, button, progress, list_box, sets, status, version):
         '''Initiates the set download process when the Add Set button is clicked'''
         result = True
         result_string = ""
@@ -2790,6 +2808,7 @@ class Overlay(ScaledWindow):
                     result = False
                     result_string = "Invalid End Date (YYYY-MM-DD)"
                     break
+                self.extractor.set_user_group(user_group.get())
                 self.extractor.set_version(version)
                 status.set("Downloading Color Ratings")
                 self.extractor.retrieve_17lands_color_ratings()
@@ -2840,7 +2859,13 @@ class Overlay(ScaledWindow):
         for row in list_box.get_children():
             list_box.delete(row)
         self.root.update()
-        file_list = retrieve_local_set_list(sets)
+        set_codes = [v.seventeenlands[0] for v in sets.values()]
+        set_names = sets.keys()
+        file_list, error_list = retrieve_local_set_list(set_codes, set_names)
+        
+        # Log all of errors generated by retrieve_local_set_list
+        for error_string in error_list:
+            logger.error(error_string)
 
         if file_list:
             list_box.config(height=min(len(file_list), 10))
@@ -2848,7 +2873,7 @@ class Overlay(ScaledWindow):
             list_box.config(height=0)
 
         # Sort list by end date
-        file_list.sort(key=lambda x: x[3], reverse=True)
+        file_list.sort(key=lambda x: x[4], reverse=True)
 
         for count, file in enumerate(file_list):
             row_tag = identify_table_row_tag(False, "", count)

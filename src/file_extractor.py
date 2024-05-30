@@ -1,7 +1,5 @@
 """This module contains the functions and classes that are used for building the set files and communicating with platforms"""
-from enum import Enum
 from urllib.parse import quote as urlencode
-from typing import Tuple
 import sys
 import os
 import time
@@ -12,9 +10,9 @@ import ssl
 import itertools
 import re
 import sqlite3
-import copy
 from src import constants
 from src.logger import create_logger
+from src.utils import Result, check_file_integrity
 
 logger = create_logger()
 
@@ -26,14 +24,6 @@ if not os.path.exists(constants.TIER_FOLDER):
 
 if not os.path.exists(constants.TEMP_FOLDER):
     os.makedirs(constants.TEMP_FOLDER)
-
-
-class Result(Enum):
-    '''Enumeration class for file integrity results'''
-    VALID = 0
-    ERROR_MISSING_FILE = 1
-    ERROR_UNREADABLE_FILE = 2
-
 
 def initialize_card_data(card_data):
     card_data[constants.DATA_FIELD_DECK_COLORS] = {}
@@ -74,39 +64,6 @@ def decode_mana_cost(encoded_cost):
         decoded_cost = "".join(f"{{{x}}}" for x in sections)
 
     return decoded_cost, cmc
-
-
-def retrieve_local_set_list(sets):
-    '''Scans the Sets folder and returns a list of valid set files'''
-    file_list = []
-    main_sets = [v.seventeenlands[0] for k, v in sets.items()]
-    for file in os.listdir(constants.SETS_FOLDER):
-        try:
-            name_segments = file.split("_")
-            if len(name_segments) == 3:
-
-                if ((name_segments[0].upper() in main_sets) and
-                    (name_segments[1] in constants.LIMITED_TYPES_DICT) and
-                        (name_segments[2] == constants.SET_FILE_SUFFIX)):
-
-                    set_name = list(sets.keys())[list(
-                        main_sets).index(name_segments[0].upper())]
-                    result, json_data = check_file_integrity(
-                        os.path.join(constants.SETS_FOLDER, file))
-                    if result == Result.VALID:
-                        if json_data["meta"]["version"] == 1:
-                            start_date, end_date = json_data["meta"]["date_range"].split(
-                                "->")
-                        else:
-                            start_date = json_data["meta"]["start_date"]
-                            end_date = json_data["meta"]["end_date"]
-                        file_list.append(
-                            (set_name, name_segments[1], start_date, end_date))
-        except Exception as error:
-            logger.error(error)
-
-    return file_list
-
 
 def search_arena_log_locations(input_location=None):
     '''Searches local directories for the location of the Arena Player.log file'''
@@ -218,56 +175,6 @@ def check_date(date):
         result = False
     return result
 
-
-def check_file_integrity(filename):
-    '''Extracts data from a file to determine if it's formatted correctly'''
-    result = Result.VALID
-    json_data = {}
-
-    try:
-        with open(filename, 'r', encoding="utf-8", errors="replace") as json_file:
-            json_data = json_file.read()
-    except FileNotFoundError:
-        return Result.ERROR_MISSING_FILE, json_data
-
-    try:
-        json_data = json.loads(json_data)
-
-        if json_data.get("meta"):
-            meta = json_data["meta"]
-            version = meta.get("version")
-            if version == 1:
-                meta.get("date_range", "").split("->")
-            else:
-                meta.get("start_date")
-                meta.get("end_date")
-        else:
-            return Result.ERROR_UNREADABLE_FILE, json_data
-
-        cards = json_data.get("card_ratings")
-        if isinstance(cards, dict) and len(cards) >= 100:
-            for card in cards.values():
-                card.get(constants.DATA_FIELD_NAME)
-                card.get(constants.DATA_FIELD_COLORS)
-                card.get(constants.DATA_FIELD_CMC)
-                card.get(constants.DATA_FIELD_TYPES)
-                card.get("mana_cost")
-                card.get(constants.DATA_SECTION_IMAGES)
-                deck_colors = card.get(constants.DATA_FIELD_DECK_COLORS, {}).get(
-                    constants.FILTER_OPTION_ALL_DECKS, {})
-                deck_colors.get(constants.DATA_FIELD_GIHWR)
-                deck_colors.get(constants.DATA_FIELD_ALSA)
-                deck_colors.get(constants.DATA_FIELD_IWD)
-                break
-        else:
-            return Result.ERROR_UNREADABLE_FILE, json_data
-
-    except json.JSONDecodeError:
-        return Result.ERROR_UNREADABLE_FILE, json_data
-
-    return result, json_data
-
-
 class FileExtractor:
     '''Class that handles the creation of set files and the retrieval of platform information'''
 
@@ -278,6 +185,7 @@ class FileExtractor:
         self.session = ""
         self.start_date = ""
         self.end_date = ""
+        self.user_group = ""
         self.directory = directory
         self.context: ssl.SSLContext = ssl.SSLContext(protocol=ssl.PROTOCOL_TLS_CLIENT)
         self.context.load_default_certs()
@@ -320,6 +228,13 @@ class FileExtractor:
             self.end_date = end_date
             self.combined_data["meta"]["end_date"] = self.end_date
         return result
+    
+    def set_user_group(self, user_group):
+        '''Sets the user_group filter in a set file (all/bottom/middle/top)'''
+        if user_group in constants.LIMITED_GROUPS_LIST:
+            self.user_group = user_group
+        else:
+            self.user_group = constants.LIMITED_USER_GROUP_ALL       
 
     def set_version(self, version):
         '''Sets the version in a set file'''
@@ -413,6 +328,8 @@ class FileExtractor:
             if constants.LOCAL_DATA_FOLDER_PATH_LINUX:
                 directory = constants.LOCAL_DATA_FOLDER_PATH_LINUX
                 paths = [os.path.join(directory, constants.LOCAL_DOWNLOADS_DATA)]
+            else:
+                paths = [] # program was giving errors on WSL without this
         else:
             if not self.directory:
                 path_list = [constants.WINDOWS_DRIVES, constants.WINDOWS_PROGRAM_FILES, [
@@ -635,7 +552,7 @@ class FileExtractor:
         card_text = {}
         try:
             # Retrieve the title (card name) for each of the collected arena IDs
-            card_text = {x[constants.LOCAL_DATABASE_LOCALIZATION_COLUMN_ID]                         : x[constants.LOCAL_DATABASE_LOCALIZATION_COLUMN_TEXT] for x in data}
+            card_text = {x[constants.LOCAL_DATABASE_LOCALIZATION_COLUMN_ID]: x[constants.LOCAL_DATABASE_LOCALIZATION_COLUMN_TEXT] for x in data}
 
         except Exception as error:
             result = False
@@ -796,8 +713,11 @@ class FileExtractor:
                     try:
                         status.set(f"Collecting {color} 17Lands Data")
                         root.update()
-                        url = f"https://www.17lands.com/card_ratings/data?expansion={set_code}&format={self.draft}&start_date={self.start_date}&end_date={self.end_date}"
-
+                        if self.user_group == constants.LIMITED_USER_GROUP_ALL:
+                            user_group = ""
+                        else:
+                            user_group = "&user_group=" + self.user_group.lower()
+                        url = f"https://www.17lands.com/card_ratings/data?expansion={set_code}&format={self.draft}&start_date={self.start_date}&end_date={self.end_date}{user_group}"
                         if color != constants.FILTER_OPTION_ALL_DECKS:
                             url += "&colors=" + color
                         url_data = urllib.request.urlopen(
@@ -843,7 +763,11 @@ class FileExtractor:
     def retrieve_17lands_color_ratings(self):
         '''Use 17Lands endpoint to collect the data from the color_ratings page'''
         try:
-            url = f"https://www.17lands.com/color_ratings/data?expansion={self.selected_sets.seventeenlands[0]}&event_type={self.draft}&start_date={self.start_date}&end_date={self.end_date}&combine_splash=true"
+            if self.user_group == constants.LIMITED_USER_GROUP_ALL:
+                user_group = ""
+            else:
+                user_group = "&user_group=" + self.user_group.lower()
+            url = f"https://www.17lands.com/color_ratings/data?expansion={self.selected_sets.seventeenlands[0]}&event_type={self.draft}&start_date={self.start_date}&end_date={self.end_date}{user_group}&combine_splash=true"
             url_data = urllib.request.urlopen(url, context=self.context).read()
 
             color_json_data = json.loads(url_data)
@@ -878,7 +802,7 @@ class FileExtractor:
                               (key == constants.DATA_FIELD_ALSA)):
                             color_data[colors][key] = round(float(card[value] if card[value] else 0.0), 2)
                         else:
-                            color_data[colors][key] = int(card[value])
+                            color_data[colors][key] = int(card[value] if card[value] else 0)
 
                 card_name = card[constants.DATA_FIELD_NAME]
 
@@ -1023,7 +947,7 @@ class FileExtractor:
         result = True
         try:
             output_file = "_".join(
-                (self.selected_sets.seventeenlands[0], self.draft, constants.SET_FILE_SUFFIX))
+                (self.selected_sets.seventeenlands[0], self.draft, self.user_group, constants.SET_FILE_SUFFIX))
             location = os.path.join(constants.SETS_FOLDER, output_file)
 
             with open(location, 'w', encoding="utf-8", errors="replace") as file:
