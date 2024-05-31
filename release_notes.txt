@@ -1,3 +1,6 @@
+===================== RELEASE NOTES 3.19 =====================
+* TBD
+
 ===================== RELEASE NOTES 3.18 =====================
 * FiYir added Windows executable build to help avoid flagged windows builds
 * leCoq42 added a user group drop-down and column to the 'Add Sets' window
