@@ -1,6 +1,7 @@
 import statistics as stats
 from typing import Tuple
 from pydantic import BaseModel
+from src.dataset import Dataset
 from src.constants import (
     DECK_COLORS,
     DATA_FIELD_NAME,
@@ -16,10 +17,10 @@ class SetMetrics:
     """
     This class is used to calculate the mean, standard deviation for a MTG set dataset.
     """
-    def __init__(self, set_data: dict, digits: int = 2):
+    def __init__(self, dataset: Dataset, digits: int = 2):
         self._color_metrics: dict = {}
         self._digits: int = digits
-        self.generate_metrics(set_data)
+        self.generate_metrics(dataset)
 
     def get_metrics(self, color: str, field: str) -> Tuple[float, float]:
         """
@@ -43,20 +44,20 @@ class SetMetrics:
 
         return percentile
 
-    def generate_metrics(self, set_data: dict) -> None:
+    def generate_metrics(self, dataset: Dataset) -> None:
         """
         Calculate the mean and standard deviation for all of the supported colors and win rate fields
         """
-        if not set_data:
+        if not dataset:
             return
 
         # Iterate over the supported colors and generate the metrics for each color
         for field in WIN_RATE_OPTIONS:
             self._color_metrics[field] = {}
             for color in DECK_COLORS:
-                self._color_metrics[field][color] = self.generate_color_metrics(color, field, set_data)
+                self._color_metrics[field][color] = self.generate_color_metrics(color, field, dataset)
 
-    def generate_color_metrics(self, color: str, field: str, set_data: dict) -> ColorMetrics:
+    def generate_color_metrics(self, color: str, field: str, dataset: Dataset) -> ColorMetrics:
         """
         Calculate the mean and standard deviation for a specific color and field
         """
@@ -64,9 +65,13 @@ class SetMetrics:
 
         processed_cards = []
         unique_gihwr = []
-
+        dataset = dataset.get_card_ratings()
+        
+        if not dataset:
+            return metrics
+            
         # Iterate over the card list and retrieve the GIHWR for unique cards (remove duplicates and 0.0 values)
-        for card_data in set_data["card_ratings"].values():
+        for card_data in dataset.values():
             card_name = card_data[DATA_FIELD_NAME]
             # Check if the card name is not already in the processed_cards list
             if card_name not in processed_cards:

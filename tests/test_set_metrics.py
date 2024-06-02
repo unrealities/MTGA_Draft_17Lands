@@ -2,6 +2,7 @@ import pytest
 import os
 import json
 from src.set_metrics import SetMetrics
+from src.dataset import Dataset
 from src.constants import (
     DATA_FIELD_GIHWR,
     DATA_FIELD_OHWR,
@@ -108,19 +109,15 @@ OTJ_PREMIER_EXPECTED_RESULTS = [
 
 @pytest.fixture(name="mkm_premier", scope="module")
 def fixture_mkm_premier():
-    set_data = {}
-    with open(MKM_PREMIER_SNAPSHOT, 'r', encoding="utf-8", errors="replace") as json_file:
-        set_data = json.loads(json_file.read())
-        
-    return SetMetrics(set_data, 1)
+    dataset = Dataset()
+    dataset.open_file(MKM_PREMIER_SNAPSHOT)
+    return SetMetrics(dataset, 1)
     
 @pytest.fixture(name="otj_premier", scope="module")
 def fixture_otj_premier():
-    set_data = {}
-    with open(OTJ_PREMIER_SNAPSHOT, 'r', encoding="utf-8", errors="replace") as json_file:
-        set_data = json.loads(json_file.read())
-        
-    return SetMetrics(set_data, 1)
+    dataset = Dataset()
+    dataset.open_file(OTJ_PREMIER_SNAPSHOT)
+    return SetMetrics(dataset, 1)
     
 @pytest.fixture(name="missing_set", scope="module")
 def fixture_missing_set():

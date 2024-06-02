@@ -1002,8 +1002,7 @@ class Overlay(ScaledWindow):
             if self.compare_table is None or self.compare_list is None:
                 return
 
-            card_list = self.draft.set_data["card_ratings"] if self.draft.set_data else [
-            ]
+            card_list = self.draft.set_data.get_card_ratings()
 
             taken_cards = self.draft.retrieve_taken_cards()
 
@@ -1970,10 +1969,9 @@ class Overlay(ScaledWindow):
 
             card_frame = tkinter.Frame(popup)
             set_card_names = []
+            set_data = self.draft.set_data.get_card_ratings()
 
-            if self.draft.set_data:
-                set_data = self.draft.set_data["card_ratings"]
-
+            if set_data:
                 set_card_names = [v[constants.DATA_FIELD_NAME]
                                   for k, v in set_data.items()]
 
