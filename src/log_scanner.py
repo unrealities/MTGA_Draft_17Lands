@@ -11,6 +11,7 @@ from src.logger import create_logger
 from src.utils import process_json, json_find
 from src.set_metrics import SetMetrics
 from src.utils import Result, check_file_integrity, retrieve_local_set_list
+from src.dataset import Dataset
 
 if not os.path.exists(constants.DRAFT_LOG_FOLDER):
     os.makedirs(constants.DRAFT_LOG_FOLDER)
@@ -30,12 +31,9 @@ class ArenaScanner:
         self.sets_location = sets_location
 
         self.logging_enabled = False
-
-        # The retrieve_card_data method will return cards that are not in the 17Lands dataset
-        self.retrieve_unknown = retrieve_unknown
         
         self.step_through = step_through
-        self.set_data = None
+        self.set_data = Dataset(retrieve_unknown)
         self.draft_type = constants.LIMITED_TYPE_UNKNOWN
         self.pick_offset = 0
         self.pack_offset = 0
@@ -54,20 +52,6 @@ class ArenaScanner:
         self.file_size = 0
         self.data_source = "None"
         self.event_string = ""
-        
-
-    def retrieve_card_data(self, set_data, card):
-        card_data = []
-        if (set_data is not None) and (card in set_data["card_ratings"]):
-            card_data.append(set_data["card_ratings"][card])
-        elif self.retrieve_unknown:
-            empty_dict = {constants.DATA_FIELD_NAME: card,
-                        constants.DATA_FIELD_MANA_COST: "",
-                        constants.DATA_FIELD_TYPES: [],
-                        constants.DATA_SECTION_IMAGES: []}
-            FE.initialize_card_data(empty_dict)
-            card_data.append(empty_dict)
-        return card_data
 
     def set_arena_file(self, filename):
         '''Public function that's used for storing the location of the Player.log file'''
@@ -108,7 +92,7 @@ class ArenaScanner:
             self.search_offset = 0
             self.draft_start_offset = 0
             self.file_size = 0
-        self.set_data = None
+        self.set_data.clear()
         self.draft_type = constants.LIMITED_TYPE_UNKNOWN
         self.pick_offset = 0
         self.pack_offset = 0
@@ -1000,13 +984,10 @@ class ArenaScanner:
     def retrieve_set_data(self, file):
         '''Retrieve set data from the set data files'''
         result = Result.ERROR_MISSING_FILE
-        self.set_data = None
+        self.set_data.clear()
 
         try:
-            result, json_data = check_file_integrity(file)
-
-            if result == Result.VALID:
-                self.set_data = json_data
+            result = self.set_data.open_file(file)
 
         except Exception as error:
             logger.error(error)
@@ -1029,15 +1010,16 @@ class ArenaScanner:
             deck_colors[colors] = deck_color
 
         try:
-            if self.set_data:
-                for colors in self.set_data["color_ratings"]:
+            color_ratings = self.set_data.get_color_ratings()
+            if color_ratings:
+                for colors in color_ratings:
                     for deck_color in deck_colors:
                         if (len(deck_color) == len(colors)) and set(deck_color).issubset(colors):
                             filter_label = deck_color
                             if (label_type == constants.DECK_FILTER_FORMAT_NAMES) and (deck_color in constants.COLOR_NAMES_DICT):
                                 filter_label = constants.COLOR_NAMES_DICT[deck_color]
                             ratings_string = filter_label + \
-                                f' ({self.set_data["color_ratings"][colors]}%)'
+                                f' ({color_ratings[colors]}%)'
                             deck_colors[deck_color] = ratings_string
         except Exception as error:
             logger.error(error)
@@ -1049,18 +1031,14 @@ class ArenaScanner:
 
     def retrieve_current_picked_cards(self):
         '''Return the card data for the card that was picked from the current pack'''
-        pickeds_card = []
+        picked_cards = []
 
         pack_index = max(self.current_pick - 1, 0) % 8
 
         if pack_index < len(self.picked_cards):
-            for card in self.picked_cards[pack_index]:
-                try:
-                    pickeds_card.extend(self.retrieve_card_data(self.set_data, card))
-                except Exception as error:
-                    logger.error(error)
+            picked_cards = self.set_data.get_data_by_id(self.picked_cards[pack_index])
 
-        return pickeds_card
+        return picked_cards
 
     def retrieve_current_missing_cards(self):
         '''Retrieve a list of missing cards from the current pack'''
@@ -1080,8 +1058,7 @@ class ArenaScanner:
             # Identify the missing cards by removing the taken card and the current cards from the initial pack
             card_list = [
                 x for x in initial_pack_cards if x not in current_pack_cards]
-            for card in card_list:
-                missing_cards.extend(self.retrieve_card_data(self.set_data, card))
+            missing_cards = self.set_data.get_data_by_id(card_list)
         except Exception as error:
             logger.error(error)
 
@@ -1094,17 +1071,13 @@ class ArenaScanner:
         pack_index = max(self.current_pick - 1, 0) % 8
 
         if pack_index < len(self.pack_cards):
-            for card in self.pack_cards[pack_index]:
-                pack_cards.extend(self.retrieve_card_data(self.set_data, card))
+            pack_cards = self.set_data.get_data_by_id(self.pack_cards[pack_index])
 
         return pack_cards
 
     def retrieve_taken_cards(self):
         '''Return the card data for all of the cards that were picked during the draft'''
-        taken_cards = []
-
-        for card in self.taken_cards:
-            taken_cards.extend(self.retrieve_card_data(self.set_data, card))
+        taken_cards = self.set_data.get_data_by_id(self.taken_cards)
         return taken_cards
 
     def retrieve_tier_data(self, files):

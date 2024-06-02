@@ -5,6 +5,7 @@ from src import constants
 from src.set_metrics import SetMetrics
 from src.configuration import Configuration, Settings
 from src.card_logic import CardResult
+from src.dataset import Dataset
 
 # 17Lands OTJ data from 2024-4-16 to 2024-5-3
 OTJ_PREMIER_SNAPSHOT = os.path.join(os.getcwd(), "tests", "data","OTJ_PremierDraft_Data_2024_5_3.json")
@@ -78,13 +79,11 @@ def fixture_card_result():
     
 @pytest.fixture(name="otj_premier", scope="module")
 def fixture_otj_premier():
-    with open(OTJ_PREMIER_SNAPSHOT, 'r', encoding="utf-8", errors="replace") as json_file:
-        set_data = json.loads(json_file.read())
-        set_metrics = SetMetrics(set_data, 2)
-        # Remove the arena ID part of the dictionary and make the card name the key
-        transformed_data = {v["name"]: v for v in set_data["card_ratings"].values()}
+    dataset = Dataset()
+    dataset.open_file(OTJ_PREMIER_SNAPSHOT)
+    set_metrics = SetMetrics(dataset, 2)
         
-    return set_metrics, transformed_data
+    return set_metrics, dataset
     
 #The card data is pulled from the JSON set files downloaded from 17Lands, excluding the fake card
 @pytest.mark.parametrize("card_list, expected_tier",TIER_TESTS)
@@ -96,12 +95,13 @@ def test_tier_results(card_result, card_list, expected_tier):
     
 @pytest.mark.parametrize("card_name, colors, field, expected_grade", OTJ_GRADE_TESTS)
 def test_otj_grades(otj_premier, card_name, colors, field, expected_grade):
-    metrics, transformed_data = otj_premier
-    assert card_name in transformed_data
+    metrics, dataset = otj_premier
+    data_list = dataset.get_data_by_name([card_name])
+    assert data_list
     
     config = Configuration(settings=Settings(result_format=constants.RESULT_FORMAT_GRADE))
     results = CardResult(metrics, None, config, 2)
-    card_data = transformed_data[card_name]
+    card_data = data_list[0]
     result_list = results.return_results([card_data], [colors],  {"Column1" : field})
     
     assert result_list[0]["results"][0] == expected_grade
