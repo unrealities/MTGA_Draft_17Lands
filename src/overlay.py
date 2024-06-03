@@ -17,7 +17,7 @@ from src.configuration import read_configuration, write_configuration, reset_con
 from src.limited_sets import LimitedSets
 from src.log_scanner import ArenaScanner
 from src.file_extractor import FileExtractor, search_arena_log_locations, retrieve_arena_directory
-from src.utils import retrieve_local_set_list
+from src.utils import capture_screen_base64str, retrieve_local_set_list
 from src import constants
 from src.logger import create_logger
 from src.app_update import AppUpdate
@@ -1731,6 +1731,10 @@ class Overlay(ScaledWindow):
                 event_type == constants.LIMITED_TYPE_STRING_TRAD_SEALED:
             self.__open_taken_cards_window()
 
+        # Make OCR request if no pack_cards and P1P1
+        if current_pack == 1 and current_pick == 1 and len(pack_cards) == 0:
+            self.__update_p1p1()
+
     def __update_deck_stats_callback(self, *_):
         '''Callback function that updates the Deck Stats table in the main window'''
         self.root.update_idletasks()
@@ -3030,6 +3034,11 @@ class Overlay(ScaledWindow):
                 self.trace_ids = []
         except Exception as error:
             logger.error(error)
+
+    def __update_p1p1(self):
+        '''Take screenshot of MTGA and sent to cloud function to process via OCR and return list of p1p1 cards'''
+        iamge = capture_screen_base64str()
+        # TODO: get card names
 
     def __reset_draft(self, full_reset):
         '''Clear all of the stored draft data (i.e., draft type, draft set, collected cards, etc.)'''
