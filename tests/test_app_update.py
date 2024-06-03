@@ -3,7 +3,7 @@ import os
 import sys
 from src.app_update import AppUpdate
 
-EXPECTED_OLD_VERSION_STRING = "0317"
+EXPECTED_OLD_VERSION_STRING = "0318"
 
 @pytest.fixture
 def app_update():
@@ -15,7 +15,7 @@ def invalid_search_location():
 
 @pytest.fixture
 def valid_search_location_old():
-    return "https://api.github.com/repos/unrealities/MTGA_Draft_17Lands/releases/157155262"
+    return "https://api.github.com/repos/unrealities/MTGA_Draft_17Lands/releases/158211650"
 
 @pytest.fixture
 def valid_search_location_latest():
@@ -27,7 +27,7 @@ def invalid_input_url():
 
 @pytest.fixture
 def valid_input_url_zip():
-    return "https://github.com/unrealities/MTGA_Draft_17Lands/releases/download/MTGA_Draft_Tool_V0317/MTGA_Draft_Tool_V0317.zip"
+    return "https://github.com/unrealities/MTGA_Draft_17Lands/releases/download/MTGA_Draft_Tool_V0318/MTGA_Draft_Tool_V0318.zip"
     
 @pytest.fixture
 def output_filename():
