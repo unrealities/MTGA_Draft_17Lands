@@ -254,3 +254,17 @@ class Dataset:
             card_ratings = self._dataset["card_ratings"]
             
         return card_ratings
+        
+    def get_all_names(self) -> List[str]:
+        """
+        Returns a list containing all of the unique card names in the dataset
+        
+        Output Example:
+            name_list: ["Another Round","One Last Job", "Crime /// Punishment", "Port Razer", ...]
+        """
+        name_list = []
+        
+        if self._dataset is not None:
+            name_list = list(set([v[DATA_FIELD_NAME] for v in self._dataset["card_ratings"].values()]))
+        
+        return name_list
