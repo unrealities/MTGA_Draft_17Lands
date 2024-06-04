@@ -4,3 +4,4 @@ Pillow==10.3.0
 pynput==1.7.6
 numpy==1.26.4
 pydantic==2.7.1
+requests==2.32.3
