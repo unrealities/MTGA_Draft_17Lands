@@ -9,10 +9,15 @@ import src.card_logic as CL
 import src.file_extractor as FE
 from datetime import datetime
 from src.logger import create_logger
-from src.utils import process_json, json_find
 from src.set_metrics import SetMetrics
-from src.utils import Result, retrieve_local_set_list, capture_screen_base64str
 from src.dataset import Dataset
+from src.utils import (
+    process_json,
+    json_find,
+    Result,
+    retrieve_local_set_list,
+    capture_screen_base64str
+)
 
 if not os.path.exists(constants.DRAFT_LOG_FOLDER):
     os.makedirs(constants.DRAFT_LOG_FOLDER)
@@ -244,19 +249,27 @@ class ArenaScanner:
         return update
         
     def __get_ocr_pack(self):
-
         try:
+            card_names = self.set_data.get_all_names()
+            
+            # Exit if the dataset isn't available
+            if not card_names:
+                return
+        
             data = {
-                "card_names": self.set_data.get_all_names(),
+                "card_names": card_names,
                 "image": capture_screen_base64str()
             }
+            
             url = constants.PACK_PARSER_URL
             headers = {'Content-Type': 'application/json'}
             response = requests.post(url, headers=headers, data=json.dumps(data), timeout=5.0)
             
-            names = json.loads(response.text)
+            # Process the received text to create a list of card names
+            received_names = json.loads(response.text)
+            
             # Convert the card names to Arena IDs so that the existing pack parsing logic can be used
-            pack_cards = self.set_data.get_ids_by_name(names)
+            pack_cards = self.set_data.get_ids_by_name(received_names)
             
             if not pack_cards:
                 return
@@ -273,8 +286,9 @@ class ArenaScanner:
             if (self.current_pack == 0) and (self.current_pick == 0):
                 self.current_pack = 1
                 self.current_pick = 1
+                
         except Exception as error:
-            print(error)
+            logger.error(error)
 
     def __draft_pack_search_premier_p1p1(self):
         '''Parse premier draft string that contains the P1P1 pack data'''
