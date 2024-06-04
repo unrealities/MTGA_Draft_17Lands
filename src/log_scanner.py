@@ -3,6 +3,7 @@ import os
 import json
 import re
 import logging
+import requests
 import src.constants as constants
 import src.card_logic as CL
 import src.file_extractor as FE
@@ -10,7 +11,7 @@ from datetime import datetime
 from src.logger import create_logger
 from src.utils import process_json, json_find
 from src.set_metrics import SetMetrics
-from src.utils import Result, check_file_integrity, retrieve_local_set_list
+from src.utils import Result, retrieve_local_set_list, capture_screen_base64str
 from src.dataset import Dataset
 
 if not os.path.exists(constants.DRAFT_LOG_FOLDER):
@@ -208,11 +209,15 @@ class ArenaScanner:
 
         if self.draft_type == constants.LIMITED_TYPE_DRAFT_PREMIER_V1:
             if len(self.initial_pack[0]) == 0:
+                # Use OCR to retrieve P1P1
+                self.__get_ocr_pack()
+                # Backup - collect the P1P1 cards from the log
                 self.__draft_pack_search_premier_p1p1()
             self.__draft_pack_search_premier_v1()
             self.__draft_picked_search_premier_v1()
         elif self.draft_type == constants.LIMITED_TYPE_DRAFT_PREMIER_V2:
             if len(self.initial_pack[0]) == 0:
+                self.__get_ocr_pack()
                 self.__draft_pack_search_premier_p1p1()
             self.__draft_pack_search_premier_v2()
             self.__draft_picked_search_premier_v2()
@@ -221,7 +226,8 @@ class ArenaScanner:
             self.__draft_picked_search_quick()
         elif self.draft_type == constants.LIMITED_TYPE_DRAFT_TRADITIONAL:
             if len(self.initial_pack[0]) == 0:
-                self.__draft_pack_search_traditional_p1p1()
+                self.__get_ocr_pack()
+                self.__draft_pack_search_traditional_p1p1() 
             self.__draft_pack_search_traditional()
             self.__draft_picked_search_traditional()
         elif ((self.draft_type == constants.LIMITED_TYPE_SEALED)
@@ -232,10 +238,43 @@ class ArenaScanner:
         if not update:
             if ((previous_pack != self.current_pack) or
                 (previous_pick != self.current_pick) or
-                    (previous_picked != self.current_picked_pick)):
+                (previous_picked != self.current_picked_pick)):
                 update = True
 
         return update
+        
+    def __get_ocr_pack(self):
+
+        try:
+            data = {
+                "card_names": self.set_data.get_all_names(),
+                "image": capture_screen_base64str()
+            }
+            url = constants.PACK_PARSER_URL
+            headers = {'Content-Type': 'application/json'}
+            response = requests.post(url, headers=headers, data=json.dumps(data), timeout=5.0)
+            
+            names = json.loads(response.text)
+            # Convert the card names to Arena IDs so that the existing pack parsing logic can be used
+            pack_cards = self.set_data.get_ids_by_name(names)
+            
+            if not pack_cards:
+                return
+                
+            # The following code is from the existing __draft_pack_search_premier_p1p1 method
+            if self.current_pack != 1:
+                self.initial_pack = [[]] * 8
+    
+            if len(self.initial_pack[0]) == 0:
+                self.initial_pack[0] = pack_cards
+    
+            self.pack_cards[0] = pack_cards
+            
+            if (self.current_pack == 0) and (self.current_pick == 0):
+                self.current_pack = 1
+                self.current_pick = 1
+        except Exception as error:
+            print(error)
 
     def __draft_pack_search_premier_p1p1(self):
         '''Parse premier draft string that contains the P1P1 pack data'''

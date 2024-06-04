@@ -1,6 +1,9 @@
+import base64
 import json
 import os
 from enum import Enum
+from io import BytesIO
+from PIL import ImageGrab
 from src.constants import (
     LIMITED_USER_GROUP_ALL,
     LIMITED_TYPES_DICT,
@@ -154,3 +157,11 @@ def check_file_integrity(filename):
         return Result.ERROR_UNREADABLE_FILE, json_data
 
     return result, json_data
+
+def capture_screen_base64str():
+    '''takes a screenshot and returns it as a base64 encoded string'''
+    screenshot = ImageGrab.grab()
+    buffered = BytesIO()
+    screenshot.save(buffered, format="PNG")
+
+    return base64.b64encode(buffered.getvalue()).decode("utf-8")
