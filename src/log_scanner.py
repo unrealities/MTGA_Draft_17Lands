@@ -2,13 +2,14 @@
 import os
 import json
 import re
+import requests
 import logging
 import src.constants as constants
 import src.card_logic as CL
 import src.file_extractor as FE
 from datetime import datetime
 from src.logger import create_logger
-from src.utils import process_json, json_find
+from src.utils import capture_screen_base64str, json_find, process_json
 from src.set_metrics import SetMetrics
 from src.utils import Result, check_file_integrity, retrieve_local_set_list
 from src.dataset import Dataset
@@ -291,7 +292,21 @@ class ArenaScanner:
 
                             if self.step_through:
                                 break
+                            
+                            # If there is nothing in the log for P1P1 make cloud function request
+                            # TODO: prevent multiple requests
+                            # TODO: This didn't trigger
+                            if self.pack_cards == []:
+                                data = {
+                                    "card_names": self.set_data.get_all_names,
+                                    "image": capture_screen_base64str()
+                                }
+                                url = constants.PACK_PARSER_URL
+                                headers = {'Content-Type': 'application/json'}
+                                response = requests.post(url, headers=headers, data=json.dumps(data))
 
+                                self.pack_cards == self.set_data.get_data_by_name(response.text)
+                        
                         except Exception as error:
                             self.draft_log.info(
                                 "__draft_pack_search_premier_p1p1 Sub Error: %s", error)
