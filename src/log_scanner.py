@@ -2,6 +2,7 @@
 import os
 import json
 import re
+import requests
 import logging
 import src.constants as constants
 import src.card_logic as CL
@@ -251,7 +252,6 @@ class ArenaScanner:
                 update = True
 
         return update
-
     def __get_ocr_pack(self, source):
         try:
             # Exit if the source of the update isn't the refresh button
@@ -355,7 +355,6 @@ class ArenaScanner:
 
                             if self.step_through:
                                 break
-
                         except Exception as error:
                             self.draft_log.info(
                                 "__draft_pack_search_premier_p1p1 Sub Error: %s", error)

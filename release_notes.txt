@@ -1,3 +1,14 @@
+===================== RELEASE NOTES 3.19 =====================
+* TBD
+
+===================== RELEASE NOTES 3.18 =====================
+* FiYir added Windows executable build to help avoid flagged windows builds
+* leCoq42 added a user group drop-down and column to the 'Add Sets' window
+* leCoq42 modified the FileExtractor code so that it includes the user group in the 17Lands card data and deck color data endpoint calls
+* leCoq42 modified the dataset file name so that you can simultaneously store datasets for multiple user groups without overwriting the dataset
+* FiYir modified the dataset search code so that the old datasets are still supported. The old datasets have a user group of 'All'
+* FiYir modified the 'Data Source' options so that you can switch between the different user groups
+
 ===================== RELEASE NOTES 3.17 =====================
 * Fix Taken Cards not displaying
 * FiYir added overlay.py test to avoid similar error in the future

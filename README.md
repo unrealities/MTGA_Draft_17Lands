@@ -106,7 +106,6 @@ Magic: The Gathering Arena draft tool that utilizes 17Lands data.
 - **Step 4:** [Download Inno Setup](https://jrsoftware.org/isdl.php#stable)
 
 - **Step 5:** Build MTGA_Draft_Tool.exe by opening the terminal and entering ```python -m PyInstaller  main.py --onefile --noconsole -n MTGA_Draft_Tool --clean```
-    - Move the `MTGA_Draft_Tool.exe` file from the `dist` folder to the main `MTGA_Draft_17Lands` folder.
     - If this fails to build, you probably need to add an exclusion in your Windows virus & threat protection.
     
 - **Step 6:** Open `Installer.iss` in Inno Setup and click Build->Compile.
@@ -122,6 +121,7 @@ Magic: The Gathering Arena draft tool that utilizes 17Lands data.
     - The application will attempt to pull data for the current draft type and set (e.g., data from NEO_PremierDraft_Data.json for a Premier Draft). If the user hasn't downloaded the data file for the current draft type and set, then the application will attempt to use a different data file from the same set (e.g., NEO_QuickDraft_Data.json if NEO_PremierDraft_Data.json isn't available).
     - This field will display "None" if the application is unable to find a valid data file for the current draft type and set.
     - You can hide this feature by deselecting `Enable Data Source Options` in the [Settings window](#settings)
+    - *New 3.18* You can select a given user group. 17lands provides data from "Top", "Bottom" and "Middle" users. This data needs to be fetched when you add set data, the default option remains "All" [Definitions of user groups](https://www.17lands.com/metrics_definitions).
   
 - **Deck Filter:** A drop-down that lists all of the available deck color permutations that you can use to filter the deck card ratings.
     - The percentage next to the number represents the win rate for that color combination. These percentage values are collected from the [color ratings page on 17Lands](https://www.17lands.com/color_ratings). If there are no values, then that means the sample size was too small to determine the win rate (unpopular deck combination).
