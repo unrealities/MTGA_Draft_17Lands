@@ -629,5 +629,3 @@ UI_SIZE_DICT = {
     "240%": 2.4,
     "250%": 2.5
 }
-
-PACK_PARSER_URL = "https://us-central1-mtgalimited.cloudfunctions.net/pack_parser"
