@@ -428,7 +428,7 @@ def fixture_test_scanner():
     if os.path.exists(TEST_LOG_FILE_LOCATION):
         os.remove(TEST_LOG_FILE_LOCATION)
   
-@pytest.fixture(name="otj_scanner")  
+@pytest.fixture(name="otj_scanner",scope="function") 
 def fixture_otj_scanner():
     if os.path.exists(TEST_LOG_FILE_LOCATION):
         os.remove(TEST_LOG_FILE_LOCATION)
@@ -519,7 +519,8 @@ def test_quick_trad_draft_old(test_scanner, entry_label, expected, entry_string)
 
 # TODO - Sealed
 
-def test_otj_premier_p1p1_ocr(otj_scanner):
+@patch("src.ocr.OCR.get_pack")
+def test_otj_premier_p1p1_ocr_overwrite(mock_ocr, otj_scanner):
     # Write the event entry to the fake Player.log file
     with open(TEST_LOG_FILE_LOCATION, 'a', encoding="utf-8", errors="replace") as log_file:
         log_file.write(f"{OTJ_EVENT_ENTRY}\n")
@@ -532,12 +533,13 @@ def test_otj_premier_p1p1_ocr(otj_scanner):
         
     # Mock the card names returned by the OCR get_pack method
     expected_names = ["Seraphic Steed", "Spinewoods Armadillo", "Sterling Keykeeper"]
-    with(patch("src.ocr.OCR.get_pack", return_value=expected_names) as mocked_ocr):
-        otj_scanner.draft_data_search(Source.REFRESH)
+    mock_ocr.return_value = expected_names
+    
+    otj_scanner.draft_data_search(Source.REFRESH)
         
     # Verify the current pack, pick
     current_pack, current_pick = otj_scanner.retrieve_current_pack_and_pick()
-    assert (1, 1) == (current_pack, current_pick), f"Test Failed: OCR Pack/Pick, Set: OTJ, Expected: {(1,1)}, Actual: {(current_pack, current_pick)}"
+    assert (1, 1) == (current_pack, current_pick), f"OCT Test Failed: OCR Pack/Pick, Set: OTJ, Expected: {(1,1)}, Actual: {(current_pack, current_pick)}"
     
     # Verify the pack cards
     card_names = [x["name"] for x in otj_scanner.retrieve_current_pack_cards()]
@@ -571,4 +573,37 @@ def test_otj_premier_p1p1_ocr(otj_scanner):
     assert expected_names == card_names, f"OCR Test Failed: Log Pack Cards, Set: OTJ, Expected: {expected_names}, Actual: {card_names}"
     
     # Verify that the OCR method was only called once
-    assert mocked_ocr.call_count == 1
+    assert mock_ocr.call_count == 1
+    
+@patch("src.ocr.OCR.get_pack")
+def test_otj_premier_p1p1_ocr_multiclick(mock_ocr, otj_scanner):
+    # Write the event entry to the fake Player.log file
+    with open(TEST_LOG_FILE_LOCATION, 'a', encoding="utf-8", errors="replace") as log_file:
+        log_file.write(f"{OTJ_EVENT_ENTRY}\n")
+        
+    # Search for the event
+    otj_scanner.draft_start_search()      
+        
+    # Open the dataset
+    otj_scanner.retrieve_set_data(OTJ_PREMIER_SNAPSHOT)    
+        
+    # Mock the card names returned by the OCR get_pack method
+    expected_names = ["Seraphic Steed", "Spinewoods Armadillo", "Sterling Keykeeper"]
+    mock_ocr.return_value = expected_names
+    
+    otj_scanner.draft_data_search(Source.REFRESH)
+        
+    # Verify the current pack, pick
+    current_pack, current_pick = otj_scanner.retrieve_current_pack_and_pick()
+    assert (1, 1) == (current_pack, current_pick), f"OCR Test Failed: OCR Pack/Pick, Set: OTJ, Expected: {(1,1)}, Actual: {(current_pack, current_pick)}"
+    
+    # Verify the pack cards
+    card_names = [x["name"] for x in otj_scanner.retrieve_current_pack_cards()]
+    assert expected_names == card_names, f"OCR Test Failed: OCR Pack Cards, Set: OTJ, Expected: {expected_names}, Actual: {card_names}"
+    
+    # Simulate refresh clicks
+    otj_scanner.draft_data_search(Source.REFRESH)
+    otj_scanner.draft_data_search(Source.REFRESH)
+    
+    # Verify that the OCR method was only called once
+    assert mock_ocr.call_count == 1
