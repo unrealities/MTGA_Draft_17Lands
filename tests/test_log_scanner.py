@@ -3,11 +3,18 @@ import os
 from typing import List
 from pydantic.dataclasses import dataclass
 from pydantic import Field
-from src.log_scanner import ArenaScanner
+from unittest.mock import patch, MagicMock
+from src.log_scanner import ArenaScanner, Source
 from src.limited_sets import SetDictionary, SetInfo
 
 TEST_LOG_DIRECTORY = os.path.join(os.getcwd(), "tests")
 TEST_LOG_FILE_LOCATION = os.path.join(os.getcwd(), "tests", "Player.log")
+TEST_SETS_DIRECTORY = os.path.join(os.getcwd(), "tests","data")
+
+OTJ_PREMIER_SNAPSHOT = os.path.join(os.getcwd(), "tests", "data","OTJ_PremierDraft_Data_2024_5_3.json")
+
+OTJ_EVENT_ENTRY = r'[UnityCrossThreadLogger]==> Event_Join {"id":"11a8f74b-1afb-4d25-bb35-55d43674c808","request":"{\"EventName\":\"PremierDraft_OTJ_20240416\",\"EntryCurrencyType\":\"Gem\",\"EntryCurrencyPaid\":1500,\"CustomTokenId\":null}"}'
+OTJ_P1P1_ENTRY = r'[UnityCrossThreadLogger]==> LogBusinessEvents {"id":"a5515a1a-d96e-4da3-9a4a-c03cc4b2b938","request":"{\"PlayerId\":null,\"ClientPlatform\":null,\"DraftId\":\"87b408d1-43e0-4fb5-8c74-a1227fde087c\",\"EventId\":\"PremierDraft_OTJ_20240416\",\"SeatNumber\":1,\"PackNumber\":1,\"PickNumber\":1,\"PickGrpId\":90459,\"CardsInPack\":[90734,90584,90631,90362,90440,90349,90486,90527,90406,90439,90488,90480,90388,90459],\"AutoPick\":false,\"TimeRemainingOnPick\":63.99701,\"EventType\":24,\"EventTime\":\"2024-05-08T00:56:34.4223433Z\"}"}'
 
 TEST_SETS = SetDictionary(data={
     "OTJ" : SetInfo(seventeenlands=["OTJ"]),
@@ -42,7 +49,7 @@ OTJ_PREMIER_DRAFT_ENTRIES_2024_5_7 = [
                  pack=[],
                  card_pool=[],
                  missing=[]),
-    r'[UnityCrossThreadLogger]==> Event_Join {"id":"11a8f74b-1afb-4d25-bb35-55d43674c808","request":"{\"EventName\":\"PremierDraft_OTJ_20240416\",\"EntryCurrencyType\":\"Gem\",\"EntryCurrencyPaid\":1500,\"CustomTokenId\":null}"}'
+    OTJ_EVENT_ENTRY
     ),
     ("P1P1 - Pack",
     EventResults(new_event=False,
@@ -55,7 +62,7 @@ OTJ_PREMIER_DRAFT_ENTRIES_2024_5_7 = [
                  pack=["90734","90584","90631","90362","90440","90349","90486","90527","90406","90439","90488","90480","90388","90459"], 
                  card_pool=[],
                  missing=[]),
-    r'[UnityCrossThreadLogger]==> LogBusinessEvents {"id":"a5515a1a-d96e-4da3-9a4a-c03cc4b2b938","request":"{\"PlayerId\":null,\"ClientPlatform\":null,\"DraftId\":\"87b408d1-43e0-4fb5-8c74-a1227fde087c\",\"EventId\":\"PremierDraft_OTJ_20240416\",\"SeatNumber\":1,\"PackNumber\":1,\"PickNumber\":1,\"PickGrpId\":90459,\"CardsInPack\":[90734,90584,90631,90362,90440,90349,90486,90527,90406,90439,90488,90480,90388,90459],\"AutoPick\":false,\"TimeRemainingOnPick\":63.99701,\"EventType\":24,\"EventTime\":\"2024-05-08T00:56:34.4223433Z\"}"}'
+    OTJ_P1P1_ENTRY
     ),
     ("P1P1 - Pick",
     EventResults(new_event=False,
@@ -420,16 +427,19 @@ def fixture_test_scanner():
     yield scanner
     if os.path.exists(TEST_LOG_FILE_LOCATION):
         os.remove(TEST_LOG_FILE_LOCATION)
-        
-@pytest.fixture(name="test_scanner",scope="session")
-def fixture_test_scanner():
-    scanner = ArenaScanner(TEST_LOG_FILE_LOCATION, TEST_SETS, sets_location = TEST_LOG_DIRECTORY, retrieve_unknown = True)
+  
+@pytest.fixture(name="otj_scanner",scope="function") 
+def fixture_otj_scanner():
+    if os.path.exists(TEST_LOG_FILE_LOCATION):
+        os.remove(TEST_LOG_FILE_LOCATION)
+    scanner = ArenaScanner(TEST_LOG_FILE_LOCATION, TEST_SETS, sets_location=TEST_SETS_DIRECTORY, retrieve_unknown=False)
     scanner.log_enable(False)
     yield scanner
     if os.path.exists(TEST_LOG_FILE_LOCATION):
         os.remove(TEST_LOG_FILE_LOCATION)
 
-def event_test_cases(test_scanner, event_label, entry_label, expected, entry_string):
+@patch("src.ocr.OCR.get_pack")
+def event_test_cases(test_scanner, event_label, entry_label, expected, entry_string, mock_ocr):
     """Generic test cases for verifying the log events"""
     # Write the entry to the fake Player.log file
     with open(TEST_LOG_FILE_LOCATION, 'a', encoding="utf-8", errors="replace") as log_file:
@@ -440,7 +450,7 @@ def event_test_cases(test_scanner, event_label, entry_label, expected, entry_str
     assert expected.new_event == new_event, f"Test Failed: New Event, Set: {event_label}, {entry_label}, Expected: {expected.new_event}, Actual: {new_event}"
     
     # Verify that new event data was collected
-    data_update = test_scanner.draft_data_search()
+    data_update = test_scanner.draft_data_search(Source.UPDATE)
     assert expected.data_update == data_update, f"Test Failed: Data Update, Set: {event_label}, {entry_label}, Expected: {expected.data_update}, Actual: {data_update}"
     
     # Verify the current set and event
@@ -466,6 +476,9 @@ def event_test_cases(test_scanner, event_label, entry_label, expected, entry_str
     # Verify picks
     picks = [x["name"] for x in test_scanner.retrieve_current_picked_cards()]
     assert expected.picks == picks, f"Test Failed: Picks, Set: {event_label}, {entry_label}, Expected: {expected.picks}, Actual: {picks}"
+    
+    # Verify that the OCR method wasn't called
+    assert mock_ocr.call_count == 0, f"Test Failed: Picks, Set: {event_label}, {entry_label}, OCR Method Called"
 
 @pytest.mark.parametrize("entry_label, expected, entry_string", OTJ_PREMIER_DRAFT_ENTRIES_2024_5_7)
 def test_otj_premier_draft_new(test_scanner, entry_label, expected, entry_string):
@@ -505,3 +518,92 @@ def test_quick_trad_draft_old(test_scanner, entry_label, expected, entry_string)
 # TODO - Traditional Sealed
 
 # TODO - Sealed
+
+@patch("src.ocr.OCR.get_pack")
+def test_otj_premier_p1p1_ocr_overwrite(mock_ocr, otj_scanner):
+    # Write the event entry to the fake Player.log file
+    with open(TEST_LOG_FILE_LOCATION, 'a', encoding="utf-8", errors="replace") as log_file:
+        log_file.write(f"{OTJ_EVENT_ENTRY}\n")
+        
+    # Search for the event
+    otj_scanner.draft_start_search()      
+        
+    # Open the dataset
+    otj_scanner.retrieve_set_data(OTJ_PREMIER_SNAPSHOT)    
+        
+    # Mock the card names returned by the OCR get_pack method
+    expected_names = ["Seraphic Steed", "Spinewoods Armadillo", "Sterling Keykeeper"]
+    mock_ocr.return_value = expected_names
+    
+    otj_scanner.draft_data_search(Source.REFRESH)
+        
+    # Verify the current pack, pick
+    current_pack, current_pick = otj_scanner.retrieve_current_pack_and_pick()
+    assert (1, 1) == (current_pack, current_pick), f"OCT Test Failed: OCR Pack/Pick, Set: OTJ, Expected: {(1,1)}, Actual: {(current_pack, current_pick)}"
+    
+    # Verify the pack cards
+    card_names = [x["name"] for x in otj_scanner.retrieve_current_pack_cards()]
+    assert expected_names == card_names, f"OCR Test Failed: OCR Pack Cards, Set: OTJ, Expected: {expected_names}, Actual: {card_names}"
+    
+    # Write the P1P1 entry to the fake Player.log file
+    with open(TEST_LOG_FILE_LOCATION, 'a', encoding="utf-8", errors="replace") as log_file:
+        log_file.write(f"{OTJ_P1P1_ENTRY}\n")
+    
+    expected_names = [
+        "Back for More",
+        "Wrangler of the Damned",
+        "Holy Cow",
+        "Mourner's Surprise",
+        "Armored Armadillo",
+        "Reckless Lackey",
+        "Snakeskin Veil",
+        "Peerless Ropemaster",
+        "Lively Dirge",
+        "Return the Favor",
+        "Magebane Lizard",
+        "Deepmuck Desperado",
+        "Vadmir, New Blood"
+    ]
+    
+    # Update the ArenaScanner results
+    otj_scanner.draft_data_search(Source.UPDATE)
+    
+    # Verify that P1P1 is overwritten when the log entry is received
+    card_names = [x["name"] for x in otj_scanner.retrieve_current_pack_cards()]
+    assert expected_names == card_names, f"OCR Test Failed: Log Pack Cards, Set: OTJ, Expected: {expected_names}, Actual: {card_names}"
+    
+    # Verify that the OCR method was only called once
+    assert mock_ocr.call_count == 1
+    
+@patch("src.ocr.OCR.get_pack")
+def test_otj_premier_p1p1_ocr_multiclick(mock_ocr, otj_scanner):
+    # Write the event entry to the fake Player.log file
+    with open(TEST_LOG_FILE_LOCATION, 'a', encoding="utf-8", errors="replace") as log_file:
+        log_file.write(f"{OTJ_EVENT_ENTRY}\n")
+        
+    # Search for the event
+    otj_scanner.draft_start_search()      
+        
+    # Open the dataset
+    otj_scanner.retrieve_set_data(OTJ_PREMIER_SNAPSHOT)    
+        
+    # Mock the card names returned by the OCR get_pack method
+    expected_names = ["Seraphic Steed", "Spinewoods Armadillo", "Sterling Keykeeper"]
+    mock_ocr.return_value = expected_names
+    
+    otj_scanner.draft_data_search(Source.REFRESH)
+        
+    # Verify the current pack, pick
+    current_pack, current_pick = otj_scanner.retrieve_current_pack_and_pick()
+    assert (1, 1) == (current_pack, current_pick), f"OCR Test Failed: OCR Pack/Pick, Set: OTJ, Expected: {(1,1)}, Actual: {(current_pack, current_pick)}"
+    
+    # Verify the pack cards
+    card_names = [x["name"] for x in otj_scanner.retrieve_current_pack_cards()]
+    assert expected_names == card_names, f"OCR Test Failed: OCR Pack Cards, Set: OTJ, Expected: {expected_names}, Actual: {card_names}"
+    
+    # Simulate refresh clicks
+    otj_scanner.draft_data_search(Source.REFRESH)
+    otj_scanner.draft_data_search(Source.REFRESH)
+    
+    # Verify that the OCR method was only called once
+    assert mock_ocr.call_count == 1

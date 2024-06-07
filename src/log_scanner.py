@@ -7,11 +7,19 @@ import logging
 import src.constants as constants
 import src.card_logic as CL
 import src.file_extractor as FE
+from enum import Enum
 from datetime import datetime
 from src.logger import create_logger
-from src.utils import Result, capture_screen_base64str, json_find, process_json, retrieve_local_set_list
 from src.set_metrics import SetMetrics
 from src.dataset import Dataset
+from src.ocr import OCR
+from src.utils import (
+    process_json,
+    json_find,
+    Result,
+    retrieve_local_set_list,
+    capture_screen_base64str
+)
 
 if not os.path.exists(constants.DRAFT_LOG_FOLDER):
     os.makedirs(constants.DRAFT_LOG_FOLDER)
@@ -19,6 +27,10 @@ if not os.path.exists(constants.DRAFT_LOG_FOLDER):
 LOG_TYPE_DRAFT = "draftLog"
 
 logger = create_logger()
+
+class Source(Enum):
+    REFRESH = 1
+    UPDATE = 2
 
 class ArenaScanner:
     '''Class that handles the processing of the information within Arena Player.log file'''
@@ -199,7 +211,7 @@ class ArenaScanner:
 
         return update, event_type, draft_id
 
-    def draft_data_search(self):
+    def draft_data_search(self, source):
         '''Collect draft data from the Player.log file based on the current active format'''
         update = False
         previous_pick = self.current_pick
@@ -207,26 +219,25 @@ class ArenaScanner:
         previous_picked = self.current_picked_pick
 
         if self.draft_type == constants.LIMITED_TYPE_DRAFT_PREMIER_V1:
-            if len(self.initial_pack[0]) == 0:
-                # Use OCR to retrieve P1P1
-                self.__get_ocr_pack()
-                # Backup - collect the P1P1 cards from the log
-                self.__draft_pack_search_premier_p1p1()
+            # Use OCR to retrieve P1P1
+            self.__get_ocr_pack(source)
+            # Backup - collect the P1P1 cards from the log
+            self.__draft_pack_search_premier_p1p1()
             self.__draft_pack_search_premier_v1()
             self.__draft_picked_search_premier_v1()
         elif self.draft_type == constants.LIMITED_TYPE_DRAFT_PREMIER_V2:
-            if len(self.initial_pack[0]) == 0:
-                self.__get_ocr_pack()
-                self.__draft_pack_search_premier_p1p1()
+            # Use OCR to retrieve P1P1
+            self.__get_ocr_pack(source)
+            self.__draft_pack_search_premier_p1p1()
             self.__draft_pack_search_premier_v2()
             self.__draft_picked_search_premier_v2()
         elif self.draft_type == constants.LIMITED_TYPE_DRAFT_QUICK:
             self.__draft_pack_search_quick()
             self.__draft_picked_search_quick()
         elif self.draft_type == constants.LIMITED_TYPE_DRAFT_TRADITIONAL:
-            if len(self.initial_pack[0]) == 0:
-                self.__get_ocr_pack()
-                self.__draft_pack_search_traditional_p1p1() 
+            # Use OCR to retrieve P1P1
+            self.__get_ocr_pack(source)
+            self.__draft_pack_search_traditional_p1p1() 
             self.__draft_pack_search_traditional()
             self.__draft_picked_search_traditional()
         elif ((self.draft_type == constants.LIMITED_TYPE_SEALED)
@@ -241,39 +252,50 @@ class ArenaScanner:
                 update = True
 
         return update
-
-    def __get_ocr_pack(self):
-        '''take screnshot and pass to cloud function which returns OCR card data'''
+    def __get_ocr_pack(self, source):
         try:
-            data = {
-                "card_names": self.set_data.get_all_names(),
-                "image": capture_screen_base64str()
-            }
-            url = constants.PACK_PARSER_URL
-            headers = {'Content-Type': 'application/json'}
-            response = requests.post(url, headers=headers, data=json.dumps(data), timeout=5.0)
+            # Exit if the source of the update isn't the refresh button
+            if source != Source.REFRESH:
+                return
+                
+            # Exit if the draft is past P1P1
+            if self.current_pack != 0 or self.current_pick != 0:
+                return
 
-            names = json.loads(response.text)
+            card_names = self.set_data.get_all_names()
+
+            # Exit if the dataset isn't available - Data Source is 'None'
+            if not card_names:
+                return
+
+            screenshot = capture_screen_base64str()
+            received_names = OCR().get_pack(card_names, screenshot)
+
             # Convert the card names to Arena IDs so that the existing pack parsing logic can be used
-            pack_cards = self.set_data.get_ids_by_name(names)
+            pack_cards = self.set_data.get_ids_by_name(received_names)
 
+            # Exit if there are no recognizable cards in the OCR results
             if not pack_cards:
                 return
 
-            # The following code is from the existing __draft_pack_search_premier_p1p1 method
-            if self.current_pack != 1:
-                self.initial_pack = [[]] * 8
+            # Exit if there are already cards for P1P1
+            if self.initial_pack[0]:
+                return
 
-            if len(self.initial_pack[0]) == 0:
-                self.initial_pack[0] = pack_cards
 
+            # initial_pack: the contents of the pack when it's first seen
+            # pack_cards: the current contents of the pack
+            # The app is recording both of these to determine which cards didn't wheel.
+            self.initial_pack[0] = pack_cards
             self.pack_cards[0] = pack_cards
 
+            # Don't overwrite the pack and pick numbers if you're beyond P1P1
             if (self.current_pack == 0) and (self.current_pick == 0):
                 self.current_pack = 1
                 self.current_pick = 1
+
         except Exception as error:
-            print(error)
+            logger.error(error)
 
     def __draft_pack_search_premier_p1p1(self):
         '''Parse premier draft string that contains the P1P1 pack data'''
@@ -312,6 +334,10 @@ class ArenaScanner:
 
                             pack = json_find("PackNumber", draft_data)
                             pick = json_find("PickNumber", draft_data)
+                            
+                            # Exit if you're not receiving P1P1
+                            if pack != 1 and pick != 1:
+                                break
 
                             pack_index = (pick - 1) % 8
 
@@ -730,6 +756,10 @@ class ArenaScanner:
 
                             pack = json_find("PackNumber", draft_data)
                             pick = json_find("PickNumber", draft_data)
+
+                            # Exit if you're not receiving P1P1
+                            if pack != 1 and pick != 1:
+                                break
 
                             pack_index = (pick - 1) % 8
 

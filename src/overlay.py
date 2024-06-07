@@ -15,7 +15,7 @@ from pynput.keyboard import Listener, KeyCode
 from PIL import Image, ImageTk, ImageFont
 from src.configuration import read_configuration, write_configuration, reset_configuration
 from src.limited_sets import LimitedSets
-from src.log_scanner import ArenaScanner
+from src.log_scanner import ArenaScanner, Source
 from src.file_extractor import FileExtractor, search_arena_log_locations, retrieve_arena_directory
 from src.utils import retrieve_local_set_list
 from src import constants
@@ -51,7 +51,6 @@ logger = create_logger()
 class TableInfo:
     reverse: bool = True
     column: str = ""
-
 
 def start_overlay():
     """Retrieve arguments, create overlay object, and run overlay"""
@@ -591,7 +590,7 @@ class Overlay(ScaledWindow):
 
         self.refresh_button_frame = tkinter.Frame(self.root)
         self.refresh_button = Button(
-            self.refresh_button_frame, command=lambda: self.__update_overlay_callback(True), text="Refresh")
+            self.refresh_button_frame, command=lambda: self.__update_overlay_callback(True, Source.REFRESH), text="Refresh")
 
         self.separator_frame_draft = Separator(self.root, orient='horizontal')
         self.status_frame = tkinter.Frame(self.root)
@@ -1466,7 +1465,7 @@ class Overlay(ScaledWindow):
         for key, value in tier_dict.items():
             self.main_options_dict[key] = value
 
-    def __update_draft(self):
+    def __update_draft(self, source):
         '''Function that that triggers a search of the Arena log for draft data'''
         update = False
 
@@ -1482,7 +1481,7 @@ class Overlay(ScaledWindow):
                         mean,
                         std)
 
-        if self.draft.draft_data_search():
+        if self.draft.draft_data_search(source):
             update = True
 
         return update
@@ -1679,11 +1678,11 @@ class Overlay(ScaledWindow):
 
         self.root.update()
 
-    def __update_overlay_callback(self, enable_draft_search):
+    def __update_overlay_callback(self, enable_draft_search, source = Source.UPDATE):
         '''Callback function that updates all of the widgets in the main window'''
         update = True
         if enable_draft_search:
-            update = self.__update_draft()
+            update = self.__update_draft(source)
 
         if not update:
             return
