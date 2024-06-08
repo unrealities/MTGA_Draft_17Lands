@@ -2,7 +2,6 @@
 import os
 import json
 import re
-import requests
 import logging
 import src.constants as constants
 import src.card_logic as CL
@@ -278,21 +277,13 @@ class ArenaScanner:
             if not pack_cards:
                 return
 
-            # Exit if there are already cards for P1P1
-            if self.initial_pack[0]:
-                return
-
-
             # initial_pack: the contents of the pack when it's first seen
             # pack_cards: the current contents of the pack
             # The app is recording both of these to determine which cards didn't wheel.
             self.initial_pack[0] = pack_cards
             self.pack_cards[0] = pack_cards
-
-            # Don't overwrite the pack and pick numbers if you're beyond P1P1
-            if (self.current_pack == 0) and (self.current_pick == 0):
-                self.current_pack = 1
-                self.current_pick = 1
+            self.current_pack = 1
+            self.current_pick = 1
 
         except Exception as error:
             logger.error(error)
@@ -336,7 +327,7 @@ class ArenaScanner:
                             pick = json_find("PickNumber", draft_data)
                             
                             # Exit if you're not receiving P1P1
-                            if pack != 1 and pick != 1:
+                            if pack != 1 or pick != 1:
                                 break
 
                             pack_index = (pick - 1) % 8
@@ -758,7 +749,7 @@ class ArenaScanner:
                             pick = json_find("PickNumber", draft_data)
 
                             # Exit if you're not receiving P1P1
-                            if pack != 1 and pick != 1:
+                            if pack != 1 or pick != 1:
                                 break
 
                             pack_index = (pick - 1) % 8
