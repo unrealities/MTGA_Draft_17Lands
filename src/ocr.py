@@ -2,7 +2,6 @@ import json
 import requests
 from typing import List
 
-API_KEY_VALUE = "AIzaSyAUFZlhPbBdB2dA5fy6ztGbw01FeuyfmD8"
 PACK_PARSER_URL = "https://us-central1-mtgalimited.cloudfunctions.net/pack_parser"
 REQUEST_TIMEOUT_SEC = 5.0
 
@@ -27,7 +26,7 @@ class OCR:
             "image": screenshot
         }
 
-        headers = {'Content-Type': 'application/json', 'X-goog-api-key': API_KEY_VALUE}
+        headers = {'Content-Type': 'application/json'}
         response = requests.post(self.url, headers=headers, data=json.dumps(data), timeout=timeout)
         received_names = json.loads(response.text)
 
