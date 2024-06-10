@@ -1,5 +1,6 @@
 ===================== RELEASE NOTES 3.19 =====================
-* TBD
+* FiYir & unrealities implemented a fix for P1P1 pack cards not being displayed. If you press the Refresh button, a screenshot will be sent to a third-party tool to determine the cards in the pack.
+* This experimental feature may be unstable or removed without notice.
 
 ===================== RELEASE NOTES 3.18 =====================
 * FiYir added Windows executable build to help avoid flagged windows builds
