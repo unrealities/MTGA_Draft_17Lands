@@ -22,7 +22,7 @@ class OCR:
             list of str: A list of names detected in the screenshot through OCR.
         """
         basic_lands = ["plains", "island", "swamp", "mountain", "forest"]
-        card_names_with_basics = card_names.append(basic_lands)
+        card_names_with_basics = card_names + basic_lands
 
         data = {
             "card_names": card_names_with_basics,
