@@ -136,8 +136,8 @@ Magic: The Gathering Arena draft tool that utilizes 17Lands data.
 
 ## Menu Features
 
-![Settings_Dark](https://github.com/unrealities/MTGA_Draft_17Lands/assets/96687942/642a0795-e407-410e-b8d6-6332f3083ac7.png)
-![Settings_Colors](https://github.com/unrealities/MTGA_Draft_17Lands/assets/96687942/90c6b3df-0ade-4f32-a1be-b2ef40cedc32.png)
+![Settings_Dark](https://github.com/unrealities/MTGA_Draft_17Lands/blob/main/assets/96687942/642a0795-e407-410e-b8d6-6332f3083ac7.png)
+![Settings_Colors](https://github.com/unrealities/MTGA_Draft_17Lands/blob/main/assets/96687942/90c6b3df-0ade-4f32-a1be-b2ef40cedc32.png)
 
 - **Read Draft Logs:** Read the log file from a draft by selecting `File->Open`. Select a file that has the following naming scheme `DraftLog_<Set>_<Draft Type>_<Draft_ID>.log` file to read the file.
 - **Download Set Data:** Get to the Add Sets window by selecting `Data->Add Sets`. Enter the set information and click on the ADD SET button to begin downloading the set data.
