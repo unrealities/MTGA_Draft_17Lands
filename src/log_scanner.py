@@ -254,6 +254,7 @@ class ArenaScanner:
     def __get_ocr_pack(self, source):
         try:
             # Exit if the source of the update isn't the refresh button
+            # TODO: Exit if p1p1_ocr_enabled == False
             if source != Source.REFRESH:
                 return
                 

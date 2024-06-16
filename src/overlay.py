@@ -514,6 +514,7 @@ class Overlay(ScaledWindow):
         self.color_bonus_checkbox_value = tkinter.IntVar(self.root)
         self.bayesian_average_checkbox_value = tkinter.IntVar(self.root)
         self.draft_log_checkbox_value = tkinter.IntVar(self.root)
+        self.p1p1_ocr_checkbox_value = tkinter.IntVar(self.root)
         self.taken_alsa_checkbox_value = tkinter.IntVar(self.root)
         self.taken_ata_checkbox_value = tkinter.IntVar(self.root)
         self.taken_gpwr_checkbox_value = tkinter.IntVar(self.root)
@@ -1530,6 +1531,8 @@ class Overlay(ScaledWindow):
                 self.color_identity_checkbox_value.get())
             self.configuration.settings.draft_log_enabled = bool(
                 self.draft_log_checkbox_value.get())
+            self.configuration.settings.p1p1_ocr_enabled = bool(
+                self.p1p1_ocr_checkbox_value.get())
             self.configuration.settings.taken_alsa_enabled = bool(
                 self.taken_alsa_checkbox_value.get())
             self.configuration.settings.taken_ata_enabled = bool(
@@ -1613,6 +1616,8 @@ class Overlay(ScaledWindow):
                 self.configuration.settings.color_identity_enabled)
             self.draft_log_checkbox_value.set(
                 self.configuration.settings.draft_log_enabled)
+            self.p1p1_ocr_checkbox_value.set(
+                self.configuration.settings.p1p1_ocr_enabled)
             self.taken_alsa_checkbox_value.set(
                 self.configuration.settings.taken_alsa_enabled)
             self.taken_ata_checkbox_value.set(
@@ -2416,6 +2421,13 @@ class Overlay(ScaledWindow):
                                              variable=self.draft_log_checkbox_value,
                                              onvalue=1,
                                              offvalue=0)
+            
+            p1p1_ocr_label = Label(popup, text="Enable P1P1 OCR:",
+                                    style="MainSectionsBold.TLabel", anchor="e")
+            p1p1_ocr_checkbox = Checkbutton(popup,
+                                             variable=self.p1p1_ocr_checkbox_value,
+                                             onvalue=1,
+                                             offvalue=0)
 
             card_colors_label = Label(
                 popup, text="Enable Row Colors:", style="MainSectionsBold.TLabel", anchor="e")
@@ -2970,6 +2982,8 @@ class Overlay(ScaledWindow):
                 (self.stat_options_selection, lambda: self.stat_options_selection.trace(
                     "w", self.__update_deck_stats_callback)),
                 (self.draft_log_checkbox_value, lambda: self.draft_log_checkbox_value.trace(
+                    "w", self.__update_settings_callback)),
+                (self.p1p1_ocr_checkbox_value, lambda: self.p1p1_ocr_checkbox_value.trace(
                     "w", self.__update_settings_callback)),
                 (self.filter_format_selection, lambda: self.filter_format_selection.trace(
                     "w", self.__update_source_callback)),
