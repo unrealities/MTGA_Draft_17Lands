@@ -210,7 +210,7 @@ class ArenaScanner:
 
         return update, event_type, draft_id
 
-    def draft_data_search(self, source):
+    def draft_data_search(self, use_ocr):
         '''Collect draft data from the Player.log file based on the current active format'''
         update = False
         previous_pick = self.current_pick
@@ -219,14 +219,16 @@ class ArenaScanner:
 
         if self.draft_type == constants.LIMITED_TYPE_DRAFT_PREMIER_V1:
             # Use OCR to retrieve P1P1
-            self.__get_ocr_pack(source)
+            if use_ocr:
+                self.__get_ocr_pack()
             # Backup - collect the P1P1 cards from the log
             self.__draft_pack_search_premier_p1p1()
             self.__draft_pack_search_premier_v1()
             self.__draft_picked_search_premier_v1()
         elif self.draft_type == constants.LIMITED_TYPE_DRAFT_PREMIER_V2:
             # Use OCR to retrieve P1P1
-            self.__get_ocr_pack(source)
+            if use_ocr:
+                self.__get_ocr_pack()
             self.__draft_pack_search_premier_p1p1()
             self.__draft_pack_search_premier_v2()
             self.__draft_picked_search_premier_v2()
@@ -235,7 +237,8 @@ class ArenaScanner:
             self.__draft_picked_search_quick()
         elif self.draft_type == constants.LIMITED_TYPE_DRAFT_TRADITIONAL:
             # Use OCR to retrieve P1P1
-            self.__get_ocr_pack(source)
+            if use_ocr:
+                self.__get_ocr_pack()
             self.__draft_pack_search_traditional_p1p1() 
             self.__draft_pack_search_traditional()
             self.__draft_picked_search_traditional()
@@ -251,13 +254,8 @@ class ArenaScanner:
                 update = True
 
         return update
-    def __get_ocr_pack(self, source):
-        try:
-            # Exit if the source of the update isn't the refresh button
-            # TODO: Exit if p1p1_ocr_enabled == False
-            if source != Source.REFRESH:
-                return
-                
+    def __get_ocr_pack(self):
+        try:  
             # Exit if the draft is past P1P1
             if self.current_pack != 0 or self.current_pick != 0:
                 return

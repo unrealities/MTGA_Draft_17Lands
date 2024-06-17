@@ -1482,7 +1482,8 @@ class Overlay(ScaledWindow):
                         mean,
                         std)
 
-        if self.draft.draft_data_search(source):
+        use_ocr = source == Source.REFRESH & self.configuration.settings.p1p1_ocr_enabled
+        if self.draft.draft_data_search(use_ocr):
             update = True
 
         return update
@@ -2674,6 +2675,14 @@ class Overlay(ScaledWindow):
                 row=row_count, column=0, columnspan=1, sticky="nsew",
                 padx=row_padding_x, pady=row_padding_y)
             draft_log_checkbox.grid(
+                row=row_count, column=1, columnspan=1, sticky="nsew",
+                padx=row_padding_x, pady=row_padding_y)
+            row_count += 1
+            
+            p1p1_ocr_label.grid(
+                row=row_count, column=0, columnspan=1, sticky="nsew",
+                padx=row_padding_x, pady=row_padding_y)
+            p1p1_ocr_checkbox.grid(
                 row=row_count, column=1, columnspan=1, sticky="nsew",
                 padx=row_padding_x, pady=row_padding_y)
             row_count += 1
