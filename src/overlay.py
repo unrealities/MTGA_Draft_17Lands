@@ -1482,7 +1482,7 @@ class Overlay(ScaledWindow):
                         mean,
                         std)
 
-        use_ocr = source == Source.REFRESH & self.configuration.settings.p1p1_ocr_enabled
+        use_ocr = source == Source.REFRESH and self.configuration.settings.p1p1_ocr_enabled
         if self.draft.draft_data_search(use_ocr):
             update = True
 

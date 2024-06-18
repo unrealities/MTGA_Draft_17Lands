@@ -166,6 +166,8 @@ Magic: The Gathering Arena draft tool that utilizes 17Lands data.
   - **As of September 2023, this feature has become obsolete. The 17Lands endpoint no longer provides win rate data for cards with fewer than 500 samples.**
 - **Enable Draft Log:** Records the draft in a log file within the `./Logs` folder.
 - **UI Size:** Increase or decrease the size of the application text and images.
+- **Enable P1P1 OCR:** Enables [The P1P1 Solution](#the-p1p1-solution).
+- **Save P1P1 Screenshots:** When using [The P1P1 Solution](#the-p1p1-solution) screenshots will be saved to the `./Screenshots` folder.
 
 ## Card Logic
 
@@ -236,9 +238,12 @@ MTGA_Draft_17Lands, like many other platforms, relies on MTG Arena's detailed lo
 
 ### The Solution
 
-We implemented the following solution in v3.19. **This only works for P1P1. After you have selected a card, only Arena logs are used**:
+**This is a configurable setting. `Enable P1P1 OCR` is enabled by default.**
 
-- A screenshot is taken when you press the `Refresh` button. The application converts the image to a base64 string.
+The following solution is for P1P1. After you have selected a card, only Arena logs are used:
+
+- A screenshot is taken when you press the `Refresh` button. **enable `Save P1P1 Screenshots` setting to store images that are sent.**
+- The application converts the image to a base64 string.
 - The string and a list of possible card names are sent to a Google Cloud Function (GCF).
 - The GCF uses Google Vision API for Optical Character Recognition (OCR). This API returns all text detected in the image.
 - The Google Vision results are compared to the possible card names sent via [TheFuzz](https://github.com/seatgeek/thefuzz).

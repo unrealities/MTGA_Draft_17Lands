@@ -158,6 +158,7 @@ def check_file_integrity(filename):
 
     return result, json_data
 
+# TODO allow persisting screenshot to `/Screenshots` folder
 def capture_screen_base64str():
     '''takes a screenshot and returns it as a base64 encoded string'''
     screenshot = ImageGrab.grab()
