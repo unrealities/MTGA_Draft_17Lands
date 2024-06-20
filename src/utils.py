@@ -1,6 +1,7 @@
 import base64
 import json
 import os
+import time
 from enum import Enum
 from io import BytesIO
 from PIL import ImageGrab
@@ -21,7 +22,8 @@ from src.constants import (
     DATA_FIELD_MANA_COST,
     DATA_SECTION_IMAGES,
     FILTER_OPTION_ALL_DECKS,
-    SCREENSHOT_FOLDER
+    SCREENSHOT_FOLDER,
+    SCREENSHOT_PREFIX
 )
 
 class Result(Enum):
@@ -166,6 +168,8 @@ def capture_screen_base64str(persist):
     buffered = BytesIO()
     screenshot.save(buffered, format="PNG")
     if persist:
-        screenshot.save(SCREENSHOT_FOLDER)
+        current_timestamp = int(time.time())
+        filename = SCREENSHOT_PREFIX + current_timestamp
+        screenshot.save(os.path.join(SCREENSHOT_FOLDER, filename), format="PNG")
 
     return base64.b64encode(buffered.getvalue()).decode("utf-8")
