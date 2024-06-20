@@ -631,3 +631,5 @@ UI_SIZE_DICT = {
 }
 
 PACK_PARSER_URL = "https://us-central1-mtgalimited.cloudfunctions.net/pack_parser"
+
+SCREENSHOT_FOLDER = os.path.join(os.getcwd(), "Screenshots")

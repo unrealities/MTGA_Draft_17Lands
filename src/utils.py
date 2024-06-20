@@ -20,7 +20,8 @@ from src.constants import (
     DATA_FIELD_IWD,
     DATA_FIELD_MANA_COST,
     DATA_SECTION_IMAGES,
-    FILTER_OPTION_ALL_DECKS
+    FILTER_OPTION_ALL_DECKS,
+    SCREENSHOT_FOLDER
 )
 
 class Result(Enum):
@@ -159,10 +160,12 @@ def check_file_integrity(filename):
     return result, json_data
 
 # TODO allow persisting screenshot to `/Screenshots` folder
-def capture_screen_base64str():
+def capture_screen_base64str(persist):
     '''takes a screenshot and returns it as a base64 encoded string'''
     screenshot = ImageGrab.grab()
     buffered = BytesIO()
     screenshot.save(buffered, format="PNG")
+    if persist:
+        screenshot.save(SCREENSHOT_FOLDER)
 
     return base64.b64encode(buffered.getvalue()).decode("utf-8")
