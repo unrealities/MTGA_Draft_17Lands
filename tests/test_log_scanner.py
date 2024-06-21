@@ -643,3 +643,22 @@ def test_otj_premier_p1p1_ocr_multiclick(mock_screenshot, mock_ocr, otj_scanner)
 
     # Verify that the OCR method was only called once
     assert mock_ocr.call_count == 1
+
+@patch("src.log_scanner.OCR.get_pack")
+@patch("src.log_scanner.capture_screen_base64str")
+def test_otj_premier_p1p1_ocr_disabled(mock_ocr, otj_scanner):
+    # Write the event entry to the fake Player.log file
+    with open(TEST_LOG_FILE_LOCATION, 'a', encoding="utf-8", errors="replace") as log_file:
+        log_file.write(f"{OTJ_EVENT_ENTRY}\n")
+
+    # Search for the event
+    otj_scanner.draft_start_search()
+
+    # Open the dataset
+    otj_scanner.retrieve_set_data(OTJ_PREMIER_SNAPSHOT)
+
+    # P1P1_OCR is disabled
+    otj_scanner.draft_data_search(False, False)
+
+    # Verify that the OCR method was not called
+    assert mock_ocr.call_count == 0
