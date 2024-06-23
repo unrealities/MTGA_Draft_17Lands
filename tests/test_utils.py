@@ -1,69 +1,60 @@
 import unittest
 from unittest.mock import patch, MagicMock
-from PIL import Image
-import base64
 import os
-import tempfile
+import time
+import base64
 from io import BytesIO
+from PIL import ImageGrab
 from src.utils import capture_screen_base64str
-from src.constants import SCREENSHOT_FOLDER
 
-class TestCaptureScreenBase64Str(unittest.TestCase):
+SCREENSHOT_PREFIX = "test_"
+SCREENSHOT_FOLDER = "/tests"
 
-    @patch('PIL.ImageGrab.grab')
-    @patch('time.time', return_value=1625077765)
-    @patch('os.path.join', return_value='screenshots/screenshot_1625077765.png')
-    def test_capture_screen_base64str_no_persist(self, mock_grab):
-        # Setup mock image
-        mock_image = MagicMock(spec=Image.Image)
-        mock_grab.return_value = mock_image
-
-        # Create a mock buffer to simulate image save and base64 encoding
-        mock_buffer = BytesIO()
-        mock_image.save.side_effect = lambda buf, fmt: mock_buffer.write(b'test_image_data')
-
-        result = capture_screen_base64str(persist=False)
-
-        # Ensure the function returns the expected base64 string
-        expected_base64 = base64.b64encode(b'test_image_data').decode("utf-8")
-        self.assertEqual(result, expected_base64)
-
-        # Ensure image save is called once
-        mock_image.save.assert_called_once_with(mock_buffer, format="PNG")
+class TestCaptureScreenBase64str(unittest.TestCase):
 
     @patch('PIL.ImageGrab.grab')
-    @patch('time.time', return_value=1625077765)
-    @patch('os.path.join', return_value='screenshots/screenshot_1625077765.png')
-    def test_capture_screen_base64str_with_persist(self, mock_grab):
-        # Setup mock image
-        mock_image = MagicMock(spec=Image.Image)
+    @patch('time.time')
+    @patch('os.path.join')
+    @patch('builtins.open', new_callable=unittest.mock.mock_open)
+    def test_screenshot_persist(self, mock_open, mock_path_join, mock_time, mock_grab):
+        # Arrange
+        mock_image = MagicMock()
         mock_grab.return_value = mock_image
+        mock_time.return_value = 1234567890
+        mock_path_join.return_value = "/path/to/screenshot/folder/screenshot_1234567890"
+        
+        expected_filename = "/path/to/screenshot/folder/screenshot_1234567890"
+        
+        # Act
+        base64str = capture_screen_base64str(True)
+        
+        # Assert
+        mock_grab.assert_called_once()
+        mock_time.assert_called_once()
+        mock_path_join.assert_called_once_with(SCREENSHOT_FOLDER, SCREENSHOT_PREFIX + "1234567890")
+        mock_image.save.assert_any_call(expected_filename, format="PNG")
+        self.assertIsInstance(base64str, str)
+        self.assertTrue(base64str.startswith("iVBORw0KGgo"))
 
-        # Create a mock buffer to simulate image save and base64 encoding
-        mock_buffer = BytesIO()
-        mock_image.save.side_effect = lambda buf, fmt: mock_buffer.write(b'test_image_data')
+    @patch('PIL.ImageGrab.grab')
+    @patch('time.time')
+    @patch('os.path.join')
+    @patch('builtins.open', new_callable=unittest.mock.mock_open)
+    def test_screenshot_not_persist(self, mock_open, mock_path_join, mock_time, mock_grab):
+        # Arrange
+        mock_image = MagicMock()
+        mock_grab.return_value = mock_image
+        
+        # Act
+        base64str = capture_screen_base64str(False)
+        
+        # Assert
+        mock_grab.assert_called_once()
+        mock_time.assert_not_called()
+        mock_path_join.assert_not_called()
+        mock_image.save.assert_not_called()
+        self.assertIsInstance(base64str, str)
+        self.assertTrue(base64str.startswith("iVBORw0KGgo"))
 
-        # Create a temporary directory to save the screenshot
-        with tempfile.TemporaryDirectory() as tempdir:
-            global SCREENSHOT_FOLDER
-            original_screenshot_folder = SCREENSHOT_FOLDER
-            SCREENSHOT_FOLDER = tempdir
-
-            # Ensure the temporary directory exists
-            os.makedirs(SCREENSHOT_FOLDER, exist_ok=True)
-
-            result = capture_screen_base64str(persist=True)
-
-            # Ensure the function returns the expected base64 string
-            expected_base64 = base64.b64encode(b'test_image_data').decode("utf-8")
-            self.assertEqual(result, expected_base64)
-
-            # Ensure image save is called twice (once for the buffer and once for the file)
-            self.assertEqual(mock_image.save.call_count, 2)
-
-            # Check that the file was created
-            expected_filename = os.path.join(tempdir, 'screenshot_1625077765.png')
-            self.assertTrue(os.path.exists(expected_filename))
-
-            # Clean up: restore the original SCREENSHOT_FOLDER
-            SCREENSHOT_FOLDER = original_screenshot_folder
+if __name__ == '__main__':
+    unittest.main()
