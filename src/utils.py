@@ -168,7 +168,7 @@ def capture_screen_base64str(persist):
     screenshot.save(buffered, format="PNG")
     if persist:
         current_timestamp = int(time.time())
-        filename = SCREENSHOT_PREFIX + str(current_timestamp)
+        filename = SCREENSHOT_PREFIX + str(current_timestamp) + ".png"
         screenshot.save(os.path.join(SCREENSHOT_FOLDER, filename), format="PNG")
 
     return base64.b64encode(buffered.getvalue()).decode("utf-8")

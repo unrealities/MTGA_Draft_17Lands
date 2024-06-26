@@ -1,10 +1,6 @@
 import unittest
 from unittest.mock import patch, MagicMock
 import os
-import time
-import base64
-from io import BytesIO
-from PIL import ImageGrab
 from src.utils import capture_screen_base64str
 
 SCREENSHOT_FOLDER = os.path.join(os.getcwd(), "Screenshots")
@@ -21,9 +17,9 @@ class TestCaptureScreenBase64str(unittest.TestCase):
         mock_image = MagicMock()
         mock_grab.return_value = mock_image
         mock_time.return_value = 1234567890
-        mock_path_join.return_value = "/Screenshots/screenshot_1234567890"
+        mock_path_join.return_value = "/Screenshots/screenshot_1234567890.png"
         
-        expected_filename = "/Screenshots/screenshot_1234567890"
+        expected_filename = "/Screenshots/screenshot_1234567890.png"
         
         # Act
         base64str = capture_screen_base64str(True)
@@ -31,7 +27,7 @@ class TestCaptureScreenBase64str(unittest.TestCase):
         # Assert
         mock_grab.assert_called_once()
         mock_time.assert_called_once()
-        mock_path_join.assert_called_once_with(SCREENSHOT_FOLDER, SCREENSHOT_PREFIX + "1234567890")
+        mock_path_join.assert_called_once_with(SCREENSHOT_FOLDER, SCREENSHOT_PREFIX + "1234567890.png")
         mock_image.save.assert_any_call(expected_filename, format="PNG")
         self.assertIsInstance(base64str, str)
 
