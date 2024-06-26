@@ -43,7 +43,7 @@ Magic: The Gathering Arena draft tool that utilizes 17Lands data.
   - The [UI Size](#settings) setting can be used to adjust the image and text size.
 - **Step 8:** Start the draft in Arena.
   - The Arena log doesn't list P1P1 for premier and traditional drafts until after P1P2.
-    - **New 3.19** Pressing the `Refresh` button will use OCR to identify the cards your first pack. See [The P1P1 Solution](#the-p1p1-solution) for more information on this feature.
+    - Pressing the `Refresh` button will use OCR to identify the cards your first pack. See [The P1P1 Solution](#the-p1p1-solution) for more information on this feature.
     - The [Card Compare](#menu-features) feature can also be used as a substitute for P1P1.
   - The sealed card pool can be found in the [Taken Cards window](#menu-features).
 
@@ -78,7 +78,7 @@ Magic: The Gathering Arena draft tool that utilizes 17Lands data.
   - The [UI Size](#settings) setting can be used to adjust the image and text size.
 - **Step 13:** Start the draft in Arena.
   - The Arena log doesn't list P1P1 for premier and traditional drafts until after P1P2.
-    - **New 3.19** Pressing the `Refresh` button will use OCR to identify the cards your first pack. See [The P1P1 Solution](#the-p1p1-solution) for more information on this feature.
+    - Pressing the `Refresh` button will use OCR to identify the cards your first pack. See [The P1P1 Solution](#the-p1p1-solution) for more information on this feature.
   - The [Card Compare](#menu-features) feature can be used as a substitute for P1P1.
   - The sealed card pool can be found in the [Taken Cards window](#menu-features).
 
@@ -102,7 +102,7 @@ Magic: The Gathering Arena draft tool that utilizes 17Lands data.
   - The application will attempt to pull data for the current draft type and set (e.g., data from NEO_PremierDraft_Data.json for a Premier Draft). If the user hasn't downloaded the data file for the current draft type and set, then the application will attempt to use a different data file from the same set (e.g., NEO_QuickDraft_Data.json if NEO_PremierDraft_Data.json isn't available).
   - This field will display "None" if the application is unable to find a valid data file for the current draft type and set.
   - You can hide this feature by deselecting `Enable Data Source Options` in the [Settings window](#settings)
-  - **New 3.18** You can select a given user group. 17lands provides data from "Top", "Bottom" and "Middle" users. This data needs to be fetched when you add set data, the default option remains "All" [Definitions of user groups](https://www.17lands.com/metrics_definitions).
+  - You can select a given user group. 17lands provides data from "Top", "Bottom" and "Middle" users. This data needs to be fetched when you add set data, the default option remains "All" [Definitions of user groups](https://www.17lands.com/metrics_definitions).
 - **Deck Filter:** A drop-down that lists all of the available deck color permutations that you can use to filter the deck card ratings.
   - The percentage next to the number represents the win rate for that color combination. These percentage values are collected from the [color ratings page on 17Lands](https://www.17lands.com/color_ratings). If there are no values, then that means the sample size was too small to determine the win rate (unpopular deck combination).
   - The `All Decks` option lists the combined rating across all of the deck color combinations
