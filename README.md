@@ -30,20 +30,20 @@ Magic: The Gathering Arena draft tool that utilizes 17Lands data.
 
 - **Step 1:** Download the latest zip file from the [releases page](https://github.com/unrealities/MTGA_Draft_17Lands/releases).
 - **Step 2:** Unzip and double-click the exe file to start the installation.
-- **Step 3:** (Optional) Go to the installed folder and right-click the executable (`MTGA_Draft_Tool.exe`), click properties, compatibility tab, and check Run this program as an administrator.
+- **Step 3:** (Optional) Go to the installed folder and right-click the executable (`MTGA_Draft_Tool.exe`), click properties, compatibility tab, and check "Run this program as an administrator."
   - This step is only required if the application is installed in a directory with write restrictions (i.e., `Program Files` and `Program Files (x86)`).
   - This step isn't necessary if the application is installed in the main directory of a drive (i.e., `C:/` or `D:/`) or the `Users/<Username>/` directory
 - **Step 4:** In Arena, go to Adjust Options, Account, and then check the Detailed Logs (Plugin Support) check box.
 - **Step 5:** Double-click `MTGA_Draft_Tool.exe` to start the program.
-- **Step 6:** Download the sets that you plan on using (`Data->Add Sets`).
-  - Event datasets can be used for different events (e.g., you can use the premier draft dataset for a sealed event).
+- **Step 6:** Download the sets you plan to use (`Data->Add Sets`).
+  Event datasets can be used for different events (e.g., the premier draft dataset can be used for a sealed event).
   - Quick draft players should consider using the premier draft dataset when quick draft initially becomes available.
 - **Step 7:** Configure the tool through the [Settings window](#settings).
-  - Users that are new to 17Lands might find the [Win Rate Grades](#card-logic) (`Win Rate Format: Grade`) more useful than the win rate percentages.
-  - The [UI Size](#settings) setting can be used to adjust the image and text size.
+  - Users that are new to 17Lands might find the [Win Rate Grades](#card-logic) (`Win Rate Format: Grade`) more valuable than the win rate percentages.
+  - The [UI Size](#settings) setting can adjust the image and text size.
 - **Step 8:** Start the draft in Arena.
   - The Arena log doesn't list P1P1 for premier and traditional drafts until after P1P2.
-    - Pressing the `Refresh` button will use OCR to identify the cards your first pack. See [The P1P1 Solution](#the-p1p1-solution) for more information on this feature.
+  - Pressing the `Refresh` button will help OCR identify the cards in your first pack. For more information on this feature, see [The P1P1 Solution](#the-p1p1-solution).
     - The [Card Compare](#menu-features) feature can also be used as a substitute for P1P1.
   - The sealed card pool can be found in the [Taken Cards window](#menu-features).
 
@@ -69,16 +69,16 @@ Magic: The Gathering Arena draft tool that utilizes 17Lands data.
   - **Bottles (Linux):** /home/{username}/.var/app/com.usebottles.bottles/data/bottles/bottles/MTG-Arena/drive_c/users/{username}/AppData/LocalLow/Wizards Of The Coast/MTGA/Player.log
   - **Lutris (Linux):** /home/{username}/Games/magic-the-gathering-arena/drive_c/users/{username}/AppData/LocalLow/Wizards Of The Coast/MTGA/Player.log
 - **Step 10:** (Mac Only) Set Arena to window mode.
-- **Step 11:** Download the sets that you plan on using (`Data->Add Sets`).
-  - Event datasets can be used for different events (e.g., you can use the premier draft dataset for a sealed event).
+- **Step 11:** Download the sets you plan to use (`Data->Add Sets`).
+  - Event datasets can be used for different events (e.g., the premier draft dataset can be used for a sealed event).
   - Select `Arena Cube` and adjust the start date to download the data from the most recent Arena Cube event.
   - Quick draft players should consider using the premier draft dataset when quick draft initially becomes available.
 - **Step 12:** Configure the tool through the [Settings window](#settings).
-  - Users that are new to 17Lands might find the [Win Rate Grades](#card-logic) (`Win Rate Format: Grade`) more useful than the win rate percentages.
+  - Users that are new to 17Lands might find the [Win Rate Grades](#card-logic) (`Win Rate Format: Grade`) more valuable than the win rate percentages.
   - The [UI Size](#settings) setting can be used to adjust the image and text size.
 - **Step 13:** Start the draft in Arena.
   - The Arena log doesn't list P1P1 for premier and traditional drafts until after P1P2.
-    - Pressing the `Refresh` button will use OCR to identify the cards your first pack. See [The P1P1 Solution](#the-p1p1-solution) for more information on this feature.
+  - Pressing the `Refresh` button will help OCR identify the cards in your first pack. For more information on this feature, see [The P1P1 Solution](#the-p1p1-solution).
   - The [Card Compare](#menu-features) feature can be used as a substitute for P1P1.
   - The sealed card pool can be found in the [Taken Cards window](#menu-features).
 
@@ -89,36 +89,36 @@ Magic: The Gathering Arena draft tool that utilizes 17Lands data.
 - **Step 3:** Open the terminal and enter ```pip install -r requirements.txt```.
 - **Step 4:** [Download Inno Setup](https://jrsoftware.org/isdl.php#stable)
 - **Step 5:** Build MTGA_Draft_Tool.exe by opening the terminal and entering ```python -m PyInstaller  main.py --onefile --noconsole -n MTGA_Draft_Tool --clean```
-  - If this fails to build, you probably need to add an exclusion in your Windows virus & threat protection.
+  - If this fails to build, you must add an exclusion in your Windows virus & threat protection.
 - **Step 6:** Open `Installer.iss` in Inno Setup and click Build->Compile.
   - In the `{app}` folder, rename the mysetup.exe file to `setup.exe` and move the file to the main `MTGA_Draft_17Lands` folder.
 
 ## UI Features
 
 - **Current Draft:** Lists the current draft type (i.e., Premier, Quick, or Traditional) that the application has identified.
-  - In the Arena logs, P1P1 doesn't appear for Premier and Traditional drafts until after P1P2.
+  - P1P1 doesn't appear for Premier and Traditional drafts until after P1P2 in the Arena logs.
   - You can hide this feature by deselecting `Enable Current Draft Display` in the [Settings window](#settings)
-- **Data Source:** Lists the current draft type (i.e., Premier, Quick, or Traditional) from which the application is pulling the card data.
+- **Data Source:** Lists the current draft type (i.e., Premier, Quick, or Traditional) from which the application pulls the card data.
   - The application will attempt to pull data for the current draft type and set (e.g., data from NEO_PremierDraft_Data.json for a Premier Draft). If the user hasn't downloaded the data file for the current draft type and set, then the application will attempt to use a different data file from the same set (e.g., NEO_QuickDraft_Data.json if NEO_PremierDraft_Data.json isn't available).
-  - This field will display "None" if the application is unable to find a valid data file for the current draft type and set.
+  - This field will display "None" if the application cannot find a valid data file for the current draft type and set.
   - You can hide this feature by deselecting `Enable Data Source Options` in the [Settings window](#settings)
-  - You can select a given user group. 17lands provides data from "Top", "Bottom" and "Middle" users. This data needs to be fetched when you add set data, the default option remains "All" [Definitions of user groups](https://www.17lands.com/metrics_definitions).
-- **Deck Filter:** A drop-down that lists all of the available deck color permutations that you can use to filter the deck card ratings.
-  - The percentage next to the number represents the win rate for that color combination. These percentage values are collected from the [color ratings page on 17Lands](https://www.17lands.com/color_ratings). If there are no values, then that means the sample size was too small to determine the win rate (unpopular deck combination).
+  - You can select a given user group. 17lands provides data from "Top," "Bottom," and "Middle" users. This data needs to be fetched when you add set data; the default option remains "All" [Definitions of user groups](https://www.17lands.com/metrics_definitions).
+- **Deck Filter:** A drop-down that lists all available deck color permutations that you can use to filter the deck card ratings.
+  - The percentage next to the number represents the win rate for that color combination. These percentage values are collected from the [color rating page on 17Lands](https://www.17lands.com/color_ratings). If there were no values, the sample size was too small to determine the win rate (unpopular deck combination).
   - The `All Decks` option lists the combined rating across all of the deck color combinations
     - The `Auto` option will keep the filter at `All Decks` for the first 15 picks and then switch over to the filter that best matches your taken cards. See the Auto Highest Rating note in the Card Logic section.
   - You can hide this feature by deselecting `Enable Deck Filter Options` in the [Settings window](#settings)
 - **Refresh Button:** Trigger a log read.
   - Can find cards for P1P1 using [The P1P1 Solution](#the-p1p1-solution)
-  - The application will automatically read new log entries, so this button is not required unless you are using an outdated operating system (Windows 7 or 8).
+  - The application will automatically read new log entries, so this button is only required if you use an outdated operating system (Windows 7 or 8).
   - You can hide this feature by deselecting `Enable Refresh Button` in the [Settings window](#settings)
 - **Pack / Pick Table:** This table displays the cards included in the current pack.  
   - If a dataset is missing `Data Source: None` or an unrecognized card is listed, this table will show a number under the name column.
-- **Missing Cards Table:** This table displays the cards missing from a pack that has already been seen.
+- **Missing Cards Table:** This table displays the cards missing from an already seen pack.
   - The user's chosen card will have an asterisk next to the name.
   - You can hide this feature by deselecting `Enable Missing Cards` in the [Settings window](#settings)
-- **Draft Stats Table:** This table lists the card distribution and total for creatures, noncreatures, and all cards that were taken during the draft.
-  - The numbered columns represent the cost of the card (cmc).
+- **Draft Stats Table:** This table lists the card distribution and total for creatures, non-creatures, and all cards taken during the draft.
+  - The numbered columns represent the cost of the card (CMC).
   - You can hide this feature by deselecting `Enable Draft Stats` in the [Settings window](#settings)
 
 ## Menu Features
