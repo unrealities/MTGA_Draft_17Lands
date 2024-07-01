@@ -1,6 +1,7 @@
 import base64
 import json
 import os
+import time
 from enum import Enum
 from io import BytesIO
 from PIL import ImageGrab
@@ -20,7 +21,9 @@ from src.constants import (
     DATA_FIELD_IWD,
     DATA_FIELD_MANA_COST,
     DATA_SECTION_IMAGES,
-    FILTER_OPTION_ALL_DECKS
+    FILTER_OPTION_ALL_DECKS,
+    SCREENSHOT_FOLDER,
+    SCREENSHOT_PREFIX
 )
 
 class Result(Enum):
@@ -158,10 +161,16 @@ def check_file_integrity(filename):
 
     return result, json_data
 
-def capture_screen_base64str():
+def capture_screen_base64str(persist):
     '''takes a screenshot and returns it as a base64 encoded string'''
     screenshot = ImageGrab.grab()
     buffered = BytesIO()
     screenshot.save(buffered, format="PNG")
+    if persist:
+        current_timestamp = int(time.time())
+        filename = SCREENSHOT_PREFIX + str(current_timestamp) + ".png"
+        if not os.path.exists(SCREENSHOT_FOLDER):
+            os.makedirs(SCREENSHOT_FOLDER)
+        screenshot.save(os.path.join(SCREENSHOT_FOLDER, filename), format="PNG")
 
     return base64.b64encode(buffered.getvalue()).decode("utf-8")

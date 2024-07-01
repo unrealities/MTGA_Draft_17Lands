@@ -478,7 +478,7 @@ def event_test_cases(test_scanner, event_label, entry_label, expected, entry_str
     assert expected.new_event == new_event, f"Test Failed: New Event, Set: {event_label}, {entry_label}, Expected: {expected.new_event}, Actual: {new_event}"
 
     # Verify that new event data was collected
-    data_update = test_scanner.draft_data_search(Source.UPDATE)
+    data_update = test_scanner.draft_data_search(False, False)
     assert expected.data_update == data_update, f"Test Failed: Data Update, Set: {event_label}, {entry_label}, Expected: {expected.data_update}, Actual: {data_update}"
 
     # Verify the current set and event
@@ -585,7 +585,7 @@ def test_otj_premier_p1p1_ocr_overwrite(mock_screenshot, mock_ocr, otj_scanner):
     mock_ocr.return_value = expected_names
     mock_screenshot.return_value = 0
 
-    otj_scanner.draft_data_search(Source.REFRESH)
+    otj_scanner.draft_data_search(True, False)
 
     # Verify the current pack, pick
     current_pack, current_pick = otj_scanner.retrieve_current_pack_and_pick()
@@ -600,7 +600,7 @@ def test_otj_premier_p1p1_ocr_overwrite(mock_screenshot, mock_ocr, otj_scanner):
         log_file.write(f"{OTJ_P1P1_ENTRY}\n")
 
     # Update the ArenaScanner results
-    otj_scanner.draft_data_search(Source.UPDATE)
+    otj_scanner.draft_data_search(False, False)
 
     # Verify that P1P1 is overwritten when the log entry is received
     card_names = [x["name"] for x in otj_scanner.retrieve_current_pack_cards()]
@@ -627,7 +627,7 @@ def test_otj_premier_p1p1_ocr_multiclick(mock_screenshot, mock_ocr, otj_scanner)
     mock_ocr.return_value = expected_names
     mock_screenshot.return_value = 0
 
-    otj_scanner.draft_data_search(Source.REFRESH)
+    otj_scanner.draft_data_search(True, False)
 
     # Verify the current pack, pick
     current_pack, current_pick = otj_scanner.retrieve_current_pack_and_pick()
@@ -638,8 +638,28 @@ def test_otj_premier_p1p1_ocr_multiclick(mock_screenshot, mock_ocr, otj_scanner)
     assert expected_names == card_names, f"OCR Test Failed: OCR Pack Cards, Set: OTJ, Expected: {expected_names}, Actual: {card_names}"
 
     # Simulate refresh clicks
-    otj_scanner.draft_data_search(Source.REFRESH)
-    otj_scanner.draft_data_search(Source.REFRESH)
+    otj_scanner.draft_data_search(True, False)
+    otj_scanner.draft_data_search(True, False)
 
     # Verify that the OCR method was only called once
     assert mock_ocr.call_count == 1
+
+@patch("src.log_scanner.OCR.get_pack")
+@patch("src.log_scanner.capture_screen_base64str")
+def test_otj_premier_p1p1_ocr_disabled(mock_screenshot, mock_ocr, otj_scanner):
+    # Write the event entry to the fake Player.log file
+    with open(TEST_LOG_FILE_LOCATION, 'a', encoding="utf-8", errors="replace") as log_file:
+        log_file.write(f"{OTJ_EVENT_ENTRY}\n")
+
+    # Search for the event
+    otj_scanner.draft_start_search()
+
+    # Open the dataset
+    otj_scanner.retrieve_set_data(OTJ_PREMIER_SNAPSHOT)
+
+    # P1P1_OCR is disabled
+    otj_scanner.draft_data_search(False, False)
+
+    # Verify that the OCR method was not called
+    assert mock_ocr.call_count == 0
+    mock_screenshot.return_value = 0

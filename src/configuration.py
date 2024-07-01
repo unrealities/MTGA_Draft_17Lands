@@ -41,6 +41,8 @@ class Settings(BaseModel):
     color_bonus_enabled: bool = False
     bayesian_average_enabled: bool = False
     draft_log_enabled: bool = True
+    p1p1_ocr_enabled: bool = True
+    save_screenshot_enabled: bool = False
     color_identity_enabled: bool = False
     current_draft_enabled: bool = True
     data_source_enabled: bool = True
