@@ -15,7 +15,7 @@ def invalid_search_location():
 
 @pytest.fixture
 def valid_search_location_old():
-    return "https://api.github.com/repos/unrealities/MTGA_Draft_17Lands/releases/160144208"
+    return "https://api.github.com/repos/unrealities/MTGA_Draft_17Lands/releases/163580064"
 
 @pytest.fixture
 def valid_search_location_latest():
@@ -27,7 +27,7 @@ def invalid_input_url():
 
 @pytest.fixture
 def valid_input_url_zip():
-    return "https://github.com/unrealities/MTGA_Draft_17Lands/releases/download/MTGA_Draft_Tool_V0319/MTGA_Draft_Tool_V0319.zip"
+    return "https://github.com/unrealities/MTGA_Draft_17Lands/releases/download/MTGA_Draft_Tool_V0319/MTGA_Draft_Tool_V0320.zip"
     
 @pytest.fixture
 def output_filename():
