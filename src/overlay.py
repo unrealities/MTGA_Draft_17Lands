@@ -40,7 +40,7 @@ try:
 except ImportError:
     pass
 
-APPLICATION_VERSION = 3.19
+APPLICATION_VERSION = 3.20
 
 HOTKEY_CTRL_G = '\x07'
 
@@ -514,6 +514,8 @@ class Overlay(ScaledWindow):
         self.color_bonus_checkbox_value = tkinter.IntVar(self.root)
         self.bayesian_average_checkbox_value = tkinter.IntVar(self.root)
         self.draft_log_checkbox_value = tkinter.IntVar(self.root)
+        self.p1p1_ocr_checkbox_value = tkinter.IntVar(self.root)
+        self.save_screenshot_checkbox_value = tkinter.IntVar(self.root)
         self.taken_alsa_checkbox_value = tkinter.IntVar(self.root)
         self.taken_ata_checkbox_value = tkinter.IntVar(self.root)
         self.taken_gpwr_checkbox_value = tkinter.IntVar(self.root)
@@ -1481,7 +1483,8 @@ class Overlay(ScaledWindow):
                         mean,
                         std)
 
-        if self.draft.draft_data_search(source):
+        use_ocr = source == Source.REFRESH and self.configuration.settings.p1p1_ocr_enabled
+        if self.draft.draft_data_search(use_ocr, self.configuration.settings.save_screenshot_enabled):
             update = True
 
         return update
@@ -1530,6 +1533,10 @@ class Overlay(ScaledWindow):
                 self.color_identity_checkbox_value.get())
             self.configuration.settings.draft_log_enabled = bool(
                 self.draft_log_checkbox_value.get())
+            self.configuration.settings.p1p1_ocr_enabled = bool(
+                self.p1p1_ocr_checkbox_value.get())
+            self.configuration.settings.save_screenshot_enabled = bool(
+                self.save_screenshot_checkbox_value.get())
             self.configuration.settings.taken_alsa_enabled = bool(
                 self.taken_alsa_checkbox_value.get())
             self.configuration.settings.taken_ata_enabled = bool(
@@ -1613,6 +1620,10 @@ class Overlay(ScaledWindow):
                 self.configuration.settings.color_identity_enabled)
             self.draft_log_checkbox_value.set(
                 self.configuration.settings.draft_log_enabled)
+            self.p1p1_ocr_checkbox_value.set(
+                self.configuration.settings.p1p1_ocr_enabled)
+            self.save_screenshot_checkbox_value.set(
+                self.configuration.settings.save_screenshot_enabled)
             self.taken_alsa_checkbox_value.set(
                 self.configuration.settings.taken_alsa_enabled)
             self.taken_ata_checkbox_value.set(
@@ -2416,6 +2427,20 @@ class Overlay(ScaledWindow):
                                              variable=self.draft_log_checkbox_value,
                                              onvalue=1,
                                              offvalue=0)
+            
+            p1p1_ocr_label = Label(popup, text="Enable P1P1 OCR:",
+                                    style="MainSectionsBold.TLabel", anchor="e")
+            p1p1_ocr_checkbox = Checkbutton(popup,
+                                             variable=self.p1p1_ocr_checkbox_value,
+                                             onvalue=1,
+                                             offvalue=0)
+            
+            save_screenshot_label = Label(popup, text="Enable Save Screenshot:",
+                                    style="MainSectionsBold.TLabel", anchor="e")
+            save_screenshot_checkbox = Checkbutton(popup,
+                                             variable=self.save_screenshot_checkbox_value,
+                                             onvalue=1,
+                                             offvalue=0)
 
             card_colors_label = Label(
                 popup, text="Enable Row Colors:", style="MainSectionsBold.TLabel", anchor="e")
@@ -2662,6 +2687,22 @@ class Overlay(ScaledWindow):
                 row=row_count, column=0, columnspan=1, sticky="nsew",
                 padx=row_padding_x, pady=row_padding_y)
             draft_log_checkbox.grid(
+                row=row_count, column=1, columnspan=1, sticky="nsew",
+                padx=row_padding_x, pady=row_padding_y)
+            row_count += 1
+            
+            p1p1_ocr_label.grid(
+                row=row_count, column=0, columnspan=1, sticky="nsew",
+                padx=row_padding_x, pady=row_padding_y)
+            p1p1_ocr_checkbox.grid(
+                row=row_count, column=1, columnspan=1, sticky="nsew",
+                padx=row_padding_x, pady=row_padding_y)
+            row_count += 1
+            
+            save_screenshot_label.grid(
+                row=row_count, column=0, columnspan=1, sticky="nsew",
+                padx=row_padding_x, pady=row_padding_y)
+            save_screenshot_checkbox.grid(
                 row=row_count, column=1, columnspan=1, sticky="nsew",
                 padx=row_padding_x, pady=row_padding_y)
             row_count += 1
@@ -2970,6 +3011,10 @@ class Overlay(ScaledWindow):
                 (self.stat_options_selection, lambda: self.stat_options_selection.trace(
                     "w", self.__update_deck_stats_callback)),
                 (self.draft_log_checkbox_value, lambda: self.draft_log_checkbox_value.trace(
+                    "w", self.__update_settings_callback)),
+                (self.p1p1_ocr_checkbox_value, lambda: self.p1p1_ocr_checkbox_value.trace(
+                    "w", self.__update_settings_callback)),
+                (self.save_screenshot_checkbox_value, lambda: self.save_screenshot_checkbox_value.trace(
                     "w", self.__update_settings_callback)),
                 (self.filter_format_selection, lambda: self.filter_format_selection.trace(
                     "w", self.__update_source_callback)),
