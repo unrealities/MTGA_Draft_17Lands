@@ -41,6 +41,8 @@ class Settings(BaseModel):
     color_bonus_enabled: bool = False
     bayesian_average_enabled: bool = False
     draft_log_enabled: bool = True
+    p1p1_ocr_enabled: bool = True
+    save_screenshot_enabled: bool = False
     color_identity_enabled: bool = False
     current_draft_enabled: bool = True
     data_source_enabled: bool = True
@@ -53,9 +55,11 @@ class Settings(BaseModel):
     taken_gdwr_enabled: bool = False
     taken_gndwr_enabled: bool = False
     taken_iwd_enabled: bool = False
+    taken_wheel_enabled: bool = False
     arena_log_location: str = ""
 
     @field_validator('deck_filter')
+    @classmethod
     def validate_deck_filter(cls, value, info):
         allowed_values = constants.DECK_FILTERS  # List of options
         if value not in allowed_values:
@@ -63,6 +67,7 @@ class Settings(BaseModel):
         return value
 
     @field_validator('filter_format')
+    @classmethod
     def validate_filter_format(cls, value, info):
         allowed_values = constants.DECK_FILTER_FORMAT_LIST  # List of options
         if value not in allowed_values:
@@ -70,6 +75,7 @@ class Settings(BaseModel):
         return value
 
     @field_validator('result_format')
+    @classmethod
     def validate_result_format(cls, value, info):
         allowed_values = constants.RESULT_FORMAT_LIST  # List of options
         if value not in allowed_values:
@@ -77,6 +83,7 @@ class Settings(BaseModel):
         return value
 
     @field_validator('ui_size')
+    @classmethod
     def validate_ui_size(cls, value, info):
         allowed_values = constants.UI_SIZE_DICT  # List of options
         if value not in allowed_values:

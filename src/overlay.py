@@ -4,30 +4,43 @@ from tkinter.ttk import Progressbar, Treeview, Style, OptionMenu, Button, Checkb
 from tkinter import filedialog, messagebox, font
 from datetime import date
 import urllib
-import os
 import sys
 import io
 import math
 import argparse
 import webbrowser
+from os import stat
 from dataclasses import dataclass
 from pynput.keyboard import Listener, KeyCode
 from PIL import Image, ImageTk, ImageFont
 from src.configuration import read_configuration, write_configuration, reset_configuration
 from src.limited_sets import LimitedSets
-from src.log_scanner import ArenaScanner
-from src import file_extractor as FE
-from src import card_logic as CL
+from src.log_scanner import ArenaScanner, Source
+from src.file_extractor import FileExtractor, search_arena_log_locations, retrieve_arena_directory
+from src.utils import retrieve_local_set_list
 from src import constants
 from src.logger import create_logger
 from src.app_update import AppUpdate
+from src.card_logic import (
+    CardResult,
+    copy_deck,
+    stack_cards,
+    row_color_tag,
+    field_process_sort,
+    filter_options,
+    deck_card_search,
+    get_card_colors,
+    get_deck_metrics,
+    suggest_deck,
+    calculate_win_rate
+)
 
 try:
     import win32api
 except ImportError:
     pass
 
-APPLICATION_VERSION = 3.10
+APPLICATION_VERSION = 3.20
 
 HOTKEY_CTRL_G = '\x07'
 
@@ -39,7 +52,6 @@ class TableInfo:
     reverse: bool = True
     column: str = ""
 
-
 def start_overlay():
     """Retrieve arguments, create overlay object, and run overlay"""
     parser = argparse.ArgumentParser()
@@ -48,9 +60,10 @@ def start_overlay():
     parser.add_argument('-d', '--data')
     parser.add_argument('--step', action='store_true')
 
-    args = parser.parse_args()
+    args = parser.parse_known_args()
 
-    overlay = Overlay(args)
+    # Ignore unknown arguments from ArgumentParser - pytest change
+    overlay = Overlay(args[0])
 
     overlay.main_loop()
 
@@ -121,7 +134,7 @@ def copy_suggested(deck_colors, deck, color_options):
     colors = color_options[deck_colors.get()]
     deck_string = ""
     try:
-        deck_string = CL.copy_deck(
+        deck_string = copy_deck(
             deck[colors]["deck_cards"], deck[colors]["sideboard_cards"])
         copy_clipboard(deck_string)
     except Exception as error:
@@ -133,8 +146,8 @@ def copy_taken(taken_cards):
     """Copy the card list from the Taken Cards window"""
     deck_string = ""
     try:
-        stacked_cards = CL.stack_cards(taken_cards)
-        deck_string = CL.copy_deck(
+        stacked_cards = stack_cards(taken_cards)
+        deck_string = copy_deck(
             stacked_cards, None)
         copy_clipboard(deck_string)
 
@@ -163,7 +176,7 @@ def identify_table_row_tag(colors_enabled, colors, index):
     tag = ""
 
     if colors_enabled:
-        tag = CL.row_color_tag(colors)
+        tag = row_color_tag(colors)
     else:
         tag = constants.BW_ROW_COLOR_ODD_TAG if index % 2 else constants.BW_ROW_COLOR_EVEN_TAG
 
@@ -233,38 +246,47 @@ def url_callback(event):
 class AutocompleteEntry(tkinter.Entry):
     def initialize(self, completion_list):
         self.completion_list = completion_list
-        self.hitsIndex = 0
+        self.hitsIndex = -1
         self.hits = []
         self.autocompleted = False
         self.current = ""
         self.bind('<KeyRelease>', self.act_on_release)
-        self.bind('<Key>', self.act_on_press)
+        self.bind('<KeyPress>', self.act_on_press)
 
     def autocomplete(self):
         self.current = self.get().lower()
-        self.hits = []
-        for item in self.completion_list:
-            if item.lower().startswith(self.current):
-                self.hits.append(item)
-        self.hitsIndex = 0
+        self.hits = [item for item in self.completion_list if item.lower().startswith(self.current)]
         if self.hits:
+            self.hitsIndex = 0  # Start with the first hit
             self.display_autocompletion()
+        else:
+            self.hitsIndex = -1
+            self.remove_autocompletion()
 
     def remove_autocompletion(self):
-        cursor = self.index(tkinter.INSERT)
-        self.delete(cursor, tkinter.END)
         self.autocompleted = False
 
     def display_autocompletion(self):
-        cursor = self.index(tkinter.INSERT)
-        self.delete(0, tkinter.END)
-        self.insert(0, self.hits[self.hitsIndex])
-        self.select_range(cursor, tkinter.END)
-        self.icursor(cursor)
-        self.autocompleted = True
+        if self.hitsIndex == -1:
+            self.remove_autocompletion()  # Don't display anything if hitsIndex is -1
+            return
+        if self.hits:
+            cursor = self.index(tkinter.INSERT)
+            self.delete(0, tkinter.END)
+            self.insert(0, self.hits[self.hitsIndex])
+            self.select_range(cursor, tkinter.END)
+            self.icursor(cursor)
+            self.autocompleted = True
+        else:
+            self.autocompleted = False
 
     def act_on_release(self, event):
-        return
+        if event.keysym in ('BackSpace', 'Delete'):
+            self.autocompleted = False
+            return
+
+        if event.keysym not in ('Down', 'Up', 'Tab', 'Right', 'Left'):
+            self.autocomplete()
 
     def act_on_press(self, event):
         if event.keysym == 'Left':
@@ -275,12 +297,11 @@ class AutocompleteEntry(tkinter.Entry):
         if event.keysym in ('Down', 'Up', 'Tab'):
             if self.select_present():
                 cursor = self.index(tkinter.SEL_FIRST)
-                if len(self.hits) and self.current == self.get().lower()[0:cursor]:
+                if self.hits and self.current == self.get().lower()[0:cursor]:
                     if event.keysym == 'Up':
-                        self.hitsIndex -= 1
+                        self.hitsIndex = (self.hitsIndex - 1) % len(self.hits)
                     else:
-                        self.hitsIndex += 1
-                    self.hitsIndex %= len(self.hits)
+                        self.hitsIndex = (self.hitsIndex + 1) % len(self.hits)
                     self.display_autocompletion()
             else:
                 self.autocomplete()
@@ -292,7 +313,16 @@ class AutocompleteEntry(tkinter.Entry):
                 self.icursor(tkinter.END)
                 return "break"
 
+        if event.keysym in ('BackSpace', 'Delete'):
+            if self.autocompleted:
+                self.remove_autocompletion()
 
+    def select_present(self):
+        try:
+            self.index(tkinter.SEL_FIRST)
+            return True
+        except tkinter.TclError:
+            return False
 
 class ScaledWindow:
     def __init__(self):
@@ -357,7 +387,7 @@ class ScaledWindow:
             row_list = [(table.set(k, column), k)
                         for k in table.get_children('')]
 
-        row_list.sort(key=lambda x: CL.field_process_sort(
+        row_list.sort(key=lambda x: field_process_sort(
             x[0]), reverse=reverse)
 
         if row_list:
@@ -396,7 +426,7 @@ class Overlay(ScaledWindow):
             self.configuration.settings.table_width)
 
         self.listener = None
-        self.configuration.settings.arena_log_location = FE.search_arena_log_locations(
+        self.configuration.settings.arena_log_location = search_arena_log_locations(
             [args.file, self.configuration.settings.arena_log_location])
 
         if self.configuration.settings.arena_log_location:
@@ -404,14 +434,14 @@ class Overlay(ScaledWindow):
         self.arena_file = self.configuration.settings.arena_log_location
 
         if args.data is None:
-            self.data_file = FE.retrieve_arena_directory(self.arena_file)
+            self.data_file = retrieve_arena_directory(self.arena_file)
         else:
             self.data_file = args.file
         logger.info("Card Data Location: %s", self.data_file)
 
         self.step_through = args.step
 
-        self.extractor = FE.FileExtractor(self.data_file)
+        self.extractor = FileExtractor(self.data_file)
         self.limited_sets = LimitedSets().retrieve_limited_sets()
         self.draft = ArenaScanner(
             self.arena_file, self.limited_sets, step_through=self.step_through)
@@ -484,12 +514,15 @@ class Overlay(ScaledWindow):
         self.color_bonus_checkbox_value = tkinter.IntVar(self.root)
         self.bayesian_average_checkbox_value = tkinter.IntVar(self.root)
         self.draft_log_checkbox_value = tkinter.IntVar(self.root)
+        self.p1p1_ocr_checkbox_value = tkinter.IntVar(self.root)
+        self.save_screenshot_checkbox_value = tkinter.IntVar(self.root)
         self.taken_alsa_checkbox_value = tkinter.IntVar(self.root)
         self.taken_ata_checkbox_value = tkinter.IntVar(self.root)
         self.taken_gpwr_checkbox_value = tkinter.IntVar(self.root)
         self.taken_ohwr_checkbox_value = tkinter.IntVar(self.root)
         self.taken_gndwr_checkbox_value = tkinter.IntVar(self.root)
         self.taken_iwd_checkbox_value = tkinter.IntVar(self.root)
+        self.taken_wheel_checkbox_value = tkinter.IntVar(self.root)
         self.taken_gdwr_checkbox_value = tkinter.IntVar(self.root)
         self.card_colors_checkbox_value = tkinter.IntVar(self.root)
         self.color_identity_checkbox_value = tkinter.IntVar(self.root)
@@ -559,7 +592,7 @@ class Overlay(ScaledWindow):
 
         self.refresh_button_frame = tkinter.Frame(self.root)
         self.refresh_button = Button(
-            self.refresh_button_frame, command=lambda: self.__update_overlay_callback(True), text="Refresh")
+            self.refresh_button_frame, command=lambda: self.__update_overlay_callback(True, Source.REFRESH), text="Refresh")
 
         self.separator_frame_draft = Separator(self.root, orient='horizontal')
         self.status_frame = tkinter.Frame(self.root)
@@ -717,7 +750,7 @@ class Overlay(ScaledWindow):
         if platform == constants.PLATFORM_ID_OSX:
             self.configuration.features.hotkey_enabled = False
         else:
-            self.root.tk.call("source", "dark_mode.tcl")
+            self.root.call("source", "dark_mode.tcl")
         self.__adjust_overlay_scale()
         self.__configure_fonts(platform)
 
@@ -843,7 +876,7 @@ class Overlay(ScaledWindow):
         try:
             #selected_option = self.deck_filter_selection.get()
             selected_color = self.deck_colors[selected_option]
-            filtered_colors = CL.option_filter(
+            filtered_colors = filter_options(
                 cards, selected_color, self.set_metrics, self.configuration)
 
             if selected_color == constants.FILTER_OPTION_AUTO:
@@ -863,7 +896,7 @@ class Overlay(ScaledWindow):
     def __update_pack_table(self, card_list, filtered_colors, fields):
         '''Update the table that lists the cards within the current pack'''
         try:
-            result_class = CL.CardResult(
+            result_class = CardResult(
                 self.set_metrics, self.tier_data, self.configuration, self.draft.current_pick)
             result_list = result_class.return_results(
                 card_list, filtered_colors, fields)
@@ -886,10 +919,10 @@ class Overlay(ScaledWindow):
             if self.table_info["pack_table"].column in visible_columns:
                 column_index = visible_columns[self.table_info["pack_table"].column]
                 direction = self.table_info["pack_table"].reverse
-                result_list = sorted(result_list, key=lambda d: CL.field_process_sort(
+                result_list = sorted(result_list, key=lambda d: field_process_sort(
                     d["results"][column_index]), reverse=direction)
             else:
-                result_list = sorted(result_list, key=lambda d: CL.field_process_sort(
+                result_list = sorted(result_list, key=lambda d: field_process_sort(
                     d["results"][last_field_index]), reverse=True)
 
             for count, card in enumerate(result_list):
@@ -925,7 +958,7 @@ class Overlay(ScaledWindow):
                     self.missing_table.config(height=0)
 
                 if list_length:
-                    result_class = CL.CardResult(
+                    result_class = CardResult(
                         self.set_metrics, self.tier_data, self.configuration, self.draft.current_pick)
                     result_list = result_class.return_results(
                         missing_cards, filtered_colors, fields)
@@ -933,10 +966,10 @@ class Overlay(ScaledWindow):
                     if self.table_info["missing_table"].column in visible_columns:
                         column_index = visible_columns[self.table_info["missing_table"].column]
                         direction = self.table_info["missing_table"].reverse
-                        result_list = sorted(result_list, key=lambda d: CL.field_process_sort(
+                        result_list = sorted(result_list, key=lambda d: field_process_sort(
                             d["results"][column_index]), reverse=direction)
                     else:
-                        result_list = sorted(result_list, key=lambda d: CL.field_process_sort(
+                        result_list = sorted(result_list, key=lambda d: field_process_sort(
                             d["results"][last_field_index]), reverse=True)
 
                     picked_card_names = [
@@ -970,8 +1003,7 @@ class Overlay(ScaledWindow):
             if self.compare_table is None or self.compare_list is None:
                 return
 
-            card_list = self.draft.set_data["card_ratings"] if self.draft.set_data else [
-            ]
+            card_list = self.draft.set_data.get_card_ratings()
 
             taken_cards = self.draft.retrieve_taken_cards()
 
@@ -994,7 +1026,7 @@ class Overlay(ScaledWindow):
                     if cards:
                         self.compare_list.append(cards[0])
 
-            result_class = CL.CardResult(
+            result_class = CardResult(
                 self.set_metrics, self.tier_data, self.configuration, self.draft.current_pick)
             result_list = result_class.return_results(
                 self.compare_list, filtered_colors, fields)
@@ -1008,10 +1040,10 @@ class Overlay(ScaledWindow):
             if self.table_info["compare_table"].column in visible_columns:
                 column_index = visible_columns[self.table_info["compare_table"].column]
                 direction = self.table_info["compare_table"].reverse
-                result_list = sorted(result_list, key=lambda d: CL.field_process_sort(
+                result_list = sorted(result_list, key=lambda d: field_process_sort(
                     d["results"][column_index]), reverse=direction)
             else:
-                result_list = sorted(result_list, key=lambda d: CL.field_process_sort(
+                result_list = sorted(result_list, key=lambda d: field_process_sort(
                     d["results"][last_field_index]), reverse=True)
 
             list_length = len(result_list)
@@ -1080,19 +1112,19 @@ class Overlay(ScaledWindow):
                                            constants.CARD_TYPE_ENCHANTMENT,
                                            constants.CARD_TYPE_PLANESWALKER])
 
-                    taken_cards = CL.deck_card_search(taken_cards,
+                    taken_cards = deck_card_search(taken_cards,
                                                       constants.CARD_COLORS,
                                                       card_types,
                                                       True,
                                                       True,
                                                       True)
 
-                stacked_cards = CL.stack_cards(taken_cards)
+                stacked_cards = stack_cards(taken_cards)
 
                 for row in self.taken_table.get_children():
                     self.taken_table.delete(row)
 
-                result_class = CL.CardResult(
+                result_class = CardResult(
                     self.set_metrics, self.tier_data, self.configuration, self.draft.current_pick)
                 result_list = result_class.return_results(
                     stacked_cards, filtered_colors, fields)
@@ -1103,10 +1135,10 @@ class Overlay(ScaledWindow):
                 if self.table_info["taken_table"].column in visible_columns:
                     column_index = visible_columns[self.table_info["taken_table"].column]
                     direction = self.table_info["taken_table"].reverse
-                    result_list = sorted(result_list, key=lambda d: CL.field_process_sort(
+                    result_list = sorted(result_list, key=lambda d: field_process_sort(
                         d["results"][column_index]), reverse=direction)
                 else:
-                    result_list = sorted(result_list, key=lambda d: CL.field_process_sort(
+                    result_list = sorted(result_list, key=lambda d: field_process_sort(
                         d["results"][last_field_index]), reverse=True)
 
                 if result_list:
@@ -1157,7 +1189,7 @@ class Overlay(ScaledWindow):
                 if constants.CARD_TYPE_LAND in card[constants.DATA_FIELD_TYPES]:
                     card_colors = "".join(card[constants.DATA_FIELD_COLORS])
                 else:
-                    card_colors = "".join(list(CL.card_colors(card[constants.DATA_FIELD_MANA_COST]).keys())
+                    card_colors = "".join(list(get_card_colors(card[constants.DATA_FIELD_MANA_COST]).keys())
                                           if not self.configuration.settings.color_identity_enabled
                                           else card[constants.DATA_FIELD_COLORS])
 
@@ -1180,12 +1212,12 @@ class Overlay(ScaledWindow):
             colors_filtered = {}
             for color, symbol in constants.CARD_COLORS_DICT.items():
                 if symbol:
-                    card_colors_sorted = CL.deck_card_search(
+                    card_colors_sorted = deck_card_search(
                         taken_cards, symbol, card_types[0], card_types[1], card_types[2], card_types[3])
                 else:
-                    card_colors_sorted = CL.deck_card_search(
+                    card_colors_sorted = deck_card_search(
                         taken_cards, symbol, card_types[0], card_types[1], True, False)
-                card_metrics = CL.deck_metrics(card_colors_sorted)
+                card_metrics = get_deck_metrics(card_colors_sorted)
                 colors_filtered[color] = {}
                 colors_filtered[color]["symbol"] = symbol
                 colors_filtered[color]["total"] = card_metrics.total_cards
@@ -1435,7 +1467,7 @@ class Overlay(ScaledWindow):
         for key, value in tier_dict.items():
             self.main_options_dict[key] = value
 
-    def __update_draft(self):
+    def __update_draft(self, source):
         '''Function that that triggers a search of the Arena log for draft data'''
         update = False
 
@@ -1445,12 +1477,14 @@ class Overlay(ScaledWindow):
             self.tier_sources = self.draft.retrieve_tier_source()
             self.__update_data_source_options(True)
             self.__update_draft_data()
-            logger.info("%s, Mean: %.2f, Standard Deviation: %.2f",
+            mean, std = self.set_metrics.get_metrics(constants.FILTER_OPTION_ALL_DECKS, constants.DATA_FIELD_GIHWR)
+            logger.info("%s, Mean: %.1f, Standard Deviation: %.1f",
                         self.draft.draft_sets,
-                        self.set_metrics.mean,
-                        self.set_metrics.standard_deviation)
+                        mean,
+                        std)
 
-        if self.draft.draft_data_search():
+        use_ocr = source == Source.REFRESH and self.configuration.settings.p1p1_ocr_enabled
+        if self.draft.draft_data_search(use_ocr, self.configuration.settings.save_screenshot_enabled):
             update = True
 
         return update
@@ -1499,6 +1533,10 @@ class Overlay(ScaledWindow):
                 self.color_identity_checkbox_value.get())
             self.configuration.settings.draft_log_enabled = bool(
                 self.draft_log_checkbox_value.get())
+            self.configuration.settings.p1p1_ocr_enabled = bool(
+                self.p1p1_ocr_checkbox_value.get())
+            self.configuration.settings.save_screenshot_enabled = bool(
+                self.save_screenshot_checkbox_value.get())
             self.configuration.settings.taken_alsa_enabled = bool(
                 self.taken_alsa_checkbox_value.get())
             self.configuration.settings.taken_ata_enabled = bool(
@@ -1513,6 +1551,8 @@ class Overlay(ScaledWindow):
                 self.taken_gndwr_checkbox_value.get())
             self.configuration.settings.taken_gdwr_enabled = bool(
                 self.taken_gdwr_checkbox_value.get())
+            self.configuration.settings.taken_wheel_enabled = bool(
+                self.taken_wheel_checkbox_value.get())
             self.configuration.settings.card_colors_enabled = bool(
                 self.card_colors_checkbox_value.get())
             self.configuration.settings.current_draft_enabled = bool(
@@ -1580,6 +1620,10 @@ class Overlay(ScaledWindow):
                 self.configuration.settings.color_identity_enabled)
             self.draft_log_checkbox_value.set(
                 self.configuration.settings.draft_log_enabled)
+            self.p1p1_ocr_checkbox_value.set(
+                self.configuration.settings.p1p1_ocr_enabled)
+            self.save_screenshot_checkbox_value.set(
+                self.configuration.settings.save_screenshot_enabled)
             self.taken_alsa_checkbox_value.set(
                 self.configuration.settings.taken_alsa_enabled)
             self.taken_ata_checkbox_value.set(
@@ -1594,6 +1638,8 @@ class Overlay(ScaledWindow):
                 self.configuration.settings.taken_gndwr_enabled)
             self.taken_iwd_checkbox_value.set(
                 self.configuration.settings.taken_iwd_enabled)
+            self.taken_wheel_checkbox_value.set(
+                self.configuration.settings.taken_wheel_enabled)
             self.card_colors_checkbox_value.set(
                 self.configuration.settings.card_colors_enabled)
             self.current_draft_checkbox_value.set(
@@ -1643,11 +1689,11 @@ class Overlay(ScaledWindow):
 
         self.root.update()
 
-    def __update_overlay_callback(self, enable_draft_search):
+    def __update_overlay_callback(self, enable_draft_search, source = Source.UPDATE):
         '''Callback function that updates all of the widgets in the main window'''
         update = True
         if enable_draft_search:
-            update = self.__update_draft()
+            update = self.__update_draft(source)
 
         if not update:
             return
@@ -1704,7 +1750,7 @@ class Overlay(ScaledWindow):
     def __arena_log_check(self):
         '''Function that monitors the Arena log every 1000ms to determine if there's new draft data'''
         try:
-            self.current_timestamp = os.stat(self.arena_file).st_mtime
+            self.current_timestamp = stat(self.arena_file).st_mtime
 
             if self.current_timestamp != self.previous_timestamp:
                 self.previous_timestamp = self.current_timestamp
@@ -1771,8 +1817,9 @@ class Overlay(ScaledWindow):
 
             sets = self.limited_sets.data
 
-            headers = {"SET": {"width": .40, "anchor": tkinter.W},
-                       "DRAFT": {"width": .20, "anchor": tkinter.CENTER},
+            headers = {"SET": {"width": .30, "anchor": tkinter.W},
+                       "EVENT": {"width": .20, "anchor": tkinter.CENTER},
+                       "USER GROUP": {"width": .10, "anchor": tkinter.CENTER},
                        "START DATE": {"width": .20, "anchor": tkinter.CENTER},
                        "END DATE": {"width": .20, "anchor": tkinter.CENTER}}
 
@@ -1805,6 +1852,10 @@ class Overlay(ScaledWindow):
                               text="End Date:",
                               style="SetOptions.TLabel",
                               anchor="e")
+            group_label = Label(popup,
+                                text="User Group:",
+                                style="SetOptions.TLabel",
+                                anchor="e")
             draft_choices = constants.LIMITED_TYPE_LIST
 
             status_text = tkinter.StringVar()
@@ -1831,8 +1882,14 @@ class Overlay(ScaledWindow):
             menu = self.root.nametowidget(set_entry['menu'])
             menu.config(font=self.fonts_dict["All.TMenubutton"])
 
-            set_value.trace("w", lambda *args, start=start_entry, selection=set_value,
+            set_value.trace_add("write", lambda *args, start=start_entry, selection=set_value,
                             set_list=sets: self.__update_set_start_date(start, selection, set_list, *args))
+
+            draft_groups = constants.LIMITED_GROUPS_LIST
+            group_value = tkinter.StringVar(self.root)
+            group_entry = OptionMenu(popup, group_value, draft_groups[0], *draft_groups)
+            menu = self.root.nametowidget(group_entry['menu'])
+            menu.config(font=self.fonts_dict["All.TMenubutton"])
 
             progress = Progressbar(
                 popup, orient=tkinter.HORIZONTAL, length=100, mode='determinate')
@@ -1842,6 +1899,7 @@ class Overlay(ScaledWindow):
                                                                       event_value,
                                                                       start_entry,
                                                                       end_entry,
+                                                                      group_value,
                                                                       add_button,
                                                                       progress,
                                                                       list_box,
@@ -1851,22 +1909,27 @@ class Overlay(ScaledWindow):
 
             event_separator = Separator(popup, orient='vertical')
             set_separator = Separator(popup, orient='vertical')
+            group_separator = Separator(popup, orient='vertical')
 
-            notice_label.grid(row=0, column=0, columnspan=10, sticky='nsew')
-            list_box_frame.grid(row=1, column=0, columnspan=10, sticky='nsew')
+            notice_label.grid(row=0, column=0, columnspan=13, sticky='nsew')
+            list_box_frame.grid(row=1, column=0, columnspan=13, sticky='nsew')
+            add_button.grid(row=3, column=0, columnspan=13, sticky='nsew')
+            progress.grid(row=4, column=0, columnspan=13, sticky='nsew')
+            status_label.grid(row=5, column=0, columnspan=13, sticky='nsew')
+            
             set_label.grid(row=2, column=0, sticky='nsew')
             set_entry.grid(row=2, column=1, sticky='nsew')
             set_separator.grid(row=2, column=2, sticky='nsew')
             event_label.grid(row=2, column=3, sticky='nsew')
             event_entry.grid(row=2, column=4, sticky='nsew')
             event_separator.grid(row=2, column=5, sticky='nsew')
-            start_label.grid(row=2, column=6, sticky='nsew')
-            start_entry.grid(row=2, column=7, sticky='nsew')
-            end_label.grid(row=2, column=8, sticky='nsew')
-            end_entry.grid(row=2, column=9, sticky='nsew')
-            add_button.grid(row=3, column=0, columnspan=10, sticky='nsew')
-            progress.grid(row=4, column=0, columnspan=10, sticky='nsew')
-            status_label.grid(row=5, column=0, columnspan=10, sticky='nsew')
+            group_label.grid(row=2, column=6, sticky='nsew')
+            group_entry.grid(row=2, column=7, sticky='nsew')
+            group_separator.grid(row=2, column=8, sticky='nsew')
+            start_label.grid(row=2, column=9, sticky='nsew')
+            start_entry.grid(row=2, column=10, sticky='nsew')
+            end_label.grid(row=2, column=11, sticky='nsew')
+            end_entry.grid(row=2, column=12, sticky='nsew')
 
             list_box.pack(expand=True, fill="both")
 
@@ -1916,10 +1979,9 @@ class Overlay(ScaledWindow):
 
             card_frame = tkinter.Frame(popup)
             set_card_names = []
+            set_data = self.draft.set_data.get_card_ratings()
 
-            if self.draft.set_data:
-                set_data = self.draft.set_data["card_ratings"]
-
+            if set_data:
                 set_card_names = [v[constants.DATA_FIELD_NAME]
                                   for k, v in set_data.items()]
 
@@ -2001,7 +2063,7 @@ class Overlay(ScaledWindow):
                        "Column8": {"width": .20, "anchor": tkinter.CENTER},
                        "Column9": {"width": .20, "anchor": tkinter.CENTER},
                        "Column10": {"width": .20, "anchor": tkinter.CENTER},
-                       "Column11": {"width": .20, "anchor": tkinter.CENTER},
+                       "Column11": {"width": .20, "anchor": tkinter.CENTER}
                        }
 
             taken_table_frame = tkinter.Frame(popup)
@@ -2101,6 +2163,12 @@ class Overlay(ScaledWindow):
                                              variable=self.taken_iwd_checkbox_value,
                                              onvalue=1,
                                              offvalue=0)
+            taken_wheel_checkbox = Checkbutton(checkbox_frame,
+                                             text="WHEEL",
+                                             style="Taken.TCheckbutton",
+                                             variable=self.taken_wheel_checkbox_value,
+                                             onvalue=1,
+                                             offvalue=0)
 
             option_frame.grid(row=0, column=0, columnspan=7, sticky="nsew")
             type_checkbox_frame.grid(
@@ -2152,6 +2220,7 @@ class Overlay(ScaledWindow):
                 self.taken_ohwr_checkbox_value,
                 self.taken_gdwr_checkbox_value,
                 self.taken_gndwr_checkbox_value,
+                self.taken_wheel_checkbox_value
             ]
 
             for option in column_checkboxes:
@@ -2205,7 +2274,7 @@ class Overlay(ScaledWindow):
         try:
             tkinter.Grid.rowconfigure(popup, 3, weight=1)
 
-            suggested_decks = CL.suggest_deck(
+            suggested_decks = suggest_deck(
                 self.draft.retrieve_taken_cards(), self.set_metrics, self.configuration)
 
             choices = ["None"]
@@ -2356,6 +2425,20 @@ class Overlay(ScaledWindow):
                                     style="MainSectionsBold.TLabel", anchor="e")
             draft_log_checkbox = Checkbutton(popup,
                                              variable=self.draft_log_checkbox_value,
+                                             onvalue=1,
+                                             offvalue=0)
+            
+            p1p1_ocr_label = Label(popup, text="Enable P1P1 OCR:",
+                                    style="MainSectionsBold.TLabel", anchor="e")
+            p1p1_ocr_checkbox = Checkbutton(popup,
+                                             variable=self.p1p1_ocr_checkbox_value,
+                                             onvalue=1,
+                                             offvalue=0)
+            
+            save_screenshot_label = Label(popup, text="Enable Save Screenshot:",
+                                    style="MainSectionsBold.TLabel", anchor="e")
+            save_screenshot_checkbox = Checkbutton(popup,
+                                             variable=self.save_screenshot_checkbox_value,
                                              onvalue=1,
                                              offvalue=0)
 
@@ -2607,6 +2690,22 @@ class Overlay(ScaledWindow):
                 row=row_count, column=1, columnspan=1, sticky="nsew",
                 padx=row_padding_x, pady=row_padding_y)
             row_count += 1
+            
+            p1p1_ocr_label.grid(
+                row=row_count, column=0, columnspan=1, sticky="nsew",
+                padx=row_padding_x, pady=row_padding_y)
+            p1p1_ocr_checkbox.grid(
+                row=row_count, column=1, columnspan=1, sticky="nsew",
+                padx=row_padding_x, pady=row_padding_y)
+            row_count += 1
+            
+            save_screenshot_label.grid(
+                row=row_count, column=0, columnspan=1, sticky="nsew",
+                padx=row_padding_x, pady=row_padding_y)
+            save_screenshot_checkbox.grid(
+                row=row_count, column=1, columnspan=1, sticky="nsew",
+                padx=row_padding_x, pady=row_padding_y)
+            row_count += 1
 
             default_button.grid(row=row_count, column=0,
                                 columnspan=2, sticky="nsew")
@@ -2660,7 +2759,7 @@ class Overlay(ScaledWindow):
 
             github_url = Label(
                 popup,
-                text="https://github.com/bstaple1/MTGA_Draft_17Lands",
+                text="https://github.com/unrealities/MTGA_Draft_17Lands",
                 style="MainSections.TLabel",
                 anchor="c",
                 foreground="#0066CC",
@@ -2720,7 +2819,7 @@ class Overlay(ScaledWindow):
         except Exception as error:
             logger.error(error)
 
-    def __add_set(self, popup, draft_set, draft, start, end, button, progress, list_box, sets, status, version):
+    def __add_set(self, popup, draft_set, draft, start, end, user_group, button, progress, list_box, sets, status, version):
         '''Initiates the set download process when the Add Set button is clicked'''
         result = True
         result_string = ""
@@ -2747,6 +2846,7 @@ class Overlay(ScaledWindow):
                     result = False
                     result_string = "Invalid End Date (YYYY-MM-DD)"
                     break
+                self.extractor.set_user_group(user_group.get())
                 self.extractor.set_version(version)
                 status.set("Downloading Color Ratings")
                 self.extractor.retrieve_17lands_color_ratings()
@@ -2797,7 +2897,13 @@ class Overlay(ScaledWindow):
         for row in list_box.get_children():
             list_box.delete(row)
         self.root.update()
-        file_list = FE.retrieve_local_set_list(sets)
+        set_codes = [v.seventeenlands[0] for v in sets.values()]
+        set_names = sets.keys()
+        file_list, error_list = retrieve_local_set_list(set_codes, set_names)
+        
+        # Log all of errors generated by retrieve_local_set_list
+        for error_string in error_list:
+            logger.error(error_string)
 
         if file_list:
             list_box.config(height=min(len(file_list), 10))
@@ -2805,7 +2911,7 @@ class Overlay(ScaledWindow):
             list_box.config(height=0)
 
         # Sort list by end date
-        file_list.sort(key=lambda x: x[3], reverse=True)
+        file_list.sort(key=lambda x: x[4], reverse=True)
 
         for count, file in enumerate(file_list):
             row_tag = identify_table_row_tag(False, "", count)
@@ -2829,7 +2935,7 @@ class Overlay(ScaledWindow):
                                    and k in card[constants.DATA_FIELD_DECK_COLORS][color]:
                                     if k in constants.WIN_RATE_FIELDS_DICT:
                                         winrate_count = constants.WIN_RATE_FIELDS_DICT[k]
-                                        color_dict[color][k] = CL.calculate_win_rate(card[constants.DATA_FIELD_DECK_COLORS][color][k],
+                                        color_dict[color][k] = calculate_win_rate(card[constants.DATA_FIELD_DECK_COLORS][color][k],
                                                                                      card[constants.DATA_FIELD_DECK_COLORS][color][winrate_count],
                                                                                      self.configuration.settings.bayesian_average_enabled)
                                     else:
@@ -2906,6 +3012,10 @@ class Overlay(ScaledWindow):
                     "w", self.__update_deck_stats_callback)),
                 (self.draft_log_checkbox_value, lambda: self.draft_log_checkbox_value.trace(
                     "w", self.__update_settings_callback)),
+                (self.p1p1_ocr_checkbox_value, lambda: self.p1p1_ocr_checkbox_value.trace(
+                    "w", self.__update_settings_callback)),
+                (self.save_screenshot_checkbox_value, lambda: self.save_screenshot_checkbox_value.trace(
+                    "w", self.__update_settings_callback)),
                 (self.filter_format_selection, lambda: self.filter_format_selection.trace(
                     "w", self.__update_source_callback)),
                 (self.result_format_selection, lambda: self.result_format_selection.trace(
@@ -2925,6 +3035,8 @@ class Overlay(ScaledWindow):
                 (self.taken_gndwr_checkbox_value, lambda: self.taken_gndwr_checkbox_value.trace(
                     "w", self.__update_settings_callback)),
                 (self.taken_iwd_checkbox_value, lambda: self.taken_iwd_checkbox_value.trace(
+                    "w", self.__update_settings_callback)),
+                (self.taken_wheel_checkbox_value, lambda: self.taken_wheel_checkbox_value.trace(
                     "w", self.__update_settings_callback)),
                 (self.taken_filter_selection, lambda: self.taken_filter_selection.trace(
                     "w", self.__update_settings_callback)),
@@ -2992,10 +3104,10 @@ class Overlay(ScaledWindow):
                                 0, "open", output_location, None, None, 10)
                         else:
                             message_box = tkinter.messagebox.showerror(
-                                title="Download Failed", message="Visit https://github.com/bstaple1/MTGA_Draft_17Lands/releases to manually download the new version.")
+                                title="Download Failed", message="Visit https://github.com/unrealities/MTGA_Draft_17Lands/releases to manually download the new version.")
 
                 else:
-                    message_string = f"Update {new_version} is now available.\n\nCheck https://github.com/bstaple1/MTGA_Draft_17Lands/releases for more details."
+                    message_string = f"Update {new_version} is now available.\n\nCheck https://github.com/unrealities/MTGA_Draft_17Lands/releases for more details."
                     message_box = tkinter.messagebox.showinfo(
                         title="Update", message=message_string)
         except Exception as error:

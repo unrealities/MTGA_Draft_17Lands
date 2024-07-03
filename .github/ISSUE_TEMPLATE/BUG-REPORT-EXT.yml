@@ -1,0 +1,58 @@
+name: Chrome Extension Bug Report
+description: Chrome extension bug report template
+title: "[Bug]: "
+labels: ["bug"]
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        The report will be closed if a vague title is provided.
+        
+        The report will be ignored if detailed steps for reproducing the bug are not provided.
+        
+        Please check both open and closed bugs to ensure your problem hasn't already been reported. Duplicate bugs will be ignored.
+  - type: textarea
+    id: bug-description
+    attributes:
+      label: Describe the bug in detail
+      description: Provide a detailed description of the bug and the expected behavior
+      placeholder: "The extension is creating a file when I click the download button, but the file doesn't have any card grades."
+    validations:
+      required: true
+  - type: textarea
+    id: steps-reproduce
+    attributes:
+      label: Steps to reproduce this bug
+      description: Provide a list of steps that can be used to reproduce the bug.
+      placeholder: |
+        1. Go to page https://www.17lands.com/tier_list/58d9427911c74212841c04e223556395
+        2. Click on the download tier list button
+        3. Go to your downloads folder and open the generated file in notepad
+        4. Scroll down to a card entry and check the "rating" field
+    validations:
+      required: true
+  - type: textarea
+    id: chrome-version
+    attributes:
+      label: Chrome Version
+      description: What version of Chrome are you using?
+      placeholder: "Version 124.0.6367.208 (Official Build) (64-bit)"
+    validations:
+      required: true
+  - type: dropdown
+    id: logged-in
+    attributes:
+      label: Logged-in
+      description: Are you logged-in to 17Lands.com?
+      options:
+        - "Yes"
+        - "No"
+    validations:
+      required: true
+  - type: textarea
+    id: possible-solution
+    attributes:
+      label: Possible Solution (optional)
+      description: If you have a possible solution or workaround, please describe it.
+      placeholder:

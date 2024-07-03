@@ -293,6 +293,18 @@ LIMITED_TYPE_LIST = [
     LIMITED_TYPE_STRING_SEALED,
     LIMITED_TYPE_STRING_TRAD_SEALED]
 
+LIMITED_USER_GROUP_ALL = "All"
+LIMITED_USER_GROUP_BOTTOM = "Bottom"
+LIMITED_USER_GROUP_MIDDLE = "Middle"
+LIMITED_USER_GROUP_TOP = "Top"
+
+LIMITED_GROUPS_LIST = [
+    LIMITED_USER_GROUP_ALL,
+    LIMITED_USER_GROUP_TOP,
+    LIMITED_USER_GROUP_MIDDLE,
+    LIMITED_USER_GROUP_BOTTOM
+]
+
 SET_TYPE_EXPANSION = "expansion"
 SET_TYPE_ALCHEMY = "alchemy"
 SET_TYPE_MASTERS = "masters"
@@ -467,6 +479,7 @@ COLUMNS_OPTIONS_MAIN_DICT = {
     FIELD_LABEL_GIHWR: DATA_FIELD_GIHWR,
     FIELD_LABEL_GDWR: DATA_FIELD_GDWR,
     FIELD_LABEL_GNSWR: DATA_FIELD_GNSWR,
+    FIELD_LABEL_WHEEL: DATA_FIELD_WHEEL,
     FIELD_LABEL_COLORS: DATA_FIELD_COLORS,
 }
 
@@ -480,6 +493,7 @@ COLUMNS_OPTIONS_EXTRA_DICT = {
     FIELD_LABEL_GIHWR: DATA_FIELD_GIHWR,
     FIELD_LABEL_GDWR: DATA_FIELD_GDWR,
     FIELD_LABEL_GNSWR: DATA_FIELD_GNSWR,
+    FIELD_LABEL_WHEEL: DATA_FIELD_WHEEL,
     FIELD_LABEL_COLORS: DATA_FIELD_COLORS,
 }
 
@@ -570,6 +584,14 @@ TABLE_PROPORTIONS = [
     (.46, .18, .18, .18)
 ]
 
+# TODO: Where are these values from?
+# My understanding is this array is an array for values for each of the first six packs
+# The four values are used in a numpy polyval with the ALSA
+# Meaning if you have a card with an ALSA of 7.2 in pack #1, then your wheel % would be
+# -0.46*(7.2^3) + 7.97*(7.2^2) - 27.43*7.2 + 26.61 = 70.6% (69.4% in MTGAZone article)
+# For pack #6: 0.25*(7.2^3) +-2.65*(7.2^2) + 9.76*7.2 - 11.21 = 15.0% (13.0% in MTGAZone article)
+# The numbers seem reasonable, but don't know if it is generalized from a set's draft data?
+# https://mtgazone.com/how-to-wheel-in-drafts/ is the best I could find online and the percentages are close
 WHEEL_COEFFICIENTS = [
     [-0.46, 7.97, -27.43, 26.61],
     [-0.33, 6.31, -23.12, 23.86],
@@ -607,3 +629,8 @@ UI_SIZE_DICT = {
     "240%": 2.4,
     "250%": 2.5
 }
+
+PACK_PARSER_URL = "https://us-central1-mtgalimited.cloudfunctions.net/pack_parser"
+
+SCREENSHOT_FOLDER = os.path.join(os.getcwd(), "Screenshots")
+SCREENSHOT_PREFIX = "p1p1_screenshot_"
