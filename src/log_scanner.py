@@ -63,6 +63,7 @@ class ArenaScanner:
         self.file_size = 0
         self.data_source = "None"
         self.event_string = ""
+        self.draft_label = ""
 
     def set_arena_file(self, filename):
         '''Public function that's used for storing the location of the Player.log file'''
@@ -118,6 +119,7 @@ class ArenaScanner:
         self.previous_picked_pack = 0
         self.current_picked_pick = 0
         self.data_source = "None"
+        self.draft_label = ""
 
     def draft_start_search(self):
         '''Search for the string that represents the start of a draft'''
@@ -172,36 +174,16 @@ class ArenaScanner:
         try:
             draft_id = json_find("id", event_data)
             event_name = json_find("EventName", event_data)
-
             logger.info("Event found %s", event_name)
-
-            event_sections = event_name.split('_')
-
-            # Find event type in event string
-            events = [i for i in constants.LIMITED_TYPES_DICT
-                      for x in event_sections if i in x]
-            if not events and [i for i in constants.DRAFT_DETECTION_CATCH_ALL for x in event_sections if i in x]:
-                # Unknown draft events will be parsed as premier drafts
-                events.append(constants.LIMITED_TYPE_STRING_DRAFT_PREMIER)
-
-            if events:
-                # Find set name within the event string
-                sets = [i.seventeenlands[0] for i in self.set_list.data.values(
-                ) for x in event_sections if i.seventeenlands[0].lower() in x.lower()]
-                # Remove duplicates while retaining order
-                sets = list(dict.fromkeys(sets))
-
-                sets = ["UNKN"] if not sets else sets
-
-                if events[0] == constants.LIMITED_TYPE_STRING_SEALED:
-                    # Trad_Sealed_NEO_20220317
-                    event_type = constants.LIMITED_TYPE_STRING_TRAD_SEALED if "Trad" in event_sections else constants.LIMITED_TYPE_STRING_SEALED
-                else:
-                    event_type = events[0]
-                draft_type = constants.LIMITED_TYPES_DICT[event_type]
+            event_match, event_type, event_label, event_set = self.__check_special_event(event_name)
+            if not event_match:
+                event_match, event_type, event_label, event_set = self.__check_standard_event(event_name)
+                
+            if event_match:
                 self.clear_draft(False)
-                self.draft_type = draft_type
-                self.draft_sets = sets
+                self.draft_type = constants.LIMITED_TYPES_DICT[event_type]
+                self.draft_sets = event_set
+                self.draft_label = event_label
                 self.event_string = event_name
                 update = True
 
@@ -209,6 +191,63 @@ class ArenaScanner:
             logger.error(error)
 
         return update, event_type, draft_id
+        
+    def __check_special_event(self, event_name):
+        ''''''
+        event_match = False
+        event_type = ""
+        event_label = ""
+        event_set = ""
+        
+        for event in self.set_list.special_events:
+            if (
+                event.type in constants.LIMITED_TYPES_DICT and
+                all(x in event_name for x in event.keywords)
+            ):
+                event_type = event.type
+                # Truncate the string to prevent the label from increasing the width of the main window when displayed
+                event_label = event.label[:12]
+                event_set = [event.set_code]
+                event_match = True
+                break
+                
+        return event_match, event_type, event_label, event_set
+        
+    def __check_standard_event(self, event_name):
+        ''''''
+        event_match = False
+        event_type = ""
+        event_label = ""
+        event_set = ""
+        
+        event_sections = event_name.split('_')
+        
+        # Find event type in event string
+        events = [i for i in constants.LIMITED_TYPES_DICT
+                  for x in event_sections if i in x]
+        if not events and [i for i in constants.DRAFT_DETECTION_CATCH_ALL for x in event_sections if i in x]:
+            # Unknown draft events will be parsed as premier drafts
+            events.append(constants.LIMITED_TYPE_STRING_DRAFT_PREMIER)
+
+        if events:
+            # Find set name within the event string
+            event_set = [i.seventeenlands[0] for i in self.set_list.data.values(
+            ) for x in event_sections if i.seventeenlands[0].lower() in x.lower()]
+            # Remove duplicates while retaining order
+            event_set = list(dict.fromkeys(event_set))
+
+            event_set = ["UNKN"] if not event_set else event_set
+
+            if events[0] == constants.LIMITED_TYPE_STRING_SEALED:
+                # Trad_Sealed_NEO_20220317
+                event_type = constants.LIMITED_TYPE_STRING_TRAD_SEALED if "Trad" in event_sections else constants.LIMITED_TYPE_STRING_SEALED
+            else:
+                event_type = events[0]
+            event_label = event_type
+            event_match = True
+            
+        return event_match, event_type, event_label, event_set
+                
 
     def draft_data_search(self, use_ocr, save_screenshot):
         '''Collect draft data from the Player.log file based on the current active format'''
@@ -1182,12 +1221,7 @@ class ArenaScanner:
 
         try:
             event_set = self.draft_sets[0] if self.draft_sets else ""
-
-            for key, value in constants.LIMITED_TYPES_DICT.items():
-                if value == self.draft_type:
-                    event_type = key
-                    break
-
+            event_type = self.draft_label
         except Exception as error:
             logger.error(error)
 

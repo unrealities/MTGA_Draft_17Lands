@@ -19,16 +19,36 @@ class SetInfo(BaseModel):
     seventeenlands: List[str] = Field(default_factory=list)
     start_date: str = ""
 
+class SpecialEvent(BaseModel):
+    label: str = ""
+    type: str = ""
+    set_code: str = ""
+    keywords: List[str] = Field(default_factory=list)
 
 class SetDictionary(BaseModel):
     version: int = 0
+    latest_set: str = ""
     data: Dict[str, SetInfo] = Field(default_factory=dict)
+    special_events: List[SpecialEvent] = [
+        SpecialEvent(
+            label="OpenDay1",
+            type="Sealed",
+            set_code="{LATEST}",
+            keywords=["ArenaOpen","Day1"]
+        ),
+        SpecialEvent(
+            label="OpenDay2",
+            type="PremierDraft",
+            set_code="{LATEST}",
+            keywords=["ArenaOpen","Day2"]
+        )
+    ]
 
 LIMITED_SETS_VERSION = 1
 TOTAL_SCRYFALL_SETS = 50
 SET_ARENA_CUBE_START_OFFSET_DAYS = -25
 TEMP_LIMITED_SETS = os.path.join("Temp", "temp_set_list.json")
-
+REPLACE_PHRASE_LATEST = "{LATEST}"
 
 def shift_date(start_date, shifted_days, string_format, next_dow=None):
     '''Shifts a date by a certain number of days'''
@@ -54,11 +74,12 @@ def shift_date(start_date, shifted_days, string_format, next_dow=None):
 class LimitedSets:
     def __init__(self, sets_file_location: str = TEMP_LIMITED_SETS):
         self.sets_file_location: str = sets_file_location
-        self.limited_sets: SetDictionary()
+        self.limited_sets = SetDictionary()
         self.sets_scryfall = SetDictionary()
         self.sets_17lands = SetDictionary()
         self.context: ssl.SSLContext = ssl.SSLContext(protocol=ssl.PROTOCOL_TLS_CLIENT)
         self.context.load_default_certs()
+        self.latest_set = ""
 
     def retrieve_limited_sets(self) -> SetDictionary:
         '''Retrieve a list of sets from 17Lands and Scryfall
@@ -84,7 +105,7 @@ class LimitedSets:
         self.retrieve_scryfall_sets()
 
         self.__assemble_limited_sets()
-
+        self.__substitute_strings()
         return self.limited_sets
 
     def retrieve_scryfall_sets(self, retries: int = 3, wait: int = 5) -> SetDictionary:
@@ -125,8 +146,7 @@ class LimitedSets:
         while retries:
             try:
                 url = "https://www.17lands.com/data/filters"
-                url_data = urllib.request.urlopen(
-                    url, context=self.context).read()
+                url_data = urllib.request.urlopen(url, context=self.context).read()
                 set_json_data = json.loads(url_data)
 
                 self.__process_17lands_sets(set_json_data)
@@ -155,10 +175,11 @@ class LimitedSets:
             # Create a new file if one doesn't exist or if it's an older version
             if not sets_object.data or sets_object.version < LIMITED_SETS_VERSION:
                 return temp_sets, success
+            else:
+                temp_sets = sets_object
 
             sets_to_remove = []
-            for set_name, set_info in sets_object.data.items():
-                temp_sets.data[set_name] = set_info
+            for set_info in sets_object.data.values():
                 set_code = set_info.seventeenlands[0]
                 if set_code in self.sets_17lands.data:
                     sets_to_remove.append(set_code)
@@ -198,8 +219,13 @@ class LimitedSets:
 
         # Retrieve a stored sets dataset from the Temp folder
         read_sets, _ = self.read_sets_file()
+        
+        # 17Lands might add an Alchemy set to the top of the list and rearrange it within the first day. 
+        # This means the latest set needs updating continuously, not only when a new set is added.
+        if self.latest_set:
+            read_sets.latest_set = self.latest_set
 
-        if self.sets_17lands:
+        if self.sets_17lands.data:
             # Add any missing sets to the dataset
             self.limited_sets = self.__append_limited_sets(read_sets)
 
@@ -231,6 +257,7 @@ class LimitedSets:
         # Insert any 17Lands sets that were not collected from Scryfall
         temp_dict.data.update(self.sets_17lands.data)
         temp_dict.data.update(read_sets.data)
+        temp_dict.latest_set = read_sets.latest_set
 
         return temp_dict
 
@@ -243,9 +270,10 @@ class LimitedSets:
                                                                    seventeenlands=[card_set.upper()])
             for card_set, date_string in data["start_dates"].items():
                 if card_set.upper() in self.sets_17lands.data:
-                    self.sets_17lands.data[card_set.upper()].start_date = date_string.split('T')[
-                        0]
-
+                    self.sets_17lands.data[card_set.upper()].start_date = date_string.split('T')[0]
+            
+            # Retrieve the latest set code from the 17Lands expansions list
+            self.latest_set = next(iter(self.sets_17lands.data))
         except Exception as error:
             logger.error(error)
 
@@ -336,3 +364,10 @@ class LimitedSets:
                 seventeenlands=[set_code.upper()]
             )
         return set_entry
+
+    def __substitute_strings(self):
+        '''Substitute any brace strings with the relevant data'''
+        # Replace set_code fields with the string {LATEST} with the latest set code from 17Lands
+        for event in self.limited_sets.special_events:
+            if event.set_code == REPLACE_PHRASE_LATEST and self.latest_set:
+                event.set_code = self.latest_set
