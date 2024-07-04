@@ -1,5 +1,11 @@
 ===================== RELEASE NOTES 3.21 =====================
-* TBD
+* FiYir added support for Day 1 and Day 2 of the Arena Open.
+* FiYir: The app now automatically updates the temp_set_list file, eliminating the need for users to manually delete the file when switching from version 3.10 to this fork.
+* FiYir introduced a special_events section in the temp_set_list file to accommodate entries for both days of the Arena Open.
+* FiYir: LimitedSets will replace the {LATEST} placeholder with the most recent set code fetched from 17Lands. Users can manually edit the set code by replacing {LATEST} with the desired code.
+* FiYir: To modify the temp_set_list contents, increment LIMITED_SETS_VERSION. The app will overwrite the entire file if its stored version is older than LIMITED_SETS_VERSION.
+* FiYir: ArenaScanner now perform an additional check for special events using data from the new special events set entries.
+* FiYir: Detection of special events requires all specified keywords to appear in the event string for recognition.
 
 ===================== RELEASE NOTES 3.20 =====================
 * Update README with more information on how P1P1 solution is implemented
