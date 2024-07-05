@@ -4,3 +4,7 @@ pydantic==2.8.0
 pynput==1.7.6
 pytest==8.2.0
 Requests==2.32.3
+
+## Excluded if auto-generated
+pyinstaller==6.7.0; sys_platform == 'win32'
+pywin32==306 ; sys_platform == 'win32'
