@@ -3,7 +3,7 @@ import os
 import sys
 from src.app_update import AppUpdate
 
-EXPECTED_OLD_VERSION_STRING = "0319"
+EXPECTED_OLD_VERSION_STRING = "0320"
 
 @pytest.fixture
 def app_update():
