@@ -50,6 +50,18 @@ TEST_SETS = SetDictionary(data={
             type="PremierDraft",
             set_code="OTJ",
             keywords=["ArenaOpen","Day2"]
+        ),
+        SpecialEvent(
+            label="QualSealed",
+            type="Sealed",
+            set_code="MKM",
+            keywords=["Qualifier","Sealed"]
+        ),
+        SpecialEvent(
+            label="ArenaDirect",
+            type="Sealed",
+            set_code="DMU",
+            keywords=["ArenaDirect"]
         )
     ]
 )
@@ -517,6 +529,34 @@ ARENA_OPEN_TEST_ENTRIES = [
                  missing=[]),
     r'[UnityCrossThreadLogger]==> Event_Join {"id":"57d3b2c6-71ef-44ee-a395-1e977fcdd6b6","request":"{\"EventName\":\"ArenaOpen_Day2_DraftOne_20240623\",\"EntryCurrencyType\":\"Gem\",\"EntryCurrencyPaid\":1500,\"CustomTokenId\":null}"}'
     ),
+    ("Qualifier Event Start",
+    EventResults(new_event=True,
+                 data_update=False,
+                 current_set="MKM",
+                 current_event="QualSealed",
+                 current_pack=0,
+                 current_pick=0,
+                 picks=[],
+                 pack=[],
+                 card_pool=[],
+                 missing=[]),
+    r'[UnityCrossThreadLogger]==> Event_Join {"id":"57d3b2c6-71ef-44ee-a395-1e977fcdd6b6","request":"{\"EventName\":\"QualifierPlayInSealed\",\"EntryCurrencyType\":\"Gem\",\"EntryCurrencyPaid\":1500,\"CustomTokenId\":null}"}'
+    ),
+    ("Arena Direct Event Start",
+    EventResults(new_event=True,
+                 data_update=False,
+                 current_set="DMU",
+                 current_event="ArenaDirect",
+                 current_pack=0,
+                 current_pick=0,
+                 picks=[],
+                 pack=[],
+                 card_pool=[],
+                 missing=[]),
+    r'[UnityCrossThreadLogger]==> Event_Join {"id":"57d3b2c6-71ef-44ee-a395-1e977fcdd6b6","request":"{\"EventName\":\"ArenaDirect_Sealed\",\"EntryCurrencyType\":\"Gem\",\"EntryCurrencyPaid\":1500,\"CustomTokenId\":null}"}'
+    ),
+    
+    
 ]
 
 @pytest.fixture(name="session_scanner",scope="session")
