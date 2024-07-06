@@ -41,10 +41,22 @@ class SetDictionary(BaseModel):
             type="PremierDraft",
             set_code="{LATEST}",
             keywords=["ArenaOpen","Day2"]
+        ),
+        SpecialEvent(
+            label="QualSealed",
+            type="Sealed",
+            set_code="{LATEST}",
+            keywords=["Qualifier","Sealed"]
+        ),
+        SpecialEvent(
+            label="ArenaDirect",
+            type="Sealed",
+            set_code="{LATEST}",
+            keywords=["ArenaDirect"]
         )
     ]
 
-LIMITED_SETS_VERSION = 1
+LIMITED_SETS_VERSION = 2
 TOTAL_SCRYFALL_SETS = 50
 SET_ARENA_CUBE_START_OFFSET_DAYS = -25
 TEMP_LIMITED_SETS = os.path.join("Temp", "temp_set_list.json")
