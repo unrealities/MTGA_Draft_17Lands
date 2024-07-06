@@ -1,3 +1,6 @@
+===================== RELEASE NOTES 3.21 =====================
+* FiYir added support for the Arena Open, Qualifier, and Arena Direct events
+
 ===================== RELEASE NOTES 3.20 =====================
 * Update README with more information on how P1P1 solution is implemented
 * Add P1P1 OCR setting to allow users to disable sending information to third parties
