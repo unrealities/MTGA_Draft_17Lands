@@ -1,5 +1,5 @@
 ===================== RELEASE NOTES 3.22 =====================
-* TBD
+* Update Arena Direct event
 
 ===================== RELEASE NOTES 3.21 =====================
 * FiYir added support for the Arena Open, Qualifier, and Arena Direct events
