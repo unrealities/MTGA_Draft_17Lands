@@ -55,7 +55,7 @@ TEST_SETS = SetDictionary(data={
             label="QualSealed",
             type="Sealed",
             set_code="MKM",
-            keywords=["Qualifier","Sealed"]
+            keywords=["Qualifier"]
         ),
         SpecialEvent(
             label="ArenaDirect",
@@ -540,7 +540,7 @@ ARENA_OPEN_TEST_ENTRIES = [
                  pack=[],
                  card_pool=[],
                  missing=[]),
-    r'[UnityCrossThreadLogger]==> Event_Join {"id":"57d3b2c6-71ef-44ee-a395-1e977fcdd6b6","request":"{\"EventName\":\"QualifierPlayInSealed\",\"EntryCurrencyType\":\"Gem\",\"EntryCurrencyPaid\":1500,\"CustomTokenId\":null}"}'
+    r'[UnityCrossThreadLogger]==> Event_Join {"id":"57d3b2c6-71ef-44ee-a395-1e977fcdd6b6","request":"{\"EventName\":\"QualifierPlayIn_Bo1_MH3_20240707\",\"EntryCurrencyType\":\"Gem\",\"EntryCurrencyPaid\":1500,\"CustomTokenId\":null}"}'
     ),
     ("Arena Direct Event Start",
     EventResults(new_event=True,
