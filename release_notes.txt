@@ -1,3 +1,6 @@
+===================== RELEASE NOTES 3.23 =====================
+* TBD
+
 ===================== RELEASE NOTES 3.22 =====================
 * Update Arena Direct event
 
