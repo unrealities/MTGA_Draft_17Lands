@@ -1,11 +1,15 @@
 from src.utils import Result, check_file_integrity
 from src.file_extractor import initialize_card_data
-from typing import List, Dict
+from typing import List, Dict, Tuple
 from src.constants import (
     DATA_FIELD_NAME,
     DATA_FIELD_MANA_COST,
     DATA_FIELD_TYPES,
-    DATA_SECTION_IMAGES
+    DATA_FIELD_DECK_COLORS,
+    DATA_FIELD_COLORS,
+    DATA_SECTION_IMAGES,
+    COLOR_NAMES_DICT,
+    WIN_RATE_OPTIONS
 )
 
 class Dataset:
@@ -268,3 +272,46 @@ class Dataset:
             name_list = list(set([v[DATA_FIELD_NAME] for v in self._dataset["card_ratings"].values()]))
         
         return name_list
+        
+    def get_top_archetypes(self, card_name:str, field:str, count:int) -> List[Tuple[str, str]]:
+        """
+        """
+        archetype_list = []
+
+        if field not in WIN_RATE_OPTIONS:
+            return archetype_list
+
+        card_data = self.get_data_by_name([card_name])
+
+        if not card_data:
+            return archetype_list
+
+        win_rate = card_data[0][DATA_FIELD_DECK_COLORS]["All Decks"][field]
+        if not win_rate:
+            return archetype_list
+        else:
+            archetype_list.append(["", "All Decks", win_rate])
+
+        temp_list = []
+
+        card_identity = sorted(card_data[0][DATA_FIELD_COLORS])
+        
+        for color, name in COLOR_NAMES_DICT.items():
+            win_rate = card_data[0][DATA_FIELD_DECK_COLORS][color][field]
+            if win_rate != 0:
+                # Add the archetype that matches the card's color identity
+                if card_identity == sorted(color):
+                    archetype_list.append([name, color, str(win_rate)])
+                else:
+                    temp_list.append([name, color, str(win_rate)])
+
+        # Sort the list by the field (highest to lowest)
+        if temp_list:
+            temp_list.sort(key=lambda x: x[2], reverse=True)
+
+        # Truncate list
+        archetype_list.extend(temp_list)
+        archetype_list = archetype_list[:count]
+
+        return archetype_list
+  

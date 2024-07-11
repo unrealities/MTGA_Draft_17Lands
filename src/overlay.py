@@ -899,7 +899,7 @@ class Overlay(ScaledWindow):
             result_class = CardResult(
                 self.set_metrics, self.tier_data, self.configuration, self.draft.current_pick)
             result_list = result_class.return_results(
-                card_list, filtered_colors, fields)
+                card_list, filtered_colors, fields.values())
 
             # clear the previous rows
             for row in self.pack_table.get_children():
@@ -961,7 +961,7 @@ class Overlay(ScaledWindow):
                     result_class = CardResult(
                         self.set_metrics, self.tier_data, self.configuration, self.draft.current_pick)
                     result_list = result_class.return_results(
-                        missing_cards, filtered_colors, fields)
+                        missing_cards, filtered_colors, fields.values())
 
                     if self.table_info["missing_table"].column in visible_columns:
                         column_index = visible_columns[self.table_info["missing_table"].column]
@@ -1029,7 +1029,7 @@ class Overlay(ScaledWindow):
             result_class = CardResult(
                 self.set_metrics, self.tier_data, self.configuration, self.draft.current_pick)
             result_list = result_class.return_results(
-                self.compare_list, filtered_colors, fields)
+                self.compare_list, filtered_colors, fields.values())
 
             self.compare_table.delete(*self.compare_table.get_children())
 
@@ -1127,7 +1127,7 @@ class Overlay(ScaledWindow):
                 result_class = CardResult(
                     self.set_metrics, self.tier_data, self.configuration, self.draft.current_pick)
                 result_list = result_class.return_results(
-                    stacked_cards, filtered_colors, fields)
+                    stacked_cards, filtered_colors, fields.values())
 
                 last_field_index, visible_columns = control_table_column(
                     self.taken_table, fields)
@@ -2946,6 +2946,13 @@ class Overlay(ScaledWindow):
                                 if name in fields.values() and card_name in tier_list["ratings"]:
                                     tier_info[name] = tier_list["ratings"][card_name]["comment"]
 
+                        archetype_list = self.draft.set_data.get_top_archetypes(card_name, constants.DATA_FIELD_GIHWR, 17)
+                        if self.configuration.settings.result_format != constants.RESULT_FORMAT_WIN_RATE:
+                            results = CardResult(self.set_metrics, self.tier_data, self.configuration, self.draft.current_pick)
+                            for archetype in archetype_list:
+                                rating = results.return_results([card], [archetype[1]], [constants.DATA_FIELD_GIHWR])
+                                archetype.append(rating[0]["results"][0])
+                        
                         CreateCardToolTip(table,
                                           event,
                                           card[constants.DATA_FIELD_NAME],
@@ -2954,7 +2961,8 @@ class Overlay(ScaledWindow):
                                           self.configuration.features.images_enabled,
                                           self.scale_factor,
                                           self.fonts_dict,
-                                          tier_info)
+                                          tier_info,
+                                          archetype_list)
                     except Exception as error:
                         logger.error(error)
                     break
@@ -3150,7 +3158,7 @@ class Overlay(ScaledWindow):
 class CreateCardToolTip(ScaledWindow):
     '''Class that's used to create the card tooltip that appears when a table row is clicked'''
 
-    def __init__(self, widget, event, card_name, color_dict, image, images_enabled, scale_factor, fonts_dict, tier_info):
+    def __init__(self, widget, event, card_name, color_dict, image, images_enabled, scale_factor, fonts_dict, tier_info, top_archetypes):
         super().__init__()
         self.scale_factor = scale_factor
         self.fonts_dict = fonts_dict
@@ -3166,6 +3174,7 @@ class CreateCardToolTip(ScaledWindow):
         self.id = None
         self.tw = None
         self.tier_info = tier_info
+        self.top_archetypes = top_archetypes
         self.event = event
         self.images = []
         self.__enter()
@@ -3217,7 +3226,7 @@ class CreateCardToolTip(ScaledWindow):
                                anchor="c",)
 
             note_label = Label(tt_frame,
-                               text="Win rate fields with fewer than 200 samples are listed as 0% or NA.",
+                               text="Win rate fields with fewer than 500 samples are listed as 0% or NA.",
                                style="Notes.TLabel",
                                background="#3d3d3d",
                                foreground="#e6ecec",
@@ -3237,9 +3246,45 @@ class CreateCardToolTip(ScaledWindow):
 
             style = Style()
             style.configure("Tooltip.Treeview", rowheight=row_height)
+            
+            archetype_headers = {"Label": {"width": .55, "anchor": tkinter.W},
+                                 "Value1": {"width": .15, "anchor": tkinter.W},
+                                 "Value2": {"width": .30, "anchor": tkinter.W}}
+            archetype_width = self._scale_value(200)
+            
+            archetype_table = self._create_header(
+                                    "tooltip_table",
+                                    tt_frame,
+                                    0,
+                                    self.fonts_dict["All.TableRow"],
+                                    archetype_headers,
+                                    archetype_width,
+                                    False,
+                                    True,
+                                    "Tooltip.Treeview", 
+                                    False
+                                )
+                                
+            archetype_table.config(height=17)
+            
+            # Pad the table if there are fewer than 17 entries
+            if len(self.top_archetypes) < 17:
+                empty_rows = 17 - len(self.top_archetypes)
+                for row in range(empty_rows):
+                    self.top_archetypes.append(["","","",""])
 
-            stats_main_table = self._create_header("tooltip_table",
-                                                   tt_frame, 0, self.fonts_dict["All.TableRow"], headers, width, False, True, "Tooltip.Treeview", False)
+            stats_main_table = self._create_header(
+                                    "tooltip_table",
+                                    tt_frame, 
+                                    0, 
+                                    self.fonts_dict["All.TableRow"], 
+                                    headers, 
+                                    width, 
+                                    False, 
+                                    True, 
+                                    "Tooltip.Treeview", 
+                                    False
+                                )
             main_field_list = []
 
             values = ["Filter:"] + list(self.color_dict.keys())
@@ -3332,7 +3377,7 @@ class CreateCardToolTip(ScaledWindow):
                         logger.error(error)
 
             card_label.grid(column=0, row=0,
-                            columnspan=column_offset + 2, sticky=tkinter.NSEW)
+                            columnspan=column_offset + 3, sticky=tkinter.NSEW)
 
             row_count = 3
             for name, comment in self.tier_info.items():
@@ -3340,7 +3385,7 @@ class CreateCardToolTip(ScaledWindow):
                     continue
                 comment_frame = tkinter.LabelFrame(tt_frame, text=name)
                 comment_frame.grid(column=0, row=row_count,
-                                   columnspan=column_offset + 2, sticky=tkinter.NSEW)
+                                   columnspan=column_offset + 3, sticky=tkinter.NSEW)
 
                 comment_label = Label(comment_frame,
                                       text=f"\"{comment}\"",
@@ -3355,22 +3400,29 @@ class CreateCardToolTip(ScaledWindow):
                 row_count += 1
 
             note_label.grid(column=0, row=row_count,
-                            columnspan=column_offset + 2, sticky=tkinter.NSEW)
+                            columnspan=column_offset + 3, sticky=tkinter.NSEW)
+
+            for count, row_values in enumerate(self.top_archetypes):
+                row_tag = identify_table_row_tag(False, "", count)
+                if not row_values[0]:
+                    win_rate = f"({row_values[2]}%)" if row_values[2] else row_values[2]
+                    row_data = (row_values[1], row_values[3], win_rate)
+                else:
+                    row_data = (f"{row_values[0]} ({row_values[1]})", row_values[3], f"({row_values[2]}%)")
+                archetype_table.insert("", index=count, iid=count, values=row_data, tag=(row_tag,))
 
             for count, row_values in enumerate(main_field_list):
                 row_tag = identify_table_row_tag(False, "", count)
-                stats_main_table.insert(
-                    "", index=count, iid=count, values=row_values, tag=(row_tag,))
+                stats_main_table.insert("", index=count, iid=count, values=row_values, tag=(row_tag,))
 
-            stats_main_table.grid(
-                row=1, column=column_offset)
+            archetype_table.grid(row=1, column=column_offset)
+            stats_main_table.grid(row=1, column=column_offset + 1)
 
             tt_width += self._scale_value(10)
             location_x, location_y = identify_safe_coordinates(self.tw,
                                                                tt_width,
                                                                tt_height,
-                                                               self._scale_value(
-                                                                   25),
+                                                               self._scale_value(25),
                                                                self._scale_value(20))
             self.tw.wm_geometry(f"+{location_x}+{location_y}")
 
