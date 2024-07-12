@@ -14,7 +14,7 @@ from dataclasses import dataclass
 from pynput.keyboard import Listener, KeyCode
 from PIL import Image, ImageTk, ImageFont
 from src.configuration import read_configuration, write_configuration, reset_configuration
-from src.limited_sets import LimitedSets
+from src.limited_sets import LimitedSets, START_DATE_DEFAULT
 from src.log_scanner import ArenaScanner, Source
 from src.file_extractor import FileExtractor, search_arena_log_locations, retrieve_arena_directory
 from src.utils import retrieve_local_set_list
@@ -1870,7 +1870,7 @@ class Overlay(ScaledWindow):
             menu.config(font=self.fonts_dict["All.TMenubutton"])
 
             start_entry = tkinter.Entry(popup)
-            start_entry.insert(tkinter.END, constants.SET_START_DATE_DEFAULT)
+            start_entry.insert(tkinter.END, START_DATE_DEFAULT)
             end_entry = tkinter.Entry(popup)
             end_entry.insert(tkinter.END, str(date.today()))
 

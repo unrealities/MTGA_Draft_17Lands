@@ -1,6 +1,7 @@
 import pytest
 import os
 import json
+import datetime
 from unittest.mock import patch
 from src.limited_sets import (
     LimitedSets,
@@ -392,7 +393,7 @@ def test_read_sets_file_fail_invalid_fields(limited_sets):
     output_sets, result = limited_sets.read_sets_file()
     
     assert result == False
-    assert output_sets == expected_result 
+    assert output_sets == expected_result
 
 @patch("src.limited_sets.urllib.request.urlopen")
 def test_overwrite_old_sets(mock_urlopen, limited_sets):
@@ -402,7 +403,7 @@ def test_overwrite_old_sets(mock_urlopen, limited_sets):
     test_data = SetDictionary(data=OLD_SETS_FORMAT)
 
     # Create a file with old entries
-    assert limited_sets.write_sets_file(test_data) is True
+    assert limited_sets.write_sets_file(test_data)
 
     # Mock the urlopen responses - 17Lands and then Scryfall
     mock_urlopen.return_value.read.side_effect = [MOCK_URL_RESPONSE_17LANDS_FILTERS, MOCK_URL_RESPONSE_SCRYFALL_SETS]
@@ -428,7 +429,7 @@ def test_substitute_string_latest(mock_urlopen, limited_sets):
     test_data = SetDictionary()
          
     # Create a file with the new special event
-    assert limited_sets.write_sets_file(test_data) is True
+    assert limited_sets.write_sets_file(test_data)
 
     # Mock the urlopen responses - 17Lands and then Scryfall
     test_response = b'{"expansions":["MKM","OTJ"],"start_dates":{"MKM":"2024-02-06T00:00:00Z", "OTJ":"2024-04-16T15:00:00Z"}}'
@@ -456,3 +457,30 @@ def test_substitute_string_latest(mock_urlopen, limited_sets):
     assert output_sets.special_events[0].set_code == "OTJ"
     assert output_sets.special_events[1].label == "OpenDay2"
     assert output_sets.special_events[1].set_code == "OTJ"
+
+@patch("src.limited_sets.urllib.request.urlopen")
+def test_substitute_string_date_shift(mock_urlopen, limited_sets):
+    """
+    Verify that string '{DATESHIFT}' gets replaced with a date that is 30 days from the mocked date
+    """
+    test_data = SetDictionary()
+
+    # Create a new sets file
+    assert limited_sets.write_sets_file(test_data)
+
+    # Mock the urlopen responses - 17Lands and then Scryfall
+    mock_urlopen.return_value.read.side_effect = [MOCK_URL_RESPONSE_17LANDS_FILTERS, MOCK_URL_RESPONSE_SCRYFALL_SETS]
+    mocked_today = datetime.date(2024, 5, 15)
+    mocked_min = datetime.date.min
+    expected_shift_date = "2024-04-15"
+
+    # Read the file back - this will make calls to the mocked urlopen method and the mocked date methods
+    with patch("src.limited_sets.datetime.date") as mock_date:
+        # Mocked start date
+        mock_date.today.return_value = mocked_today
+        mock_date.min = mocked_min
+        output_sets = limited_sets.retrieve_limited_sets()
+
+    # Verify that the {DATESHIFT} response is substituted for the expected shift date 
+    assert "Arena Cube" in output_sets.data
+    assert output_sets.data["Arena Cube"].start_date == expected_shift_date
