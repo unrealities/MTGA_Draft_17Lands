@@ -1,10 +1,41 @@
 import unittest
 from unittest.mock import patch, MagicMock
 import os
-from src.utils import capture_screen_base64str
+from src.constants import SETS_FOLDER
+from src.utils import (
+    capture_screen_base64str,
+    retrieve_local_set_list,
+    Result
+)
 
 SCREENSHOT_FOLDER = os.path.join(os.getcwd(), "Screenshots")
 SCREENSHOT_PREFIX = "p1p1_screenshot_"
+
+MOCKED_SET_CODES = ["MH3","OTJ"]
+MOCKED_DATASETS = [
+    "MH3_PremierDraft_Data.json",
+    "MH3_PremierDraft_All_Data.json",
+    "MH3_PremierDraft_Side_Data.json",
+    "MH3_PremierDraft_Top_Data.json",
+    "OTJ_TradDraft_Middle_Data.json",
+    "OTJ_PremierDraft_All.json",
+    "OTJ_PremierDraft_All_Data.txt",
+    "OTJ_QuickDraft_Bottom_Data.json",
+    "OTJ_FakeDraft_All_Data.json",
+]
+MOCKED_DATASETS_LIST_VALID = [
+    ("MH3", "PremierDraft", "All", "2019-01-01", "2024-07-11", os.path.join(SETS_FOLDER, "MH3_PremierDraft_All_Data.json")),
+    ("MH3", "PremierDraft", "Top", "2019-01-01", "2024-07-11", os.path.join(SETS_FOLDER, "MH3_PremierDraft_Top_Data.json")),
+    ("OTJ", "TradDraft", "Middle", "2019-01-01", "2024-07-11", os.path.join(SETS_FOLDER, "OTJ_TradDraft_Middle_Data.json")),
+    ("OTJ", "QuickDraft", "Bottom", "2019-01-01", "2024-07-11", os.path.join(SETS_FOLDER, "OTJ_QuickDraft_Bottom_Data.json"))
+]
+MOCKED_DATASET_JSON = {
+    "meta" : {
+        "version": 2,
+        "start_date": "2019-01-01",
+        "end_date": "2024-07-11",
+    }
+}
 
 class TestCaptureScreenBase64str(unittest.TestCase):
 
@@ -51,3 +82,17 @@ class TestCaptureScreenBase64str(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
+@patch("os.listdir")
+@patch("src.utils.check_file_integrity")
+def test_retrieve_local_set_list_skip_old(mock_integrity, mock_listdir):
+    """
+    Verify that the function ignores old datasets
+    """
+    mock_listdir.return_value = MOCKED_DATASETS
+    mock_integrity.return_value = (Result.VALID, MOCKED_DATASET_JSON)
+
+    file_list, error_list = retrieve_local_set_list(MOCKED_SET_CODES)
+
+    assert not error_list
+    assert file_list == MOCKED_DATASETS_LIST_VALID
