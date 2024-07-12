@@ -1,5 +1,6 @@
 ===================== RELEASE NOTES 3.23 =====================
-* TBD
+* FiYir Fixed issue [Bug]: Incorrect Arena Cube Start Date #30: The app now sets the correct start date for the Arena Cube.
+* FiYir Fixed issue [Bug]: App Uses Obsolete Datasets #29: Old datasets no longer block new datasets.
 
 ===================== RELEASE NOTES 3.22 =====================
 * Update Arena Direct event
