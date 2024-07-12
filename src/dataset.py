@@ -9,7 +9,8 @@ from src.constants import (
     DATA_FIELD_COLORS,
     DATA_SECTION_IMAGES,
     COLOR_NAMES_DICT,
-    WIN_RATE_OPTIONS
+    WIN_RATE_OPTIONS,
+    WIN_RATE_FIELDS_DICT
 )
 
 class Dataset:
@@ -273,7 +274,7 @@ class Dataset:
         
         return name_list
         
-    def get_top_archetypes(self, card_name:str, field:str, count:int) -> List[Tuple[str, str]]:
+    def get_top_archetypes(self, card_name:str, field:str) -> List[Tuple[str, str]]:
         """
         """
         archetype_list = []
@@ -287,31 +288,31 @@ class Dataset:
             return archetype_list
 
         win_rate = card_data[0][DATA_FIELD_DECK_COLORS]["All Decks"][field]
+        game_count = card_data[0][DATA_FIELD_DECK_COLORS]["All Decks"][WIN_RATE_FIELDS_DICT[field]]
         if not win_rate:
             return archetype_list
         else:
-            archetype_list.append(["", "All Decks", win_rate])
+            archetype_list.append(["", "All Decks", win_rate, game_count])
 
         temp_list = []
 
-        card_identity = sorted(card_data[0][DATA_FIELD_COLORS])
-        
         for color, name in COLOR_NAMES_DICT.items():
             win_rate = card_data[0][DATA_FIELD_DECK_COLORS][color][field]
+            game_count = card_data[0][DATA_FIELD_DECK_COLORS][color][WIN_RATE_FIELDS_DICT[field]]
             if win_rate != 0:
-                # Add the archetype that matches the card's color identity
-                if card_identity == sorted(color):
-                    archetype_list.append([name, color, str(win_rate)])
-                else:
-                    temp_list.append([name, color, str(win_rate)])
+                temp_list.append([
+                    name, 
+                    color, 
+                    str(win_rate), 
+                    game_count
+                ])
 
         # Sort the list by the field (highest to lowest)
         if temp_list:
-            temp_list.sort(key=lambda x: x[2], reverse=True)
+            temp_list.sort(key=lambda x: x[3], reverse=True)
 
-        # Truncate list
+        # Combine lists
         archetype_list.extend(temp_list)
-        archetype_list = archetype_list[:count]
 
         return archetype_list
   
