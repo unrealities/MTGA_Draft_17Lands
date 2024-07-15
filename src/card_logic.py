@@ -38,7 +38,7 @@ class CardResult:
         """This function processes a card list and returns a list with the requested field results"""
         return_list = []
         wheel_sum = 0
-        if constants.DATA_FIELD_WHEEL in fields.values():
+        if constants.DATA_FIELD_WHEEL in fields:
             wheel_sum = self.__retrieve_wheel_sum(card_list)
 
         for card in card_list:
@@ -46,7 +46,7 @@ class CardResult:
                 selected_card = copy.deepcopy(card)
                 selected_card["results"] = ["NA"] * len(fields)
 
-                for count, option in enumerate(fields.values()):
+                for count, option in enumerate(fields):
                     if constants.FILTER_OPTION_TIER in option:
                         selected_card["results"][count] = self.__process_tier(
                             card, option)

@@ -1,11 +1,16 @@
 from src.utils import Result, check_file_integrity
 from src.file_extractor import initialize_card_data
-from typing import List, Dict
+from typing import List, Dict, Tuple
 from src.constants import (
     DATA_FIELD_NAME,
     DATA_FIELD_MANA_COST,
     DATA_FIELD_TYPES,
-    DATA_SECTION_IMAGES
+    DATA_FIELD_DECK_COLORS,
+    DATA_FIELD_COLORS,
+    DATA_SECTION_IMAGES,
+    COLOR_NAMES_DICT,
+    WIN_RATE_OPTIONS,
+    WIN_RATE_FIELDS_DICT
 )
 
 class Dataset:
@@ -268,3 +273,65 @@ class Dataset:
             name_list = list(set([v[DATA_FIELD_NAME] for v in self._dataset["card_ratings"].values()]))
         
         return name_list
+        
+    def get_card_archetypes_by_field(self, card_name:str, field:str) -> List[Tuple[str, str]]:
+        """
+        Returns a list of archetypes and their associated win rates for a selected card, sorted by descending sample size.
+        
+        Input Example:
+            card_name: "Hardbristle Bandit"
+            field: "gihwr"
+        Outpute Example:
+            archetype_list: [
+                ["", "All Decks", 55.88, 76984],
+                ["Selesnya", "WG", 55.73, 18851],
+                ["Golgari", "BG", 57.23, 17442],
+                ["Gruul", "RG", 54.26, 10838],
+                ["Simic", "UG", 55.59, 8925],
+                ["Sultai", "UBG", 58.9, 4175],
+                ["Naya", "WRG", 55.73, 3734],
+                ["Abzan", "WBG", 54.6, 3590],
+                ["Bant", "WUG", 53.63, 2657],
+                ["Jund", "BRG", 54.84, 2336],
+                ["Temur", "URG", 55.69, 1968],
+                ["Green", "G", 60.09, 917]
+            ]
+        """
+        archetype_list = []
+
+        if field not in WIN_RATE_OPTIONS:
+            return archetype_list
+
+        card_data = self.get_data_by_name([card_name])
+
+        if not card_data:
+            return archetype_list
+
+        win_rate = card_data[0][DATA_FIELD_DECK_COLORS]["All Decks"][field]
+        game_count = card_data[0][DATA_FIELD_DECK_COLORS]["All Decks"][WIN_RATE_FIELDS_DICT[field]]
+        if not win_rate:
+            return archetype_list
+        else:
+            archetype_list.append(["", "All Decks", win_rate, game_count])
+
+        temp_list = []
+
+        for color, name in COLOR_NAMES_DICT.items():
+            win_rate = card_data[0][DATA_FIELD_DECK_COLORS][color][field]
+            game_count = card_data[0][DATA_FIELD_DECK_COLORS][color][WIN_RATE_FIELDS_DICT[field]]
+            if win_rate != 0:
+                temp_list.append([
+                    name,
+                    color,
+                    win_rate,
+                    game_count
+                ])
+
+        # Sort the list by the field (highest to lowest)
+        if temp_list:
+            temp_list.sort(key=lambda x: x[3], reverse=True)
+
+        # Combine lists
+        archetype_list.extend(temp_list)
+
+        return archetype_list
