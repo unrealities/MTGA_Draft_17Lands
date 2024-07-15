@@ -89,7 +89,7 @@ def fixture_otj_premier():
 @pytest.mark.parametrize("card_list, expected_tier",TIER_TESTS)
 def test_tier_results(card_result, card_list, expected_tier):
     # Go through a list of non-standard cards and confirm that the CardResults class is producing the expected result
-    result_list = card_result.return_results(card_list, ["All Decks"], {"Column1" : "TIER0"})
+    result_list = card_result.return_results(card_list, ["All Decks"], ["TIER0"])
     
     assert result_list[0]["results"][0] == expected_tier
     
@@ -102,6 +102,6 @@ def test_otj_grades(otj_premier, card_name, colors, field, expected_grade):
     config = Configuration(settings=Settings(result_format=constants.RESULT_FORMAT_GRADE))
     results = CardResult(metrics, None, config, 2)
     card_data = data_list[0]
-    result_list = results.return_results([card_data], [colors],  {"Column1" : field})
+    result_list = results.return_results([card_data], [colors],  [field])
     
     assert result_list[0]["results"][0] == expected_grade
