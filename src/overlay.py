@@ -2947,7 +2947,7 @@ class Overlay(ScaledWindow):
                                     tier_info[name] = tier_list["ratings"][card_name]["comment"]
 
                         # Get the top archetypes for this card
-                        archetype_list = self.draft.set_data.get_top_archetypes(card_name, constants.DATA_FIELD_GIHWR)
+                        archetype_list = self.draft.set_data.get_card_archetypes_by_field(card_name, constants.DATA_FIELD_GIHWR)
                         
                         # Add the grade/rating based on selected format
                         if self.configuration.settings.result_format != constants.RESULT_FORMAT_WIN_RATE:

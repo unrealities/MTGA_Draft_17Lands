@@ -2,6 +2,7 @@ import pytest
 import os
 from src.dataset import Dataset
 from src.utils import Result
+from src.constants import DATA_FIELD_GIHWR
 
 # 17Lands OTJ data from 2024-4-16 to 2024-5-3
 OTJ_PREMIER_SNAPSHOT = os.path.join(os.getcwd(), "tests", "data","OTJ_PremierDraft_Data_2024_5_3.json")
@@ -40,6 +41,21 @@ OTJ_GET_DATA_BY_NAME_TEST_PASS = [
     (["Djinn of Fool's Fall"], [{"name": "Djinn of Fool's Fall", "cmc": 5, "mana_cost": "{4}{U}"}]),
     (["Thoughtseize", "Djinn of Fool's Fall"], [{"name": "Thoughtseize", "cmc": 1, "mana_cost": "{B}"},{"name": "Djinn of Fool's Fall", "cmc": 5, "mana_cost": "{4}{U}"}]),
     ([], []),
+]
+
+OTJ_HARDBRISTLE_BANDIT_ARCHETYPE_DATA = [
+    ["", "All Decks", 55.88, 76984],
+    ["Selesnya", "WG", 55.73, 18851],
+    ["Golgari", "BG", 57.23, 17442],
+    ["Gruul", "RG", 54.26, 10838],
+    ["Simic", "UG", 55.59, 8925],
+    ["Sultai", "UBG", 58.9, 4175],
+    ["Naya", "WRG", 55.73, 3734],
+    ["Abzan", "WBG", 54.6, 3590],
+    ["Bant", "WUG", 53.63, 2657],
+    ["Jund", "BRG", 54.84, 2336],
+    ["Temur", "URG", 55.69, 1968],
+    ["Green", "G", 60.09, 917]
 ]
 
 OTJ_GET_ALL_NAMES_TEST_PASS = [
@@ -461,3 +477,31 @@ def test_get_all_names(otj_dataset):
     name_list = otj_dataset.get_all_names()
     assert set(name_list) == set(OTJ_GET_ALL_NAMES_TEST_PASS)
 
+def test_get_card_archetypes_by_field_fail_invalid_name(otj_dataset):
+    """
+    Verify that an empty list is returned if the card name is not in the dataset
+    """
+    archetype_list = otj_dataset.get_card_archetypes_by_field("FakeCard", DATA_FIELD_GIHWR)
+    assert not archetype_list
+    
+def test_get_card_archetypes_by_field_fail_invalid_field(otj_dataset):
+    """
+    Verify that an empty list is returned if the field doesn't exist
+    """
+    archetype_list = otj_dataset.get_card_archetypes_by_field("Hardbristle Bandit", "fakefield")
+    assert not archetype_list
+    
+def test_get_card_archetypes_by_field_fail_empty(otj_dataset):
+    """
+    Verify that an empty list is returned when the arguments are valid, but no archetype data is available
+    """
+    archetype_list = otj_dataset.get_card_archetypes_by_field("Rest in Peace", DATA_FIELD_GIHWR)
+    assert not archetype_list
+    
+def test_get_card_archetypes_by_field_pass(otj_dataset):
+    """
+    Verify that a list of archetypes is returned 
+    """
+    archetype_list = otj_dataset.get_card_archetypes_by_field("Hardbristle Bandit", DATA_FIELD_GIHWR)
+    assert archetype_list == OTJ_HARDBRISTLE_BANDIT_ARCHETYPE_DATA
+    

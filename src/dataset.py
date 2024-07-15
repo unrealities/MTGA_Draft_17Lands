@@ -274,8 +274,28 @@ class Dataset:
         
         return name_list
         
-    def get_top_archetypes(self, card_name:str, field:str) -> List[Tuple[str, str]]:
+    def get_card_archetypes_by_field(self, card_name:str, field:str) -> List[Tuple[str, str]]:
         """
+        Returns a list of archetypes and their associated win rates for a selected card, sorted by descending sample size.
+        
+        Input Example:
+            card_name: "Hardbristle Bandit"
+            field: "gihwr"
+        Outpute Example:
+            archetype_list: [
+                ["", "All Decks", 55.88, 76984],
+                ["Selesnya", "WG", 55.73, 18851],
+                ["Golgari", "BG", 57.23, 17442],
+                ["Gruul", "RG", 54.26, 10838],
+                ["Simic", "UG", 55.59, 8925],
+                ["Sultai", "UBG", 58.9, 4175],
+                ["Naya", "WRG", 55.73, 3734],
+                ["Abzan", "WBG", 54.6, 3590],
+                ["Bant", "WUG", 53.63, 2657],
+                ["Jund", "BRG", 54.84, 2336],
+                ["Temur", "URG", 55.69, 1968],
+                ["Green", "G", 60.09, 917]
+            ]
         """
         archetype_list = []
 
@@ -301,9 +321,9 @@ class Dataset:
             game_count = card_data[0][DATA_FIELD_DECK_COLORS][color][WIN_RATE_FIELDS_DICT[field]]
             if win_rate != 0:
                 temp_list.append([
-                    name, 
-                    color, 
-                    str(win_rate), 
+                    name,
+                    color,
+                    win_rate,
                     game_count
                 ])
 
@@ -315,4 +335,3 @@ class Dataset:
         archetype_list.extend(temp_list)
 
         return archetype_list
-  
