@@ -35,7 +35,7 @@ Magic: The Gathering Arena draft tool that utilizes 17Lands data.
   - This step isn't necessary if the application is installed in the main directory of a drive (i.e., `C:/` or `D:/`) or the `Users/<Username>/` directory
 - **Step 4:** In Arena, go to Adjust Options, Account, and then check the Detailed Logs (Plugin Support) check box.
 - **Step 5:** Double-click `MTGA_Draft_Tool.exe` to start the program.
-- **Step 6:** Download the sets you plan to use (`Data->Add Sets`).
+- **Step 6:** Download the sets you plan to use (`Data->Download Dataset`).
  Event datasets can be used for different events (e.g., the premier draft dataset can be used for a sealed event).
   - Quick draft players should consider using the premier draft dataset when quick draft initially becomes available.
 - **Step 7:** Configure the tool through the [Settings window](#settings).
@@ -69,7 +69,7 @@ Magic: The Gathering Arena draft tool that utilizes 17Lands data.
   - **Bottles (Linux):** /home/{username}/.var/app/com.usebottles.bottles/data/bottles/bottles/MTG-Arena/drive_c/users/{username}/AppData/LocalLow/Wizards Of The Coast/MTGA/Player.log
   - **Lutris (Linux):** /home/{username}/Games/magic-the-gathering-arena/drive_c/users/{username}/AppData/LocalLow/Wizards Of The Coast/MTGA/Player.log
 - **Step 10:** (Mac Only) Set Arena to window mode.
-- **Step 11:** Download the sets you plan to use (`Data->Add Sets`).
+- **Step 11:** Download the sets you plan to use (`Data->Download Dataset`).
   - Event datasets can be used for different events (e.g., the premier draft dataset can be used for a sealed event).
   - Select `Arena Cube` and adjust the start date to download the data from the most recent Arena Cube event.
   - Quick draft players should consider using the premier draft dataset when quick draft initially becomes available.
@@ -127,7 +127,7 @@ Magic: The Gathering Arena draft tool that utilizes 17Lands data.
 ![Settings_Colors](https://github.com/unrealities/MTGA_Draft_17Lands/blob/main/assets/96687942/90c6b3df-0ade-4f32-a1be-b2ef40cedc32.png)
 
 - **Read Draft Logs:** Read the log file from a draft by selecting `File->Open`. Select a file that has the following naming scheme `DraftLog_<Set>_<Draft Type>_<Draft_ID>.log` file to read the file.
-- **Download Set Data:** Open the Add Sets window by selecting `Data->Add Sets`. Enter the set information and click the ADD SET button to begin downloading the set data.
+- **Download Set Data:** Open the Download Dataset window by selecting `Data->Download Dataset`. Enter the set information and click the ADD SET button to begin downloading the set data.
   - The download can take several minutes.
   - 17Lands will timeout the request if too many requests are made within a short period.
 - **List Taken Cards:** Get to the Taken Cards window by selecting `Cards->Taken Cards`.
