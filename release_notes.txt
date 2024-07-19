@@ -1,5 +1,8 @@
-===================== RELEASE NOTES 3.24 =====================
+===================== RELEASE NOTES 3.25 =====================
 * TBD
+
+===================== RELEASE NOTES 3.24 =====================
+* FiYir released feature: Card Popup Archetype Stats #32: Add archetype stats to card popup window
 
 ===================== RELEASE NOTES 3.23 =====================
 * FiYir Fixed issue [Bug]: Incorrect Arena Cube Start Date #30: The app now sets the correct start date for the Arena Cube.
