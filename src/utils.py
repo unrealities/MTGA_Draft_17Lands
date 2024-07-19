@@ -97,13 +97,20 @@ def retrieve_local_set_list(codes, names = None):
                 else:
                     start_date = json_data["meta"]["start_date"]
                     end_date = json_data["meta"]["end_date"]
+                    
+                if "game_count" in json_data["meta"]:
+                    game_count = json_data["meta"]["game_count"]
+                else:
+                    game_count = 0
+                    
                 file_list.append((
                     set_name,
                     event_type,
                     user_group,
                     start_date,
                     end_date,
-                    file_location
+                    file_location,
+                    game_count
                 ))
         except Exception as error:
             error_list.append(error)
