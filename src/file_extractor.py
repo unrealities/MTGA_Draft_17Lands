@@ -762,6 +762,8 @@ class FileExtractor:
 
     def retrieve_17lands_color_ratings(self):
         '''Use 17Lands endpoint to collect the data from the color_ratings page'''
+        result = True
+        game_count = 0
         try:
             if self.user_group == constants.LIMITED_USER_GROUP_ALL:
                 user_group = ""
@@ -771,11 +773,13 @@ class FileExtractor:
             url_data = urllib.request.urlopen(url, context=self.context).read()
 
             color_json_data = json.loads(url_data)
-            self._process_17lands_color_ratings(color_json_data)
+            game_count = self._process_17lands_color_ratings(color_json_data)
 
         except Exception as error:
+            result = False
             logger.error(url)
             logger.error(error)
+        return result, game_count
 
     def _process_17lands_data(self, colors, cards):
         '''Parse the 17Lands json data to extract the card ratings'''
@@ -847,7 +851,7 @@ class FileExtractor:
             "(RGW)": "RGW",
             "(GWU)": "GWU",
         }
-
+        game_count = 0
         try:
             self.combined_data["color_ratings"] = {}
             for color in colors:
@@ -866,9 +870,13 @@ class FileExtractor:
 
                         if processed_colors not in self.combined_data["color_ratings"]:
                             self.combined_data["color_ratings"][processed_colors] = winrate
+                elif color["is_summary"] and color["color_name"] == "All Decks":
+                    game_count = color["games"] if color["games"] else 0
+                    self.combined_data["meta"]["game_count"] = game_count
 
         except Exception as error:
             logger.error(error)
+        return game_count
 
     def _process_scryfall_data(self, data):
         '''Parse json data from the Scryfall API to extract pertinent card data'''
