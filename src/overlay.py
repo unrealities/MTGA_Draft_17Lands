@@ -2,8 +2,7 @@
 import tkinter
 from tkinter.ttk import Progressbar, Treeview, Style, OptionMenu, Button, Checkbutton, Label, Separator, Entry
 from tkinter import filedialog, messagebox, font
-import ttkbootstrap as ttk
-from ttkbootstrap.constants import *
+# from ttkbootstrap import Style
 from datetime import date, datetime, UTC
 import urllib
 import sys
@@ -47,7 +46,6 @@ APPLICATION_VERSION = 3.26
 HOTKEY_CTRL_G = '\x07'
 
 logger = create_logger()
-
 
 @dataclass
 class TableInfo:

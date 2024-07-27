@@ -1,7 +1,7 @@
 import os
 import getpass
 
-FONT_SANS_SERIF = "Arial"
+FONT_SANS_SERIF = "Aptos, San Francisco, Arial"
 FONT_MONO_SPACE = "Courier"
 
 BASIC_LANDS = ["Island", "Mountain", "Swamp", "Plains", "Forest"]
