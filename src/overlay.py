@@ -2,6 +2,8 @@
 import tkinter
 from tkinter.ttk import Progressbar, Treeview, Style, OptionMenu, Button, Checkbutton, Label, Separator, Entry
 from tkinter import filedialog, messagebox, font
+import ttkbootstrap as ttk
+from ttkbootstrap.constants import *
 from datetime import date, datetime, UTC
 import urllib
 import sys
