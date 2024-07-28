@@ -56,12 +56,6 @@ TEST_SETS = SetDictionary(data={
             type="Sealed",
             set_code="MKM",
             keywords=["Qualifier"]
-        ),
-        SpecialEvent(
-            label="ArenaDirect",
-            type="Sealed",
-            set_code="DMU",
-            keywords=["ArenaDirect"]
         )
     ]
 )
@@ -545,15 +539,15 @@ ARENA_OPEN_TEST_ENTRIES = [
     ("Arena Direct Event Start",
     EventResults(new_event=True,
                  data_update=False,
-                 current_set="DMU",
-                 current_event="ArenaDirect",
+                 current_set="OTJ",
+                 current_event="Sealed",
                  current_pack=0,
                  current_pick=0,
                  picks=[],
                  pack=[],
                  card_pool=[],
                  missing=[]),
-    r'[UnityCrossThreadLogger]==> Event_Join {"id":"57d3b2c6-71ef-44ee-a395-1e977fcdd6b6","request":"{\"EventName\":\"ArenaDirect_Sealed\",\"EntryCurrencyType\":\"Gem\",\"EntryCurrencyPaid\":1500,\"CustomTokenId\":null}"}'
+    r'[UnityCrossThreadLogger]==> Event_Join {"id":"57d3b2c6-71ef-44ee-a395-1e977fcdd6b6","request":"{\"EventName\":\"ArenaDirect_OTJ_Sealed_20240726\",\"EntryCurrencyType\":\"Gem\",\"EntryCurrencyPaid\":1500,\"CustomTokenId\":null}"}'
     ),
     
     
