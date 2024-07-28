@@ -251,7 +251,7 @@ The following solution is for P1P1. After you have selected a card, only Arena l
 
 ### Future Considerations
 
-- The Google Cloud Function has a cost, and only 1000 requests each month are free. If used excessively, the endpoint may need to be deactivated.
+- For 30 days in June/July 2024, there were 913 requests, less than 1000 free requests each month for Google Cloud Functions. I will monitor Bloomburrow's release, but the feature is currently in no jeopardy of being removed.
 
 ## Troubleshooting
 

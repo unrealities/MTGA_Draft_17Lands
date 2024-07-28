@@ -1,3 +1,6 @@
+===================== RELEASE NOTES 3.26 =====================
+* FiYir Fixed issue [Bug]: OTJ ArenaDirect is detected as MH3 ArenaDirect and no picks are detected #42
+
 ===================== RELEASE NOTES 3.25 =====================
 * FiYir released feature: Dataset Pre-Download Check #38
 
