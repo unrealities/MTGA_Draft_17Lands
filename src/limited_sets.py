@@ -12,7 +12,7 @@ from src.logger import create_logger
 
 logger = create_logger()
 
-LIMITED_SETS_VERSION = 4
+LIMITED_SETS_VERSION = 5
 TOTAL_SCRYFALL_SETS = 50
 DATE_SHIFT_OFFSET_DAYS = -30
 TEMP_LIMITED_SETS = os.path.join("Temp", "temp_set_list.json")
@@ -54,12 +54,6 @@ class SetDictionary(BaseModel):
             type="Sealed",
             set_code=REPLACE_PHRASE_LATEST,
             keywords=["Qualifier"]
-        ),
-        SpecialEvent(
-            label="ArenaDirect",
-            type="Sealed",
-            set_code=REPLACE_PHRASE_LATEST,
-            keywords=["ArenaDirect"]
         )
     ]
 
