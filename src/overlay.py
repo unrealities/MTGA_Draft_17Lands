@@ -2,7 +2,7 @@
 import tkinter
 from tkinter.ttk import Progressbar, Treeview, Style, OptionMenu, Button, Checkbutton, Label, Separator, Entry
 from tkinter import filedialog, messagebox, font
-# from ttkbootstrap import Style
+import customtkinter
 from datetime import date, datetime, UTC
 import urllib
 import sys
@@ -61,6 +61,7 @@ def start_overlay():
     parser.add_argument('--step', action='store_true')
 
     args = parser.parse_known_args()
+    app = customtkinter.CTk()
 
     # Ignore unknown arguments from ArgumentParser - pytest change
     overlay = Overlay(args[0])
