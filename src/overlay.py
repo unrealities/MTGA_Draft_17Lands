@@ -1,8 +1,8 @@
 """This module contains the functions and classes that are used for building and handling the application UI"""
-import tkinter
-from tkinter.ttk import Progressbar, Treeview, Style, OptionMenu, Button, Checkbutton, Label, Separator, Entry
-from tkinter import filedialog, messagebox, font
-import customtkinter
+# import ctk
+# from ctk.ttk import Progressbar, Treeview, Style, OptionMenu, Button, Checkbutton, Label, Separator, Entry
+# from ctk import filedialog, messagebox, font
+import customtkinter as ctk
 from datetime import date, datetime, UTC
 import urllib
 import sys
@@ -61,7 +61,6 @@ def start_overlay():
     parser.add_argument('--step', action='store_true')
 
     args = parser.parse_known_args()
-    app = customtkinter.CTk()
 
     # Ignore unknown arguments from ArgumentParser - pytest change
     overlay = Overlay(args[0])
@@ -161,7 +160,7 @@ def copy_clipboard(copy):
     """Send the copied data to the clipboard"""
     try:
         # Attempt to copy to clipboard
-        clip = tkinter.Tk()
+        clip = ctk.CTk()
         clip.withdraw()
         clip.clipboard_clear()
         clip.clipboard_append(copy)
@@ -244,7 +243,7 @@ def disable_resizing(event, table):
 def url_callback(event):
     webbrowser.open_new(event.widget.cget("text"))
 
-class AutocompleteEntry(tkinter.Entry):
+class AutocompleteEntry(ctk.CTkEntry):
     def initialize(self, completion_list):
         self.completion_list = completion_list
         self.hitsIndex = -1
@@ -272,10 +271,10 @@ class AutocompleteEntry(tkinter.Entry):
             self.remove_autocompletion()  # Don't display anything if hitsIndex is -1
             return
         if self.hits:
-            cursor = self.index(tkinter.INSERT)
-            self.delete(0, tkinter.END)
+            cursor = self.index(ctk.INSERT)
+            self.delete(0, ctk.END)
             self.insert(0, self.hits[self.hitsIndex])
-            self.select_range(cursor, tkinter.END)
+            self.select_range(cursor, ctk.END)
             self.icursor(cursor)
             self.autocompleted = True
         else:
@@ -297,7 +296,7 @@ class AutocompleteEntry(tkinter.Entry):
 
         if event.keysym in ('Down', 'Up', 'Tab'):
             if self.select_present():
-                cursor = self.index(tkinter.SEL_FIRST)
+                cursor = self.index(ctk.SEL_FIRST)
                 if self.hits and self.current == self.get().lower()[0:cursor]:
                     if event.keysym == 'Up':
                         self.hitsIndex = (self.hitsIndex - 1) % len(self.hits)
@@ -311,7 +310,7 @@ class AutocompleteEntry(tkinter.Entry):
         if event.keysym == 'Right':
             if self.select_present():
                 self.selection_clear()
-                self.icursor(tkinter.END)
+                self.icursor(ctk.END)
                 return "break"
 
         if event.keysym in ('BackSpace', 'Delete'):
@@ -320,9 +319,9 @@ class AutocompleteEntry(tkinter.Entry):
 
     def select_present(self):
         try:
-            self.index(tkinter.SEL_FIRST)
+            self.index(ctk.SEL_FIRST)
             return True
-        except tkinter.TclError:
+        except ctk.TclError:
             return False
 
 class ScaledWindow:
@@ -337,10 +336,10 @@ class ScaledWindow:
         return scaled_value
 
     def _create_header(self, table_label, frame, height, font, headers, total_width, include_header, fixed_width, table_style, stretch_enabled):
-        """Configure the tkinter Treeview widget tables that are used to list draft data"""
+        """Configure the ctk Treeview widget tables that are used to list draft data"""
         header_labels = tuple(headers.keys())
         show_header = "headings" if include_header else ""
-        column_stretch = tkinter.YES if stretch_enabled else tkinter.NO
+        column_stretch = ctk.YES if stretch_enabled else ctk.NO
         list_box = Treeview(frame, columns=header_labels,
                             show=show_header, style=table_style, height=height)
 
@@ -364,7 +363,7 @@ class ScaledWindow:
                 else:
                     list_box.column(column, stretch=column_stretch,
                                     anchor=headers[column]["anchor"])
-                list_box.heading(column, text=column, anchor=tkinter.CENTER,
+                list_box.heading(column, text=column, anchor=ctk.CENTER,
                                  command=lambda _col=column: self._sort_table_column(table_label, list_box, _col, True))
             list_box["show"] = show_header  # use after setting columns
             if include_header:
@@ -416,7 +415,7 @@ class Overlay(ScaledWindow):
 
     def __init__(self, args):
         super().__init__()
-        self.root = tkinter.Tk()
+        self.root = ctk.CTk()
         self.root.title(f"Version {APPLICATION_VERSION:2.2f}")
         self.configuration, _ = read_configuration()
         self.root.resizable(False, False)
@@ -458,17 +457,18 @@ class Overlay(ScaledWindow):
         self.tier_sources = self.draft.retrieve_tier_source()
         self.set_metrics = self.draft.retrieve_set_metrics(False)
 
-        tkinter.Grid.columnconfigure(self.root, 0, weight=1)
-        tkinter.Grid.columnconfigure(self.root, 1, weight=1)
+        # Grid doesn't work
+        # ctk.grid_columnconfigure(self.root, 0, weight=1)
+        # ctk.grid_columnconfigure(self.root, 1, weight=1)
         # Menu Bar
-        self.menubar = tkinter.Menu(self.root)
-        self.filemenu = tkinter.Menu(self.menubar, tearoff=0)
+        self.menubar = ctk.Menu(self.root)
+        self.filemenu = ctk.Menu(self.menubar, tearoff=0)
         self.filemenu.add_command(label="Open", command=self.__open_draft_log)
-        self.datamenu = tkinter.Menu(self.menubar, tearoff=0)
+        self.datamenu = ctk.Menu(self.menubar, tearoff=0)
         self.datamenu.add_command(
             label="Download Dataset", command=self.__open_set_view_window)
 
-        self.cardmenu = tkinter.Menu(self.menubar, tearoff=0)
+        self.cardmenu = ctk.Menu(self.menubar, tearoff=0)
         self.cardmenu.add_command(
             label="Taken Cards", command=self.__open_taken_cards_window)
         self.cardmenu.add_command(
@@ -476,11 +476,11 @@ class Overlay(ScaledWindow):
         self.cardmenu.add_command(
             label="Compare Cards", command=self.__open_card_compare_window)
 
-        self.settingsmenu = tkinter.Menu(self.menubar, tearoff=0)
+        self.settingsmenu = ctk.Menu(self.menubar, tearoff=0)
         self.settingsmenu.add_command(
             label="Settings", command=self.__open_settings_window)
 
-        self.helpmenu = tkinter.Menu(self.menubar, tearoff=0)
+        self.helpmenu = ctk.Menu(self.menubar, tearoff=0)
         self.helpmenu.add_command(
             label="About", command=self.__open_about_window)
 
@@ -491,82 +491,82 @@ class Overlay(ScaledWindow):
         self.menubar.add_cascade(label="Help", menu=self.helpmenu)
         self.root.config(menu=self.menubar)
 
-        self.current_draft_label_frame = tkinter.Frame(self.root)
+        self.current_draft_label_frame = ctk.CTkFrame(self.root)
         self.current_draft_label = Label(
             self.current_draft_label_frame, text="Current Draft:", style="MainSectionsBold.TLabel", anchor="e")
-        self.current_draft_value_frame = tkinter.Frame(self.root)
+        self.current_draft_value_frame = ctk.CTkFrame(self.root)
         self.current_draft_value_label = Label(
             self.current_draft_value_frame, text="", style="CurrentDraft.TLabel", anchor="w")
 
-        self.data_source_label_frame = tkinter.Frame(self.root)
+        self.data_source_label_frame = ctk.CTkFrame(self.root)
         self.data_source_label = Label(
             self.data_source_label_frame, text="Data Source:", style="MainSectionsBold.TLabel", anchor="e")
 
-        self.deck_colors_label_frame = tkinter.Frame(self.root)
+        self.deck_colors_label_frame = ctk.CTkFrame(self.root)
         self.deck_colors_label = Label(
             self.deck_colors_label_frame, text="Deck Filter:", style="MainSectionsBold.TLabel", anchor="e")
 
-        self.data_source_selection = tkinter.StringVar(self.root)
+        self.data_source_selection = ctk.StringVar(self.root)
         self.data_source_list = self.data_sources
 
-        self.deck_stats_checkbox_value = tkinter.IntVar(self.root)
-        self.missing_cards_checkbox_value = tkinter.IntVar(self.root)
-        self.auto_highest_checkbox_value = tkinter.IntVar(self.root)
-        self.curve_bonus_checkbox_value = tkinter.IntVar(self.root)
-        self.color_bonus_checkbox_value = tkinter.IntVar(self.root)
-        self.bayesian_average_checkbox_value = tkinter.IntVar(self.root)
-        self.draft_log_checkbox_value = tkinter.IntVar(self.root)
-        self.p1p1_ocr_checkbox_value = tkinter.IntVar(self.root)
-        self.save_screenshot_checkbox_value = tkinter.IntVar(self.root)
-        self.taken_alsa_checkbox_value = tkinter.IntVar(self.root)
-        self.taken_ata_checkbox_value = tkinter.IntVar(self.root)
-        self.taken_gpwr_checkbox_value = tkinter.IntVar(self.root)
-        self.taken_ohwr_checkbox_value = tkinter.IntVar(self.root)
-        self.taken_gndwr_checkbox_value = tkinter.IntVar(self.root)
-        self.taken_iwd_checkbox_value = tkinter.IntVar(self.root)
-        self.taken_wheel_checkbox_value = tkinter.IntVar(self.root)
-        self.taken_gdwr_checkbox_value = tkinter.IntVar(self.root)
-        self.card_colors_checkbox_value = tkinter.IntVar(self.root)
-        self.color_identity_checkbox_value = tkinter.IntVar(self.root)
-        self.current_draft_checkbox_value = tkinter.IntVar(self.root)
-        self.data_source_checkbox_value = tkinter.IntVar(self.root)
-        self.deck_filter_checkbox_value = tkinter.IntVar(self.root)
-        self.refresh_button_checkbox_value = tkinter.IntVar(self.root)
+        self.deck_stats_checkbox_value = ctk.IntVar(self.root)
+        self.missing_cards_checkbox_value = ctk.IntVar(self.root)
+        self.auto_highest_checkbox_value = ctk.IntVar(self.root)
+        self.curve_bonus_checkbox_value = ctk.IntVar(self.root)
+        self.color_bonus_checkbox_value = ctk.IntVar(self.root)
+        self.bayesian_average_checkbox_value = ctk.IntVar(self.root)
+        self.draft_log_checkbox_value = ctk.IntVar(self.root)
+        self.p1p1_ocr_checkbox_value = ctk.IntVar(self.root)
+        self.save_screenshot_checkbox_value = ctk.IntVar(self.root)
+        self.taken_alsa_checkbox_value = ctk.IntVar(self.root)
+        self.taken_ata_checkbox_value = ctk.IntVar(self.root)
+        self.taken_gpwr_checkbox_value = ctk.IntVar(self.root)
+        self.taken_ohwr_checkbox_value = ctk.IntVar(self.root)
+        self.taken_gndwr_checkbox_value = ctk.IntVar(self.root)
+        self.taken_iwd_checkbox_value = ctk.IntVar(self.root)
+        self.taken_wheel_checkbox_value = ctk.IntVar(self.root)
+        self.taken_gdwr_checkbox_value = ctk.IntVar(self.root)
+        self.card_colors_checkbox_value = ctk.IntVar(self.root)
+        self.color_identity_checkbox_value = ctk.IntVar(self.root)
+        self.current_draft_checkbox_value = ctk.IntVar(self.root)
+        self.data_source_checkbox_value = ctk.IntVar(self.root)
+        self.deck_filter_checkbox_value = ctk.IntVar(self.root)
+        self.refresh_button_checkbox_value = ctk.IntVar(self.root)
 
-        self.taken_type_creature_checkbox_value = tkinter.IntVar(self.root)
+        self.taken_type_creature_checkbox_value = ctk.IntVar(self.root)
         self.taken_type_creature_checkbox_value.set(True)
-        self.taken_type_land_checkbox_value = tkinter.IntVar(self.root)
+        self.taken_type_land_checkbox_value = ctk.IntVar(self.root)
         self.taken_type_land_checkbox_value.set(True)
-        self.taken_type_instant_sorcery_checkbox_value = tkinter.IntVar(
+        self.taken_type_instant_sorcery_checkbox_value = ctk.IntVar(
             self.root)
         self.taken_type_instant_sorcery_checkbox_value.set(True)
-        self.taken_type_other_checkbox_value = tkinter.IntVar(self.root)
+        self.taken_type_other_checkbox_value = ctk.IntVar(self.root)
         self.taken_type_other_checkbox_value.set(True)
 
-        self.column_2_selection = tkinter.StringVar(self.root)
+        self.column_2_selection = ctk.StringVar(self.root)
         self.column_2_list = self.main_options_dict.keys()
-        self.column_3_selection = tkinter.StringVar(self.root)
+        self.column_3_selection = ctk.StringVar(self.root)
         self.column_3_list = self.main_options_dict.keys()
-        self.column_4_selection = tkinter.StringVar(self.root)
+        self.column_4_selection = ctk.StringVar(self.root)
         self.column_4_list = self.main_options_dict.keys()
-        self.column_5_selection = tkinter.StringVar(self.root)
+        self.column_5_selection = ctk.StringVar(self.root)
         self.column_5_list = self.main_options_dict.keys()
-        self.column_6_selection = tkinter.StringVar(self.root)
+        self.column_6_selection = ctk.StringVar(self.root)
         self.column_6_list = self.main_options_dict.keys()
-        self.column_7_selection = tkinter.StringVar(self.root)
+        self.column_7_selection = ctk.StringVar(self.root)
         self.column_7_list = self.main_options_dict.keys()
-        self.filter_format_selection = tkinter.StringVar(self.root)
+        self.filter_format_selection = ctk.StringVar(self.root)
         self.filter_format_list = constants.DECK_FILTER_FORMAT_LIST
-        self.result_format_selection = tkinter.StringVar(self.root)
+        self.result_format_selection = ctk.StringVar(self.root)
         self.result_format_list = constants.RESULT_FORMAT_LIST
-        self.deck_filter_selection = tkinter.StringVar(self.root)
+        self.deck_filter_selection = ctk.StringVar(self.root)
         self.deck_filter_list = self.deck_colors.keys()
-        self.taken_filter_selection = tkinter.StringVar(self.root)
-        self.taken_type_selection = tkinter.StringVar(self.root)
-        self.ui_size_selection = tkinter.StringVar(self.root)
+        self.taken_filter_selection = ctk.StringVar(self.root)
+        self.taken_type_selection = ctk.StringVar(self.root)
+        self.ui_size_selection = ctk.StringVar(self.root)
         self.ui_size_list = constants.UI_SIZE_DICT.keys()
 
-        self.data_source_option_frame = tkinter.Frame(self.root)
+        self.data_source_option_frame = ctk.CTkFrame(self.root)
         self.data_source_options = OptionMenu(self.data_source_option_frame, self.data_source_selection,
                                               self.data_source_selection.get(), *self.data_source_list, style="All.TMenubutton")
         menu = self.root.nametowidget(self.data_source_options['menu'])
@@ -586,51 +586,51 @@ class Overlay(ScaledWindow):
         self.about_window_open = False
         self.sets_window_open = False
 
-        self.deck_colors_option_frame = tkinter.Frame(self.root)
+        self.deck_colors_option_frame = ctk.CTkFrame(self.root)
         self.deck_colors_options = OptionMenu(self.deck_colors_option_frame, self.deck_filter_selection,
                                               self.deck_filter_selection.get(), *self.deck_filter_list, style="All.TMenubutton")
         menu = self.root.nametowidget(self.deck_colors_options['menu'])
         menu.config(font=self.fonts_dict["All.TMenubutton"])
 
-        self.refresh_button_frame = tkinter.Frame(self.root)
+        self.refresh_button_frame = ctk.CTkFrame(self.root)
         self.refresh_button = Button(
             self.refresh_button_frame, command=lambda: self.__update_overlay_callback(True, Source.REFRESH), text="Refresh")
 
         self.separator_frame_draft = Separator(self.root, orient='horizontal')
-        self.status_frame = tkinter.Frame(self.root)
+        self.status_frame = ctk.CTkFrame(self.root)
         self.pack_pick_label = Label(
             self.status_frame, text="Pack 0, Pick 0", style="MainSectionsBold.TLabel")
 
-        self.pack_table_frame = tkinter.Frame(self.root, width=10)
+        self.pack_table_frame = ctk.CTkFrame(self.root, width=10)
 
-        headers = {"Column1": {"width": .46, "anchor": tkinter.W},
-                   "Column2": {"width": .18, "anchor": tkinter.CENTER},
-                   "Column3": {"width": .18, "anchor": tkinter.CENTER},
-                   "Column4": {"width": .18, "anchor": tkinter.CENTER},
-                   "Column5": {"width": .18, "anchor": tkinter.CENTER},
-                   "Column6": {"width": .18, "anchor": tkinter.CENTER},
-                   "Column7": {"width": .18, "anchor": tkinter.CENTER}}
+        headers = {"Column1": {"width": .46, "anchor": ctk.W},
+                   "Column2": {"width": .18, "anchor": ctk.CENTER},
+                   "Column3": {"width": .18, "anchor": ctk.CENTER},
+                   "Column4": {"width": .18, "anchor": ctk.CENTER},
+                   "Column5": {"width": .18, "anchor": ctk.CENTER},
+                   "Column6": {"width": .18, "anchor": ctk.CENTER},
+                   "Column7": {"width": .18, "anchor": ctk.CENTER}}
 
         self.pack_table = self._create_header("pack_table", self.pack_table_frame, 0, self.fonts_dict["All.TableRow"], headers,
                                               self.table_width, True, True, constants.TABLE_STYLE, False)
 
-        self.missing_frame = tkinter.Frame(self.root)
+        self.missing_frame = ctk.CTkFrame(self.root)
         self.missing_cards_label = Label(
             self.missing_frame, text="Missing Cards", style="MainSectionsBold.TLabel")
 
-        self.missing_table_frame = tkinter.Frame(self.root, width=10)
+        self.missing_table_frame = ctk.CTkFrame(self.root, width=10)
 
         self.missing_table = self._create_header("missing_table", self.missing_table_frame, 0, self.fonts_dict["All.TableRow"], headers,
                                                  self.table_width, True, True, constants.TABLE_STYLE, False)
 
-        self.stat_frame = tkinter.Frame(self.root)
+        self.stat_frame = ctk.CTkFrame(self.root)
 
         self.stat_table = self._create_header("stat_table", self.root, 0, self.fonts_dict["All.TableRow"], constants.STATS_HEADER_CONFIG,
                                               self.table_width, True, True, constants.TABLE_STYLE, False)
         self.stat_label = Label(self.stat_frame, text="Draft Stats:",
                                 style="MainSectionsBold.TLabel", anchor="e", width=15)
 
-        self.stat_options_selection = tkinter.StringVar(self.root)
+        self.stat_options_selection = ctk.StringVar(self.root)
         self.stat_options_list = [constants.CARD_TYPE_SELECTION_CREATURES,
                                   constants.CARD_TYPE_SELECTION_NONCREATURES,
                                   constants.CARD_TYPE_SELECTION_ALL]
@@ -690,8 +690,8 @@ class Overlay(ScaledWindow):
         self.pack_table.pack(expand=True, fill='both')
         self.missing_cards_label.pack(expand=False, fill=None)
         self.missing_table.pack(expand=True, fill='both')
-        self.stat_label.pack(side=tkinter.LEFT, expand=True, fill=None)
-        self.stat_options.pack(side=tkinter.RIGHT, expand=True, fill=None)
+        self.stat_label.pack(side=ctk.LEFT, expand=True, fill=None)
+        self.stat_options.pack(side=ctk.RIGHT, expand=True, fill=None)
         self.current_draft_label.pack(expand=True, fill=None, anchor="e")
         self.current_draft_value_label.pack(expand=True, fill=None, anchor="w")
         self.data_source_label.pack(expand=True, fill=None, anchor="e")
@@ -713,7 +713,7 @@ class Overlay(ScaledWindow):
             logger.info("Arena Player Log Location: %s", self.arena_file)
         else:
             logger.error("Arena Player Log Missing")
-            tkinter.messagebox.showinfo(
+            ctk.messagebox.showinfo(
                 title="Arena Player Log Missing", message="Unable to locate the Arena player log.\n\n"
                 "Please set the log location by clicking File->Open and selecting the Arena log file (Player.log).\n\n"
                 "This log is typically located at the following location:\n"
@@ -740,7 +740,7 @@ class Overlay(ScaledWindow):
             self.root.iconify()
 
     def main_loop(self):
-        '''Run the TKinter overlay'''
+        '''Run the ctk overlay'''
         self.root.mainloop()
 
     def __set_os_configuration(self):
@@ -778,19 +778,19 @@ class Overlay(ScaledWindow):
               in points (1/72 inch = 1 point)
         '''
         try:
-            default_font = tkinter.font.nametofont("TkDefaultFont")
+            default_font = ctk.font.nametofont("TkDefaultFont")
             default_font.configure(size=self._scale_value(-12),
                                    family=constants.FONT_SANS_SERIF)
 
-            text_font = tkinter.font.nametofont("TkTextFont")
+            text_font = ctk.font.nametofont("TkTextFont")
             text_font.configure(size=self._scale_value(-12),
                                 family=constants.FONT_SANS_SERIF)
 
-            fixed_font = tkinter.font.nametofont("TkFixedFont")
+            fixed_font = ctk.font.nametofont("TkFixedFont")
             fixed_font.configure(size=self._scale_value(-12),
                                  family=constants.FONT_SANS_SERIF)
 
-            menu_font = tkinter.font.nametofont("TkMenuFont")
+            menu_font = ctk.font.nametofont("TkMenuFont")
             menu_font.configure(size=self._scale_value(-12),
                                 family=constants.FONT_SANS_SERIF)
 
@@ -1024,7 +1024,7 @@ class Overlay(ScaledWindow):
                 if added_card:
                     cards = [card_list[x] for x in card_list if card_list[x]
                              [constants.DATA_FIELD_NAME] == added_card and card_list[x] not in self.compare_list]
-                    entry_box.delete(0, tkinter.END)
+                    entry_box.delete(0, ctk.END)
                     if cards:
                         self.compare_list.append(cards[0])
 
@@ -1450,7 +1450,7 @@ class Overlay(ScaledWindow):
         '''Callback function updates the settings and opens a restart prompt'''
         self.__update_settings_storage()
         self.__update_settings_data()
-        message_box = tkinter.messagebox.askyesno(
+        message_box = ctk.messagebox.askyesno(
             title="Restart", message="A restart is required for this setting to take effect. Restart the application?")
 
         if message_box:
@@ -1779,8 +1779,8 @@ class Overlay(ScaledWindow):
             set_data = set_list[selection.get()]
 
             if set_data.start_date:
-                start.delete(0, tkinter.END)
-                start.insert(tkinter.END, set_data.start_date)
+                start.delete(0, ctk.END)
+                start.insert(ctk.END, set_data.start_date)
 
             self.root.update()
         except Exception as error:
@@ -1797,7 +1797,7 @@ class Overlay(ScaledWindow):
         if self.sets_window_open:
             return
 
-        popup = tkinter.Toplevel()
+        popup = ctk.Toplevel()
         popup.wm_title("Download Dataset")
         popup.protocol("WM_DELETE_WINDOW",
                        lambda window=popup: self.__close_set_view_window(window))
@@ -1814,21 +1814,21 @@ class Overlay(ScaledWindow):
                                                            self._scale_value(20))
         popup.wm_geometry(f"+{location_x}+{location_y}")
 
-        tkinter.Grid.rowconfigure(popup, 1, weight=1)
+        ctk.Grid.rowconfigure(popup, 1, weight=1)
         try:
 
             sets = self.limited_sets.data
 
-            headers = {"SET": {"width": .30, "anchor": tkinter.W},
-                       "EVENT": {"width": .20, "anchor": tkinter.CENTER},
-                       "USER GROUP": {"width": .10, "anchor": tkinter.CENTER},
-                       "START DATE": {"width": .20, "anchor": tkinter.CENTER},
-                       "END DATE": {"width": .20, "anchor": tkinter.CENTER}}
+            headers = {"SET": {"width": .30, "anchor": ctk.W},
+                       "EVENT": {"width": .20, "anchor": ctk.CENTER},
+                       "USER GROUP": {"width": .10, "anchor": ctk.CENTER},
+                       "START DATE": {"width": .20, "anchor": ctk.CENTER},
+                       "END DATE": {"width": .20, "anchor": ctk.CENTER}}
 
-            list_box_frame = tkinter.Frame(popup)
-            list_box_scrollbar = tkinter.Scrollbar(
-                list_box_frame, orient=tkinter.VERTICAL)
-            list_box_scrollbar.pack(side=tkinter.RIGHT, fill=tkinter.Y)
+            list_box_frame = ctk.CTkFrame(popup)
+            list_box_scrollbar = ctk.Scrollbar(
+                list_box_frame, orient=ctk.VERTICAL)
+            list_box_scrollbar.pack(side=ctk.RIGHT, fill=ctk.Y)
 
             list_box = self._create_header("set_table",
                                            list_box_frame, 0, self.fonts_dict["Sets.TableRow"], headers, self._scale_value(500), True, True, "Set.Treeview", True)
@@ -1860,25 +1860,25 @@ class Overlay(ScaledWindow):
                                 anchor="e")
             draft_choices = constants.LIMITED_TYPE_LIST
 
-            status_text = tkinter.StringVar()
+            status_text = ctk.StringVar()
             status_label = Label(popup, textvariable=status_text,
                                  style="Status.TLabel", anchor="c")
             status_text.set("Retrieving Set List")
 
-            event_value = tkinter.StringVar(self.root)
+            event_value = ctk.StringVar(self.root)
             event_entry = OptionMenu(
                 popup, event_value, draft_choices[0], *draft_choices)
             menu = self.root.nametowidget(event_entry['menu'])
             menu.config(font=self.fonts_dict["All.TMenubutton"])
 
-            start_entry = tkinter.Entry(popup)
-            start_entry.insert(tkinter.END, START_DATE_DEFAULT)
-            end_entry = tkinter.Entry(popup)
-            end_entry.insert(tkinter.END, str(date.today()))
+            start_entry = ctk.CTkEntry(popup)
+            start_entry.insert(ctk.END, START_DATE_DEFAULT)
+            end_entry = ctk.CTkEntry(popup)
+            end_entry.insert(ctk.END, str(date.today()))
 
             set_choices = list(sets)
 
-            set_value = tkinter.StringVar(self.root)
+            set_value = ctk.StringVar(self.root)
             set_entry = OptionMenu(
                 popup, set_value, set_choices[0], *set_choices)
             menu = self.root.nametowidget(set_entry['menu'])
@@ -1888,13 +1888,13 @@ class Overlay(ScaledWindow):
                             set_list=sets: self.__update_set_start_date(start, selection, set_list, *args))
 
             draft_groups = constants.LIMITED_GROUPS_LIST
-            group_value = tkinter.StringVar(self.root)
+            group_value = ctk.StringVar(self.root)
             group_entry = OptionMenu(popup, group_value, draft_groups[0], *draft_groups)
             menu = self.root.nametowidget(group_entry['menu'])
             menu.config(font=self.fonts_dict["All.TMenubutton"])
 
             progress = Progressbar(
-                popup, orient=tkinter.HORIZONTAL, length=100, mode='determinate')
+                popup, orient=ctk.HORIZONTAL, length=100, mode='determinate')
 
             add_button = Button(popup, command=lambda: self.__add_set(popup,
                                                                       set_value,
@@ -1958,7 +1958,7 @@ class Overlay(ScaledWindow):
         if self.compare_table:
             return
 
-        popup = tkinter.Toplevel()
+        popup = ctk.Toplevel()
         popup.wm_title("Card Compare")
         popup.resizable(width=False, height=True)
         popup.attributes("-topmost", True)
@@ -1974,12 +1974,12 @@ class Overlay(ScaledWindow):
         popup.protocol(
             "WM_DELETE_WINDOW", lambda window=popup: self.__close_card_compare_window(window))
         try:
-            tkinter.Grid.rowconfigure(popup, 2, weight=1)
-            tkinter.Grid.columnconfigure(popup, 0, weight=1)
+            ctk.Grid.rowconfigure(popup, 2, weight=1)
+            ctk.Grid.columnconfigure(popup, 0, weight=1)
 
             self.compare_list = []
 
-            card_frame = tkinter.Frame(popup)
+            card_frame = ctk.CTkFrame(popup)
             set_card_names = []
             set_data = self.draft.set_data.get_card_ratings()
 
@@ -1987,18 +1987,18 @@ class Overlay(ScaledWindow):
                 set_card_names = [v[constants.DATA_FIELD_NAME]
                                   for k, v in set_data.items()]
 
-            headers = {"Column1": {"width": .46, "anchor": tkinter.W},
-                       "Column2": {"width": .18, "anchor": tkinter.CENTER},
-                       "Column3": {"width": .18, "anchor": tkinter.CENTER},
-                       "Column4": {"width": .18, "anchor": tkinter.CENTER},
-                       "Column5": {"width": .18, "anchor": tkinter.CENTER},
-                       "Column6": {"width": .18, "anchor": tkinter.CENTER},
-                       "Column7": {"width": .18, "anchor": tkinter.CENTER}}
+            headers = {"Column1": {"width": .46, "anchor": ctk.W},
+                       "Column2": {"width": .18, "anchor": ctk.CENTER},
+                       "Column3": {"width": .18, "anchor": ctk.CENTER},
+                       "Column4": {"width": .18, "anchor": ctk.CENTER},
+                       "Column5": {"width": .18, "anchor": ctk.CENTER},
+                       "Column6": {"width": .18, "anchor": ctk.CENTER},
+                       "Column7": {"width": .18, "anchor": ctk.CENTER}}
 
-            compare_table_frame = tkinter.Frame(popup)
-            compare_scrollbar = tkinter.Scrollbar(
-                compare_table_frame, orient=tkinter.VERTICAL)
-            compare_scrollbar.pack(side=tkinter.RIGHT, fill=tkinter.Y)
+            compare_table_frame = ctk.CTkFrame(popup)
+            compare_scrollbar = ctk.Scrollbar(
+                compare_table_frame, orient=ctk.VERTICAL)
+            compare_scrollbar.pack(side=ctk.RIGHT, fill=ctk.Y)
             self.compare_table = self._create_header("compare_table", compare_table_frame, 0, self.fonts_dict["All.TableRow"], headers,
                                                      self.table_width, True, True, constants.TABLE_STYLE, False)
             self.compare_table.config(yscrollcommand=compare_scrollbar.set)
@@ -2016,7 +2016,7 @@ class Overlay(ScaledWindow):
             card_entry = AutocompleteEntry(card_frame)
             card_entry.initialize(set_card_names)
             card_entry.focus_set()
-            card_entry.pack(side=tkinter.LEFT, expand=True, fill="both")
+            card_entry.pack(side=ctk.LEFT, expand=True, fill="both")
 
             card_entry.bind(
                 "<Return>", lambda event: self.__update_compare_table(card_entry))
@@ -2039,7 +2039,7 @@ class Overlay(ScaledWindow):
         if self.taken_table:
             return
 
-        popup = tkinter.Toplevel()
+        popup = ctk.Toplevel()
         popup.wm_title("Taken Cards")
         popup.attributes("-topmost", True)
         popup.resizable(width=False, height=True)
@@ -2048,36 +2048,36 @@ class Overlay(ScaledWindow):
             "WM_DELETE_WINDOW", lambda window=popup: self.__close_taken_cards_window(window))
         self.__control_trace(False)
         try:
-            tkinter.Grid.rowconfigure(popup, 4, weight=1)
-            tkinter.Grid.columnconfigure(popup, 6, weight=1)
+            ctk.Grid.rowconfigure(popup, 4, weight=1)
+            ctk.Grid.columnconfigure(popup, 6, weight=1)
 
             taken_cards = self.draft.retrieve_taken_cards()
             copy_button = Button(popup, command=lambda: copy_taken(taken_cards),
                                  text="Copy to Clipboard")
 
-            headers = {"Column1": {"width": .40, "anchor": tkinter.W},
-                       "Column2": {"width": .20, "anchor": tkinter.CENTER},
-                       "Column3": {"width": .20, "anchor": tkinter.CENTER},
-                       "Column4": {"width": .20, "anchor": tkinter.CENTER},
-                       "Column5": {"width": .20, "anchor": tkinter.CENTER},
-                       "Column6": {"width": .20, "anchor": tkinter.CENTER},
-                       "Column7": {"width": .20, "anchor": tkinter.CENTER},
-                       "Column8": {"width": .20, "anchor": tkinter.CENTER},
-                       "Column9": {"width": .20, "anchor": tkinter.CENTER},
-                       "Column10": {"width": .20, "anchor": tkinter.CENTER},
-                       "Column11": {"width": .20, "anchor": tkinter.CENTER}
+            headers = {"Column1": {"width": .40, "anchor": ctk.W},
+                       "Column2": {"width": .20, "anchor": ctk.CENTER},
+                       "Column3": {"width": .20, "anchor": ctk.CENTER},
+                       "Column4": {"width": .20, "anchor": ctk.CENTER},
+                       "Column5": {"width": .20, "anchor": ctk.CENTER},
+                       "Column6": {"width": .20, "anchor": ctk.CENTER},
+                       "Column7": {"width": .20, "anchor": ctk.CENTER},
+                       "Column8": {"width": .20, "anchor": ctk.CENTER},
+                       "Column9": {"width": .20, "anchor": ctk.CENTER},
+                       "Column10": {"width": .20, "anchor": ctk.CENTER},
+                       "Column11": {"width": .20, "anchor": ctk.CENTER}
                        }
 
-            taken_table_frame = tkinter.Frame(popup)
-            taken_scrollbar = tkinter.Scrollbar(
-                taken_table_frame, orient=tkinter.VERTICAL)
-            taken_scrollbar.pack(side=tkinter.RIGHT, fill=tkinter.Y)
+            taken_table_frame = ctk.CTkFrame(popup)
+            taken_scrollbar = ctk.Scrollbar(
+                taken_table_frame, orient=ctk.VERTICAL)
+            taken_scrollbar.pack(side=ctk.RIGHT, fill=ctk.Y)
             self.taken_table = self._create_header("taken_table",
                                                    taken_table_frame, 0, self.fonts_dict["All.TableRow"], headers, self._scale_value(440), True, True, "Taken.Treeview", False)
             self.taken_table.config(yscrollcommand=taken_scrollbar.set)
             taken_scrollbar.config(command=self.taken_table.yview)
 
-            option_frame = tkinter.Frame(
+            option_frame = ctk.CTkFrame(
                 popup, highlightbackground="white", highlightthickness=2)
             taken_filter_label = Label(
                 option_frame, text="Deck Filter:", style="MainSectionsBold.TLabel", anchor="w")
@@ -2089,7 +2089,7 @@ class Overlay(ScaledWindow):
             menu = self.root.nametowidget(taken_option['menu'])
             menu.config(font=self.fonts_dict["All.TMenubutton"])
 
-            type_checkbox_frame = tkinter.Frame(
+            type_checkbox_frame = ctk.CTkFrame(
                 popup, highlightbackground="white", highlightthickness=2)
 
             taken_creature_checkbox = Checkbutton(type_checkbox_frame,
@@ -2120,7 +2120,7 @@ class Overlay(ScaledWindow):
                                                onvalue=1,
                                                offvalue=0)
 
-            checkbox_frame = tkinter.Frame(
+            checkbox_frame = ctk.CTkFrame(
                 popup, highlightbackground="white", highlightthickness=2)
 
             taken_alsa_checkbox = Checkbutton(checkbox_frame,
@@ -2180,37 +2180,37 @@ class Overlay(ScaledWindow):
             taken_table_frame.grid(
                 row=4, column=0, columnspan=7, sticky="nsew")
 
-            self.taken_table.pack(side=tkinter.LEFT, expand=True, fill="both")
+            self.taken_table.pack(side=ctk.LEFT, expand=True, fill="both")
 
             taken_creature_checkbox.pack(
-                side=tkinter.LEFT, expand=True, fill="both")
+                side=ctk.LEFT, expand=True, fill="both")
 
             taken_land_checkbox.pack(
-                side=tkinter.LEFT, expand=True, fill="both")
+                side=ctk.LEFT, expand=True, fill="both")
 
             taken_instant_sorcery_checkbox.pack(
-                side=tkinter.LEFT, expand=True, fill="both")
+                side=ctk.LEFT, expand=True, fill="both")
 
             taken_other_checkbox.pack(
-                side=tkinter.LEFT, expand=True, fill="both")
+                side=ctk.LEFT, expand=True, fill="both")
 
             taken_alsa_checkbox.pack(
-                side=tkinter.LEFT, expand=True, fill="both")
+                side=ctk.LEFT, expand=True, fill="both")
             taken_ata_checkbox.pack(
-                side=tkinter.LEFT, expand=True, fill="both")
+                side=ctk.LEFT, expand=True, fill="both")
             taken_gpwr_checkbox.pack(
-                side=tkinter.LEFT, expand=True, fill="both")
+                side=ctk.LEFT, expand=True, fill="both")
             taken_ohwr_checkbox.pack(
-                side=tkinter.LEFT, expand=True, fill="both")
+                side=ctk.LEFT, expand=True, fill="both")
             taken_gdwr_checkbox.pack(
-                side=tkinter.LEFT, expand=True, fill="both")
+                side=ctk.LEFT, expand=True, fill="both")
             taken_gndwr_checkbox.pack(
-                side=tkinter.LEFT, expand=True, fill="both")
+                side=ctk.LEFT, expand=True, fill="both")
             taken_iwd_checkbox.pack(
-                side=tkinter.LEFT, expand=True, fill="both")
+                side=ctk.LEFT, expand=True, fill="both")
 
-            taken_filter_label.pack(side=tkinter.LEFT, expand=True, fill=None)
-            taken_option.pack(side=tkinter.LEFT, expand=True, fill="both")
+            taken_filter_label.pack(side=ctk.LEFT, expand=True, fill=None)
+            taken_option.pack(side=ctk.LEFT, expand=True, fill="both")
 
             table_width = self._scale_value(500)
 
@@ -2257,7 +2257,7 @@ class Overlay(ScaledWindow):
         if self.suggester_table:
             return
 
-        popup = tkinter.Toplevel()
+        popup = ctk.Toplevel()
         popup.wm_title("Suggested Decks")
         popup.attributes("-topmost", True)
         popup.resizable(width=False, height=False)
@@ -2274,7 +2274,7 @@ class Overlay(ScaledWindow):
         popup.protocol(
             "WM_DELETE_WINDOW", lambda window=popup: self.__close_suggest_deck_window(window))
         try:
-            tkinter.Grid.rowconfigure(popup, 3, weight=1)
+            ctk.Grid.rowconfigure(popup, 3, weight=1)
 
             suggested_decks = suggest_deck(
                 self.draft.retrieve_taken_cards(), self.set_metrics, self.configuration)
@@ -2292,7 +2292,7 @@ class Overlay(ScaledWindow):
             deck_colors_label = Label(
                 popup, text="Deck Colors:", anchor='e', style="MainSectionsBold.TLabel")
 
-            deck_colors_value = tkinter.StringVar(popup)
+            deck_colors_value = ctk.StringVar(popup)
             deck_colors_entry = OptionMenu(
                 popup, deck_colors_value, choices[0], *choices)
             menu = self.root.nametowidget(deck_colors_entry['menu'])
@@ -2308,16 +2308,16 @@ class Overlay(ScaledWindow):
                                                                        deck_color_options),
                                  text="Copy to Clipboard")
 
-            headers = {"CARD": {"width": .35, "anchor": tkinter.W},
-                       "COUNT": {"width": .14, "anchor": tkinter.CENTER},
-                       "COLOR": {"width": .12, "anchor": tkinter.CENTER},
-                       "COST": {"width": .10, "anchor": tkinter.CENTER},
-                       "TYPE": {"width": .29, "anchor": tkinter.CENTER}}
+            headers = {"CARD": {"width": .35, "anchor": ctk.W},
+                       "COUNT": {"width": .14, "anchor": ctk.CENTER},
+                       "COLOR": {"width": .12, "anchor": ctk.CENTER},
+                       "COST": {"width": .10, "anchor": ctk.CENTER},
+                       "TYPE": {"width": .29, "anchor": ctk.CENTER}}
 
-            suggester_table_frame = tkinter.Frame(popup)
-            suggest_scrollbar = tkinter.Scrollbar(
-                suggester_table_frame, orient=tkinter.VERTICAL)
-            suggest_scrollbar.pack(side=tkinter.RIGHT, fill=tkinter.Y)
+            suggester_table_frame = ctk.CTkFrame(popup)
+            suggest_scrollbar = ctk.Scrollbar(
+                suggester_table_frame, orient=ctk.VERTICAL)
+            suggest_scrollbar.pack(side=ctk.RIGHT, fill=ctk.Y)
             self.suggester_table = self._create_header("suggester_table",
                                                        suggester_table_frame, 0, self.fonts_dict["All.TableRow"], headers, self._scale_value(450), True, True, "Suggest.Treeview", False)
             self.suggester_table.config(yscrollcommand=suggest_scrollbar.set)
@@ -2357,7 +2357,7 @@ class Overlay(ScaledWindow):
         if self.column_2_options:
             return
 
-        popup = tkinter.Toplevel()
+        popup = ctk.Toplevel()
         popup.wm_title("Settings")
         popup.protocol("WM_DELETE_WINDOW",
                        lambda window=popup: self.__close_settings_window(window))
@@ -2374,7 +2374,7 @@ class Overlay(ScaledWindow):
         popup.wm_geometry(f"+{location_x}+{location_y}")
 
         try:
-            tkinter.Grid.columnconfigure(popup, 1, weight=1)
+            ctk.Grid.columnconfigure(popup, 1, weight=1)
 
             self.__control_trace(False)
 
@@ -2728,7 +2728,7 @@ class Overlay(ScaledWindow):
         if self.about_window_open:
             return
 
-        popup = tkinter.Toplevel()
+        popup = ctk.Toplevel()
         popup.wm_title("About")
         popup.protocol("WM_DELETE_WINDOW",
                        lambda window=popup: self.__close_about_window(window))
@@ -2831,14 +2831,14 @@ class Overlay(ScaledWindow):
             try:
                 time_difference = current_time - self.last_download
                 if time_difference >= constants.DATASET_DOWNLOAD_RATE_LIMIT_SEC:
-                    message_box = tkinter.messagebox.askyesno(
+                    message_box = ctk.messagebox.askyesno(
                                     title="Download",
                                     message=f"Are you sure that you want to download the {draft_set.get()} {draft.get()} dataset?"
                                  )
                     if not message_box:
                         break
                 else:
-                    message_box = tkinter.messagebox.showinfo(
+                    message_box = ctk.messagebox.showinfo(
                                     title="Download",
                                     message="Rate limit reached.\n\n"
                                     f"Please wait {int(constants.DATASET_DOWNLOAD_RATE_LIMIT_SEC - time_difference)} seconds before trying again."
@@ -2877,7 +2877,7 @@ class Overlay(ScaledWindow):
 
                 if result and file_list:
                     if game_count == 0:
-                        message_box = tkinter.messagebox.askyesno(
+                        message_box = ctk.messagebox.askyesno(
                                          title="Download",
                                          message=f"17Lands doesn't have data for {draft_set.get()} {draft.get()} {start.get()} to {end.get()}.\n\n"
                                          "Would you still like to continue with the download?"
@@ -2902,7 +2902,7 @@ class Overlay(ScaledWindow):
 
                         if notify:
                             current_time_utc = datetime.now(UTC).strftime('%H:%M:%S')
-                            message_box = tkinter.messagebox.askyesno(
+                            message_box = ctk.messagebox.askyesno(
                                             title="Download",
                                             message="Your dataset is already up-to-date.\n\n"
                                             f"It's currently {current_time_utc} UTC, and 17Lands updates their card data once a day around 03:00:00 UTC.\n\n"
@@ -2943,7 +2943,7 @@ class Overlay(ScaledWindow):
             popup.update()
             button['state'] = 'normal'
             message_string = f"Download Failed: {result_string}"
-            message_box = tkinter.messagebox.showwarning(
+            message_box = ctk.messagebox.showwarning(
                 title="Error", message=message_string)
         else:
             button['state'] = 'normal'
@@ -3165,7 +3165,7 @@ class Overlay(ScaledWindow):
             if new_version_found:
                 if sys.platform == constants.PLATFORM_ID_WINDOWS:
                     message_string = f"Version {new_version} is now available. Would you like to upgrade?"
-                    message_box = tkinter.messagebox.askyesno(
+                    message_box = ctk.messagebox.askyesno(
                         title="Update", message=message_string)
                     if message_box:
                         output_location = update.download_file(file_location)
@@ -3175,12 +3175,12 @@ class Overlay(ScaledWindow):
                             win32api.ShellExecute(
                                 0, "open", output_location, None, None, 10)
                         else:
-                            message_box = tkinter.messagebox.showerror(
+                            message_box = ctk.messagebox.showerror(
                                 title="Download Failed", message="Visit https://github.com/unrealities/MTGA_Draft_17Lands/releases to manually download the new version.")
 
                 else:
                     message_string = f"Update {new_version} is now available.\n\nCheck https://github.com/unrealities/MTGA_Draft_17Lands/releases for more details."
-                    message_box = tkinter.messagebox.showinfo(
+                    message_box = ctk.messagebox.showinfo(
                         title="Update", message=message_string)
         except Exception as error:
             logger.error(error)
@@ -3272,15 +3272,15 @@ class CreateCardToolTip(ScaledWindow):
             tt_width = 0
             tt_height = self._scale_value(450)
             # creates a toplevel window
-            self.tw = tkinter.Toplevel(self.widget)
+            self.tw = ctk.Toplevel(self.widget)
             # Leaves only the label and removes the app window
             self.tw.wm_overrideredirect(True)
             if sys.platform == constants.PLATFORM_ID_OSX:
                 self.tw.wm_overrideredirect(False)
 
-            tt_frame = tkinter.Frame(self.tw, borderwidth=5, relief="solid")
+            tt_frame = ctk.CTkFrame(self.tw, borderwidth=5, relief="solid")
 
-            tkinter.Grid.rowconfigure(tt_frame, 2, weight=1)
+            ctk.Grid.rowconfigure(tt_frame, 2, weight=1)
 
             style = Style()
             style.configure("Tooltip.Treeview", rowheight=row_height)
@@ -3376,16 +3376,16 @@ class CreateCardToolTip(ScaledWindow):
                 column=0,
                 row=0,
                 columnspan=column_offset,
-                sticky=tkinter.NSEW
+                sticky=ctk.NSEW
             )
             
             row_count = 3
             for name, comment in self.tier_info.items():
                 if not comment:
                     continue
-                comment_frame = tkinter.LabelFrame(tt_frame, text=name)
+                comment_frame = ctk.LabelFrame(tt_frame, text=name)
                 comment_frame.grid(column=0, row=row_count,
-                                   columnspan=column_offset, sticky=tkinter.NSEW)
+                                   columnspan=column_offset, sticky=ctk.NSEW)
 
                 comment_label = Label(comment_frame,
                                       text=f"\"{comment}\"",
@@ -3393,7 +3393,7 @@ class CreateCardToolTip(ScaledWindow):
                                       foreground="#e6ecec",
                                       anchor="c",
                                       wraplength=tt_width,)
-                comment_label.grid(column=0, row=0, sticky=tkinter.NSEW)
+                comment_label.grid(column=0, row=0, sticky=ctk.NSEW)
 
                 #Removed broken code that was used to calculate the comment height in pixels
                 
@@ -3410,7 +3410,7 @@ class CreateCardToolTip(ScaledWindow):
                 column=0, 
                 row=row_count,
                 columnspan=column_offset, 
-                sticky=tkinter.NSEW
+                sticky=ctk.NSEW
             ) 
 
             tt_width += self._scale_value(10)
@@ -3446,9 +3446,9 @@ class CreateCardToolTip(ScaledWindow):
             return table_headers, table_width, table_data
 
         if len(self.top_archetypes[0]) == 5:
-            table_headers = {"Label": {"width": .55, "anchor": tkinter.W},
-                             "Value1": {"width": .15, "anchor": tkinter.W},
-                             "Value2": {"width": .30, "anchor": tkinter.W}}
+            table_headers = {"Label": {"width": .55, "anchor": ctk.W},
+                             "Value1": {"width": .15, "anchor": ctk.W},
+                             "Value2": {"width": .30, "anchor": ctk.W}}
             table_width = self._scale_value(200)                 
                              
             for x in self.top_archetypes:
@@ -3460,8 +3460,8 @@ class CreateCardToolTip(ScaledWindow):
                 table_data.append(data)
                              
         elif len(self.top_archetypes[0]) == 4:
-            table_headers = {"Label": {"width": .70, "anchor": tkinter.W},
-                             "Value2": {"width": .30, "anchor": tkinter.W}}
+            table_headers = {"Label": {"width": .70, "anchor": ctk.W},
+                             "Value2": {"width": .30, "anchor": ctk.W}}
             table_width = self._scale_value(170)  
             table_columns = 2
             
@@ -3496,13 +3496,13 @@ class CreateCardToolTip(ScaledWindow):
         table_columns = 2
         
         if len(self.color_dict) == 2:
-            table_headers = {"Label": {"width": .60, "anchor": tkinter.W},
-                             "Value1": {"width": .20, "anchor": tkinter.CENTER},
-                             "Value2": {"width": .20, "anchor": tkinter.CENTER}}
+            table_headers = {"Label": {"width": .60, "anchor": ctk.W},
+                             "Value1": {"width": .20, "anchor": ctk.CENTER},
+                             "Value2": {"width": .20, "anchor": ctk.CENTER}}
             table_width = self._scale_value(340)
         else:
-            table_headers = {"Label": {"width": .70, "anchor": tkinter.W},
-                             "Value1": {"width": .30, "anchor": tkinter.CENTER}}
+            table_headers = {"Label": {"width": .70, "anchor": ctk.W},
+                             "Value1": {"width": .30, "anchor": ctk.CENTER}}
             table_width = self._scale_value(300)
         
         values = ["Filter:"] + list(self.color_dict.keys())
