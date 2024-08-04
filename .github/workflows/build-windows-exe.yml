@@ -33,10 +33,12 @@ jobs:
     - name: Calculate installer hash
       run: |
         $folder = "./builder/{app}"
+        
         Get-ChildItem -Path $folder | ForEach-Object {
             $filePath = $_.FullName
-            Write-Output "SHA256 hash for $filePath:"
-            CertUtil -hashfile $filePath SHA256 > "$filePath.hash.txt"
+            $hashOutput = CertUtil -hashfile $filePath SHA256
+            $hashOutput | Out-File -FilePath "$filePath.hash.txt"
+            Write-Output $hashOutput
         }
 
     - name: Upload installer
