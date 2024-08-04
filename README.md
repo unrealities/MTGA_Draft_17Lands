@@ -14,7 +14,7 @@ Magic: The Gathering Arena draft tool that utilizes 17Lands data.
   - [Table of Contents](#table-of-contents)
   - [Run Steps: Windows Executable (Windows Only)](#run-steps-windows-executable-windows-only)
   - [Run Steps: Python (Windows/Mac/Linux)](#run-steps-python-windowsmaclinux)
-  - [Build Steps: setup.exe (Windows Only)](#build-steps-setupexe-windows-only)
+  - [Steps to Build the Windows Executable](#steps-to-build-the-windows-executable)
   - [UI Features](#ui-features)
   - [Menu Features](#menu-features)
   - [Additional Features](#additional-features)
@@ -82,11 +82,15 @@ Magic: The Gathering Arena draft tool that utilizes 17Lands data.
   - The [Card Compare](#menu-features) feature can be used as a substitute for P1P1.
   - The sealed card pool can be found in the [Taken Cards window](#menu-features).
 
-## Build Steps: setup.exe (Windows Only)
+## Steps to Build the Windows Executable
+**Note:** This project uses a [GitHub Action](https://github.com/unrealities/MTGA_Draft_17Lands/actions/workflows/build-windows-exe.yml) to perform the following steps.
 
 - **Step 1:** Download and install Python 3.12.
 - **Step 2:** Install the Python package installer Pip by opening the terminal and entering ```python -m ensurepip --upgrade```.
-- **Step 3:** Open the terminal and enter ```pip install -r requirements.txt```.
+- **Step 3:** Open the terminal and enter the following commands.
+    ```pip install -r requirements.txt```
+    ```pip install pywin32==306```
+    ```pip install pyinstaller==6.7.0```
 - **Step 4:** [Download Inno Setup](https://jrsoftware.org/isdl.php#stable)
 - **Step 5:** Build MTGA_Draft_Tool.exe by opening the terminal and entering ```python -m PyInstaller  main.py --onefile --noconsole -n MTGA_Draft_Tool --clean```
   - If this fails to build, you must add an exclusion in your Windows virus & threat protection.
