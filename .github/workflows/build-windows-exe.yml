@@ -24,12 +24,24 @@ jobs:
         pip install -r requirements.txt
         pip install pywin32==306
         pip install pyinstaller==6.7.0
+
     - name: Build executable
       run: python -m PyInstaller  main.py --onefile --noconsole -n MTGA_Draft_Tool --clean
-      
+
     - name: Build installer
       run: iscc ./builder/Installer.iss
       
+    - name: Calculate installer hash
+      run: |
+        $folder = "./builder/{app}"
+        
+        Get-ChildItem -Path $folder | ForEach-Object {
+            $filePath = $_.FullName
+            $hashOutput = CertUtil -hashfile $filePath SHA256
+            $hashOutput | Out-File -FilePath "$filePath.hash.txt"
+            Write-Output $hashOutput
+        }
+
     - name: Upload installer
       uses: actions/upload-artifact@v4
       with: 
