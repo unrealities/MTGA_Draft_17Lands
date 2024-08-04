@@ -22,12 +22,24 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install -r requirements.txt
+        pip install pywin32==306
+        pip install pyinstaller==6.7.0
+
     - name: Build executable
       run: python -m PyInstaller  main.py --onefile --noconsole -n MTGA_Draft_Tool --clean
-      
+
     - name: Build installer
       run: iscc ./builder/Installer.iss
       
+    - name: Calculate installer hash
+      run: |
+        @echo off
+        set "folder=.\builder\{app}"
+        for %%f in ("%folder%\*") do (
+            echo SHA256 hash for %%f:
+            CertUtil -hashfile "%folder%\%file%" SHA256 > "%folder%\%file%.hash.txt"
+        )
+
     - name: Upload installer
       uses: actions/upload-artifact@v4
       with: 
