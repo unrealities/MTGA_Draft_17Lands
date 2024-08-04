@@ -88,9 +88,9 @@ Magic: The Gathering Arena draft tool that utilizes 17Lands data.
 - **Step 1:** Download and install Python 3.12.
 - **Step 2:** Install the Python package installer Pip by opening the terminal and entering ```python -m ensurepip --upgrade```.
 - **Step 3:** Open the terminal and enter the following commands.
-    ```pip install -r requirements.txt```
-    ```pip install pywin32==306```
-    ```pip install pyinstaller==6.7.0```
+  - ```pip install -r requirements.txt```
+  - ```pip install pywin32==306```
+  - ```pip install pyinstaller==6.7.0```
 - **Step 4:** [Download Inno Setup](https://jrsoftware.org/isdl.php#stable)
 - **Step 5:** Build MTGA_Draft_Tool.exe by opening the terminal and entering ```python -m PyInstaller  main.py --onefile --noconsole -n MTGA_Draft_Tool --clean```
   - If this fails to build, you must add an exclusion in your Windows virus & threat protection.
