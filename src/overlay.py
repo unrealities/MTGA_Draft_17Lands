@@ -14,7 +14,7 @@ from dataclasses import dataclass
 from pynput.keyboard import Listener, KeyCode
 from PIL import Image, ImageTk, ImageFont
 from src.configuration import read_configuration, write_configuration, reset_configuration
-from src.limited_sets import LimitedSets
+from src.limited_sets import LimitedSets, START_DATE_DEFAULT
 from src.log_scanner import ArenaScanner, Source
 from src.file_extractor import FileExtractor, search_arena_log_locations, retrieve_arena_directory
 from src.utils import retrieve_local_set_list
@@ -40,7 +40,7 @@ try:
 except ImportError:
     pass
 
-APPLICATION_VERSION = 3.22
+APPLICATION_VERSION = 3.24
 
 HOTKEY_CTRL_G = '\x07'
 
@@ -899,7 +899,7 @@ class Overlay(ScaledWindow):
             result_class = CardResult(
                 self.set_metrics, self.tier_data, self.configuration, self.draft.current_pick)
             result_list = result_class.return_results(
-                card_list, filtered_colors, fields)
+                card_list, filtered_colors, fields.values())
 
             # clear the previous rows
             for row in self.pack_table.get_children():
@@ -961,7 +961,7 @@ class Overlay(ScaledWindow):
                     result_class = CardResult(
                         self.set_metrics, self.tier_data, self.configuration, self.draft.current_pick)
                     result_list = result_class.return_results(
-                        missing_cards, filtered_colors, fields)
+                        missing_cards, filtered_colors, fields.values())
 
                     if self.table_info["missing_table"].column in visible_columns:
                         column_index = visible_columns[self.table_info["missing_table"].column]
@@ -1029,7 +1029,7 @@ class Overlay(ScaledWindow):
             result_class = CardResult(
                 self.set_metrics, self.tier_data, self.configuration, self.draft.current_pick)
             result_list = result_class.return_results(
-                self.compare_list, filtered_colors, fields)
+                self.compare_list, filtered_colors, fields.values())
 
             self.compare_table.delete(*self.compare_table.get_children())
 
@@ -1127,7 +1127,7 @@ class Overlay(ScaledWindow):
                 result_class = CardResult(
                     self.set_metrics, self.tier_data, self.configuration, self.draft.current_pick)
                 result_list = result_class.return_results(
-                    stacked_cards, filtered_colors, fields)
+                    stacked_cards, filtered_colors, fields.values())
 
                 last_field_index, visible_columns = control_table_column(
                     self.taken_table, fields)
@@ -1870,7 +1870,7 @@ class Overlay(ScaledWindow):
             menu.config(font=self.fonts_dict["All.TMenubutton"])
 
             start_entry = tkinter.Entry(popup)
-            start_entry.insert(tkinter.END, constants.SET_START_DATE_DEFAULT)
+            start_entry.insert(tkinter.END, START_DATE_DEFAULT)
             end_entry = tkinter.Entry(popup)
             end_entry.insert(tkinter.END, str(date.today()))
 
@@ -2946,6 +2946,16 @@ class Overlay(ScaledWindow):
                                 if name in fields.values() and card_name in tier_list["ratings"]:
                                     tier_info[name] = tier_list["ratings"][card_name]["comment"]
 
+                        # Get the top archetypes for this card
+                        archetype_list = self.draft.set_data.get_card_archetypes_by_field(card_name, constants.DATA_FIELD_GIHWR)
+                        
+                        # Add the grade/rating based on selected format
+                        if self.configuration.settings.result_format != constants.RESULT_FORMAT_WIN_RATE:
+                            results = CardResult(self.set_metrics, self.tier_data, self.configuration, self.draft.current_pick)
+                            for archetype in archetype_list:
+                                rating = results.return_results([card], [archetype[1]], [constants.DATA_FIELD_GIHWR])
+                                archetype.append(rating[0]["results"][0])
+                        
                         CreateCardToolTip(table,
                                           event,
                                           card[constants.DATA_FIELD_NAME],
@@ -2954,7 +2964,8 @@ class Overlay(ScaledWindow):
                                           self.configuration.features.images_enabled,
                                           self.scale_factor,
                                           self.fonts_dict,
-                                          tier_info)
+                                          tier_info,
+                                          archetype_list)
                     except Exception as error:
                         logger.error(error)
                     break
@@ -3150,7 +3161,7 @@ class Overlay(ScaledWindow):
 class CreateCardToolTip(ScaledWindow):
     '''Class that's used to create the card tooltip that appears when a table row is clicked'''
 
-    def __init__(self, widget, event, card_name, color_dict, image, images_enabled, scale_factor, fonts_dict, tier_info):
+    def __init__(self, widget, event, card_name, color_dict, image, images_enabled, scale_factor, fonts_dict, tier_info, top_archetypes):
         super().__init__()
         self.scale_factor = scale_factor
         self.fonts_dict = fonts_dict
@@ -3162,10 +3173,12 @@ class CreateCardToolTip(ScaledWindow):
         self.images_enabled = images_enabled
         self.widget.bind("<Leave>", self.__leave)
         self.widget.bind("<ButtonPress-1>", self.__leave, add="+")
+        self.table_rows = 17
 
         self.id = None
         self.tw = None
         self.tier_info = tier_info
+        self.top_archetypes = top_archetypes
         self.event = event
         self.images = []
         self.__enter()
@@ -3208,106 +3221,17 @@ class CreateCardToolTip(ScaledWindow):
 
             tkinter.Grid.rowconfigure(tt_frame, 2, weight=1)
 
-            card_label = Label(tt_frame,
-                               text=self.card_name,
-                               style="TooltipHeader.TLabel",
-                               background="#3d3d3d",
-                               foreground="#e6ecec",
-                               relief="groove",
-                               anchor="c",)
-
-            note_label = Label(tt_frame,
-                               text="Win rate fields with fewer than 200 samples are listed as 0% or NA.",
-                               style="Notes.TLabel",
-                               background="#3d3d3d",
-                               foreground="#e6ecec",
-                               anchor="c",)
-
-            if len(self.color_dict) == 2:
-                headers = {"Label": {"width": .60, "anchor": tkinter.W},
-                           "Value1": {"width": .20, "anchor": tkinter.CENTER},
-                           "Value2": {"width": .20, "anchor": tkinter.CENTER}}
-                width = self._scale_value(340)
-            else:
-                headers = {"Label": {"width": .70, "anchor": tkinter.W},
-                           "Value1": {"width": .30, "anchor": tkinter.CENTER}}
-                width = self._scale_value(300)
-
-            tt_width += width
-
             style = Style()
             style.configure("Tooltip.Treeview", rowheight=row_height)
+            
+            stats_headers, stats_width, stats_data = self.__format_stats_data()
 
-            stats_main_table = self._create_header("tooltip_table",
-                                                   tt_frame, 0, self.fonts_dict["All.TableRow"], headers, width, False, True, "Tooltip.Treeview", False)
-            main_field_list = []
-
-            values = ["Filter:"] + list(self.color_dict.keys())
-            main_field_list.append(tuple(values))
-
-            values = ["Average Taken At:"] + \
-                [f"{x[constants.DATA_FIELD_ATA]}" for x in self.color_dict.values()]
-            main_field_list.append(tuple(values))
-
-            values = ["Average Last Seen At:"] + \
-                [f"{x[constants.DATA_FIELD_ALSA]}" for x in self.color_dict.values()]
-            main_field_list.append(tuple(values))
-
-            values = ["Improvement When Drawn:"] + \
-                [f"{x[constants.DATA_FIELD_IWD]}pp" for x in self.color_dict.values()]
-            main_field_list.append(tuple(values))
-
-            values = ["Games In Hand Win Rate:"] + \
-                [f"{x[constants.DATA_FIELD_GIHWR]}%" for x in self.color_dict.values()]
-            main_field_list.append(tuple(values))
-
-            values = ["Opening Hand Win Rate:"] + \
-                [f"{x[constants.DATA_FIELD_OHWR]}%" for x in self.color_dict.values()]
-            main_field_list.append(tuple(values))
-
-            values = ["Games Played Win Rate:"] + \
-                [f"{x[constants.DATA_FIELD_GPWR]}%" for x in self.color_dict.values()]
-            main_field_list.append(tuple(values))
-
-            values = ["Games Drawn Win Rate:"] + \
-                [f"{x[constants.DATA_FIELD_GDWR]}%" for x in self.color_dict.values()]
-            main_field_list.append(tuple(values))
-
-            values = ["Games Not Seen Win Rate:"] + \
-                [f"{x[constants.DATA_FIELD_GNSWR]}%" for x in self.color_dict.values()]
-            main_field_list.append(tuple(values))
-
-            main_field_list.append(tuple(["", ""]))
-
-            values = ["Number of Games In Hand:"] + \
-                [f"{x[constants.DATA_FIELD_GIH]}" for x in self.color_dict.values()]
-            main_field_list.append(tuple(values))
-
-            values = ["Number of Games in Opening Hand:"] + \
-                [f"{x[constants.DATA_FIELD_NGOH]}" for x in self.color_dict.values()]
-            main_field_list.append(tuple(values))
-
-            values = ["Number of Games Played:"] + \
-                [f"{x[constants.DATA_FIELD_NGP]}" for x in self.color_dict.values()]
-            main_field_list.append(tuple(values))
-
-            values = ["Number of Games Drawn:"] + \
-                [f"{x[constants.DATA_FIELD_NGD]}" for x in self.color_dict.values()]
-            main_field_list.append(tuple(values))
-
-            values = ["Number of Games Not Seen:"] + \
-                [f"{x[constants.DATA_FIELD_NGND]}" for x in self.color_dict.values()]
-            main_field_list.append(tuple(values))
-
-            for x in range(2):
-                main_field_list.append(tuple(["", ""]))
-
-            stats_main_table.config(height=len(main_field_list))
+            tt_width += stats_width
 
             column_offset = 0
             # Add scryfall image
             if self.images_enabled:
-                image_size_y = len(main_field_list) * row_height
+                image_size_y = len(stats_data) * row_height
                 width = self._scale_value(280)
                 size = width, image_size_y
                 self.images = []
@@ -3330,17 +3254,77 @@ class CreateCardToolTip(ScaledWindow):
                             tt_width += width - self._scale_value(10)
                     except Exception as error:
                         logger.error(error)
+                            
+            arch_headers, arch_width, arch_data = self.__format_archetype_data()
+            
+            if arch_data:
+                archetype_table = self._create_header(
+                                        "tooltip_table",
+                                        tt_frame,
+                                        0,
+                                        self.fonts_dict["All.TableRow"],
+                                        arch_headers,
+                                        arch_width,
+                                        False,
+                                        True,
+                                        "Tooltip.Treeview", 
+                                        False
+                                    )
+                                
+                archetype_table.config(height=self.table_rows)
+                
+                for count, row_values in enumerate(arch_data):
+                    row_tag = identify_table_row_tag(False, "", count)
+                    archetype_table.insert("", index=count, iid=count, values=row_values, tag=(row_tag,))
+                
+                archetype_table.grid(row=1, column=column_offset)
+                column_offset += 1
+                tt_width += arch_width
+                
+            stats_main_table = self._create_header(
+                                    "tooltip_table",
+                                    tt_frame, 
+                                    0, 
+                                    self.fonts_dict["All.TableRow"], 
+                                    stats_headers, 
+                                    stats_width, 
+                                    False, 
+                                    True, 
+                                    "Tooltip.Treeview", 
+                                    False
+                                )
+                               
+            stats_main_table.config(height=self.table_rows)
+                
+            for count, row_values in enumerate(stats_data):
+                row_tag = identify_table_row_tag(False, "", count)
+                stats_main_table.insert("", index=count, iid=count, values=row_values, tag=(row_tag,))
 
-            card_label.grid(column=0, row=0,
-                            columnspan=column_offset + 2, sticky=tkinter.NSEW)
-
+            stats_main_table.grid(row=1, column=column_offset)
+            column_offset += 1
+            
+            card_label = Label(tt_frame,
+                               text=self.card_name,
+                               style="TooltipHeader.TLabel",
+                               background="#3d3d3d",
+                               foreground="#e6ecec",
+                               relief="groove",
+                               anchor="c",)
+                            
+            card_label.grid(
+                column=0,
+                row=0,
+                columnspan=column_offset,
+                sticky=tkinter.NSEW
+            )
+            
             row_count = 3
             for name, comment in self.tier_info.items():
                 if not comment:
                     continue
                 comment_frame = tkinter.LabelFrame(tt_frame, text=name)
                 comment_frame.grid(column=0, row=row_count,
-                                   columnspan=column_offset + 2, sticky=tkinter.NSEW)
+                                   columnspan=column_offset, sticky=tkinter.NSEW)
 
                 comment_label = Label(comment_frame,
                                       text=f"\"{comment}\"",
@@ -3353,24 +3337,26 @@ class CreateCardToolTip(ScaledWindow):
                 #Removed broken code that was used to calculate the comment height in pixels
                 
                 row_count += 1
-
-            note_label.grid(column=0, row=row_count,
-                            columnspan=column_offset + 2, sticky=tkinter.NSEW)
-
-            for count, row_values in enumerate(main_field_list):
-                row_tag = identify_table_row_tag(False, "", count)
-                stats_main_table.insert(
-                    "", index=count, iid=count, values=row_values, tag=(row_tag,))
-
-            stats_main_table.grid(
-                row=1, column=column_offset)
+                
+            note_label = Label(tt_frame,
+                               text="Win rate fields with fewer than 500 samples are listed as 0% or NA.",
+                               style="Notes.TLabel",
+                               background="#3d3d3d",
+                               foreground="#e6ecec",
+                               anchor="c",)
+                
+            note_label.grid(
+                column=0, 
+                row=row_count,
+                columnspan=column_offset, 
+                sticky=tkinter.NSEW
+            ) 
 
             tt_width += self._scale_value(10)
             location_x, location_y = identify_safe_coordinates(self.tw,
                                                                tt_width,
                                                                tt_height,
-                                                               self._scale_value(
-                                                                   25),
+                                                               self._scale_value(25),
                                                                self._scale_value(20))
             self.tw.wm_geometry(f"+{location_x}+{location_y}")
 
@@ -3385,3 +3371,145 @@ class CreateCardToolTip(ScaledWindow):
         self.tw = None
         if tw:
             tw.destroy()
+            
+    def __format_archetype_data(self):
+        """
+        
+        """
+        table_headers = {}
+        table_width = 0
+        table_data = []
+        table_columns = 3
+        
+        if not self.top_archetypes:
+            return table_headers, table_width, table_data
+
+        if len(self.top_archetypes[0]) == 5:
+            table_headers = {"Label": {"width": .55, "anchor": tkinter.W},
+                             "Value1": {"width": .15, "anchor": tkinter.W},
+                             "Value2": {"width": .30, "anchor": tkinter.W}}
+            table_width = self._scale_value(200)                 
+                             
+            for x in self.top_archetypes:
+                if not x[0]:
+                    win_rate = f"({x[2]}%)" if x[2] else x[2]
+                    data = (x[1], x[4], win_rate)
+                else:
+                    data = (f"{x[0]} ({x[1]})", x[4], f"({x[2]}%)")
+                table_data.append(data)
+                             
+        elif len(self.top_archetypes[0]) == 4:
+            table_headers = {"Label": {"width": .70, "anchor": tkinter.W},
+                             "Value2": {"width": .30, "anchor": tkinter.W}}
+            table_width = self._scale_value(170)  
+            table_columns = 2
+            
+            for x in self.top_archetypes:
+                if not x[0]:
+                    data = (x[1], f"{x[2]}%")
+                else:
+                    data = (f"{x[0]} ({x[1]})", f"{x[2]}%")
+                table_data.append(data)
+        else:
+            return table_headers, table_width, table_data
+            
+        # Pad or truncate the table
+        if len(table_data) >= self.table_rows:
+            # Truncate
+            table_data = table_data[:self.table_rows]
+        else:
+            # Pad
+            empty_rows = self.table_rows - len(table_data)
+            for row in range(empty_rows):
+                table_data.append(("",) * table_columns)
+        
+        return table_headers, table_width, table_data
+        
+    def __format_stats_data(self):
+        """
+        
+        """
+        table_headers = {}
+        table_width = 0
+        table_data = []
+        table_columns = 2
+        
+        if len(self.color_dict) == 2:
+            table_headers = {"Label": {"width": .60, "anchor": tkinter.W},
+                             "Value1": {"width": .20, "anchor": tkinter.CENTER},
+                             "Value2": {"width": .20, "anchor": tkinter.CENTER}}
+            table_width = self._scale_value(340)
+        else:
+            table_headers = {"Label": {"width": .70, "anchor": tkinter.W},
+                             "Value1": {"width": .30, "anchor": tkinter.CENTER}}
+            table_width = self._scale_value(300)
+        
+        values = ["Filter:"] + list(self.color_dict.keys())
+        table_data.append(tuple(values))
+
+        values = ["Average Taken At:"] + \
+            [f"{x[constants.DATA_FIELD_ATA]}" for x in self.color_dict.values()]
+        table_data.append(tuple(values))
+
+        values = ["Average Last Seen At:"] + \
+            [f"{x[constants.DATA_FIELD_ALSA]}" for x in self.color_dict.values()]
+        table_data.append(tuple(values))
+
+        values = ["Improvement When Drawn:"] + \
+            [f"{x[constants.DATA_FIELD_IWD]}pp" for x in self.color_dict.values()]
+        table_data.append(tuple(values))
+
+        values = ["Games In Hand Win Rate:"] + \
+            [f"{x[constants.DATA_FIELD_GIHWR]}%" for x in self.color_dict.values()]
+        table_data.append(tuple(values))
+
+        values = ["Opening Hand Win Rate:"] + \
+            [f"{x[constants.DATA_FIELD_OHWR]}%" for x in self.color_dict.values()]
+        table_data.append(tuple(values))
+
+        values = ["Games Played Win Rate:"] + \
+            [f"{x[constants.DATA_FIELD_GPWR]}%" for x in self.color_dict.values()]
+        table_data.append(tuple(values))
+
+        values = ["Games Drawn Win Rate:"] + \
+            [f"{x[constants.DATA_FIELD_GDWR]}%" for x in self.color_dict.values()]
+        table_data.append(tuple(values))
+
+        values = ["Games Not Seen Win Rate:"] + \
+            [f"{x[constants.DATA_FIELD_GNSWR]}%" for x in self.color_dict.values()]
+        table_data.append(tuple(values))
+
+        table_data.append(tuple(["", ""]))
+
+        values = ["Number of Games In Hand:"] + \
+            [f"{x[constants.DATA_FIELD_GIH]}" for x in self.color_dict.values()]
+        table_data.append(tuple(values))
+
+        values = ["Number of Games in Opening Hand:"] + \
+            [f"{x[constants.DATA_FIELD_NGOH]}" for x in self.color_dict.values()]
+        table_data.append(tuple(values))
+
+        values = ["Number of Games Played:"] + \
+            [f"{x[constants.DATA_FIELD_NGP]}" for x in self.color_dict.values()]
+        table_data.append(tuple(values))
+
+        values = ["Number of Games Drawn:"] + \
+            [f"{x[constants.DATA_FIELD_NGD]}" for x in self.color_dict.values()]
+        table_data.append(tuple(values))
+
+        values = ["Number of Games Not Seen:"] + \
+            [f"{x[constants.DATA_FIELD_NGND]}" for x in self.color_dict.values()]
+        table_data.append(tuple(values))
+        
+        # Pad or truncate the table
+        if len(table_data) >= self.table_rows:
+            # Truncate
+            table_data = table_data[:self.table_rows]
+        else:
+            # Pad
+            empty_rows = self.table_rows - len(table_data)
+            for row in range(empty_rows):
+                table_data.append(("",) * table_columns)
+        
+        return table_headers, table_width, table_data
+        

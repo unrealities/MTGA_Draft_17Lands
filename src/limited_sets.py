@@ -12,12 +12,19 @@ from src.logger import create_logger
 
 logger = create_logger()
 
+LIMITED_SETS_VERSION = 4
+TOTAL_SCRYFALL_SETS = 50
+DATE_SHIFT_OFFSET_DAYS = -30
+TEMP_LIMITED_SETS = os.path.join("Temp", "temp_set_list.json")
+REPLACE_PHRASE_LATEST = "{LATEST}"
+REPLACE_PHRASE_DATE_SHIFT = "{DATESHIFT}"
+START_DATE_DEFAULT = "2019-01-01"
 
 class SetInfo(BaseModel):
     arena: List[str] = Field(default_factory=list)
     scryfall: List[str] = Field(default_factory=list)
     seventeenlands: List[str] = Field(default_factory=list)
-    start_date: str = ""
+    start_date: str = START_DATE_DEFAULT
 
 class SpecialEvent(BaseModel):
     label: str = ""
@@ -33,34 +40,28 @@ class SetDictionary(BaseModel):
         SpecialEvent(
             label="OpenDay1",
             type="Sealed",
-            set_code="{LATEST}",
+            set_code=REPLACE_PHRASE_LATEST,
             keywords=["ArenaOpen","Day1"]
         ),
         SpecialEvent(
             label="OpenDay2",
             type="PremierDraft",
-            set_code="{LATEST}",
+            set_code=REPLACE_PHRASE_LATEST,
             keywords=["ArenaOpen","Day2"]
         ),
         SpecialEvent(
             label="QualSealed",
             type="Sealed",
-            set_code="{LATEST}",
+            set_code=REPLACE_PHRASE_LATEST,
             keywords=["Qualifier"]
         ),
         SpecialEvent(
             label="ArenaDirect",
             type="Sealed",
-            set_code="{LATEST}",
+            set_code=REPLACE_PHRASE_LATEST,
             keywords=["ArenaDirect"]
         )
     ]
-
-LIMITED_SETS_VERSION = 3
-TOTAL_SCRYFALL_SETS = 50
-SET_ARENA_CUBE_START_OFFSET_DAYS = -25
-TEMP_LIMITED_SETS = os.path.join("Temp", "temp_set_list.json")
-REPLACE_PHRASE_LATEST = "{LATEST}"
 
 def shift_date(start_date, shifted_days, string_format, next_dow=None):
     '''Shifts a date by a certain number of days'''
@@ -342,8 +343,7 @@ class LimitedSets:
             arena=[constants.SET_SELECTION_ALL],
             scryfall=[],
             seventeenlands=["CUBE"],
-            start_date=shift_date(
-                datetime.date.today(), SET_ARENA_CUBE_START_OFFSET_DAYS, "%Y-%m-%d")[1]
+            start_date=REPLACE_PHRASE_DATE_SHIFT
         )
 
         return
@@ -383,3 +383,11 @@ class LimitedSets:
         for event in self.limited_sets.special_events:
             if event.set_code == REPLACE_PHRASE_LATEST and self.latest_set:
                 event.set_code = self.latest_set
+                
+        for data in self.limited_sets.data.values():
+            if data.start_date == REPLACE_PHRASE_DATE_SHIFT:
+                data.start_date = shift_date(
+                                    datetime.date.today(), 
+                                    DATE_SHIFT_OFFSET_DAYS, 
+                                    "%Y-%m-%d"
+                                  )[1]

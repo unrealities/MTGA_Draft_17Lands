@@ -74,11 +74,6 @@ def retrieve_local_set_list(codes, names = None):
                 event_type = name_segments[1]
                 user_group = name_segments[2]
                 file_suffix = name_segments[3]
-            elif len(name_segments) == 3: # Support old files
-                set_code = name_segments[0].upper()
-                event_type = name_segments[1]
-                user_group = LIMITED_USER_GROUP_ALL
-                file_suffix = name_segments[2]
             else:
                 continue
                 
