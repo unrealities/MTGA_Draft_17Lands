@@ -457,38 +457,38 @@ class Overlay(ScaledWindow):
         self.tier_sources = self.draft.retrieve_tier_source()
         self.set_metrics = self.draft.retrieve_set_metrics(False)
 
-        # Grid doesn't work
-        # ctk.grid_columnconfigure(self.root, 0, weight=1)
-        # ctk.grid_columnconfigure(self.root, 1, weight=1)
-        # Menu Bar
-        self.menubar = ctk.Menu(self.root)
-        self.filemenu = ctk.Menu(self.menubar, tearoff=0)
+        self.menubar = ctk.CTkOptionMenu(self.root)
+
+        # File menu
+        self.filemenu = ctk.CTkOptionMenu(self.menubar, tearoff=False)
         self.filemenu.add_command(label="Open", command=self.__open_draft_log)
-        self.datamenu = ctk.Menu(self.menubar, tearoff=0)
-        self.datamenu.add_command(
-            label="Download Dataset", command=self.__open_set_view_window)
 
-        self.cardmenu = ctk.Menu(self.menubar, tearoff=0)
-        self.cardmenu.add_command(
-            label="Taken Cards", command=self.__open_taken_cards_window)
-        self.cardmenu.add_command(
-            label="Suggest Decks", command=self.__open_suggest_deck_window)
-        self.cardmenu.add_command(
-            label="Compare Cards", command=self.__open_card_compare_window)
+        # Data menu
+        self.datamenu = ctk.CTkOptionMenu(self.menubar, tearoff=False)
+        self.datamenu.add_command(label="Download Dataset", command=self.__open_set_view_window)
 
-        self.settingsmenu = ctk.Menu(self.menubar, tearoff=0)
-        self.settingsmenu.add_command(
-            label="Settings", command=self.__open_settings_window)
+        # Cards menu
+        self.cardmenu = ctk.CTkOptionMenu(self.menubar, tearoff=False)
+        self.cardmenu.add_command(label="Taken Cards", command=self.__open_taken_cards_window)
+        self.cardmenu.add_command(label="Suggest Decks", command=self.__open_suggest_deck_window)
+        self.cardmenu.add_command(label="Compare Cards", command=self.__open_card_compare_window)
 
-        self.helpmenu = ctk.Menu(self.menubar, tearoff=0)
-        self.helpmenu.add_command(
-            label="About", command=self.__open_about_window)
+        # Settings menu
+        self.settingsmenu = ctk.CTkOptionMenu(self.menubar, tearoff=False)
+        self.settingsmenu.add_command(label="Settings", command=self.__open_settings_window)
 
+        # Help menu
+        self.helpmenu = ctk.CTkOptionMenu(self.menubar, tearoff=False)
+        self.helpmenu.add_command(label="About", command=self.__open_about_window)
+
+        # Adding menus to the menubar
         self.menubar.add_cascade(label="File", menu=self.filemenu)
         self.menubar.add_cascade(label="Data", menu=self.datamenu)
         self.menubar.add_cascade(label="Cards", menu=self.cardmenu)
         self.menubar.add_cascade(label="Settings", menu=self.settingsmenu)
         self.menubar.add_cascade(label="Help", menu=self.helpmenu)
+
+        # Configuring the menubar to the root window
         self.root.config(menu=self.menubar)
 
         self.current_draft_label_frame = ctk.CTkFrame(self.root)
