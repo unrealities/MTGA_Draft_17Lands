@@ -39,8 +39,8 @@ def test_start_overlay_pass(mock_scanner):
     - Mock functions interacting with external files as those files aren't available to Github runners.
     """
     with (
-        patch("ctk.Tk.mainloop", return_value=None),
-        patch("ctk.messagebox.showinfo", return_value=None),
+        patch("tkinter.Tk.mainloop", return_value=None),
+        patch("tkinter.messagebox.showinfo", return_value=None),
         patch("src.overlay.stat", return_value=MagicMock(st_mtime=0)),
         patch("src.overlay.write_configuration", return_value=True),
         patch("src.overlay.LimitedSets.retrieve_limited_sets", return_value=None),
