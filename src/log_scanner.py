@@ -278,14 +278,12 @@ class ArenaScanner:
             # Use OCR to retrieve P1P1
             if use_ocr:
                 self.__get_ocr_pack(save_screenshot)
-            self.__draft_pack_search_traditional_p1p1() 
+            self.__draft_pack_search_traditional_p1p1()
             self.__draft_pack_search_traditional()
             self.__draft_picked_search_traditional()
         elif ((self.draft_type == constants.LIMITED_TYPE_SEALED)
                 or (self.draft_type == constants.LIMITED_TYPE_SEALED_TRADITIONAL)):
             update = self.__sealed_pack_search()
-            if not update:
-                update = self.__sealed_pack_search_v2()
         if not update:
             if ((previous_pack != self.current_pack) or
                 (previous_pick != self.current_pick) or
@@ -937,50 +935,6 @@ class ArenaScanner:
     def __sealed_pack_search(self):
         '''Parse sealed string that contains all of the card data'''
         offset = self.pack_offset
-        draft_data = object()
-        draft_string = "EventGrantCardPool"
-        update = False
-        # Identify and print out the log lines that contain the draft packs
-        try:
-            with open(self.arena_file, 'r', encoding="utf-8", errors="replace") as log:
-                log.seek(offset)
-
-                while True:
-                    line = log.readline()
-                    if not line:
-                        break
-                    offset = log.tell()
-
-                    string_offset = line.find(draft_string)
-
-                    if string_offset != -1:
-                        update = True
-                        self.pack_offset = offset
-                        start_offset = line.find("{\"CurrentModule\"")
-                        self.draft_log.info(line)
-                        # Identify the pack
-                        draft_data = json.loads(line[start_offset:])
-                        changes = draft_data["Changes"]
-                        try:
-                            card_pool = []
-                            for change in changes:
-                                if change["Source"] == "EventGrantCardPool":
-                                    card_list_data = change["GrantedCards"]
-                                    for card_data in card_list_data:
-                                        card = str(card_data["GrpId"])
-                                        card_pool.append(card)
-                            self.__sealed_update(card_pool)
-                        except Exception as error:
-                            self.draft_log.info(
-                                "__sealed_pack_search Error: %s", error)
-
-        except Exception as error:
-            self.draft_log.info("__sealed_pack_search Error: %s", error)
-        return update
-
-    def __sealed_pack_search_v2(self):
-        '''Parse sealed string that contains all of the card data'''
-        offset = self.pack_offset
         draft_string = f'\"InternalEventName\":\"{self.event_string}\"'
         update = False
         # Identify and print out the log lines that contain the draft packs
@@ -999,21 +953,28 @@ class ArenaScanner:
                         try:
                             self.pack_offset = offset
                             self.draft_log.info(line)
-                            start_offset = line.find("{\"Courses\"")
-                            course_data = json.loads(line[start_offset:])
 
-                            for course in course_data["Courses"]:
-                                if course["InternalEventName"] == self.event_string:
-                                    card_pool = [str(x) for x in course["CardPool"]]
+                            if "Courses" in line:
+                                start_offset = line.find("{\"Courses\"")
+                                course_data = json.loads(line[start_offset:])
+                                for course in course_data["Courses"]:
+                                    if course["InternalEventName"] == self.event_string:
+                                        card_pool = [str(x) for x in course["CardPool"]]
+                                        self.__sealed_update(card_pool)
+                                        update = True
+                            elif "Course" in line:
+                                start_offset = line.find("{\"Course\"")
+                                course_data = process_json(line[start_offset:])
+                                if course_data["Course"]["InternalEventName"] == self.event_string:
+                                    card_pool = [str(x) for x in course_data["Course"]["CardPool"]]
                                     self.__sealed_update(card_pool)
-
-                            update = True
+                                    update = True
                         except Exception as error:
                             self.draft_log.info(
-                                "__sealed_pack_search_v2 Error: %s", error)
+                                "__sealed_pack_search Error: %s", error)
 
         except Exception as error:
-            self.draft_log.info("__sealed_pack_search_v2 Error: %s", error)
+            self.draft_log.info("__sealed_pack_search Error: %s", error)
         return update
         
     def __sealed_update(self, cards):
