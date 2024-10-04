@@ -1,3 +1,6 @@
+===================== RELEASE NOTES 3.27 =====================
+* FiYir addressed issue around sealed deck pools
+
 ===================== RELEASE NOTES 3.26 =====================
 * FiYir Fixed issue [Bug]: OTJ ArenaDirect is detected as MH3 ArenaDirect and no picks are detected #42
 
