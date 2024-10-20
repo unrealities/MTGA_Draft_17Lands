@@ -3367,22 +3367,22 @@ class CreateCardToolTip(ScaledWindow):
                 comment_label.grid(column=0, row=0, sticky=tkinter.NSEW)
 
                 #Removed broken code that was used to calculate the comment height in pixels
-                
+
                 row_count += 1
-                
+
             note_label = Label(tt_frame,
-                               text="Win rate fields with fewer than 500 samples are listed as 0% or NA.",
+                               text="17Lands does not provide data for fields with fewer than 500 samples.",
                                style="Notes.TLabel",
                                background="#3d3d3d",
                                foreground="#e6ecec",
                                anchor="c",)
-                
+
             note_label.grid(
-                column=0, 
+                column=0,
                 row=row_count,
-                columnspan=column_offset, 
+                columnspan=column_offset,
                 sticky=tkinter.NSEW
-            ) 
+            )
 
             tt_width += self._scale_value(10)
             location_x, location_y = identify_safe_coordinates(self.tw,
