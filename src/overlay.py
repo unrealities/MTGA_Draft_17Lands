@@ -377,15 +377,13 @@ class ScaledWindow:
     def _sort_table_column(self, table_label, table, column, reverse):
         """Sort the table columns when clicked"""
         row_colors = False
-
-        try:
-            # Sort column that contains numeric values
-            row_list = [(float(table.set(k, column)), k)
-                        for k in table.get_children('')]
-        except ValueError:
-            # Sort column that contains string values
-            row_list = [(table.set(k, column), k)
-                        for k in table.get_children('')]
+        row_list = []
+        for k in table.get_children(''):
+            column_value = table.set(k, column)
+            try:
+                row_list.append((float(column_value), k))
+            except ValueError:
+                row_list.append((column_value, k))
 
         row_list.sort(key=lambda x: field_process_sort(
             x[0]), reverse=reverse)
@@ -3508,35 +3506,35 @@ class CreateCardToolTip(ScaledWindow):
         table_data.append(tuple(values))
 
         values = ["Average Taken At:"] + \
-            [f"{x[constants.DATA_FIELD_ATA]}" for x in self.color_dict.values()]
+            [f"{x[constants.DATA_FIELD_ATA]}" if x[constants.DATA_FIELD_ATA] != 0 else "" for x in self.color_dict.values()]
         table_data.append(tuple(values))
 
         values = ["Average Last Seen At:"] + \
-            [f"{x[constants.DATA_FIELD_ALSA]}" for x in self.color_dict.values()]
+            [f"{x[constants.DATA_FIELD_ALSA]}" if x[constants.DATA_FIELD_ALSA] != 0 else "" for x in self.color_dict.values()]
         table_data.append(tuple(values))
 
         values = ["Improvement When Drawn:"] + \
-            [f"{x[constants.DATA_FIELD_IWD]}pp" for x in self.color_dict.values()]
+            [f"{x[constants.DATA_FIELD_IWD]}pp" if x[constants.DATA_FIELD_IWD] != 0 else "" for x in self.color_dict.values()]
         table_data.append(tuple(values))
 
         values = ["Games In Hand Win Rate:"] + \
-            [f"{x[constants.DATA_FIELD_GIHWR]}%" for x in self.color_dict.values()]
+            [f"{x[constants.DATA_FIELD_GIHWR]}%" if x[constants.DATA_FIELD_GIHWR] != 0 else "" for x in self.color_dict.values()]
         table_data.append(tuple(values))
 
         values = ["Opening Hand Win Rate:"] + \
-            [f"{x[constants.DATA_FIELD_OHWR]}%" for x in self.color_dict.values()]
+            [f"{x[constants.DATA_FIELD_OHWR]}%" if x[constants.DATA_FIELD_OHWR] != 0 else "" for x in self.color_dict.values()]
         table_data.append(tuple(values))
 
         values = ["Games Played Win Rate:"] + \
-            [f"{x[constants.DATA_FIELD_GPWR]}%" for x in self.color_dict.values()]
+            [f"{x[constants.DATA_FIELD_GPWR]}%" if x[constants.DATA_FIELD_GPWR] != 0 else "" for x in self.color_dict.values()]
         table_data.append(tuple(values))
 
         values = ["Games Drawn Win Rate:"] + \
-            [f"{x[constants.DATA_FIELD_GDWR]}%" for x in self.color_dict.values()]
+            [f"{x[constants.DATA_FIELD_GDWR]}%" if x[constants.DATA_FIELD_GDWR] != 0 else "" for x in self.color_dict.values()]
         table_data.append(tuple(values))
 
         values = ["Games Not Seen Win Rate:"] + \
-            [f"{x[constants.DATA_FIELD_GNSWR]}%" for x in self.color_dict.values()]
+            [f"{x[constants.DATA_FIELD_GNSWR]}%" if x[constants.DATA_FIELD_GNSWR] != 0 else "" for x in self.color_dict.values()]
         table_data.append(tuple(values))
 
         table_data.append(tuple(["", ""]))

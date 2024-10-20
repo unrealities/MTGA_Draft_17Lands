@@ -111,7 +111,7 @@ class CardResult:
 
     def __process_wheel(self, card):
         """Calculate wheel percentage"""
-        result = 0
+        result = constants.RESULT_UNKNOWN_VALUE
 
         try:
             # TODO: Adjust this if pack is a play booster and/or contains basic lands
@@ -125,8 +125,8 @@ class CardResult:
                 coefficients = constants.WHEEL_COEFFICIENTS[self.pick_number - 1]
                 # Exclude ALSA values below 2. These should not be assumed to wheel
                 result = round(numpy.polyval(coefficients, alsa),
-                               1) if alsa >= 2 else 0
-                result = max(result, 0)
+                               1) if alsa >= 2 else constants.RESULT_UNKNOWN_VALUE
+                result = max(result, constants.RESULT_UNKNOWN_VALUE)
         except Exception as error:
             logger.error(error)
 
@@ -134,7 +134,7 @@ class CardResult:
 
     def __process_wheel_normalized(self, card, total_sum):
         """Calculate the normalized wheel percentage using the sum of all percentages within the card list"""
-        result = 0
+        result = constants.RESULT_UNKNOWN_VALUE
 
         try:
             result = self.__process_wheel(card)
@@ -163,6 +163,7 @@ class CardResult:
                         rated_colors.append(rating_data)
                     else:  # Field that's not a win rate (ALSA, IWD, etc)
                         result = card[constants.DATA_FIELD_DECK_COLORS][color][option]
+                        result = constants.RESULT_UNKNOWN_STRING if result == 0.0 else result
             if rated_colors:
                 result = sorted(
                     rated_colors, key=field_process_sort, reverse=True)[0]
@@ -185,12 +186,13 @@ class CardResult:
             result = calculate_win_rate(card[constants.DATA_FIELD_DECK_COLORS][color][winrate_field],
                                         card[constants.DATA_FIELD_DECK_COLORS][color][winrate_count],
                                         self.configuration.settings.bayesian_average_enabled)
+        result = constants.RESULT_UNKNOWN_STRING if result == constants.RESULT_UNKNOWN_VALUE else result
 
         return result
 
     def __card_rating(self, card, winrate_field, winrate_count, color):
         """The function will take a card's win rate and calculate a 5-point rating"""
-        result = 0
+        result = constants.RESULT_UNKNOWN_VALUE
         try:
             winrate = calculate_win_rate(card[constants.DATA_FIELD_DECK_COLORS][color][winrate_field],
                                          card[constants.DATA_FIELD_DECK_COLORS][color][winrate_count],
@@ -207,7 +209,7 @@ class CardResult:
                 result = round(
                     ((winrate - lower_limit) / (upper_limit - lower_limit)) * 5.0, 1)
                 result = min(result, 5.0)
-                result = max(result, 0)
+                result = max(result, 0.1)
 
         except Exception as error:
             logger.error(error)
@@ -244,6 +246,8 @@ def field_process_sort(field_value):
             field_value = field_value.replace('*', '')
         if field_value in constants.GRADE_ORDER_DICT:
             processed_value = constants.GRADE_ORDER_DICT[field_value]
+        elif field_value == constants.RESULT_UNKNOWN_STRING:
+            processed_value = constants.RESULT_UNKNOWN_VALUE
     except ValueError:
         pass
     return processed_value
@@ -615,7 +619,7 @@ def ratings_limits(cards, bayesian_enabled):
 
 def calculate_win_rate(winrate, count, bayesian_enabled):
     """The function will modify a card's win rate by applying the Bayesian Average algorithm or by zeroing a value with a low sample size"""
-    calculated_winrate = 0.0
+    calculated_winrate = constants.RESULT_UNKNOWN_VALUE
     try:
         calculated_winrate = winrate
 
@@ -627,7 +631,7 @@ def calculate_win_rate(winrate, count, bayesian_enabled):
         else:
             # Drop values that have fewer than 200 samples (same as 17Lands card_ratings page)
             if count < 200:
-                calculated_winrate = 0.0
+                calculated_winrate = constants.RESULT_UNKNOWN_VALUE
     except Exception as error:
         logger.error(error)
     return calculated_winrate
