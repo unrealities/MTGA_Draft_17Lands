@@ -32,7 +32,6 @@ from src.card_logic import (
     get_card_colors,
     get_deck_metrics,
     suggest_deck,
-    calculate_win_rate
 )
 
 try:
@@ -453,7 +452,7 @@ class Overlay(ScaledWindow):
             self.configuration.settings.filter_format)
         self.data_sources = self.draft.retrieve_data_sources()
         self.tier_sources = self.draft.retrieve_tier_source()
-        self.set_metrics = self.draft.retrieve_set_metrics(False)
+        self.set_metrics = self.draft.retrieve_set_metrics()
 
         tkinter.Grid.columnconfigure(self.root, 0, weight=1)
         tkinter.Grid.columnconfigure(self.root, 1, weight=1)
@@ -511,7 +510,6 @@ class Overlay(ScaledWindow):
         self.auto_highest_checkbox_value = tkinter.IntVar(self.root)
         self.curve_bonus_checkbox_value = tkinter.IntVar(self.root)
         self.color_bonus_checkbox_value = tkinter.IntVar(self.root)
-        self.bayesian_average_checkbox_value = tkinter.IntVar(self.root)
         self.draft_log_checkbox_value = tkinter.IntVar(self.root)
         self.p1p1_ocr_checkbox_value = tkinter.IntVar(self.root)
         self.save_screenshot_checkbox_value = tkinter.IntVar(self.root)
@@ -1457,7 +1455,7 @@ class Overlay(ScaledWindow):
         '''Function that collects pertinent draft data from the LogScanner class'''
         self.draft.retrieve_set_data(
             self.data_sources[self.data_source_selection.get()])
-        self.set_metrics = self.draft.retrieve_set_metrics(False)
+        self.set_metrics = self.draft.retrieve_set_metrics()
         self.deck_colors = self.draft.retrieve_color_win_rate(
             self.filter_format_selection.get())
         self.tier_data, tier_dict = self.draft.retrieve_tier_data(
@@ -1526,8 +1524,6 @@ class Overlay(ScaledWindow):
                 self.curve_bonus_checkbox_value.get())
             self.configuration.settings.color_bonus_enabled = bool(
                 self.color_bonus_checkbox_value.get())
-            self.configuration.settings.bayesian_average_enabled = bool(
-                self.bayesian_average_checkbox_value.get())
             self.configuration.settings.color_identity_enabled = bool(
                 self.color_identity_checkbox_value.get())
             self.configuration.settings.draft_log_enabled = bool(
@@ -1613,8 +1609,6 @@ class Overlay(ScaledWindow):
                 self.configuration.settings.curve_bonus_enabled)
             self.color_bonus_checkbox_value.set(
                 self.configuration.settings.color_bonus_enabled)
-            self.bayesian_average_checkbox_value.set(
-                self.configuration.settings.bayesian_average_enabled)
             self.color_identity_checkbox_value.set(
                 self.configuration.settings.color_identity_enabled)
             self.draft_log_checkbox_value.set(
@@ -2413,13 +2407,6 @@ class Overlay(ScaledWindow):
                                                 onvalue=1,
                                                 offvalue=0)
 
-            bayesian_average_label = Label(
-                popup, text="Enable Bayesian Average:", style="MainSectionsBold.TLabel", anchor="e")
-            bayesian_average_checkbox = Checkbutton(popup,
-                                                    variable=self.bayesian_average_checkbox_value,
-                                                    onvalue=1,
-                                                    offvalue=0)
-
             draft_log_label = Label(popup, text="Enable Draft Log:",
                                     style="MainSectionsBold.TLabel", anchor="e")
             draft_log_checkbox = Checkbutton(popup,
@@ -2670,14 +2657,6 @@ class Overlay(ScaledWindow):
                 row=row_count, column=0, columnspan=1, sticky="nsew",
                 padx=row_padding_x, pady=row_padding_y)
             auto_highest_checkbox.grid(
-                row=row_count, column=1, columnspan=1, sticky="nsew",
-                padx=row_padding_x, pady=row_padding_y)
-            row_count += 1
-
-            bayesian_average_label.grid(
-                row=row_count, column=0, columnspan=1, sticky="nsew",
-                padx=row_padding_x, pady=row_padding_y)
-            bayesian_average_checkbox.grid(
                 row=row_count, column=1, columnspan=1, sticky="nsew",
                 padx=row_padding_x, pady=row_padding_y)
             row_count += 1
@@ -2992,10 +2971,7 @@ class Overlay(ScaledWindow):
                                 if color in card[constants.DATA_FIELD_DECK_COLORS] \
                                    and k in card[constants.DATA_FIELD_DECK_COLORS][color]:
                                     if k in constants.WIN_RATE_FIELDS_DICT:
-                                        winrate_count = constants.WIN_RATE_FIELDS_DICT[k]
-                                        color_dict[color][k] = calculate_win_rate(card[constants.DATA_FIELD_DECK_COLORS][color][k],
-                                                                                     card[constants.DATA_FIELD_DECK_COLORS][color][winrate_count],
-                                                                                     self.configuration.settings.bayesian_average_enabled)
+                                        color_dict[color][k] = card[constants.DATA_FIELD_DECK_COLORS][color][k]
                                     else:
                                         color_dict[color][k] = card[constants.DATA_FIELD_DECK_COLORS][color][k]
                         tier_info = {}
@@ -3072,8 +3048,6 @@ class Overlay(ScaledWindow):
                 (self.curve_bonus_checkbox_value, lambda: self.curve_bonus_checkbox_value.trace(
                     "w", self.__update_settings_callback)),
                 (self.color_bonus_checkbox_value, lambda: self.color_bonus_checkbox_value.trace(
-                    "w", self.__update_settings_callback)),
-                (self.bayesian_average_checkbox_value, lambda: self.bayesian_average_checkbox_value.trace(
                     "w", self.__update_settings_callback)),
                 (self.data_source_selection, lambda: self.data_source_selection.trace(
                     "w", self.__update_source_callback)),
