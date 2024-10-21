@@ -27,7 +27,7 @@ def invalid_input_url():
 
 @pytest.fixture
 def valid_input_url_zip():
-    return "https://github.com/unrealities/MTGA_Draft_17Lands/releases/download/MTGA_Draft_Tool_V0326/MTGA_Draft_Tool_V0326.zip"
+    return "https://github.com/unrealities/MTGA_Draft_17Lands/releases/download/MTGA_Draft_Tool_V0327/MTGA_Draft_Tool_V0327.zip"
     
 @pytest.fixture
 def output_filename():
