@@ -39,7 +39,7 @@ try:
 except ImportError:
     pass
 
-APPLICATION_VERSION = 3.27
+APPLICATION_VERSION = 3.28
 
 HOTKEY_CTRL_G = '\x07'
 
