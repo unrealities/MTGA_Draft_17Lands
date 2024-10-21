@@ -1051,7 +1051,7 @@ class ArenaScanner:
 
         return result
 
-    def retrieve_set_metrics(self, bayesian_enabled):
+    def retrieve_set_metrics(self):
         '''Parse set data and calculate the mean and standard deviation for a set'''
         set_metrics = SetMetrics(self.set_data)
 

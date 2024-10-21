@@ -111,7 +111,7 @@ class CardResult:
 
     def __process_wheel(self, card):
         """Calculate wheel percentage"""
-        result = 0
+        result = constants.RESULT_UNKNOWN_VALUE
 
         try:
             # TODO: Adjust this if pack is a play booster and/or contains basic lands
@@ -125,8 +125,8 @@ class CardResult:
                 coefficients = constants.WHEEL_COEFFICIENTS[self.pick_number - 1]
                 # Exclude ALSA values below 2. These should not be assumed to wheel
                 result = round(numpy.polyval(coefficients, alsa),
-                               1) if alsa >= 2 else 0
-                result = max(result, 0)
+                               1) if alsa >= 2 else constants.RESULT_UNKNOWN_VALUE
+                result = max(result, constants.RESULT_UNKNOWN_VALUE)
         except Exception as error:
             logger.error(error)
 
@@ -134,7 +134,7 @@ class CardResult:
 
     def __process_wheel_normalized(self, card, total_sum):
         """Calculate the normalized wheel percentage using the sum of all percentages within the card list"""
-        result = 0
+        result = constants.RESULT_UNKNOWN_VALUE
 
         try:
             result = self.__process_wheel(card)
@@ -163,6 +163,7 @@ class CardResult:
                         rated_colors.append(rating_data)
                     else:  # Field that's not a win rate (ALSA, IWD, etc)
                         result = card[constants.DATA_FIELD_DECK_COLORS][color][option]
+                        result = constants.RESULT_UNKNOWN_STRING if result == 0.0 else result
             if rated_colors:
                 result = sorted(
                     rated_colors, key=field_process_sort, reverse=True)[0]
@@ -182,19 +183,16 @@ class CardResult:
             result = self.__card_grade(
                 card, winrate_field, winrate_count, color)
         else:
-            result = calculate_win_rate(card[constants.DATA_FIELD_DECK_COLORS][color][winrate_field],
-                                        card[constants.DATA_FIELD_DECK_COLORS][color][winrate_count],
-                                        self.configuration.settings.bayesian_average_enabled)
+            result = card[constants.DATA_FIELD_DECK_COLORS][color][winrate_field]
+        result = constants.RESULT_UNKNOWN_STRING if result == constants.RESULT_UNKNOWN_VALUE else result
 
         return result
 
     def __card_rating(self, card, winrate_field, winrate_count, color):
         """The function will take a card's win rate and calculate a 5-point rating"""
-        result = 0
+        result = constants.RESULT_UNKNOWN_VALUE
         try:
-            winrate = calculate_win_rate(card[constants.DATA_FIELD_DECK_COLORS][color][winrate_field],
-                                         card[constants.DATA_FIELD_DECK_COLORS][color][winrate_count],
-                                         self.configuration.settings.bayesian_average_enabled)
+            winrate = card[constants.DATA_FIELD_DECK_COLORS][color][winrate_field]
 
             mean, std = self.metrics.get_metrics(color, winrate_field)
             deviation_list = list(constants.GRADE_DEVIATION_DICT.values())
@@ -207,7 +205,7 @@ class CardResult:
                 result = round(
                     ((winrate - lower_limit) / (upper_limit - lower_limit)) * 5.0, 1)
                 result = min(result, 5.0)
-                result = max(result, 0)
+                result = max(result, 0.1)
 
         except Exception as error:
             logger.error(error)
@@ -217,9 +215,7 @@ class CardResult:
         """The function will take a card's win rate and assign a letter grade based on the number of standard deviations from the mean"""
         result = constants.LETTER_GRADE_NA
         try:
-            winrate = calculate_win_rate(card[constants.DATA_FIELD_DECK_COLORS][color][winrate_field],
-                                         card[constants.DATA_FIELD_DECK_COLORS][color][winrate_count],
-                                         self.configuration.settings.bayesian_average_enabled)
+            winrate = card[constants.DATA_FIELD_DECK_COLORS][color][winrate_field]
             
             mean, std = self.metrics.get_metrics(color, winrate_field)
             if ((winrate != 0) and (std != 0)):
@@ -244,6 +240,8 @@ def field_process_sort(field_value):
             field_value = field_value.replace('*', '')
         if field_value in constants.GRADE_ORDER_DICT:
             processed_value = constants.GRADE_ORDER_DICT[field_value]
+        elif field_value == constants.RESULT_UNKNOWN_STRING:
+            processed_value = constants.RESULT_UNKNOWN_VALUE
     except ValueError:
         pass
     return processed_value
@@ -476,9 +474,7 @@ def calculate_color_rating(cards, color_filter, threshold, configuration):
     for card in cards:
         try:
             if color_filter in card[constants.DATA_FIELD_DECK_COLORS]:
-                gihwr = calculate_win_rate(card[constants.DATA_FIELD_DECK_COLORS][color_filter][constants.DATA_FIELD_GIHWR],
-                                           card[constants.DATA_FIELD_DECK_COLORS][color_filter][constants.DATA_FIELD_GIH],
-                                           configuration.settings.bayesian_average_enabled)
+                gihwr = card[constants.DATA_FIELD_DECK_COLORS][color_filter][constants.DATA_FIELD_GIHWR]
                 if gihwr > threshold:
                     rating += gihwr - threshold
         except Exception as error:
@@ -486,15 +482,13 @@ def calculate_color_rating(cards, color_filter, threshold, configuration):
     return rating
 
 
-def sort_cards_win_rate(cards, filter_order, bayesian_enabled):
+def sort_cards_win_rate(cards, filter_order):
     """This function will acquire a non-zero win rate for each card and sort the cards by the win rate (highest to lowest)"""
     for card in cards:
         card["results"] = [0]
         try:
             for color_filter in filter_order:
-                win_rate = calculate_win_rate(card[constants.DATA_FIELD_DECK_COLORS][color_filter][constants.DATA_FIELD_GIHWR],
-                                              card[constants.DATA_FIELD_DECK_COLORS][color_filter][constants.DATA_FIELD_GIH],
-                                              bayesian_enabled)
+                win_rate = card[constants.DATA_FIELD_DECK_COLORS][color_filter][constants.DATA_FIELD_GIHWR]
                 if win_rate:
                     card["results"] = [win_rate]
                     break
@@ -557,9 +551,7 @@ def calculate_color_affinity(deck_cards, color_filter, threshold, configuration)
     for card in deck_cards:
         try:
             if color_filter in card[constants.DATA_FIELD_DECK_COLORS]:
-                gihwr = calculate_win_rate(card[constants.DATA_FIELD_DECK_COLORS][color_filter][constants.DATA_FIELD_GIHWR],
-                                           card[constants.DATA_FIELD_DECK_COLORS][color_filter][constants.DATA_FIELD_GIH],
-                                           configuration.settings.bayesian_average_enabled)
+                gihwr = card[constants.DATA_FIELD_DECK_COLORS][color_filter][constants.DATA_FIELD_GIHWR]
                 if gihwr > threshold:
                     mana_colors = get_card_colors(
                         card[constants.DATA_FIELD_MANA_COST])
@@ -591,7 +583,7 @@ def row_color_tag(mana_cost):
         row_tag = constants.CARD_ROW_COLOR_GREEN_TAG
     return row_tag
 
-def ratings_limits(cards, bayesian_enabled):
+def ratings_limits(cards):
     """The function identifies the upper and lower win rates from a collection of cards"""
     upper_limit = 0
     lower_limit = 100
@@ -600,9 +592,7 @@ def ratings_limits(cards, bayesian_enabled):
         for color in constants.DECK_COLORS:
             try:
                 if color in cards[card][constants.DATA_FIELD_DECK_COLORS]:
-                    gihwr = calculate_win_rate(cards[card][constants.DATA_FIELD_DECK_COLORS][color][constants.DATA_FIELD_GIHWR],
-                                               cards[card][constants.DATA_FIELD_DECK_COLORS][color][constants.DATA_FIELD_GIH],
-                                               bayesian_enabled)
+                    gihwr = cards[card][constants.DATA_FIELD_DECK_COLORS][color][constants.DATA_FIELD_GIHWR]
                     if gihwr > upper_limit:
                         upper_limit = gihwr
                     if gihwr < lower_limit and gihwr != 0:
@@ -611,27 +601,6 @@ def ratings_limits(cards, bayesian_enabled):
                 logger.error(error)
 
     return upper_limit, lower_limit
-
-
-def calculate_win_rate(winrate, count, bayesian_enabled):
-    """The function will modify a card's win rate by applying the Bayesian Average algorithm or by zeroing a value with a low sample size"""
-    calculated_winrate = 0.0
-    try:
-        calculated_winrate = winrate
-
-        if bayesian_enabled:
-            win_count = winrate * count
-            # Bayesian average calculation
-            calculated_winrate = (win_count + 1000) / (count + 20)
-            calculated_winrate = round(calculated_winrate, 2)
-        else:
-            # Drop values that have fewer than 200 samples (same as 17Lands card_ratings page)
-            if count < 200:
-                calculated_winrate = 0.0
-    except Exception as error:
-        logger.error(error)
-    return calculated_winrate
-
 
 def deck_color_stats(deck, color):
     """The function will identify the number of creature and noncreature cards in a collection of cards"""
@@ -697,16 +666,14 @@ def card_cmc_search(deck, offset, starting_cmc, cmc_limit, remaining_count):
     return cards, unused
 
 
-def deck_rating(deck, deck_type, color, threshold, bayesian_enabled):
+def deck_rating(deck, deck_type, color, threshold):
     """The function will produce a deck rating based on the combined GIHWR value for each card with a GIHWR value above a certain threshold"""
     rating = 0
     try:
         # Combined GIHWR of the cards
         for card in deck:
             try:
-                gihwr = calculate_win_rate(card[constants.DATA_FIELD_DECK_COLORS][color][constants.DATA_FIELD_GIHWR],
-                                           card[constants.DATA_FIELD_DECK_COLORS][color][constants.DATA_FIELD_GIH],
-                                           bayesian_enabled)
+                gihwr = card[constants.DATA_FIELD_DECK_COLORS][color][constants.DATA_FIELD_GIHWR]
                 if gihwr > threshold:
                     rating += gihwr
             except Exception:
@@ -934,8 +901,7 @@ def suggest_deck(taken_cards, metrics, configuration):
             for key, value in deck_types.items():
                 deck, sideboard_cards = build_deck(
                     value, taken_cards, color, metrics, configuration)
-                rating = deck_rating(
-                    deck, value, color, threshold, configuration.settings.bayesian_average_enabled)
+                rating = deck_rating(deck, value, color, threshold)
                 if rating >= configuration.card_logic.ratings_threshold:
 
                     if ((color not in decks) or
@@ -970,9 +936,7 @@ def build_deck(deck_type, cards, color, metrics, configuration):
     sideboard_list = cards[:]  # Copy by value
     try:
         for card in cards:
-            card["results"] = [calculate_win_rate(card[constants.DATA_FIELD_DECK_COLORS][color][constants.DATA_FIELD_GIHWR],
-                                                  card[constants.DATA_FIELD_DECK_COLORS][color][constants.DATA_FIELD_GIH],
-                                                  configuration.settings.bayesian_average_enabled)]
+            card["results"] = [card[constants.DATA_FIELD_DECK_COLORS][color][constants.DATA_FIELD_GIHWR]]
 
         # identify a splashable color
         mean, std = metrics.get_metrics(constants.FILTER_OPTION_ALL_DECKS, constants.DATA_FIELD_GIHWR)
