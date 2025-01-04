@@ -74,7 +74,10 @@ def search_arena_log_locations(input_location=None):
         if input_location:
             paths.extend(input_location)
 
-        if sys.platform == constants.PLATFORM_ID_OSX:
+        if sys.platform == constants.PLATFORM_ID_LINUX:
+            paths.extend([os.path.join(os.path.expanduser(
+                '~'), constants.LOG_LOCATION_LINUX)])
+        elif sys.platform == constants.PLATFORM_ID_OSX:
             paths.extend([os.path.join(os.path.expanduser(
                 '~'), constants.LOG_LOCATION_OSX)])
         else:
