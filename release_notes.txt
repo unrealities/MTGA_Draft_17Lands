@@ -1,4 +1,8 @@
-===================== RELEASE NOTES 3.27 =====================
+===================== RELEASE NOTES 3.29 =====================
+* BachenbergS added Default Linux Log-File Path #61
+* Fix issued [Bug]: not recognizing quick draft #66 (Log formatting updated)
+
+===================== RELEASE NOTES 3.28 =====================
 * FiYir removed the obsolete Bayesian Average setting
 * FiYir ensured that fields are blank (instead of showing 0.0 or NA) in the main window, taken cards window, and card popup when 17Lands data is unavailable
 

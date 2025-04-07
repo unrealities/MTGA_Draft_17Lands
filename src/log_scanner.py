@@ -395,7 +395,7 @@ class ArenaScanner:
         '''Parse the premier draft string that contains the player pick information'''
         offset = self.pick_offset
         draft_data = object()
-        draft_string = "[UnityCrossThreadLogger]==> Event_PlayerDraftMakePick "
+        draft_string = "[UnityCrossThreadLogger]==> EventPlayerDraftMakePick "
         pack = 0
         pick = 0
         # Identify and print out the log lines that contain the draft packs
@@ -423,7 +423,7 @@ class ArenaScanner:
 
                             pack = int(json_find("Pack", draft_data))
                             pick = int(json_find("Pick", draft_data))
-                            card = str(json_find("GrpId", draft_data))
+                            card = str(json_find("GrpIds", draft_data)[0])
 
                             pack_index = (pick - 1) % 8
 
@@ -818,7 +818,7 @@ class ArenaScanner:
         '''Parse the traditional draft string that contains the player pick data'''
         offset = self.pick_offset
         draft_data = object()
-        draft_string = "[UnityCrossThreadLogger]==> Event_PlayerDraftMakePick "
+        draft_string = "[UnityCrossThreadLogger]==> EventPlayerDraftMakePick "
         pack = 0
         pick = 0
         # Identify and print out the log lines that contain the draft packs
@@ -846,7 +846,7 @@ class ArenaScanner:
 
                             pack = int(json_find("Pack", draft_data))
                             pick = int(json_find("Pick", draft_data))
-                            card = str(json_find("GrpId", draft_data))
+                            card = str(json_find("GrpIds", draft_data)[0])
 
                             pack_index = (pick - 1) % 8
 
