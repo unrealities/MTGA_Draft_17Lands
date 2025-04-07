@@ -278,6 +278,10 @@ LOG_LOCATION_WINDOWS = os.path.join('Users', getpass.getuser(
 ), "AppData", "LocalLow", "Wizards Of The Coast", "MTGA", LOG_NAME)
 LOG_LOCATION_OSX = os.path.join(
     "Library", "Logs", "Wizards of the Coast", "MTGA", LOG_NAME)
+LOG_LOCATION_LINUX = os.path.join(
+    ".local", "share", "Steam", "steamapps", "compatdata", 
+    "2141910", "pfx", "drive_c", "users", "steamuser", "AppData", "LocalLow", 
+    "Wizards Of The Coast", "MTGA", LOG_NAME)
 
 DEFAULT_GIHWR_AVERAGE = 0.0
 
