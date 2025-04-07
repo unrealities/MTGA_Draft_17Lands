@@ -13,7 +13,7 @@ TEST_SETS_DIRECTORY = os.path.join(os.getcwd(), "tests","data")
 
 OTJ_PREMIER_SNAPSHOT = os.path.join(os.getcwd(), "tests", "data","OTJ_PremierDraft_Data_2024_5_3.json")
 
-OTJ_EVENT_ENTRY = r'[UnityCrossThreadLogger]==> Event_Join {"id":"11a8f74b-1afb-4d25-bb35-55d43674c808","request":"{\"EventName\":\"PremierDraft_OTJ_20240416\",\"EntryCurrencyType\":\"Gem\",\"EntryCurrencyPaid\":1500,\"CustomTokenId\":null}"}'
+OTJ_EVENT_ENTRY = r'[UnityCrossThreadLogger]==> EventJoin {"id":"11a8f74b-1afb-4d25-bb35-55d43674c808","request":"{\"EventName\":\"PremierDraft_OTJ_20240416\",\"EntryCurrencyType\":\"Gem\",\"EntryCurrencyPaid\":1500,\"CustomTokenId\":null}"}'
 OTJ_P1P1_ENTRY = r'[UnityCrossThreadLogger]==> LogBusinessEvents {"id":"a5515a1a-d96e-4da3-9a4a-c03cc4b2b938","request":"{\"PlayerId\":null,\"ClientPlatform\":null,\"DraftId\":\"87b408d1-43e0-4fb5-8c74-a1227fde087c\",\"EventId\":\"PremierDraft_OTJ_20240416\",\"SeatNumber\":1,\"PackNumber\":1,\"PickNumber\":1,\"PickGrpId\":90459,\"CardsInPack\":[90734,90584,90631,90362,90440,90349,90486,90527,90406,90439,90488,90480,90388,90459],\"AutoPick\":false,\"TimeRemainingOnPick\":63.99701,\"EventType\":24,\"EventTime\":\"2024-05-08T00:56:34.4223433Z\"}"}'
 OTJ_P1P1_CARD_NAMES =[
     "Back for More",
@@ -113,7 +113,7 @@ OTJ_PREMIER_DRAFT_ENTRIES_2024_5_7 = [
                  pack=["90734","90584","90631","90362","90440","90349","90486","90527","90406","90439","90488","90480","90388","90459"],
                  card_pool=["90459"],
                  missing=[]),
-    r'[UnityCrossThreadLogger]==> Event_PlayerDraftMakePick {"id":"a14a9a98-f408-4051-8799-50df13eb18ad","request":"{\"DraftId\":\"87b408d1-43e0-4fb5-8c74-a1257fde387c\",\"GrpId\":90459,\"Pack\":1,\"Pick\":1}"}'
+    r'[UnityCrossThreadLogger]==> EventPlayerDraftMakePick {"id":"a14a9a98-f408-4051-8799-50df13eb18ad","request":"{\"DraftId\":\"87b408d1-43e0-4fb5-8c74-a1257fde387c\",\"GrpIds\":[90459],\"Pack\":1,\"Pick\":1}"}'
     ),
     ("P1P2 - Pack",
     EventResults(new_event=False,
@@ -182,7 +182,7 @@ MKM_PREMIER_DRAFT_ENTRIES = [
                  pack=[],
                  card_pool=[],
                  missing=[]),
-    r'[UnityCrossThreadLogger]==> Event_Join {"id":"4adb764e-3c33-46a9-91e6-4393bc7a5895","request":"{\"Type\":600,\"TransId\":\"4adb764e-3c33-46a9-91e6-4393bc7a5895\",\"Payload\":\"{\\\"EventName\\\":\\\"PremierDraft_MKM_20240206\\\",\\\"EntryCurrencyType\\\":\\\"Gold\\\",\\\"EntryCurrencyPaid\\\":10000,\\\"CustomTokenId\\\":null}\"}"}'
+    r'[UnityCrossThreadLogger]==> EventJoin {"id":"4adb764e-3c33-46a9-91e6-4393bc7a5895","request":"{\"Type\":600,\"TransId\":\"4adb764e-3c33-46a9-91e6-4393bc7a5895\",\"Payload\":\"{\\\"EventName\\\":\\\"PremierDraft_MKM_20240206\\\",\\\"EntryCurrencyType\\\":\\\"Gold\\\",\\\"EntryCurrencyPaid\\\":10000,\\\"CustomTokenId\\\":null}\"}"}'
     ),
     ("P1P1 - Pack",
     EventResults(new_event=False,
@@ -208,7 +208,7 @@ MKM_PREMIER_DRAFT_ENTRIES = [
                  pack=["89119","89040","89008","88926","89093","88981","88950","89158","89105","89194","88994","88989","88931"],
                  card_pool=["89119"],
                  missing=[]),
-    r'[UnityCrossThreadLogger]==> Event_PlayerDraftMakePick {"id":"49311e08-14e2-4ef0-b532-cff8ac3850dc","request":"{\"Type\":620,\"TransId\":\"49311e08-14e2-4ef0-b532-cff8ac3850dc\",\"Payload\":\"{\\\"DraftId\\\":\\\"bc95b8cb-04d4-4823-aa37-a9b1a1212cb6\\\",\\\"GrpId\\\":89119,\\\"Pack\\\":1,\\\"Pick\\\":1}\"}"}'
+    r'[UnityCrossThreadLogger]==> EventPlayerDraftMakePick {"id":"49311e08-14e2-4ef0-b532-cff8ac3850dc","request":"{\"Type\":620,\"TransId\":\"49311e08-14e2-4ef0-b532-cff8ac3850dc\",\"Payload\":\"{\\\"DraftId\\\":\\\"bc95b8cb-04d4-4823-aa37-a9b1a1212cb6\\\",\\\"GrpIds\\\":[89119],\\\"Pack\\\":1,\\\"Pick\\\":1}\"}"}'
     ),
     ("P1P2 - Pack",
     EventResults(new_event=False,
@@ -402,7 +402,7 @@ OTJ_TRAD_DRAFT_ENTRIES_2024_5_7 = [
                  pack=[],
                  card_pool=[],
                  missing=[]),
-    r'[UnityCrossThreadLogger]==> Event_Join {"id":"57d3b2c6-71ef-44ee-a395-1e977fcdd6b6","request":"{\"EventName\":\"TradDraft_OTJ_20240416\",\"EntryCurrencyType\":\"Gem\",\"EntryCurrencyPaid\":1500,\"CustomTokenId\":null}"}'
+    r'[UnityCrossThreadLogger]==> EventJoin {"id":"57d3b2c6-71ef-44ee-a395-1e977fcdd6b6","request":"{\"EventName\":\"TradDraft_OTJ_20240416\",\"EntryCurrencyType\":\"Gem\",\"EntryCurrencyPaid\":1500,\"CustomTokenId\":null}"}'
     ),
     ("P1P1 - Pack",
     EventResults(new_event=False,
@@ -428,7 +428,7 @@ OTJ_TRAD_DRAFT_ENTRIES_2024_5_7 = [
                  pack=["90711","90515","90623","90686","90354","90571","90418","90511","90468","90429","90432","90458","90456","90593"],  
                  card_pool=["90686"],
                  missing=[]),
-    r'[UnityCrossThreadLogger]==> Event_PlayerDraftMakePick {"id":"f803188b-1de3-4ad5-bfed-7a3cefdb6598","request":"{\"DraftId\":\"df799bea-cba5-4acc-b7e0-bf3b742e6fb7\",\"GrpId\":90686,\"Pack\":1,\"Pick\":1}"}'
+    r'[UnityCrossThreadLogger]==> EventPlayerDraftMakePick {"id":"f803188b-1de3-4ad5-bfed-7a3cefdb6598","request":"{\"DraftId\":\"df799bea-cba5-4acc-b7e0-bf3b742e6fb7\",\"GrpIds\":[90686],\"Pack\":1,\"Pick\":1}"}'
     ),
     ("P1P2 - Pack",
     EventResults(new_event=False,
@@ -484,7 +484,7 @@ DSK_SEALED_ENTRIES_2024_9_24 = [
                  pack=[],
                  card_pool=[],
                  missing=[]),
-    r'[UnityCrossThreadLogger]==> Event_Join {"id":"54d60b67-59a9-4188-bc42-ab78fed44fad","request":"{\"EventName\":\"Sealed_DSK_20240924\",\"EntryCurrencyType\":\"Gem\",\"EntryCurrencyPaid\":2000,\"CustomTokenId\":null}"}'
+    r'[UnityCrossThreadLogger]==> EventJoin {"id":"54d60b67-59a9-4188-bc42-ab78fed44fad","request":"{\"EventName\":\"Sealed_DSK_20240924\",\"EntryCurrencyType\":\"Gem\",\"EntryCurrencyPaid\":2000,\"CustomTokenId\":null}"}'
     ),
     ("Card Pool",
     EventResults(new_event=False,
@@ -513,7 +513,7 @@ ARENA_OPEN_TEST_ENTRIES = [
                  pack=[],
                  card_pool=[],
                  missing=[]),
-    r'[UnityCrossThreadLogger]==> Event_Join {"id":"57d3b2c6-71ef-44ee-a395-1e977fcdd6b6","request":"{\"EventName\":\"ArenaOpen_Day_Bo1_20240622\",\"EntryCurrencyType\":\"Gem\",\"EntryCurrencyPaid\":1500,\"CustomTokenId\":null}"}'
+    r'[UnityCrossThreadLogger]==> EventJoin {"id":"57d3b2c6-71ef-44ee-a395-1e977fcdd6b6","request":"{\"EventName\":\"ArenaOpen_Day_Bo1_20240622\",\"EntryCurrencyType\":\"Gem\",\"EntryCurrencyPaid\":1500,\"CustomTokenId\":null}"}'
     ),
     ("Unknown Event Start 2",
     EventResults(new_event=False,
@@ -526,7 +526,7 @@ ARENA_OPEN_TEST_ENTRIES = [
                  pack=[],
                  card_pool=[],
                  missing=[]),
-    r'[UnityCrossThreadLogger]==> Event_Join {"id":"57d3b2c6-71ef-44ee-a395-1e977fcdd6b6","request":"{\"EventName\":\"arenaopen_Day1_Bo1_20240622\",\"EntryCurrencyType\":\"Gem\",\"EntryCurrencyPaid\":1500,\"CustomTokenId\":null}"}'
+    r'[UnityCrossThreadLogger]==> EventJoin {"id":"57d3b2c6-71ef-44ee-a395-1e977fcdd6b6","request":"{\"EventName\":\"arenaopen_Day1_Bo1_20240622\",\"EntryCurrencyType\":\"Gem\",\"EntryCurrencyPaid\":1500,\"CustomTokenId\":null}"}'
     ),
     ("Day1 Event Start",
     EventResults(new_event=True,
@@ -539,7 +539,7 @@ ARENA_OPEN_TEST_ENTRIES = [
                  pack=[],
                  card_pool=[],
                  missing=[]),
-    r'[UnityCrossThreadLogger]==> Event_Join {"id":"57d3b2c6-71ef-44ee-a395-1e977fcdd6b6","request":"{\"EventName\":\"ArenaOpen_Day1_Bo1_20240622\",\"EntryCurrencyType\":\"Gem\",\"EntryCurrencyPaid\":1500,\"CustomTokenId\":null}"}'
+    r'[UnityCrossThreadLogger]==> EventJoin {"id":"57d3b2c6-71ef-44ee-a395-1e977fcdd6b6","request":"{\"EventName\":\"ArenaOpen_Day1_Bo1_20240622\",\"EntryCurrencyType\":\"Gem\",\"EntryCurrencyPaid\":1500,\"CustomTokenId\":null}"}'
     ),
     ("Day2 Event Start",
     EventResults(new_event=True,
@@ -552,7 +552,7 @@ ARENA_OPEN_TEST_ENTRIES = [
                  pack=[],
                  card_pool=[],
                  missing=[]),
-    r'[UnityCrossThreadLogger]==> Event_Join {"id":"57d3b2c6-71ef-44ee-a395-1e977fcdd6b6","request":"{\"EventName\":\"ArenaOpen_Day2_DraftOne_20240623\",\"EntryCurrencyType\":\"Gem\",\"EntryCurrencyPaid\":1500,\"CustomTokenId\":null}"}'
+    r'[UnityCrossThreadLogger]==> EventJoin {"id":"57d3b2c6-71ef-44ee-a395-1e977fcdd6b6","request":"{\"EventName\":\"ArenaOpen_Day2_DraftOne_20240623\",\"EntryCurrencyType\":\"Gem\",\"EntryCurrencyPaid\":1500,\"CustomTokenId\":null}"}'
     ),
     ("Qualifier Event Start",
     EventResults(new_event=True,
@@ -565,7 +565,7 @@ ARENA_OPEN_TEST_ENTRIES = [
                  pack=[],
                  card_pool=[],
                  missing=[]),
-    r'[UnityCrossThreadLogger]==> Event_Join {"id":"57d3b2c6-71ef-44ee-a395-1e977fcdd6b6","request":"{\"EventName\":\"QualifierPlayIn_Bo1_MH3_20240707\",\"EntryCurrencyType\":\"Gem\",\"EntryCurrencyPaid\":1500,\"CustomTokenId\":null}"}'
+    r'[UnityCrossThreadLogger]==> EventJoin {"id":"57d3b2c6-71ef-44ee-a395-1e977fcdd6b6","request":"{\"EventName\":\"QualifierPlayIn_Bo1_MH3_20240707\",\"EntryCurrencyType\":\"Gem\",\"EntryCurrencyPaid\":1500,\"CustomTokenId\":null}"}'
     ),
     ("Arena Direct Event Start",
     EventResults(new_event=True,
@@ -578,7 +578,7 @@ ARENA_OPEN_TEST_ENTRIES = [
                  pack=[],
                  card_pool=[],
                  missing=[]),
-    r'[UnityCrossThreadLogger]==> Event_Join {"id":"57d3b2c6-71ef-44ee-a395-1e977fcdd6b6","request":"{\"EventName\":\"ArenaDirect_OTJ_Sealed_20240726\",\"EntryCurrencyType\":\"Gem\",\"EntryCurrencyPaid\":1500,\"CustomTokenId\":null}"}'
+    r'[UnityCrossThreadLogger]==> EventJoin {"id":"57d3b2c6-71ef-44ee-a395-1e977fcdd6b6","request":"{\"EventName\":\"ArenaDirect_OTJ_Sealed_20240726\",\"EntryCurrencyType\":\"Gem\",\"EntryCurrencyPaid\":1500,\"CustomTokenId\":null}"}'
     ),
     
     
