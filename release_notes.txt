@@ -1,6 +1,11 @@
+===================== RELEASE NOTES 3.30 =====================
+* Fix issue [Bug]: Application does not track taken cards, but can see offered cards in drafts #70
+* Fix issue [Bug]: Application not detecting quick draft #71
+* Fix issue [Bug]: Application stuck at P3 Pick 14 #72
+
 ===================== RELEASE NOTES 3.29 =====================
 * BachenbergS added Default Linux Log-File Path #61
-* Fix issued [Bug]: not recognizing quick draft #66 (Log formatting updated)
+* Fix issue [Bug]: not recognizing quick draft #66 (Log formatting updated)
 
 ===================== RELEASE NOTES 3.28 =====================
 * FiYir removed the obsolete Bayesian Average setting

@@ -277,7 +277,7 @@ OTJ_QUICK_DRAFT_ENTRIES = [
                  pack=["90711","90504","90627","90449","90376","90595","90489","90527","90401","90365","90426","90480","90439","90428"],
                  card_pool=["90428"],
                  missing=[]),
-    r'[UnityCrossThreadLogger]==> BotDraft_DraftPick {"id":"8ef75393-f84d-4aea-9baa-805c7d9cdb68","request":"{\"Type\":1801,\"TransId\":\"8ef75393-f84d-4aea-9baa-805c7d9cdb68\",\"Payload\":\"{\\\"EventName\\\":\\\"QuickDraft_OTJ_20240426\\\",\\\"PickInfo\\\":{\\\"EventName\\\":\\\"QuickDraft_OTJ_20240426\\\",\\\"CardId\\\":\\\"90428\\\",\\\"PackNumber\\\":0,\\\"PickNumber\\\":0}}\"}"}'
+    r'[UnityCrossThreadLogger]==> BotDraftDraftPick {"id":"8ef75393-f84d-4aea-9baa-805c7d9cdb68","request":"{\"Type\":1801,\"TransId\":\"8ef75393-f84d-4aea-9baa-805c7d9cdb68\",\"Payload\":\"{\\\"EventName\\\":\\\"QuickDraft_OTJ_20240426\\\",\\\"PickInfo\\\":{\\\"EventName\\\":\\\"QuickDraft_OTJ_20240426\\\",\\\"CardIds\\\":[\\\"90428\\\"],\\\"PackNumber\\\":0,\\\"PickNumber\\\":0}}\"}"}'
     ),
     ("P1P2 - Pack",
     EventResults(new_event=False,
@@ -359,7 +359,7 @@ DMU_QUICK_DRAFT_ENTRIES_2024_5_7 = [
                  pack=["82309","82207","82083","82165","82196","82129","82170","82146","82120","82059","82160","82168","82091","82256"],
                  card_pool=["82091"],
                  missing=[]),
-    r'[UnityCrossThreadLogger]==> BotDraft_DraftPick {"id":"a4bc9a1c-8b5a-4939-85f8-d2eb524b5069","request":"{\"EventName\":\"QuickDraft_DMU_20240507\",\"PickInfo\":{\"EventName\":\"QuickDraft_DMU_20240507\",\"CardId\":\"82091\",\"PackNumber\":0,\"PickNumber\":0}}"}'
+    r'[UnityCrossThreadLogger]==> BotDraftDraftPick {"id":"a4bc9a1c-8b5a-4939-85f8-d2eb524b5069","request":"{\"EventName\":\"QuickDraft_DMU_20240507\",\"PickInfo\":{\"EventName\":\"QuickDraft_DMU_20240507\",\"CardIds\":[\"82091\"],\"PackNumber\":0,\"PickNumber\":0}}"}'
     ),
     ("P1P2 - Pack",
     EventResults(new_event=False,
