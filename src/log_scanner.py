@@ -697,7 +697,7 @@ class ArenaScanner:
         '''Parse the quick draft string that contains the player pick data'''
         offset = self.pick_offset
         draft_data = object()
-        draft_string = "[UnityCrossThreadLogger]==> BotDraft_DraftPick "
+        draft_string = "[UnityCrossThreadLogger]==> BotDraftDraftPick "
         pack = 0
         pick = 0
         # Identify and print out the log lines that contain the draft packs
@@ -723,7 +723,7 @@ class ArenaScanner:
 
                             pack = int(json_find("PackNumber", draft_data)) + 1
                             pick = int(json_find("PickNumber", draft_data)) + 1
-                            card = str(json_find("CardId", draft_data))
+                            card = str(json_find("CardIds", draft_data))
 
                             pack_index = (pick - 1) % 8
 
@@ -733,9 +733,9 @@ class ArenaScanner:
                             self.previous_picked_pack = pack
                             self.current_picked_pick = pick
 
-                            self.picked_cards[pack_index].append(card)
-                            self.taken_cards.append(card)
-
+                            self.picked_cards[pack_index].append(card[2:7])
+                            self.taken_cards.append(card[2:7])
+                            
                             if self.step_through:
                                 break
 
