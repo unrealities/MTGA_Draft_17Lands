@@ -2,9 +2,12 @@ import base64
 import json
 import os
 import time
+import platform
+import subprocess
 from enum import Enum
 from io import BytesIO
 from PIL import ImageGrab
+from typing import List
 from src.constants import (
     LIMITED_USER_GROUP_ALL,
     LIMITED_TYPES_DICT,
@@ -99,7 +102,7 @@ def retrieve_local_set_list(codes, names = None):
                     end_date = json_data["meta"]["end_date"]
                     
                 if "game_count" in json_data["meta"]:
-                    game_count = json_data["meta"]["game_count"]
+                    game_count = int(json_data["meta"]["game_count"])
                 else:
                     game_count = 0
                     
@@ -109,8 +112,8 @@ def retrieve_local_set_list(codes, names = None):
                     user_group,
                     start_date,
                     end_date,
+                    game_count,
                     file_location,
-                    game_count
                 ))
         except Exception as error:
             error_list.append(error)
@@ -176,3 +179,37 @@ def capture_screen_base64str(persist):
         screenshot.save(os.path.join(SCREENSHOT_FOLDER, filename), format="PNG")
 
     return base64.b64encode(buffered.getvalue()).decode("utf-8")
+
+def detect_string(search_line: str, search_strings: List[str], replace: str = '_') -> int:
+    '''Search a line for a string and return the offset at the end of the string.'''
+    # Extend search strings with modified versions (replacing 'replace' character)
+    modified_strings = search_strings + [
+        string.replace(replace, "") for string in search_strings
+    ]
+    # Find the first matching string and return its offset
+    for string in modified_strings:
+        if string in search_line:
+            return search_line.find(string) + len(string)
+    # Return -1 if no match is found
+    return -1
+    
+def open_file(file_path: str):
+    """
+    Open a file in its default application based on the operating system.
+
+    Parameters:
+        file_path (str): The path to the file to be opened.
+
+    Behavior:
+        - On Windows: Uses os.startfile() to open the file with the default application.
+        - On macOS: Uses the 'open' command via subprocess to open the file.
+        - On Linux/Unix: Uses the 'xdg-open' command via subprocess to open the file.
+    
+    This function ensures cross-platform compatibility for opening files.
+    """
+    if platform.system() == 'Windows':
+        os.startfile(file_path)
+    elif platform.system() == 'Darwin':  # macOS
+        subprocess.call(['open', file_path])
+    else:  # Linux and other Unix-based systems
+        subprocess.call(['xdg-open', file_path])

@@ -63,7 +63,7 @@ Magic: The Gathering Arena draft tool that utilizes 17Lands data.
   - (Linux only) [Install Tk](https://tkdocs.com/tutorial/install.html#installlinux)
 - **Step 7:** In Arena, go to Adjust Options, Account, and then check the Detailed Logs (Plugin Support) check box.
 - **Step 8:** Start the application by opening the terminal and entering ```python main.py```.
-- **Step 9:** If the application asks you for the location of the Arena player log, then click `File->Open` and select the log file from one of the following locations:
+- **Step 9:** If the application asks you for the location of the Arena player log, then click `File->Read Player.log` and select the log file from one of the following locations:
   - **Windows:** {drive}/Users/{username}/AppData/LocalLow/Wizards Of The Coast/MTGA/Player.log
   - **Mac:** {username}/Library/Logs/Wizards Of The Coast/MTGA/Player.log
   - **Bottles (Linux):** /home/{username}/.var/app/com.usebottles.bottles/data/bottles/bottles/MTG-Arena/drive_c/users/{username}/AppData/LocalLow/Wizards Of The Coast/MTGA/Player.log
@@ -130,7 +130,7 @@ Magic: The Gathering Arena draft tool that utilizes 17Lands data.
 ![Settings_Dark](https://github.com/unrealities/MTGA_Draft_17Lands/blob/main/assets/96687942/642a0795-e407-410e-b8d6-6332f3083ac7.png)
 ![Settings_Colors](https://github.com/unrealities/MTGA_Draft_17Lands/blob/main/assets/96687942/90c6b3df-0ade-4f32-a1be-b2ef40cedc32.png)
 
-- **Read Draft Logs:** Read the log file from a draft by selecting `File->Open`. Select a file that has the following naming scheme `DraftLog_<Set>_<Draft Type>_<Draft_ID>.log` file to read the file.
+- **Read Draft Logs:** Read the log file from a draft by selecting `File->Read Draft Log`. Select a file that has the following naming scheme `DraftLog_<Set>_<Draft Type>_<Draft_ID>.log` file to read the file.
 - **Download Set Data:** Open the Download Dataset window by selecting `Data->Download Dataset`. Enter the set information and click the ADD SET button to begin downloading the set data.
   - The download can take several minutes.
   - 17Lands will timeout the request if too many requests are made within a short period.
@@ -261,7 +261,7 @@ The following solution is for P1P1. After you have selected a card, only Arena l
 
 - **Some cards are missing from the Taken Cards window:** Due to Arena creating a new player log after every restart, the application cannot track cards that were picked and seen prior to a restart. However, players in drafting sessions spanning multiple days or sessions can still use this tool to access the current pack data. It should be noted that this application may not have access to information regarding previous packs and picks, resulting in some missing data.
 - **The application can't generate set or debug files:** Windows users might need to run the application as an administrator if the application is installed in a directory with restricted write access.
-- **My sealed card pool is missing after restarting Arena:** Arena creates a new player log after every restart, so you will need to open up your sealed event session log by clicking `File->Open` and selecting the `DraftLog_<Set>_Sealed` file if you want to see your sealed card pool. Remember that opening a log file will prevent the application from reading the Arena player log. Therefore, you must restart the application if you wish to initiate a new Arena event.
+- **My sealed card pool is missing after restarting Arena:** Arena creates a new player log after every restart, so you will need to open up your sealed event session log by clicking `File->Read Draft Log` and selecting the `DraftLog_<Set>_Sealed` file if you want to see your sealed card pool. Remember that opening a log file will prevent the application from reading the Arena player log. Therefore, you must restart the application if you wish to initiate a new Arena event.
 - **The tables are displaying a win rate of 0% or NA:** The application will display a card win rate value of 0% or NA if that win rate field has fewer than 500 samples (e.g., GIHWR will be 0% or NA if the number of games in hand is less than 500). Users should consider using the premier draft dataset or downloading a [tier list](https://github.com/unrealities/MTGA_Draft_17Lands/tree/main/Tools/TierScraper17Lands#tier-list-download-extension) for events that have a low player count.
   - ***As of September 2023, the 17Lands endpoint no longer provides win rate data for cards with fewer than 500 samples.**
 - **CTRL+G doesn't do anything:** If you're a Mac user, this shortcut isn't available. You must run the application as an administrator if you're a Windows user.
