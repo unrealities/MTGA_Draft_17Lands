@@ -484,3 +484,5 @@ def test_substitute_string_date_shift(mock_urlopen, limited_sets):
     # Verify that the {DATESHIFT} response is substituted for the expected shift date 
     assert "Arena Cube" in output_sets.data
     assert output_sets.data["Arena Cube"].start_date == expected_shift_date
+    
+

@@ -12,7 +12,7 @@ from src.logger import create_logger
 
 logger = create_logger()
 
-LIMITED_SETS_VERSION = 5
+LIMITED_SETS_VERSION = 6
 TOTAL_SCRYFALL_SETS = 50
 DATE_SHIFT_OFFSET_DAYS = -30
 TEMP_LIMITED_SETS = os.path.join("Temp", "temp_set_list.json")
@@ -248,22 +248,27 @@ class LimitedSets:
         temp_dict = SetDictionary(version=LIMITED_SETS_VERSION)
         if self.sets_scryfall.data and self.sets_17lands.data:
             set_codes_to_remove = []
-            # If the application is able to collect the set list from Scryfall and 17Lands, then it will use the 17Lands list to filter the Scryfall list
-            for code in self.sets_17lands.data:
-                for set_name, set_fields in self.sets_scryfall.data.items():
-                    set_code = set_fields.seventeenlands[0]
-                    if set_code == code:
+            alchemy_sets = {}
+            # Adding the sets that have Scryfall labels
+            for set_name, set_fields in self.sets_scryfall.data.items():
+                set_code = set_fields.seventeenlands[0]
+                if set_code in self.sets_17lands.data:
+                    if re.match(r"^Y\d{2}[A-Za-z]{3}$", set_code):
+                        alchemy_sets[set_name] = set_fields
+                    else:
                         temp_dict.data[set_name] = set_fields
-                        set_codes_to_remove.append(code)
-                        break
-
-            # Remove the set codes from self.sets_17lands
-            for code in set_codes_to_remove:
-                del self.sets_17lands.data[code]
-
-        # Insert any 17Lands sets that were not collected from Scryfall
-        temp_dict.data.update(self.sets_17lands.data)
+                    set_codes_to_remove.append(set_code)
+            
+            # Adding the unknown 17Lands sets to the list
+            for set_code, set_fields in self.sets_17lands.data.items():
+                if set_code not in set_codes_to_remove:
+                    if re.match(r"^Y\d{2}[A-Za-z]{3}$", set_code):
+                        alchemy_sets[set_code] = set_fields
+                    else:
+                        temp_dict.data[set_code] = set_fields
+                    
         temp_dict.data.update(read_sets.data)
+        temp_dict.data.update(alchemy_sets)
         temp_dict.latest_set = read_sets.latest_set
 
         return temp_dict

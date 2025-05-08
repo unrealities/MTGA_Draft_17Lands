@@ -15,8 +15,8 @@ CARD_COLOR_SYMBOL_NONE = "NC"
 
 CARD_COLORS = [
     CARD_COLOR_SYMBOL_WHITE,
-    CARD_COLOR_SYMBOL_BLACK,
     CARD_COLOR_SYMBOL_BLUE,
+    CARD_COLOR_SYMBOL_BLACK,
     CARD_COLOR_SYMBOL_RED,
     CARD_COLOR_SYMBOL_GREEN
 ]
@@ -159,11 +159,18 @@ TIER_FILE_PREFIX = "Tier_"
 
 DRAFT_DETECTION_CATCH_ALL = ["Draft", "draft"]
 
-DRAFT_START_STRING_EVENT_JOIN = "[UnityCrossThreadLogger]==> EventJoin "
-DRAFT_START_STRING_BOT_DRAFT = "[UnityCrossThreadLogger]==> BotDraft_DraftStatus "
+DRAFT_START_STRING_PREMIER = "[UnityCrossThreadLogger]==> Event_Join "
+DRAFT_PICK_STRING_PREMIER = "[UnityCrossThreadLogger]==> Event_PlayerDraftMakePick "
+DRAFT_PICK_STRING_PREMIER_OLD = "[UnityCrossThreadLogger]==> Draft.MakeHumanDraftPick "
+DRAFT_P1P1_STRING_PREMIER = "CardsInPack"
+DRAFT_PACK_STRING_PREMIER = "[UnityCrossThreadLogger]Draft.Notify "
 
-DRAFT_START_STRINGS = [DRAFT_START_STRING_EVENT_JOIN,
-                       DRAFT_START_STRING_BOT_DRAFT]
+DRAFT_START_STRING_QUICK_DRAFT = "[UnityCrossThreadLogger]==> BotDraft_DraftStatus "
+DRAFT_PACK_STRING_QUICK = "DraftPack"
+DRAFT_PICK_STRING_QUICK = "[UnityCrossThreadLogger]==> BotDraft_DraftPick "
+
+DRAFT_START_STRINGS = [DRAFT_START_STRING_PREMIER,
+                       DRAFT_START_STRING_QUICK_DRAFT]
 
 DATA_SOURCES_NONE = {"None": ""}
 

@@ -9,7 +9,7 @@ import io
 import math
 import argparse
 import webbrowser
-from os import stat
+from os import stat, path
 from dataclasses import dataclass
 from pynput.keyboard import Listener, KeyCode
 from PIL import Image, ImageTk, ImageFont
@@ -17,7 +17,7 @@ from src.configuration import read_configuration, write_configuration, reset_con
 from src.limited_sets import LimitedSets, START_DATE_DEFAULT
 from src.log_scanner import ArenaScanner, Source
 from src.file_extractor import FileExtractor, search_arena_log_locations, retrieve_arena_directory
-from src.utils import retrieve_local_set_list
+from src.utils import retrieve_local_set_list, open_file
 from src import constants
 from src.logger import create_logger
 from src.app_update import AppUpdate
@@ -222,7 +222,7 @@ def toggle_widget(input_widget, enable):
 
 def identify_card_row_tag(configuration, card_data, count):
     '''Wrapper function for setting the row color for a card'''
-    if configuration.color_identity_enabled or constants.CARD_TYPE_LAND in card_data[constants.DATA_FIELD_TYPES]:
+    if constants.CARD_TYPE_LAND in card_data[constants.DATA_FIELD_TYPES]:
         colors = card_data[constants.DATA_FIELD_COLORS]
     else:
         colors = card_data[constants.DATA_FIELD_MANA_COST]
@@ -459,7 +459,9 @@ class Overlay(ScaledWindow):
         # Menu Bar
         self.menubar = tkinter.Menu(self.root)
         self.filemenu = tkinter.Menu(self.menubar, tearoff=0)
-        self.filemenu.add_command(label="Open", command=self.__open_draft_log)
+        self.filemenu.add_command(label="Read Draft Log", command=self.__open_draft_log)
+        self.filemenu.add_command(label="Read Player.log", command=lambda: self.__open_draft_log(self.configuration.settings.arena_log_location))
+        self.filemenu.add_command(label="Open Player.log", command=lambda: open_file(self.configuration.settings.arena_log_location))
         self.datamenu = tkinter.Menu(self.menubar, tearoff=0)
         self.datamenu.add_command(
             label="Download Dataset", command=self.__open_set_view_window)
@@ -710,7 +712,7 @@ class Overlay(ScaledWindow):
             logger.error("Arena Player Log Missing")
             tkinter.messagebox.showinfo(
                 title="Arena Player Log Missing", message="Unable to locate the Arena player log.\n\n"
-                "Please set the log location by clicking File->Open and selecting the Arena log file (Player.log).\n\n"
+                "Please set the log location by clicking File->Read Player.log and selecting the Arena log file (Player.log).\n\n"
                 "This log is typically located at the following location:\n"
                 " - PC: <Drive>/Users/<User>/AppData/LocalLow/Wizards Of The Coast/MTGA\n"
                 " - MAC: <User>/Library/Logs/Wizards Of The Coast/MTGA")
@@ -1811,10 +1813,12 @@ class Overlay(ScaledWindow):
             sets = self.limited_sets.data
 
             headers = {"SET": {"width": .30, "anchor": tkinter.W},
-                       "EVENT": {"width": .20, "anchor": tkinter.CENTER},
+                       "EVENT": {"width": .12, "anchor": tkinter.CENTER},
                        "USER GROUP": {"width": .10, "anchor": tkinter.CENTER},
                        "START DATE": {"width": .20, "anchor": tkinter.CENTER},
-                       "END DATE": {"width": .20, "anchor": tkinter.CENTER}}
+                       "END DATE": {"width": .20, "anchor": tkinter.CENTER},
+                       "# GAMES": {"width": .10, "anchor": tkinter.CENTER},
+                       }
 
             list_box_frame = tkinter.Frame(popup)
             list_box_scrollbar = tkinter.Scrollbar(
@@ -2871,7 +2875,7 @@ class Overlay(ScaledWindow):
                                 user_group.get() == file[2] and
                                 start.get() == file[3] and
                                 (end.get() == file[4] or end.get() > file[4]) and
-                                game_count == file[6]
+                                game_count == file[5]
                             ):
                                 notify = True
                                 break
@@ -3004,19 +3008,27 @@ class Overlay(ScaledWindow):
                         logger.error(error)
                     break
 
-    def __open_draft_log(self):
-        '''Reads and processes a stored draft log when File->Open is selected'''
-        filename = filedialog.askopenfilename(filetypes=(("Log Files", "*.log"),
-                                                         ("All files", "*.*")))
-
-        if filename:
+    def __open_draft_log(self, log_path=""):
+        '''
+        Reads and processes a stored draft log when File->Open is selected.
+        If log_path is provided and the file exists, it uses the provided log_path.
+        """'''# Check if log_path is provided and the file exists
+        if log_path and path.isfile(log_path):
+            filename = log_path  # Use the provided log_path
+        else:
+            # Fall back to asking the user for the file
+            filename = filedialog.askopenfilename(filetypes=(("Log Files", "*.log"),
+                                                            ("All files", "*.*")))
+        
+        if filename:  # Process the file if a valid filename is provided
             self.arena_file = filename
             self.__reset_draft(True)
             self.draft.set_arena_file(filename)
             self.draft.log_suspend(True)
             self.__update_overlay_callback(True)
             self.draft.log_suspend(False)
-
+    
+            # Update configuration if the log file matches the expected name
             if constants.LOG_NAME in self.arena_file:
                 self.configuration.settings.arena_log_location = self.arena_file
                 write_configuration(self.configuration)
