@@ -25,6 +25,8 @@ Magic: The Gathering Arena draft tool that utilizes 17Lands data.
     - [The Solution](#the-solution)
     - [Future Considerations](#future-considerations)
   - [Troubleshooting](#troubleshooting)
+    - [Known Issues](#known-issues)
+    - [Arena Log Issues](#arena-log-issues)
 
 ## Run Steps: Windows Executable (Windows Only)
 
@@ -259,6 +261,8 @@ The following solution is for P1P1. After you have selected a card, only Arena l
 
 ## Troubleshooting
 
+### Known Issues
+
 - **Some cards are missing from the Taken Cards window:** Due to Arena creating a new player log after every restart, the application cannot track cards that were picked and seen prior to a restart. However, players in drafting sessions spanning multiple days or sessions can still use this tool to access the current pack data. It should be noted that this application may not have access to information regarding previous packs and picks, resulting in some missing data.
 - **The application can't generate set or debug files:** Windows users might need to run the application as an administrator if the application is installed in a directory with restricted write access.
 - **My sealed card pool is missing after restarting Arena:** Arena creates a new player log after every restart, so you will need to open up your sealed event session log by clicking `File->Read Draft Log` and selecting the `DraftLog_<Set>_Sealed` file if you want to see your sealed card pool. Remember that opening a log file will prevent the application from reading the Arena player log. Therefore, you must restart the application if you wish to initiate a new Arena event.
@@ -267,3 +271,26 @@ The following solution is for P1P1. After you have selected a card, only Arena l
 - **CTRL+G doesn't do anything:** If you're a Mac user, this shortcut isn't available. You must run the application as an administrator if you're a Windows user.
 - **The set download process takes 5+ minutes, and I'm seeing _Collecting 17Lands Data - Request Failed_ multiple times:** If you attempt to download too many sets within a short period, 17Lands will impose rate-limiting on your connection. Therefore, when downloading multiple sets, waiting at least 10 minutes between them is advisable.
 - **SSL errors in log on MacOS: `ERROR - limited_sets.retrieve_scryfall_sets - <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1000)`** Install SSL certificates via /Applications/Python 3.12/Install Certificates.command
+- **The application displays the wrong set when joining an Arena Open or qualifier event:** The log entries for these events do not specify the set, so the application defaults to the latest released set. If the event is not for the latest set, you can open the `Temp/temp_set_list.json` file and replace `"{LATEST}"` with the correct set code, such as `"TDM"` for Tarkir: Dragonstorm
+
+### Arena Log Issues 
+
+Arena updates may occasionally modify the log entries that this application reads. If the application cannot detect an active event, or if pack data is missing, please click `File > Open Player.log` and search for the following strings in the log file. If you find entries that contain similar strings, please create a bug report and include the log entry.
+
+#### Premier and Traditional Drafts
+
+- **Event Detection:** `[UnityCrossThreadLogger]==> EventJoin` or `[UnityCrossThreadLogger]==> Event_Join`, `id`, and `EventName`
+- **Pack 1, Pick 1:** `CardsInPack`, `id`, `PackNumber`, and `PickNumber`
+- **Packs:** `[UnityCrossThreadLogger]Draft.Notify `, `draftId`, `PackCards`, `SelfPack`, and `SelfPick`
+- **Picks:** `[UnityCrossThreadLogger]==> EventPlayerDraftMakePick ` or `[UnityCrossThreadLogger]==> Event_PlayerDraftMakePick `, `id`, `Pack`, `Pick`, and `GrpIds` or `GrpId`
+
+#### Quick Drafts
+
+- **Event Detection:** `[UnityCrossThreadLogger]==> BotDraftDraftStatus ` or `[UnityCrossThreadLogger]==> BotDraft_DraftStatus `, `id`, and `EventName` 
+- **Packs:** `DraftPack`, `CurrentModule`, `DraftStatus`, `PickNext`, `PackNumber`, `PickNumber`, and `PickedCards`
+- **Picks:** `[UnityCrossThreadLogger]==> BotDraftDraftPick ` or `[UnityCrossThreadLogger]==> BotDraft_DraftPick `, `PackNumber`, `PickNumber`, and `CardIds` or `CardId`
+
+#### Sealed and Traditional Sealed
+
+- **Event Detection:** `[UnityCrossThreadLogger]==> EventJoin` or `[UnityCrossThreadLogger]==> Event_Join`, `id`, and `EventName`
+- **Cardpool:** `InternalEventName`, `CardPool`, and `Courses` or `Course`
