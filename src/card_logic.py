@@ -10,7 +10,6 @@ from src.logger import create_logger
 
 logger = create_logger()
 
-
 @dataclass
 class DeckMetrics:
     cmc_average: float = 0.0
@@ -72,11 +71,11 @@ class CardResult:
         result = "NA"
         try:
             card_name = card[constants.DATA_FIELD_NAME].replace('///', '//')
-            if card_name in self.tier_data[option][constants.DATA_SECTION_RATINGS]:
-                tier_data = self.tier_data[option][constants.DATA_SECTION_RATINGS][card_name]
-                result = tier_data["rating"]
+            if card_name in self.tier_data[option].ratings:
+                tier_data = self.tier_data[option].ratings[card_name]
+                result = tier_data.rating
                 # Append an asterisk to denote a comment
-                result = "*" + result if tier_data["comment"] else result
+                result = "*" + result if tier_data.comment else result
         except Exception as error:
             logger.error(error)
 

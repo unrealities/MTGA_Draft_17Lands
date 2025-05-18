@@ -154,9 +154,6 @@ UI_SIZE_DEFAULT = "100%"
 DRAFT_LOG_PREFIX = "DraftLog_"
 DRAFT_LOG_FOLDER = os.path.join(os.getcwd(), "Logs")
 
-TIER_FOLDER = os.path.join(os.getcwd(), "Tier")
-TIER_FILE_PREFIX = "Tier_"
-
 DRAFT_DETECTION_CATCH_ALL = ["Draft", "draft"]
 
 DRAFT_START_STRING_PREMIER = "[UnityCrossThreadLogger]==> Event_Join "

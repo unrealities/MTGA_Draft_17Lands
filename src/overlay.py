@@ -10,7 +10,6 @@ import math
 import argparse
 import webbrowser
 from os import stat, path
-from dataclasses import dataclass
 from pynput.keyboard import Listener, KeyCode
 from PIL import Image, ImageTk, ImageFont
 from src.configuration import read_configuration, write_configuration, reset_configuration
@@ -21,11 +20,12 @@ from src.utils import retrieve_local_set_list, open_file
 from src import constants
 from src.logger import create_logger
 from src.app_update import AppUpdate
+from src.scaled_window import ScaledWindow, identify_safe_coordinates
+from src.tier_list import TierWindow, TierList
 from src.card_logic import (
     CardResult,
     copy_deck,
     stack_cards,
-    row_color_tag,
     field_process_sort,
     filter_options,
     deck_card_search,
@@ -39,17 +39,11 @@ try:
 except ImportError:
     pass
 
-APPLICATION_VERSION = 3.30
+APPLICATION_VERSION = 3.31
 
 HOTKEY_CTRL_G = '\x07'
 
 logger = create_logger()
-
-
-@dataclass
-class TableInfo:
-    reverse: bool = True
-    column: str = ""
 
 def start_overlay():
     """Retrieve arguments, create overlay object, and run overlay"""
@@ -169,46 +163,6 @@ def copy_clipboard(copy):
         logger.error(error)
     return
 
-
-def identify_table_row_tag(colors_enabled, colors, index):
-    """Return the row color (black/white or card color) depending on the application settings"""
-    tag = ""
-
-    if colors_enabled:
-        tag = row_color_tag(colors)
-    else:
-        tag = constants.BW_ROW_COLOR_ODD_TAG if index % 2 else constants.BW_ROW_COLOR_EVEN_TAG
-
-    return tag
-
-
-def identify_safe_coordinates(root, window_width, window_height, offset_x, offset_y):
-    '''Return x,y coordinates that fall within the bounds of the screen'''
-    location_x = 0
-    location_y = 0
-
-    try:
-        pointer_x = root.winfo_pointerx()
-        pointer_y = root.winfo_pointery()
-        screen_width = root.winfo_screenwidth()
-        screen_height = root.winfo_screenheight()
-
-        if pointer_x + offset_x + window_width > screen_width:
-            location_x = max(pointer_x - offset_x - window_width, 0)
-        else:
-            location_x = pointer_x + offset_x
-
-        if pointer_y + offset_y + window_height > screen_height:
-            location_y = max(pointer_y - offset_y - window_height, 0)
-        else:
-            location_y = pointer_y + offset_y
-
-    except Exception as error:
-        logger.error(error)
-
-    return location_x, location_y
-
-
 def toggle_widget(input_widget, enable):
     '''Hide/Display a UI widget'''
     try:
@@ -218,26 +172,6 @@ def toggle_widget(input_widget, enable):
             input_widget.grid_remove()
     except Exception as error:
         logger.error(error)
-
-
-def identify_card_row_tag(configuration, card_data, count):
-    '''Wrapper function for setting the row color for a card'''
-    if constants.CARD_TYPE_LAND in card_data[constants.DATA_FIELD_TYPES]:
-        colors = card_data[constants.DATA_FIELD_COLORS]
-    else:
-        colors = card_data[constants.DATA_FIELD_MANA_COST]
-
-    row_tag = identify_table_row_tag(
-        configuration.card_colors_enabled, colors, count)
-
-    return row_tag
-
-
-def disable_resizing(event, table):
-    '''Disable the column resizing for a treeview table'''
-    if table.identify_region(event.x, event.y) == "separator":
-        return "break"
-
 
 def url_callback(event):
     webbrowser.open_new(event.widget.cget("text"))
@@ -323,90 +257,6 @@ class AutocompleteEntry(tkinter.Entry):
         except tkinter.TclError:
             return False
 
-class ScaledWindow:
-    def __init__(self):
-        self.scale_factor = 1
-        self.fonts_dict = {}
-        self.table_info = {}
-
-    def _scale_value(self, value):
-        scaled_value = int(value * self.scale_factor)
-
-        return scaled_value
-
-    def _create_header(self, table_label, frame, height, font, headers, total_width, include_header, fixed_width, table_style, stretch_enabled):
-        """Configure the tkinter Treeview widget tables that are used to list draft data"""
-        header_labels = tuple(headers.keys())
-        show_header = "headings" if include_header else ""
-        column_stretch = tkinter.YES if stretch_enabled else tkinter.NO
-        list_box = Treeview(frame, columns=header_labels,
-                            show=show_header, style=table_style, height=height)
-
-        try:
-            for key, value in constants.ROW_TAGS_BW_DICT.items():
-                list_box.tag_configure(
-                    key, font=(value[0], font, "bold"), background=value[1], foreground=value[2])
-
-            for key, value in constants.ROW_TAGS_COLORS_DICT.items():
-                list_box.tag_configure(
-                    key, font=(value[0], font, "bold"), background=value[1], foreground=value[2])
-
-            for column in header_labels:
-                if fixed_width:
-                    column_width = int(
-                        math.ceil(headers[column]["width"] * total_width))
-                    list_box.column(column,
-                                    stretch=column_stretch,
-                                    anchor=headers[column]["anchor"],
-                                    width=column_width)
-                else:
-                    list_box.column(column, stretch=column_stretch,
-                                    anchor=headers[column]["anchor"])
-                list_box.heading(column, text=column, anchor=tkinter.CENTER,
-                                 command=lambda _col=column: self._sort_table_column(table_label, list_box, _col, True))
-            list_box["show"] = show_header  # use after setting columns
-            if include_header:
-                list_box.bind(
-                    '<Button-1>', lambda event: disable_resizing(event, table=list_box))
-            self.table_info[table_label] = TableInfo()
-        except Exception as error:
-            logger.error(error)
-        return list_box
-
-    def _sort_table_column(self, table_label, table, column, reverse):
-        """Sort the table columns when clicked"""
-        row_colors = False
-        row_list = []
-        for k in table.get_children(''):
-            column_value = table.set(k, column)
-            try:
-                row_list.append((float(column_value), k))
-            except ValueError:
-                row_list.append((column_value, k))
-
-        row_list.sort(key=lambda x: field_process_sort(
-            x[0]), reverse=reverse)
-
-        if row_list:
-            tags = table.item(row_list[0][1])["tags"][0]
-            row_colors = True if tags in constants.ROW_TAGS_COLORS_DICT else False
-
-        for index, value in enumerate(row_list):
-            table.move(value[1], "", index)
-
-            # Reset the black/white shades for sorted rows
-            if not row_colors:
-                row_tag = identify_table_row_tag(False, "", index)
-                table.item(value[1], tags=row_tag)
-
-        if table_label in self.table_info:
-            self.table_info[table_label].reverse = reverse
-            self.table_info[table_label].column = column
-
-        table.heading(column, command=lambda: self._sort_table_column(
-            table_label, table, column, not reverse))
-
-
 class Overlay(ScaledWindow):
     '''Class that handles all of the UI widgets'''
 
@@ -451,7 +301,9 @@ class Overlay(ScaledWindow):
         self.deck_colors = self.draft.retrieve_color_win_rate(
             self.configuration.settings.filter_format)
         self.data_sources = self.draft.retrieve_data_sources()
-        self.tier_sources = self.draft.retrieve_tier_source()
+        #self.tier_sources = self.draft.retrieve_tier_source()
+        self.tier_list = TierList()
+        self.event_set = ""
         self.set_metrics = self.draft.retrieve_set_metrics()
 
         tkinter.Grid.columnconfigure(self.root, 0, weight=1)
@@ -463,9 +315,8 @@ class Overlay(ScaledWindow):
         self.filemenu.add_command(label="Read Player.log", command=lambda: self.__open_draft_log(self.configuration.settings.arena_log_location))
         self.filemenu.add_command(label="Open Player.log", command=lambda: open_file(self.configuration.settings.arena_log_location))
         self.datamenu = tkinter.Menu(self.menubar, tearoff=0)
-        self.datamenu.add_command(
-            label="Download Dataset", command=self.__open_set_view_window)
-
+        self.datamenu.add_command(label="Download Dataset", command=self.__open_set_view_window)
+        self.datamenu.add_command(label="Download Tier List", command=lambda : TierWindow(self.scale_factor, self.fonts_dict, self.__update_source_callback))
         self.cardmenu = tkinter.Menu(self.menubar, tearoff=0)
         self.cardmenu.add_command(
             label="Taken Cards", command=self.__open_taken_cards_window)
@@ -925,7 +776,7 @@ class Overlay(ScaledWindow):
                     d["results"][last_field_index]), reverse=True)
 
             for count, card in enumerate(result_list):
-                row_tag = identify_card_row_tag(
+                row_tag = self._identify_card_row_tag(
                     self.configuration.settings,
                     card,
                     count)
@@ -974,7 +825,7 @@ class Overlay(ScaledWindow):
                     picked_card_names = [
                         x[constants.DATA_FIELD_NAME] for x in picked_cards]
                     for count, card in enumerate(result_list):
-                        row_tag = identify_card_row_tag(
+                        row_tag = self._identify_card_row_tag(
                             self.configuration.settings,
                             card,
                             count)
@@ -1053,7 +904,7 @@ class Overlay(ScaledWindow):
                 self.compare_table.config(height=0)
 
             for count, card in enumerate(result_list):
-                row_tag = identify_card_row_tag(
+                row_tag = self._identify_card_row_tag(
                     self.configuration.settings,
                     card,
                     count)
@@ -1147,7 +998,7 @@ class Overlay(ScaledWindow):
 
                 for count, card in enumerate(result_list):
                     field_values = tuple(card["results"])
-                    row_tag = identify_card_row_tag(
+                    row_tag = self._identify_card_row_tag(
                         self.configuration.settings,
                         card,
                         count)
@@ -1180,7 +1031,7 @@ class Overlay(ScaledWindow):
 
             for count, card in enumerate(suggested_deck):
 
-                row_tag = identify_card_row_tag(
+                row_tag = self._identify_card_row_tag(
                     self.configuration.settings,
                     card,
                     count)
@@ -1251,7 +1102,7 @@ class Overlay(ScaledWindow):
                 # return
 
             for count, (color, values) in enumerate(colors_filtered.items()):
-                row_tag = identify_table_row_tag(
+                row_tag = self._identify_table_row_tag(
                     self.configuration.settings.card_colors_enabled, values["symbol"], count)
                 self.stat_table.insert("", index=count, values=(color,
                                                                 values["distribution"][1],
@@ -1455,13 +1306,11 @@ class Overlay(ScaledWindow):
 
     def __update_draft_data(self):
         '''Function that collects pertinent draft data from the LogScanner class'''
-        self.draft.retrieve_set_data(
-            self.data_sources[self.data_source_selection.get()])
+        self.draft.retrieve_set_data(self.data_sources[self.data_source_selection.get()])
         self.set_metrics = self.draft.retrieve_set_metrics()
-        self.deck_colors = self.draft.retrieve_color_win_rate(
-            self.filter_format_selection.get())
-        self.tier_data, tier_dict = self.draft.retrieve_tier_data(
-            self.tier_sources)
+        self.deck_colors = self.draft.retrieve_color_win_rate(self.filter_format_selection.get())
+        self.event_set, _ = self.draft.retrieve_current_limited_event()
+        self.tier_data, tier_dict = self.tier_list.retrieve_data(self.event_set)
         self.main_options_dict = constants.COLUMNS_OPTIONS_EXTRA_DICT.copy()
         for key, value in tier_dict.items():
             self.main_options_dict[key] = value
@@ -1473,7 +1322,7 @@ class Overlay(ScaledWindow):
         if self.draft.draft_start_search():
             update = True
             self.data_sources = self.draft.retrieve_data_sources()
-            self.tier_sources = self.draft.retrieve_tier_source()
+            #self.tier_sources = self.draft.retrieve_tier_source()
             self.__update_data_source_options(True)
             self.__update_draft_data()
             mean, std = self.set_metrics.get_metrics(constants.FILTER_OPTION_ALL_DECKS, constants.DATA_FIELD_GIHWR)
@@ -1661,9 +1510,9 @@ class Overlay(ScaledWindow):
         self.__display_widgets()
 
         current_pack, current_pick = self.draft.retrieve_current_pack_and_pick()
-        event_set, event_type = self.draft.retrieve_current_limited_event()
+        self.event_set, event_type = self.draft.retrieve_current_limited_event()
 
-        self.__update_current_draft_label(event_set, event_type)
+        self.__update_current_draft_label(self.event_set, event_type)
         self.__update_pack_pick_label(current_pack, current_pick)
 
         fields = {"Column1": constants.DATA_FIELD_NAME,
@@ -1711,12 +1560,12 @@ class Overlay(ScaledWindow):
                   "Column7": self.main_options_dict[self.column_7_selection.get()], }
 
         current_pack, current_pick = self.draft.retrieve_current_pack_and_pick()
-        event_set, event_type = self.draft.retrieve_current_limited_event()
+        self.event_set, event_type = self.draft.retrieve_current_limited_event()
         pack_cards = self.draft.retrieve_current_pack_cards()
         picked_cards = self.draft.retrieve_current_picked_cards()
         missing_cards = self.draft.retrieve_current_missing_cards()
 
-        self.__update_current_draft_label(event_set, event_type)
+        self.__update_current_draft_label(self.event_set, event_type)
         self.__update_pack_pick_label(current_pack, current_pick)
 
         self.__update_pack_table(pack_cards,
@@ -1817,7 +1666,7 @@ class Overlay(ScaledWindow):
                        "USER GROUP": {"width": .10, "anchor": tkinter.CENTER},
                        "START DATE": {"width": .20, "anchor": tkinter.CENTER},
                        "END DATE": {"width": .20, "anchor": tkinter.CENTER},
-                       "# GAMES": {"width": .10, "anchor": tkinter.CENTER},
+                       "# GAMES": {"width": .10, "anchor": tkinter.W},
                        }
 
             list_box_frame = tkinter.Frame(popup)
@@ -2955,7 +2804,7 @@ class Overlay(ScaledWindow):
         file_list.sort(key=lambda x: x[4], reverse=True)
 
         for count, file in enumerate(file_list):
-            row_tag = identify_table_row_tag(False, "", count)
+            row_tag = self._identify_table_row_tag(False, "", count)
             list_box.insert("", index=count, iid=count,
                             values=file, tag=(row_tag,))
 
@@ -2981,8 +2830,8 @@ class Overlay(ScaledWindow):
                         tier_info = {}
                         if fields and self.tier_data:
                             for name, tier_list in self.tier_data.items():
-                                if name in fields.values() and card_name in tier_list["ratings"]:
-                                    tier_info[name] = tier_list["ratings"][card_name]["comment"]
+                                if name in fields.values() and card_name in tier_list.ratings:
+                                    tier_info[name] = tier_list.ratings[card_name].comment
 
                         # Get the top archetypes for this card
                         archetype_list = self.draft.set_data.get_card_archetypes_by_field(card_name, constants.DATA_FIELD_GIHWR)
@@ -3318,7 +3167,7 @@ class CreateCardToolTip(ScaledWindow):
                 archetype_table.config(height=self.table_rows)
                 
                 for count, row_values in enumerate(arch_data):
-                    row_tag = identify_table_row_tag(False, "", count)
+                    row_tag = self._identify_table_row_tag(False, "", count)
                     archetype_table.insert("", index=count, iid=count, values=row_values, tag=(row_tag,))
                 
                 archetype_table.grid(row=1, column=column_offset)
@@ -3341,7 +3190,7 @@ class CreateCardToolTip(ScaledWindow):
             stats_main_table.config(height=self.table_rows)
                 
             for count, row_values in enumerate(stats_data):
-                row_tag = identify_table_row_tag(False, "", count)
+                row_tag = self._identify_table_row_tag(False, "", count)
                 stats_main_table.insert("", index=count, iid=count, values=row_values, tag=(row_tag,))
 
             stats_main_table.grid(row=1, column=column_offset)
