@@ -301,9 +301,7 @@ class Overlay(ScaledWindow):
         self.deck_colors = self.draft.retrieve_color_win_rate(
             self.configuration.settings.filter_format)
         self.data_sources = self.draft.retrieve_data_sources()
-        #self.tier_sources = self.draft.retrieve_tier_source()
         self.tier_list = TierList()
-        self.event_set = ""
         self.set_metrics = self.draft.retrieve_set_metrics()
 
         tkinter.Grid.columnconfigure(self.root, 0, weight=1)
@@ -1309,8 +1307,8 @@ class Overlay(ScaledWindow):
         self.draft.retrieve_set_data(self.data_sources[self.data_source_selection.get()])
         self.set_metrics = self.draft.retrieve_set_metrics()
         self.deck_colors = self.draft.retrieve_color_win_rate(self.filter_format_selection.get())
-        self.event_set, _ = self.draft.retrieve_current_limited_event()
-        self.tier_data, tier_dict = self.tier_list.retrieve_data(self.event_set)
+        event_set, _ = self.draft.retrieve_current_limited_event()
+        self.tier_data, tier_dict = self.tier_list.retrieve_data(event_set)
         self.main_options_dict = constants.COLUMNS_OPTIONS_EXTRA_DICT.copy()
         for key, value in tier_dict.items():
             self.main_options_dict[key] = value
@@ -1322,7 +1320,6 @@ class Overlay(ScaledWindow):
         if self.draft.draft_start_search():
             update = True
             self.data_sources = self.draft.retrieve_data_sources()
-            #self.tier_sources = self.draft.retrieve_tier_source()
             self.__update_data_source_options(True)
             self.__update_draft_data()
             mean, std = self.set_metrics.get_metrics(constants.FILTER_OPTION_ALL_DECKS, constants.DATA_FIELD_GIHWR)
@@ -1510,9 +1507,9 @@ class Overlay(ScaledWindow):
         self.__display_widgets()
 
         current_pack, current_pick = self.draft.retrieve_current_pack_and_pick()
-        self.event_set, event_type = self.draft.retrieve_current_limited_event()
+        event_set, event_type = self.draft.retrieve_current_limited_event()
 
-        self.__update_current_draft_label(self.event_set, event_type)
+        self.__update_current_draft_label(event_set, event_type)
         self.__update_pack_pick_label(current_pack, current_pick)
 
         fields = {"Column1": constants.DATA_FIELD_NAME,
@@ -1560,12 +1557,12 @@ class Overlay(ScaledWindow):
                   "Column7": self.main_options_dict[self.column_7_selection.get()], }
 
         current_pack, current_pick = self.draft.retrieve_current_pack_and_pick()
-        self.event_set, event_type = self.draft.retrieve_current_limited_event()
+        event_set, event_type = self.draft.retrieve_current_limited_event()
         pack_cards = self.draft.retrieve_current_pack_cards()
         picked_cards = self.draft.retrieve_current_picked_cards()
         missing_cards = self.draft.retrieve_current_missing_cards()
 
-        self.__update_current_draft_label(self.event_set, event_type)
+        self.__update_current_draft_label(event_set, event_type)
         self.__update_pack_pick_label(current_pack, current_pick)
 
         self.__update_pack_table(pack_cards,
