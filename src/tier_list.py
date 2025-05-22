@@ -8,6 +8,7 @@ from pydantic import BaseModel
 from typing import Dict, Optional
 from src.scaled_window import ScaledWindow, identify_safe_coordinates
 from src.logger import create_logger
+from src.constants import GRADE_ORDER_DICT, LETTER_GRADE_NA
 
 # Constants for tier list storage and API
 TIER_FOLDER = os.path.join(os.getcwd(), "Tier")
@@ -57,14 +58,16 @@ class TierList(BaseModel):
                 version=TIER_VERSION,
                 url=url
             )
-            ratings = {
-                card.get("name", ""): Rating(
-                    rating=card.get("tier", "").ljust(2),
+            ratings = {}
+            for card in data.get("ratings", []):
+                name = card.get("name", "")
+                tier = card.get("tier", "").ljust(2)
+                if tier not in GRADE_ORDER_DICT:
+                    tier = LETTER_GRADE_NA
+                ratings[name] = Rating(
+                    rating=tier,
                     comment=card.get("comment", "")
                 )
-                for card in data.get("ratings", [])
-                if "name" in card and "tier" in card
-            }
             return cls(meta=meta, ratings=ratings)
         except (requests.RequestException, ValueError, KeyError, TypeError) as e:
             logger.error(f"Failed to fetch tier list from API: {e}")
@@ -77,7 +80,12 @@ class TierList(BaseModel):
             with open(file_path, "r", encoding="utf-8") as f:
                 data = json.load(f)
             meta = Meta(**data.get("meta", {}))
-            ratings = {k: Rating(**v) for k, v in data.get("ratings", {}).items()}
+            ratings = {}
+            for k, v in data.get("ratings", {}).items():
+                rating_value = v.get("rating", "")
+                if rating_value not in GRADE_ORDER_DICT:
+                    rating_value = LETTER_GRADE_NA
+                ratings[k] = Rating(rating=rating_value, comment=v.get("comment"))
             return cls(meta=meta, ratings=ratings)
         except (OSError, json.JSONDecodeError, TypeError, ValueError) as e:
             logger.error(f"Failed to load tier list from {file_path}: {e}")
