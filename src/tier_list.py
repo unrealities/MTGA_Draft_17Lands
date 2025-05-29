@@ -255,8 +255,8 @@ class TierWindow(ScaledWindow):
             )
 
             # Add placeholder text to the entry fields
-            self._add_placeholder(self._label_entry, "Enter Label Here!")
-            self._add_placeholder(self._url_entry, "https://www.17lands.com/tier_list/2b810f2420154ef9a11ad118fa7e4ae7")
+            self.__add_placeholder(self._label_entry, "Enter Label Here!")
+            self.__add_placeholder(self._url_entry, "https://www.17lands.com/tier_list/2b810f2420154ef9a11ad118fa7e4ae7")
 
             # Layout widgets
             list_box_frame.grid(row=0, column=0, columnspan=2, sticky="nsew")
@@ -283,7 +283,7 @@ class TierWindow(ScaledWindow):
         TierWindow._instance_open = False
         window.destroy()
 
-    def _add_placeholder(self, entry, placeholder):
+    def __add_placeholder(self, entry, placeholder):
         """Add placeholder text to a Tkinter Entry widget."""
         if not hasattr(entry, "default_fg"):
             entry.default_fg = entry.cget("fg")
@@ -320,6 +320,15 @@ class TierWindow(ScaledWindow):
             # Validate label
             if not self._label_entry.get() or self._label_entry.is_placeholder:
                 self._status_text.set("Invalid Label")
+                return
+
+            message_box = tkinter.messagebox.askyesno(
+                title="Download",
+                message="Make sure you also download the dataset so this application can read the Arena log.\n\n"
+                "Would you like to continue downloading the tier list?"
+            )
+            if not message_box:
+                self._status_text.set("Download Cancelled")
                 return
 
             # Download the tier list from the API

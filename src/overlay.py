@@ -2705,8 +2705,9 @@ class Overlay(ScaledWindow):
                     if game_count == 0:
                         message_box = tkinter.messagebox.askyesno(
                                          title="Download",
-                                         message=f"17Lands doesn't have data for {draft_set.get()} {draft.get()} {start.get()} to {end.get()}.\n\n"
-                                         "Would you still like to continue with the download?"
+                                         message=f"17Lands doesn't currently have card statistics for {draft_set.get()} {draft.get()} {start.get()} to {end.get()}.\n\n"
+                                         "If you plan to use a tier list, you will still need to download this dataset so this application can read the Arena log.\n\n"
+                                         "Would you like to continue with the download?"
                                       )
                         if not message_box:
                             status.set("Download Cancelled")
