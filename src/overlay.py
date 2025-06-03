@@ -1663,7 +1663,7 @@ class Overlay(ScaledWindow):
                        "USER GROUP": {"width": .10, "anchor": tkinter.CENTER},
                        "START DATE": {"width": .20, "anchor": tkinter.CENTER},
                        "END DATE": {"width": .20, "anchor": tkinter.CENTER},
-                       "# GAMES": {"width": .10, "anchor": tkinter.W},
+                       "# GAMES": {"width": .10, "anchor": tkinter.E},
                        }
 
             list_box_frame = tkinter.Frame(popup)
