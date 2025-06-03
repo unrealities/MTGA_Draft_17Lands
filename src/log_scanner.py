@@ -1007,23 +1007,6 @@ class ArenaScanner:
 
         return data_sources
 
-    def retrieve_tier_source(self):
-        '''Return a list of tier files that can be used with the current active draft'''
-        tier_sources = []
-
-        try:
-            if self.draft_sets:
-                file = FE.search_local_files([constants.TIER_FOLDER], [
-                    constants.TIER_FILE_PREFIX])
-
-                if file:
-                    tier_sources = file
-
-        except Exception as error:
-            logger.error(error)
-
-        return tier_sources
-
     def retrieve_set_data(self, file):
         '''Retrieve set data from the set data files'''
         result = Result.ERROR_MISSING_FILE
@@ -1122,40 +1105,6 @@ class ArenaScanner:
         '''Return the card data for all of the cards that were picked during the draft'''
         taken_cards = self.set_data.get_data_by_id(self.taken_cards)
         return taken_cards
-
-    def retrieve_tier_data(self, files):
-        '''Parse a tier list file and return the tier data'''
-        tier_data = {}
-        tier_options = {}
-        count = 0
-        try:
-            for file in files:
-                if os.path.exists(file):
-                    with open(file, 'r', encoding="utf-8", errors="replace") as json_file:
-                        data = json.loads(json_file.read())
-                        if [i for i in self.draft_sets if i in data["meta"]["set"]]:
-                            tier_id = f"TIER{count}"
-                            tier_label = data["meta"]["label"]
-                            tier_key = f'{tier_id}: {tier_label}'
-                            tier_options[tier_key] = tier_id
-                            if data["meta"]["version"] == 1:
-                                for card_name, card_rating in data["ratings"].items():
-                                    data["ratings"][card_name] = {
-                                        "comment": ""}
-                                    data["ratings"][card_name]["rating"] = CL.format_tier_results(card_rating,
-                                                                                                  constants.RESULT_FORMAT_RATING,
-                                                                                                  constants.RESULT_FORMAT_GRADE)
-                            elif data["meta"]["version"] == 2:
-                                for card_name, card_rating in data["ratings"].items():
-                                    data["ratings"][card_name] = {
-                                        "comment": ""}
-                                    data["ratings"][card_name]["rating"] = card_rating
-                            tier_data[tier_id] = data
-                            count += 1
-
-        except Exception as error:
-            logger.error(error)
-        return tier_data, tier_options
 
     def retrieve_current_pack_and_pick(self):
         '''Return the current pack and pick numbers (p1p1 is current_pack=1, current_pick=1)'''
