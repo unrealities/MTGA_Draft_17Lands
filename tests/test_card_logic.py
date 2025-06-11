@@ -6,52 +6,28 @@ from src.set_metrics import SetMetrics
 from src.configuration import Configuration, Settings
 from src.card_logic import CardResult
 from src.dataset import Dataset
+from src.tier_list import TierList, Meta, Rating
 
 # 17Lands OTJ data from 2024-4-16 to 2024-5-3
 OTJ_PREMIER_SNAPSHOT = os.path.join(os.getcwd(), "tests", "data","OTJ_PremierDraft_Data_2024_5_3.json")
 
-# Cards pulled from various tier lists that were downloaded using the chrome plugin
 TEST_TIER_LIST = {
-    "TIER0" : {
-        "meta": {
-            "collection_date": "",
-            "label": "",
-            "set": "",
-            "version": 3
-        },
-        "ratings":{
-            #Split sample
-            "Push // Pull": {
-                "rating": "C+",
-                "comment": ""
-            },
-            #Double-sided sample
-            "Etali, Primal Conqueror": {
-                "rating": "A+",
-                "comment": ""
-            },
-            #Adventure sample
-            "Virtue of Persistence": {
-                "rating": "A+",
-                "comment": ""
-            },
-            #Aftermath sample
-            "Consign // Oblivion": {
-                "rating": "C+",
-                "comment": ""
-            },
-            #Meld sample
-            "The Mightstone and Weakstone": {
-                "rating": "B-",
-                "comment": ""
-            },
-            #Battle sample
-            "Invasion of Gobakhan": {
-                "rating": "B+",
-                "comment": ""
-            },
+    "TIER0": TierList(
+        meta=Meta(
+            collection_date="",
+            label="",
+            set="",
+            version=3
+        ),
+        ratings={
+            "Push // Pull": Rating(rating="C+", comment=""),
+            "Etali, Primal Conqueror": Rating(rating="A+", comment=""),
+            "Virtue of Persistence": Rating(rating="A+", comment=""),
+            "Consign // Oblivion": Rating(rating="C+", comment=""),
+            "The Mightstone and Weakstone": Rating(rating="B-", comment=""),
+            "Invasion of Gobakhan": Rating(rating="B+", comment=""),
         }
-    }
+    )
 }
 
 TIER_TESTS = [

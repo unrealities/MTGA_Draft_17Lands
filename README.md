@@ -24,7 +24,10 @@ Magic: The Gathering Arena draft tool that utilizes 17Lands data.
     - [The Problem](#the-problem)
     - [The Solution](#the-solution)
     - [Future Considerations](#future-considerations)
+  - [Tier List (API-Based)](#tier-list-api-based)
   - [Troubleshooting](#troubleshooting)
+    - [Known Issues](#known-issues)
+    - [Arena Log Issues](#arena-log-issues)
 
 ## Run Steps: Windows Executable (Windows Only)
 
@@ -148,8 +151,7 @@ Magic: The Gathering Arena draft tool that utilizes 17Lands data.
 - **Hotkey:** The user can use the hotkey `CTRL+G` to toggle between minimizing and maximizing the main application window.
   - This feature doesn't work on Mac.
   - You need to run the executable as an administrator for this feature to work in Arena.
-- **Top-Level Window:** The main application window and subsequent windows will act as an overlay and remain above all other windows, including the Arena screen.
-- **Tier List:** A tier list can be added to the drop-downs by following the instructions in [tier list README](https://github.com/unrealities/MTGA_Draft_17Lands/tree/main/Tools/TierScraper17Lands#tier-list-download-extension).
+- **Tier List:** You can now add a tier list directly from the 17Lands API. Use the application's `Data > Download Tier List` menu to enter a 17Lands tier list URL and label. Once downloaded, the tier list will appear in the drop-down options during drafts. See the [Tier List (API-Based)](#tier-list-api-based) section for details.
 - **Card Tooltips:** Clicking on any card row will display a tooltip that contains the card images (back and front) and the 17Lands data.
 
 ## Settings
@@ -257,13 +259,59 @@ The following solution is for P1P1. After you have selected a card, only Arena l
 
 - For 30 days in June/July 2024, there were 913 requests, less than 1000 free requests each month for Google Cloud Functions. I will monitor Bloomburrow's release, but the feature is currently in no jeopardy of being removed.
 
+## Tier List (API-Based)
+
+MTGA_Draft_17Lands now features integrated support for downloading and using 17Lands tier lists directly within the application. Previously, this functionality required a separate Chrome extension, but it is now built in—no browser extension needed.
+
+### How It Works
+
+- The tool connects to the 17Lands API to download a tier list from a provided URL.
+- You can select a tier list during a draft to display card grades as you draft.
+
+### How to Use
+
+1. **Download a Tier List**
+  - In the application menu, go to `Data > Download Tier List`.
+  - Enter the 17Lands tier list URL and a label for the tier list.
+  - The tier list will be saved to the `Tier` folder.
+
+2. **Use Tier Lists in Drafts**
+  - Make sure you have downloaded the dataset for the event from `Data > Download Dataset`. The dataset is required to identify cards in the Arena log, even if it doesn't contain card data.
+  - When an event is detected, available tier lists for that set will appear in the column options in the [Settings window](#settings).
+  - Card ratings from the selected tier list will be shown in the pack table for your current pack.
+
 ## Troubleshooting
+
+### Known Issues
 
 - **Some cards are missing from the Taken Cards window:** Due to Arena creating a new player log after every restart, the application cannot track cards that were picked and seen prior to a restart. However, players in drafting sessions spanning multiple days or sessions can still use this tool to access the current pack data. It should be noted that this application may not have access to information regarding previous packs and picks, resulting in some missing data.
 - **The application can't generate set or debug files:** Windows users might need to run the application as an administrator if the application is installed in a directory with restricted write access.
 - **My sealed card pool is missing after restarting Arena:** Arena creates a new player log after every restart, so you will need to open up your sealed event session log by clicking `File->Read Draft Log` and selecting the `DraftLog_<Set>_Sealed` file if you want to see your sealed card pool. Remember that opening a log file will prevent the application from reading the Arena player log. Therefore, you must restart the application if you wish to initiate a new Arena event.
-- **The tables are displaying a win rate of 0% or NA:** The application will display a card win rate value of 0% or NA if that win rate field has fewer than 500 samples (e.g., GIHWR will be 0% or NA if the number of games in hand is less than 500). Users should consider using the premier draft dataset or downloading a [tier list](https://github.com/unrealities/MTGA_Draft_17Lands/tree/main/Tools/TierScraper17Lands#tier-list-download-extension) for events that have a low player count.
+- **The tables are displaying a win rate of 0% or NA:** The application will display a card win rate value of 0% or NA if that win rate field has fewer than 500 samples (e.g., GIHWR will be 0% or NA if the number of games in hand is less than 500). Users should consider using the premier draft dataset or downloading a [tier list using the API-based method](#tier-list-api-based) for events that have a low player count.
   - ***As of September 2023, the 17Lands endpoint no longer provides win rate data for cards with fewer than 500 samples.**
 - **CTRL+G doesn't do anything:** If you're a Mac user, this shortcut isn't available. You must run the application as an administrator if you're a Windows user.
 - **The set download process takes 5+ minutes, and I'm seeing _Collecting 17Lands Data - Request Failed_ multiple times:** If you attempt to download too many sets within a short period, 17Lands will impose rate-limiting on your connection. Therefore, when downloading multiple sets, waiting at least 10 minutes between them is advisable.
 - **SSL errors in log on MacOS: `ERROR - limited_sets.retrieve_scryfall_sets - <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1000)`** Install SSL certificates via /Applications/Python 3.12/Install Certificates.command
+- **The application displays the wrong set when joining an Arena Open or qualifier event:** The log entries for these events do not specify the set, so the application defaults to the latest released set. If the event is not for the latest set, you can open the `Temp/temp_set_list.json` file and replace `"{LATEST}"` with the correct set code, such as `"TDM"` for Tarkir: Dragonstorm
+
+### Arena Log Issues 
+
+Arena updates may occasionally modify the log entries that this application reads. If the application cannot detect an active event, or if pack data is missing, please click `File > Open Player.log` and search for the following strings in the log file. If you find entries that contain similar strings, please create a bug report and include the log entry.
+
+#### Premier and Traditional Drafts
+
+- **Event Detection:** `[UnityCrossThreadLogger]==> EventJoin` or `[UnityCrossThreadLogger]==> Event_Join`, `id`, and `EventName`
+- **Pack 1, Pick 1:** `CardsInPack`, `id`, `PackNumber`, and `PickNumber`
+- **Packs:** `[UnityCrossThreadLogger]Draft.Notify `, `draftId`, `PackCards`, `SelfPack`, and `SelfPick`
+- **Picks:** `[UnityCrossThreadLogger]==> EventPlayerDraftMakePick ` or `[UnityCrossThreadLogger]==> Event_PlayerDraftMakePick `, `id`, `Pack`, `Pick`, and `GrpIds` or `GrpId`
+
+#### Quick Drafts
+
+- **Event Detection:** `[UnityCrossThreadLogger]==> BotDraftDraftStatus ` or `[UnityCrossThreadLogger]==> BotDraft_DraftStatus `, `id`, and `EventName` 
+- **Packs:** `DraftPack`, `CurrentModule`, `DraftStatus`, `PickNext`, `PackNumber`, `PickNumber`, and `PickedCards`
+- **Picks:** `[UnityCrossThreadLogger]==> BotDraftDraftPick ` or `[UnityCrossThreadLogger]==> BotDraft_DraftPick `, `PackNumber`, `PickNumber`, and `CardIds` or `CardId`
+
+#### Sealed and Traditional Sealed
+
+- **Event Detection:** `[UnityCrossThreadLogger]==> EventJoin` or `[UnityCrossThreadLogger]==> Event_Join`, `id`, and `EventName`
+- **Cardpool:** `InternalEventName`, `CardPool`, and `Courses` or `Course`
