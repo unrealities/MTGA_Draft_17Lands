@@ -1,3 +1,8 @@
+===================== RELEASE NOTES 3.32 =====================
+* FiYir: Fix: Add logic to support card database path extraction from the Arena log for Linux users ([Bug]: error in file_extractor: card missing #78)
+* FiYir: Fix: Update query to support card database changes from the recent Arena patch ([Bug]: database changes after recent patch #80)
+* FiYir: Feature: Replaces the broken Chrome extension (see [Bug]: 17Lands Tier List Scraper Extension is no longer working #62) with an integrated API-based solution. Continues to support old tier lists.
+
 ===================== RELEASE NOTES 3.31 =====================
 * FiYir: Fix issue [Bug]: Application not detecting quick draft #71
 * FiYir: Sort the colors of multi-colored cards by WUBRG
