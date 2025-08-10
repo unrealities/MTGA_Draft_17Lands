@@ -13,15 +13,16 @@ from os import stat, path
 from pynput.keyboard import Listener, KeyCode
 from PIL import Image, ImageTk, ImageFont
 from src.configuration import read_configuration, write_configuration, reset_configuration
-from src.limited_sets import LimitedSets, START_DATE_DEFAULT
+from src.limited_sets import LimitedSets
 from src.log_scanner import ArenaScanner, Source
-from src.file_extractor import FileExtractor, search_arena_log_locations, retrieve_arena_directory
+from src.file_extractor import search_arena_log_locations, retrieve_arena_directory
 from src.utils import retrieve_local_set_list, open_file
 from src import constants
 from src.logger import create_logger
 from src.app_update import AppUpdate
 from src.scaled_window import ScaledWindow, identify_safe_coordinates
 from src.tier_list import TierWindow, TierList
+from src.download_dataset import DownloadDatasetWindow
 from src.card_logic import (
     CardResult,
     copy_deck,
@@ -266,7 +267,7 @@ class Overlay(ScaledWindow):
         self.root.title(f"Version {APPLICATION_VERSION:2.2f}")
         self.configuration, _ = read_configuration()
         self.root.resizable(False, False)
-        self.last_download = 0
+        #self.last_download = 0
 
         self.__set_os_configuration()
 
@@ -282,14 +283,14 @@ class Overlay(ScaledWindow):
         self.arena_file = self.configuration.settings.arena_log_location
 
         if args.data is None:
-            self.data_file = retrieve_arena_directory(self.arena_file)
+            self.configuration.settings.database_location = retrieve_arena_directory(self.arena_file)
         else:
-            self.data_file = args.file
-        logger.info("Card Data Location: %s", self.data_file)
+            self.configuration.settings.database_location = args.file
+        logger.info("Card Data Location: %s", self.configuration.settings.database_location)
 
         self.step_through = args.step
 
-        self.extractor = FileExtractor(self.data_file)
+        #self.extractor = FileExtractor(self.configuration.database_location)
         self.limited_sets = LimitedSets().retrieve_limited_sets()
         self.draft = ArenaScanner(
             self.arena_file, self.limited_sets, step_through=self.step_through)
@@ -313,7 +314,7 @@ class Overlay(ScaledWindow):
         self.filemenu.add_command(label="Read Player.log", command=lambda: self.__open_draft_log(self.configuration.settings.arena_log_location))
         self.filemenu.add_command(label="Open Player.log", command=lambda: open_file(self.configuration.settings.arena_log_location))
         self.datamenu = tkinter.Menu(self.menubar, tearoff=0)
-        self.datamenu.add_command(label="Download Dataset", command=self.__open_set_view_window)
+        self.datamenu.add_command(label="Download Dataset", command=lambda: DownloadDatasetWindow(self.root, self.limited_sets, self.scale_factor, self.fonts_dict, self.configuration))
         self.datamenu.add_command(label="Download Tier List", command=lambda : TierWindow(self.scale_factor, self.fonts_dict, self.__update_source_callback))
         self.cardmenu = tkinter.Menu(self.menubar, tearoff=0)
         self.cardmenu.add_command(
@@ -1629,161 +1630,161 @@ class Overlay(ScaledWindow):
         self.sets_window_open = False
         popup.destroy()
 
-    def __open_set_view_window(self):
-        '''Creates the Set View window'''
-
-        # Don't open the window if it's already open
-        if self.sets_window_open:
-            return
-
-        popup = tkinter.Toplevel()
-        popup.wm_title("Download Dataset")
-        popup.protocol("WM_DELETE_WINDOW",
-                       lambda window=popup: self.__close_set_view_window(window))
-        popup.resizable(width=False, height=True)
-        popup.attributes("-topmost", True)
-
-        location_x, location_y = identify_safe_coordinates(self.root,
-                                                           self._scale_value(
-                                                               1000),
-                                                           self._scale_value(
-                                                               170),
-                                                           self._scale_value(
-                                                               250),
-                                                           self._scale_value(20))
-        popup.wm_geometry(f"+{location_x}+{location_y}")
-
-        tkinter.Grid.rowconfigure(popup, 1, weight=1)
-        try:
-
-            sets = self.limited_sets.data
-
-            headers = {"SET": {"width": .30, "anchor": tkinter.W},
-                       "EVENT": {"width": .12, "anchor": tkinter.CENTER},
-                       "USER GROUP": {"width": .10, "anchor": tkinter.CENTER},
-                       "START DATE": {"width": .20, "anchor": tkinter.CENTER},
-                       "END DATE": {"width": .20, "anchor": tkinter.CENTER},
-                       "# GAMES": {"width": .10, "anchor": tkinter.E},
-                       }
-
-            list_box_frame = tkinter.Frame(popup)
-            list_box_scrollbar = tkinter.Scrollbar(
-                list_box_frame, orient=tkinter.VERTICAL)
-            list_box_scrollbar.pack(side=tkinter.RIGHT, fill=tkinter.Y)
-
-            list_box = self._create_header("set_table",
-                                           list_box_frame, 0, self.fonts_dict["Sets.TableRow"], headers, self._scale_value(500), True, True, "Set.Treeview", True)
-
-            list_box.config(yscrollcommand=list_box_scrollbar.set)
-            list_box_scrollbar.config(command=list_box.yview)
-
-            notice_label = Label(popup, text="17Lands has an embargo period of 12 days for new sets on Magic Arena. Visit https://www.17lands.com for more details.",
-                                 style="Notes.TLabel", anchor="c")
-            set_label = Label(popup,
-                              text="Set:",
-                              style="SetOptions.TLabel",
-                              anchor="e")
-            event_label = Label(popup,
-                                text="Event:",
-                                style="SetOptions.TLabel",
-                                anchor="e")
-            start_label = Label(popup,
-                                text="Start Date:",
-                                style="SetOptions.TLabel",
-                                anchor="e")
-            end_label = Label(popup,
-                              text="End Date:",
-                              style="SetOptions.TLabel",
-                              anchor="e")
-            group_label = Label(popup,
-                                text="User Group:",
-                                style="SetOptions.TLabel",
-                                anchor="e")
-            draft_choices = constants.LIMITED_TYPE_LIST
-
-            status_text = tkinter.StringVar()
-            status_label = Label(popup, textvariable=status_text,
-                                 style="Status.TLabel", anchor="c")
-            status_text.set("Retrieving Set List")
-
-            event_value = tkinter.StringVar(self.root)
-            event_entry = OptionMenu(
-                popup, event_value, draft_choices[0], *draft_choices)
-            menu = self.root.nametowidget(event_entry['menu'])
-            menu.config(font=self.fonts_dict["All.TMenubutton"])
-
-            start_entry = tkinter.Entry(popup)
-            start_entry.insert(tkinter.END, START_DATE_DEFAULT)
-            end_entry = tkinter.Entry(popup)
-            end_entry.insert(tkinter.END, str(date.today()))
-
-            set_choices = list(sets)
-
-            set_value = tkinter.StringVar(self.root)
-            set_entry = OptionMenu(
-                popup, set_value, set_choices[0], *set_choices)
-            menu = self.root.nametowidget(set_entry['menu'])
-            menu.config(font=self.fonts_dict["All.TMenubutton"])
-
-            set_value.trace_add("write", lambda *args, start=start_entry, selection=set_value,
-                            set_list=sets: self.__update_set_start_date(start, selection, set_list, *args))
-
-            draft_groups = constants.LIMITED_GROUPS_LIST
-            group_value = tkinter.StringVar(self.root)
-            group_entry = OptionMenu(popup, group_value, draft_groups[0], *draft_groups)
-            menu = self.root.nametowidget(group_entry['menu'])
-            menu.config(font=self.fonts_dict["All.TMenubutton"])
-
-            progress = Progressbar(
-                popup, orient=tkinter.HORIZONTAL, length=100, mode='determinate')
-
-            add_button = Button(popup, command=lambda: self.__add_set(popup,
-                                                                      set_value,
-                                                                      event_value,
-                                                                      start_entry,
-                                                                      end_entry,
-                                                                      group_value,
-                                                                      add_button,
-                                                                      progress,
-                                                                      list_box,
-                                                                      sets,
-                                                                      status_text,
-                                                                      constants.DATA_SET_VERSION_3), text="DOWNLOAD")
-
-            event_separator = Separator(popup, orient='vertical')
-            set_separator = Separator(popup, orient='vertical')
-            group_separator = Separator(popup, orient='vertical')
-
-            notice_label.grid(row=0, column=0, columnspan=13, sticky='nsew')
-            list_box_frame.grid(row=1, column=0, columnspan=13, sticky='nsew')
-            add_button.grid(row=3, column=0, columnspan=13, sticky='nsew')
-            progress.grid(row=4, column=0, columnspan=13, sticky='nsew')
-            status_label.grid(row=5, column=0, columnspan=13, sticky='nsew')
-            
-            set_label.grid(row=2, column=0, sticky='nsew')
-            set_entry.grid(row=2, column=1, sticky='nsew')
-            set_separator.grid(row=2, column=2, sticky='nsew')
-            event_label.grid(row=2, column=3, sticky='nsew')
-            event_entry.grid(row=2, column=4, sticky='nsew')
-            event_separator.grid(row=2, column=5, sticky='nsew')
-            group_label.grid(row=2, column=6, sticky='nsew')
-            group_entry.grid(row=2, column=7, sticky='nsew')
-            group_separator.grid(row=2, column=8, sticky='nsew')
-            start_label.grid(row=2, column=9, sticky='nsew')
-            start_entry.grid(row=2, column=10, sticky='nsew')
-            end_label.grid(row=2, column=11, sticky='nsew')
-            end_entry.grid(row=2, column=12, sticky='nsew')
-
-            list_box.pack(expand=True, fill="both")
-
-            self.__update_set_table(list_box, sets)
-            status_text.set("")
-            popup.update()
-
-            self.sets_window_open = True
-
-        except Exception as error:
-            logger.error(error)
+    #def __open_set_view_window(self):
+    #    '''Creates the Set View window'''
+#
+    #    # Don't open the window if it's already open
+    #    if self.sets_window_open:
+    #        return
+#
+    #    popup = tkinter.Toplevel()
+    #    popup.wm_title("Download Dataset")
+    #    popup.protocol("WM_DELETE_WINDOW",
+    #                   lambda window=popup: self.__close_set_view_window(window))
+    #    popup.resizable(width=False, height=True)
+    #    popup.attributes("-topmost", True)
+#
+    #    location_x, location_y = identify_safe_coordinates(self.root,
+    #                                                       self._scale_value(
+    #                                                           1000),
+    #                                                       self._scale_value(
+    #                                                           170),
+    #                                                       self._scale_value(
+    #                                                           250),
+    #                                                       self._scale_value(20))
+    #    popup.wm_geometry(f"+{location_x}+{location_y}")
+#
+    #    tkinter.Grid.rowconfigure(popup, 1, weight=1)
+    #    try:
+#
+    #        sets = self.limited_sets.data
+#
+    #        headers = {"SET": {"width": .30, "anchor": tkinter.W},
+    #                   "EVENT": {"width": .12, "anchor": tkinter.CENTER},
+    #                   "USER GROUP": {"width": .10, "anchor": tkinter.CENTER},
+    #                   "START DATE": {"width": .20, "anchor": tkinter.CENTER},
+    #                   "END DATE": {"width": .20, "anchor": tkinter.CENTER},
+    #                   "# GAMES": {"width": .10, "anchor": tkinter.E},
+    #                   }
+#
+    #        list_box_frame = tkinter.Frame(popup)
+    #        list_box_scrollbar = tkinter.Scrollbar(
+    #            list_box_frame, orient=tkinter.VERTICAL)
+    #        list_box_scrollbar.pack(side=tkinter.RIGHT, fill=tkinter.Y)
+#
+    #        list_box = self._create_header("set_table",
+    #                                       list_box_frame, 0, self.fonts_dict["Sets.TableRow"], headers, self._scale_value(500), True, True, "Set.Treeview", True)
+#
+    #        list_box.config(yscrollcommand=list_box_scrollbar.set)
+    #        list_box_scrollbar.config(command=list_box.yview)
+#
+    #        notice_label = Label(popup, text="17Lands has an embargo period of 12 days for new sets on Magic Arena. Visit https://www.17lands.com for more details.",
+    #                             style="Notes.TLabel", anchor="c")
+    #        set_label = Label(popup,
+    #                          text="Set:",
+    #                          style="SetOptions.TLabel",
+    #                          anchor="e")
+    #        event_label = Label(popup,
+    #                            text="Event:",
+    #                            style="SetOptions.TLabel",
+    #                            anchor="e")
+    #        start_label = Label(popup,
+    #                            text="Start Date:",
+    #                            style="SetOptions.TLabel",
+    #                            anchor="e")
+    #        end_label = Label(popup,
+    #                          text="End Date:",
+    #                          style="SetOptions.TLabel",
+    #                          anchor="e")
+    #        group_label = Label(popup,
+    #                            text="User Group:",
+    #                            style="SetOptions.TLabel",
+    #                            anchor="e")
+    #        draft_choices = constants.LIMITED_TYPE_LIST
+#
+    #        status_text = tkinter.StringVar()
+    #        status_label = Label(popup, textvariable=status_text,
+    #                             style="Status.TLabel", anchor="c")
+    #        status_text.set("Retrieving Set List")
+#
+    #        event_value = tkinter.StringVar(self.root)
+    #        event_entry = OptionMenu(
+    #            popup, event_value, draft_choices[0], *draft_choices)
+    #        menu = self.root.nametowidget(event_entry['menu'])
+    #        menu.config(font=self.fonts_dict["All.TMenubutton"])
+#
+    #        start_entry = tkinter.Entry(popup)
+    #        start_entry.insert(tkinter.END, START_DATE_DEFAULT)
+    #        end_entry = tkinter.Entry(popup)
+    #        end_entry.insert(tkinter.END, str(date.today()))
+#
+    #        set_choices = list(sets)
+#
+    #        set_value = tkinter.StringVar(self.root)
+    #        set_entry = OptionMenu(
+    #            popup, set_value, set_choices[0], *set_choices)
+    #        menu = self.root.nametowidget(set_entry['menu'])
+    #        menu.config(font=self.fonts_dict["All.TMenubutton"])
+#
+    #        set_value.trace_add("write", lambda *args, start=start_entry, selection=set_value,
+    #                        set_list=sets: self.__update_set_start_date(start, selection, set_list, *args))
+#
+    #        draft_groups = constants.LIMITED_GROUPS_LIST
+    #        group_value = tkinter.StringVar(self.root)
+    #        group_entry = OptionMenu(popup, group_value, draft_groups[0], *draft_groups)
+    #        menu = self.root.nametowidget(group_entry['menu'])
+    #        menu.config(font=self.fonts_dict["All.TMenubutton"])
+#
+    #        progress = Progressbar(
+    #            popup, orient=tkinter.HORIZONTAL, length=100, mode='determinate')
+#
+    #        add_button = Button(popup, command=lambda: self.__add_set(popup,
+    #                                                                  set_value,
+    #                                                                  event_value,
+    #                                                                  start_entry,
+    #                                                                  end_entry,
+    #                                                                  group_value,
+    #                                                                  add_button,
+    #                                                                  progress,
+    #                                                                  list_box,
+    #                                                                  sets,
+    #                                                                  status_text,
+    #                                                                  constants.DATA_SET_VERSION_3), text="DOWNLOAD")
+#
+    #        event_separator = Separator(popup, orient='vertical')
+    #        set_separator = Separator(popup, orient='vertical')
+    #        group_separator = Separator(popup, orient='vertical')
+#
+    #        notice_label.grid(row=0, column=0, columnspan=13, sticky='nsew')
+    #        list_box_frame.grid(row=1, column=0, columnspan=13, sticky='nsew')
+    #        add_button.grid(row=3, column=0, columnspan=13, sticky='nsew')
+    #        progress.grid(row=4, column=0, columnspan=13, sticky='nsew')
+    #        status_label.grid(row=5, column=0, columnspan=13, sticky='nsew')
+    #        
+    #        set_label.grid(row=2, column=0, sticky='nsew')
+    #        set_entry.grid(row=2, column=1, sticky='nsew')
+    #        set_separator.grid(row=2, column=2, sticky='nsew')
+    #        event_label.grid(row=2, column=3, sticky='nsew')
+    #        event_entry.grid(row=2, column=4, sticky='nsew')
+    #        event_separator.grid(row=2, column=5, sticky='nsew')
+    #        group_label.grid(row=2, column=6, sticky='nsew')
+    #        group_entry.grid(row=2, column=7, sticky='nsew')
+    #        group_separator.grid(row=2, column=8, sticky='nsew')
+    #        start_label.grid(row=2, column=9, sticky='nsew')
+    #        start_entry.grid(row=2, column=10, sticky='nsew')
+    #        end_label.grid(row=2, column=11, sticky='nsew')
+    #        end_entry.grid(row=2, column=12, sticky='nsew')
+#
+    #        list_box.pack(expand=True, fill="both")
+#
+    #        self.__update_set_table(list_box, sets)
+    #        status_text.set("")
+    #        popup.update()
+#
+    #        self.sets_window_open = True
+#
+    #    except Exception as error:
+    #        logger.error(error)
 
     def __close_card_compare_window(self, popup):
         '''Clear compare table data when the card compare window is closed'''
@@ -2647,164 +2648,164 @@ class Overlay(ScaledWindow):
         except Exception as error:
             logger.error(error)
 
-    def __add_set(self, popup, draft_set, draft, start, end, user_group, button, progress, list_box, sets, status, version):
-        '''Initiates the set download process when the Download Dataset button is clicked'''
-        result = True
-        result_string = ""
-        return_size = 0
-        current_time = datetime.now().timestamp()
-        while True:
-            try:
-                time_difference = current_time - self.last_download
-                if time_difference >= constants.DATASET_DOWNLOAD_RATE_LIMIT_SEC:
-                    message_box = tkinter.messagebox.askyesno(
-                                    title="Download",
-                                    message=f"Are you sure that you want to download the {draft_set.get()} {draft.get()} dataset?"
-                                 )
-                    if not message_box:
-                        break
-                else:
-                    message_box = tkinter.messagebox.showinfo(
-                                    title="Download",
-                                    message="Rate limit reached.\n\n"
-                                    f"Please wait {int(constants.DATASET_DOWNLOAD_RATE_LIMIT_SEC - time_difference)} seconds before trying again."
-                                  )
-                    break
-
-                status.set("Starting Download Process")
-                self.extractor.clear_data()
-                button['state'] = 'disabled'
-                progress['value'] = 0
-                popup.update()
-                self.extractor.select_sets(sets[draft_set.get()])
-                self.extractor.set_draft_type(draft.get())
-                if not self.extractor.set_start_date(start.get()):
-                    result = False
-                    result_string = "Invalid Start Date (YYYY-MM-DD)"
-                    break
-                if not self.extractor.set_end_date(end.get()):
-                    result = False
-                    result_string = "Invalid End Date (YYYY-MM-DD)"
-                    break
-                self.extractor.set_user_group(user_group.get())
-                self.extractor.set_version(version)
-                
-                set_codes = [v.seventeenlands[0] for v in sets.values()]
-                file_list, error_list = retrieve_local_set_list(set_codes)
-                
-                # Log all of errors generated by retrieve_local_set_list
-                for error_string in error_list:
-                    logger.error(error_string)
-
-                self.last_download = current_time
-
-                status.set("Downloading Color Ratings")
-                result, game_count = self.extractor.retrieve_17lands_color_ratings()
-
-                if result and file_list:
-                    if game_count == 0:
-                        message_box = tkinter.messagebox.askyesno(
-                                         title="Download",
-                                         message=f"17Lands doesn't currently have card statistics for {draft_set.get()} {draft.get()} {start.get()} to {end.get()}.\n\n"
-                                         "If you plan to use a tier list, you will still need to download this dataset so this application can read the Arena log.\n\n"
-                                         "Would you like to continue with the download?"
-                                      )
-                        if not message_box:
-                            status.set("Download Cancelled")
-                            break
-                    else:
-                        notify = False
-                        set_code = sets[draft_set.get()].seventeenlands[0]
-                        for file in file_list:
-                            if(
-                                set_code == file[0] and
-                                draft.get() == file[1] and
-                                user_group.get() == file[2] and
-                                start.get() == file[3] and
-                                (end.get() == file[4] or end.get() > file[4]) and
-                                game_count == file[5]
-                            ):
-                                notify = True
-                                break
-
-                        if notify:
-                            current_time_utc = datetime.now(UTC).strftime('%H:%M:%S')
-                            message_box = tkinter.messagebox.askyesno(
-                                            title="Download",
-                                            message="Your dataset is already up-to-date.\n\n"
-                                            f"It's currently {current_time_utc} UTC, and 17Lands updates their card data once a day around 03:00:00 UTC.\n\n"
-                                            "Would you still like to continue with the download?"
-                                        )
-                            if not message_box:
-                                status.set("Download Cancelled")
-                                break
-
-                result, result_string, temp_size = self.extractor.download_card_data(
-                    popup, progress, status, self.configuration.card_data.database_size)
-
-                if not result:
-                    break
-
-                if not self.extractor.export_card_data():
-                    result = False
-                    result_string = "File Write Failure"
-                    break
-                progress['value'] = 100
-                return_size = temp_size
-                popup.update()
-                status.set("Updating Set List")
-                self.__update_set_table(list_box, sets)
-                self.__reset_draft(True)
-                self.draft.log_suspend(True)
-                self.__update_overlay_callback(True)
-                self.draft.log_suspend(False)
-                status.set("Download Complete")
-            except Exception as error:
-                result = False
-                result_string = error
-
-            break
-
-        if not result:
-            status.set("Download Failed")
-            popup.update()
-            button['state'] = 'normal'
-            message_string = f"Download Failed: {result_string}"
-            message_box = tkinter.messagebox.showwarning(
-                title="Error", message=message_string)
-        else:
-            button['state'] = 'normal'
-            self.configuration.card_data.database_size = return_size
-            write_configuration(self.configuration)
-        popup.update()
-        return
-
-    def __update_set_table(self, list_box, sets):
-        '''Updates the set list in the Set View table'''
-        # Delete the content of the list box
-        for row in list_box.get_children():
-            list_box.delete(row)
-        self.root.update()
-        set_codes = [v.seventeenlands[0] for v in sets.values()]
-        set_names = sets.keys()
-        file_list, error_list = retrieve_local_set_list(set_codes, set_names)
-        
-        # Log all of errors generated by retrieve_local_set_list
-        for error_string in error_list:
-            logger.error(error_string)
-
-        if file_list:
-            list_box.config(height=min(len(file_list), 10))
-        else:
-            list_box.config(height=0)
-
-        # Sort list by end date
-        file_list.sort(key=lambda x: x[4], reverse=True)
-
-        for count, file in enumerate(file_list):
-            row_tag = self._identify_table_row_tag(False, "", count)
-            list_box.insert("", index=count, iid=count,
-                            values=file, tag=(row_tag,))
+    #def __add_set(self, popup, draft_set, draft, start, end, user_group, button, progress, list_box, sets, status, version):
+    #    '''Initiates the set download process when the Download Dataset button is clicked'''
+    #    result = True
+    #    result_string = ""
+    #    return_size = 0
+    #    current_time = datetime.now().timestamp()
+    #    while True:
+    #        try:
+    #            time_difference = current_time - self.last_download
+    #            if time_difference >= constants.DATASET_DOWNLOAD_RATE_LIMIT_SEC:
+    #                message_box = tkinter.messagebox.askyesno(
+    #                                title="Download",
+    #                                message=f"Are you sure that you want to download the {draft_set.get()} {draft.get()} dataset?"
+    #                             )
+    #                if not message_box:
+    #                    break
+    #            else:
+    #                message_box = tkinter.messagebox.showinfo(
+    #                                title="Download",
+    #                                message="Rate limit reached.\n\n"
+    #                                f"Please wait {int(constants.DATASET_DOWNLOAD_RATE_LIMIT_SEC - time_difference)} seconds before trying again."
+    #                              )
+    #                break
+#
+    #            status.set("Starting Download Process")
+    #            self.extractor.clear_data()
+    #            button['state'] = 'disabled'
+    #            progress['value'] = 0
+    #            popup.update()
+    #            self.extractor.select_sets(sets[draft_set.get()])
+    #            self.extractor.set_draft_type(draft.get())
+    #            if not self.extractor.set_start_date(start.get()):
+    #                result = False
+    #                result_string = "Invalid Start Date (YYYY-MM-DD)"
+    #                break
+    #            if not self.extractor.set_end_date(end.get()):
+    #                result = False
+    #                result_string = "Invalid End Date (YYYY-MM-DD)"
+    #                break
+    #            self.extractor.set_user_group(user_group.get())
+    #            self.extractor.set_version(version)
+    #            
+    #            set_codes = [v.seventeenlands[0] for v in sets.values()]
+    #            file_list, error_list = retrieve_local_set_list(set_codes)
+    #            
+    #            # Log all of errors generated by retrieve_local_set_list
+    #            for error_string in error_list:
+    #                logger.error(error_string)
+#
+    #            self.last_download = current_time
+#
+    #            status.set("Downloading Color Ratings")
+    #            result, game_count = self.extractor.retrieve_17lands_color_ratings()
+#
+    #            if result and file_list:
+    #                if game_count == 0:
+    #                    message_box = tkinter.messagebox.askyesno(
+    #                                     title="Download",
+    #                                     message=f"17Lands doesn't currently have card statistics for {draft_set.get()} {draft.get()} {start.get()} to {end.get()}.\n\n"
+    #                                     "If you plan to use a tier list, you will still need to download this dataset so this application can read the Arena log.\n\n"
+    #                                     "Would you like to continue with the download?"
+    #                                  )
+    #                    if not message_box:
+    #                        status.set("Download Cancelled")
+    #                        break
+    #                else:
+    #                    notify = False
+    #                    set_code = sets[draft_set.get()].seventeenlands[0]
+    #                    for file in file_list:
+    #                        if(
+    #                            set_code == file[0] and
+    #                            draft.get() == file[1] and
+    #                            user_group.get() == file[2] and
+    #                            start.get() == file[3] and
+    #                            (end.get() == file[4] or end.get() > file[4]) and
+    #                            game_count == file[5]
+    #                        ):
+    #                            notify = True
+    #                            break
+#
+    #                    if notify:
+    #                        current_time_utc = datetime.now(UTC).strftime('%H:%M:%S')
+    #                        message_box = tkinter.messagebox.askyesno(
+    #                                        title="Download",
+    #                                        message="Your dataset is already up-to-date.\n\n"
+    #                                        f"It's currently {current_time_utc} UTC, and 17Lands updates their card data once a day around 03:00:00 UTC.\n\n"
+    #                                        "Would you still like to continue with the download?"
+    #                                    )
+    #                        if not message_box:
+    #                            status.set("Download Cancelled")
+    #                            break
+#
+    #            result, result_string, temp_size = self.extractor.download_card_data(
+    #                popup, progress, status, self.configuration.card_data.database_size)
+#
+    #            if not result:
+    #                break
+#
+    #            if not self.extractor.export_card_data():
+    #                result = False
+    #                result_string = "File Write Failure"
+    #                break
+    #            progress['value'] = 100
+    #            return_size = temp_size
+    #            popup.update()
+    #            status.set("Updating Set List")
+    #            self.__update_set_table(list_box, sets)
+    #            self.__reset_draft(True)
+    #            self.draft.log_suspend(True)
+    #            self.__update_overlay_callback(True)
+    #            self.draft.log_suspend(False)
+    #            status.set("Download Complete")
+    #        except Exception as error:
+    #            result = False
+    #            result_string = error
+#
+    #        break
+#
+    #    if not result:
+    #        status.set("Download Failed")
+    #        popup.update()
+    #        button['state'] = 'normal'
+    #        message_string = f"Download Failed: {result_string}"
+    #        message_box = tkinter.messagebox.showwarning(
+    #            title="Error", message=message_string)
+    #    else:
+    #        button['state'] = 'normal'
+    #        self.configuration.card_data.database_size = return_size
+    #        write_configuration(self.configuration)
+    #    popup.update()
+    #    return
+#
+    #def __update_set_table(self, list_box, sets):
+    #    '''Updates the set list in the Set View table'''
+    #    # Delete the content of the list box
+    #    for row in list_box.get_children():
+    #        list_box.delete(row)
+    #    self.root.update()
+    #    set_codes = [v.seventeenlands[0] for v in sets.values()]
+    #    set_names = sets.keys()
+    #    file_list, error_list = retrieve_local_set_list(set_codes, set_names)
+    #    
+    #    # Log all of errors generated by retrieve_local_set_list
+    #    for error_string in error_list:
+    #        logger.error(error_string)
+#
+    #    if file_list:
+    #        list_box.config(height=min(len(file_list), 10))
+    #    else:
+    #        list_box.config(height=0)
+#
+    #    # Sort list by end date
+    #    file_list.sort(key=lambda x: x[4], reverse=True)
+#
+    #    for count, file in enumerate(file_list):
+    #        row_tag = self._identify_table_row_tag(False, "", count)
+    #        list_box.insert("", index=count, iid=count,
+    #                        values=file, tag=(row_tag,))
 
     def __process_table_click(self, event, table, card_list, selected_color, fields=None):
         '''Creates the card tooltip when a table row is clicked'''

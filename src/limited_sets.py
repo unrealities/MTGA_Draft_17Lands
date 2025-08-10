@@ -18,13 +18,12 @@ DATE_SHIFT_OFFSET_DAYS = -30
 TEMP_LIMITED_SETS = os.path.join("Temp", "temp_set_list.json")
 REPLACE_PHRASE_LATEST = "{LATEST}"
 REPLACE_PHRASE_DATE_SHIFT = "{DATESHIFT}"
-START_DATE_DEFAULT = "2019-01-01"
 
 class SetInfo(BaseModel):
     arena: List[str] = Field(default_factory=list)
     scryfall: List[str] = Field(default_factory=list)
     seventeenlands: List[str] = Field(default_factory=list)
-    start_date: str = START_DATE_DEFAULT
+    start_date: str = constants.START_DATE_DEFAULT
 
 class SpecialEvent(BaseModel):
     label: str = ""
