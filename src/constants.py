@@ -645,3 +645,5 @@ PACK_PARSER_URL = "https://us-central1-mtgalimited.cloudfunctions.net/pack_parse
 
 SCREENSHOT_FOLDER = os.path.join(os.getcwd(), "Screenshots")
 SCREENSHOT_PREFIX = "p1p1_screenshot_"
+
+DRAFT_FOUR_PLAYERS_STRING = "4P"

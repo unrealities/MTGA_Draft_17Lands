@@ -34,6 +34,7 @@ OTJ_P1P2_ENTRY_SKIP = r'[UnityCrossThreadLogger]==> LogBusinessEvents {"id":"972
 
 TEST_SETS = SetDictionary(data={
     "TDM" : SetInfo(seventeenlands=["TDM"]),
+    "FDN" : SetInfo(seventeenlands=["FDN"]),
     "DSK" : SetInfo(seventeenlands=["DSK"]),
     "MH3" : SetInfo(seventeenlands=["MH3"]),
     "OTJ" : SetInfo(seventeenlands=["OTJ"]),
@@ -813,6 +814,90 @@ ARENA_OPEN_TEST_ENTRIES = [
     ),
 ]
 
+FDN_FOUR_PLAYER_PREMIER_DRAFT_ENTRIES = [
+    (
+        "Event Start",
+        EventResults(
+            new_event=True,
+            data_update=False,
+            current_set="FDN",
+            current_event="PremierDraft",
+            current_pack=0,
+            current_pick=0,
+            picks=[],
+            pack=[],
+            card_pool=[],
+            missing=[]
+        ),
+        r'[UnityCrossThreadLogger]==> EventJoin {"id":"c631551d-bc9c-4ee6-8626-c4f8b7c22af2","request":"{\"EventName\":\"FDN_4P_PremierDraft_20250826\",\"EntryCurrencyType\":\"None\",\"EntryCurrencyPaid\":0,\"CustomTokenId\":null,\"EventChoice\":\"\"}"}'
+    ),
+    (
+        "P1P1 - Pack",
+        EventResults(
+            new_event=False,
+            data_update=True,
+            current_set="FDN",
+            current_event="PremierDraft",
+            current_pack=1,
+            current_pick=1,
+            picks=[],
+            pack=["93866","95200","93882","93728","93816","93800","93964","93890","93750","93912","93860","93944","93794","93934"],
+            card_pool=[],
+            missing=[],
+        ),
+        # Line 333
+        r'[UnityCrossThreadLogger]==> LogBusinessEvents {"id":"ea9b1523-469c-4f40-9e8c-ac19639c7d8d","request":"{\"PlayerId\":null,\"ClientPlatform\":null,\"DraftId\":\"1fc0d7d8-10f1-4cad-b04f-c931c9a36bf7\",\"EventId\":\"FDN_4P_PremierDraft_20250826\",\"SeatNumber\":1,\"PackNumber\":1,\"PickNumber\":1,\"PickGrpId\":93794,\"CardsInPack\":[93866,95200,93882,93728,93816,93800,93964,93890,93750,93912,93860,93944,93794,93934],\"AutoPick\":false,\"TimeRemainingOnPick\":35.0096779,\"EventType\":24,\"EventTime\":\"2025-08-26T21:35:07.5846862Z\"}"}'
+    ),
+    (
+        "P1P1 - Pick",
+        EventResults(
+            new_event=False,
+            data_update=True,
+            current_set="FDN",
+            current_event="PremierDraft",
+            current_pack=1,
+            current_pick=1,
+            picks=["93794","93934"],
+            pack=["93866","95200","93882","93728","93816","93800","93964","93890","93750","93912","93860","93944","93794","93934"],
+            card_pool=["93794","93934"],
+            missing=[]
+        ),
+        r'[UnityCrossThreadLogger]==> EventPlayerDraftMakePick {"id":"5ea9f162-4a3b-4bf4-a6fb-bceb22fc6fcf","request":"{\"DraftId\":\"1fc0d7d8-10f1-4cad-b04f-c931c9a36bf7\",\"GrpIds\":[93794,93934],\"Pack\":1,\"Pick\":1}"}'
+    ),
+    (
+        "P1P5 - Pack",
+        EventResults(
+            new_event=False,
+            data_update=True,
+            current_set="FDN",
+            current_event="PremierDraft",
+            current_pack=1,
+            current_pick=5,
+            picks=["93794","93934"],
+            pack=["93866","95200","93964","93890","93750","93912"],
+            card_pool=["93794","93934"],
+            missing=["93882","93728","93816","93800","93860","93944","93794","93934"]
+        ),
+        r'[UnityCrossThreadLogger]Draft.Notify {"draftId":"1fc0d7d8-10f1-4cad-b04f-c931c9a36bf7","SelfPick":5,"SelfPack":1,"PackCards":"93866,95200,93964,93890,93750,93912"}'
+    ),
+    (
+        "P1P5 - Pick",
+        EventResults(
+            new_event=False,
+            data_update=True,
+            current_set="FDN",
+            current_event="PremierDraft",
+            current_pack=1,
+            current_pick=5,
+            picks=["93794","93934","93912","93964"],
+            pack=["93866","95200","93964","93890","93750","93912"],
+            card_pool=["93794","93934","93912","93964"],
+            missing=["93882","93728","93816","93800","93860","93944","93794","93934"]
+        ),
+        r'[UnityCrossThreadLogger]==> EventPlayerDraftMakePick {"id":"527f3853-33bf-4b0d-a85c-b1c3d06b3365","request":"{\"DraftId\":\"1fc0d7d8-10f1-4cad-b04f-c931c9a36bf7\",\"GrpIds\":[93912,93964],\"Pack\":1,\"Pick\":5}"}'
+    ),
+]
+
 @pytest.fixture(name="session_scanner",scope="session")
 def fixture_session_scanner():
     scanner = ArenaScanner(TEST_LOG_FILE_LOCATION, TEST_SETS, sets_location = TEST_LOG_DIRECTORY, retrieve_unknown = True)
@@ -974,6 +1059,17 @@ def test_dsk_sealed(session_scanner, entry_label, expected, entry_string):
         patch("src.log_scanner.capture_screen_base64str")
     ):
         event_test_cases(session_scanner, "New DSK Sealed", entry_label, expected, entry_string, mock_ocr)
+
+@pytest.mark.parametrize("entry_label, expected, entry_string", FDN_FOUR_PLAYER_PREMIER_DRAFT_ENTRIES)
+def test_fnd_four_player_premier(session_scanner, entry_label, expected, entry_string):
+    """
+    Verify that the FDN 4-Player Premier Draft entries can be processed
+    """
+    with (
+        patch("src.log_scanner.OCR.get_pack") as mock_ocr,
+        patch("src.log_scanner.capture_screen_base64str")
+    ):
+        event_test_cases(session_scanner, "4-Player FDN Premier Draft ", entry_label, expected, entry_string, mock_ocr)
 
 @patch("src.log_scanner.OCR.get_pack")
 @patch("src.log_scanner.capture_screen_base64str")

@@ -54,11 +54,12 @@ class ArenaScanner:
         self.draft_sets = []
         self.current_pick = 0
         self.current_pack = 0
-        self.picked_cards = [[] for i in range(8)]
+        self.number_of_players = 8
+        self.picked_cards = [[] for i in range(self.number_of_players)]
         self.taken_cards = []
         self.sideboard = []
-        self.pack_cards = [[]] * 8
-        self.initial_pack = [[]] * 8
+        self.pack_cards = [[]] * self.number_of_players
+        self.initial_pack = [[]] * self.number_of_players
         self.previous_picked_pack = 0
         self.current_picked_pick = 0
         self.file_size = 0
@@ -111,11 +112,12 @@ class ArenaScanner:
         self.pack_offset = 0
         self.draft_sets = None
         self.current_pick = 0
-        self.picked_cards = [[] for i in range(8)]
+        self.number_of_players = 8
+        self.picked_cards = [[] for i in range(self.number_of_players)]
         self.taken_cards = []
         self.sideboard = []
-        self.pack_cards = [[]] * 8
-        self.initial_pack = [[]] * 8
+        self.pack_cards = [[]] * self.number_of_players
+        self.initial_pack = [[]] * self.number_of_players
         self.current_pack = 0
         self.previous_picked_pack = 0
         self.current_picked_pick = 0
@@ -174,9 +176,9 @@ class ArenaScanner:
             draft_id = json_find("id", event_data)
             event_name = json_find("EventName", event_data)
             logger.info("Event found %s", event_name)
-            event_match, event_type, event_label, event_set = self.__check_special_event(event_name)
+            event_match, event_type, event_label, event_set, number_of_players = self.__check_special_event(event_name)
             if not event_match:
-                event_match, event_type, event_label, event_set = self.__check_standard_event(event_name)
+                event_match, event_type, event_label, event_set, number_of_players = self.__check_standard_event(event_name)
                 
             if event_match:
                 self.clear_draft(False)
@@ -184,6 +186,7 @@ class ArenaScanner:
                 self.draft_sets = event_set
                 self.draft_label = event_label
                 self.event_string = event_name
+                self.number_of_players = number_of_players
                 update = True
 
         except Exception as error:
@@ -197,7 +200,8 @@ class ArenaScanner:
         event_type = ""
         event_label = ""
         event_set = ""
-        
+        number_of_players = 8
+
         for event in self.set_list.special_events:
             if (
                 event.type in constants.LIMITED_TYPES_DICT and
@@ -207,10 +211,11 @@ class ArenaScanner:
                 # Truncate the string to prevent the label from increasing the width of the main window when displayed
                 event_label = event.label[:12]
                 event_set = [event.set_code]
+                number_of_players = 4 if constants.DRAFT_FOUR_PLAYERS_STRING in event_name else 8
                 event_match = True
                 break
                 
-        return event_match, event_type, event_label, event_set
+        return event_match, event_type, event_label, event_set, number_of_players
         
     def __check_standard_event(self, event_name):
         ''''''
@@ -218,7 +223,7 @@ class ArenaScanner:
         event_type = ""
         event_label = ""
         event_set = ""
-        
+        number_of_players = 8
         event_sections = event_name.split('_')
         
         # Find event type in event string
@@ -244,8 +249,10 @@ class ArenaScanner:
                 event_type = events[0]
             event_label = event_type
             event_match = True
+            if constants.DRAFT_FOUR_PLAYERS_STRING in event_name:
+                number_of_players = 4
             
-        return event_match, event_type, event_label, event_set
+        return event_match, event_type, event_label, event_set, number_of_players
                 
 
     def draft_data_search(self, use_ocr, save_screenshot):
@@ -362,10 +369,10 @@ class ArenaScanner:
                             if pack != 1 or pick != 1:
                                 break
 
-                            pack_index = (pick - 1) % 8
+                            pack_index = (pick - 1) % self.number_of_players
 
                             if self.current_pack != pack:
-                                self.initial_pack = [[]] * 8
+                                self.initial_pack = [[]] * self.number_of_players
 
                             if len(self.initial_pack[pack_index]) == 0:
                                 self.initial_pack[pack_index] = pack_cards
@@ -416,17 +423,17 @@ class ArenaScanner:
                             pack = int(json_find("Pack", draft_data))
                             pick = int(json_find("Pick", draft_data))
                             if "GrpIds" in entry_string:
-                                card = json_find("GrpIds", draft_data)[0]
+                                cards = json_find("GrpIds", draft_data)
                             else:
-                                card = str(json_find("GrpId", draft_data))
+                                cards = [str(json_find("GrpId", draft_data))]
 
-                            pack_index = (pick - 1) % 8
+                            pack_index = (pick - 1) % self.number_of_players
 
                             if self.previous_picked_pack != pack:
-                                self.picked_cards = [[] for i in range(8)]
+                                self.picked_cards = [[] for i in range(self.number_of_players)]
 
-                            self.picked_cards[pack_index].append(card)
-                            self.taken_cards.append(card)
+                            self.picked_cards[pack_index].extend(cards)
+                            self.taken_cards.extend(cards)
 
                             self.previous_picked_pack = pack
                             self.current_picked_pick = pick
@@ -476,10 +483,10 @@ class ArenaScanner:
                             pack = json_find("SelfPack", draft_data)
                             pick = json_find("SelfPick", draft_data)
 
-                            pack_index = (pick - 1) % 8
+                            pack_index = (pick - 1) % self.number_of_players
 
                             if self.current_pack != pack:
-                                self.initial_pack = [[]] * 8
+                                self.initial_pack = [[]] * self.number_of_players
 
                             if len(self.initial_pack[pack_index]) == 0:
                                 self.initial_pack[pack_index] = pack_cards
@@ -536,10 +543,10 @@ class ArenaScanner:
                             pack = draft_data["SelfPack"]
                             pick = draft_data["SelfPick"]
 
-                            pack_index = (pick - 1) % 8
+                            pack_index = (pick - 1) % self.number_of_players
 
                             if self.current_pack != pack:
-                                self.initial_pack = [[]] * 8
+                                self.initial_pack = [[]] * self.number_of_players
 
                             if len(self.initial_pack[pack_index]) == 0:
                                 self.initial_pack[pack_index] = pack_cards
@@ -591,15 +598,19 @@ class ArenaScanner:
 
                             pack = int(param_data["packNumber"])
                             pick = int(param_data["pickNumber"])
-                            card = param_data["cardId"]
 
-                            pack_index = (pick - 1) % 8
+                            if "cardIds" in param_data:
+                                cards = param_data["cardIds"]
+                            else:
+                                cards = [param_data["cardId"]]
+
+                            pack_index = (pick - 1) % self.number_of_players
 
                             if self.previous_picked_pack != pack:
-                                self.picked_cards = [[] for i in range(8)]
+                                self.picked_cards = [[] for i in range(self.number_of_players)]
 
-                            self.picked_cards[pack_index].append(card)
-                            self.taken_cards.append(card)
+                            self.picked_cards[pack_index].extend(cards)
+                            self.taken_cards.extend(cards)
 
                             self.previous_picked_pack = pack
                             self.current_picked_pick = pick
@@ -654,10 +665,10 @@ class ArenaScanner:
                                 pack = int(json_find("PackNumber", draft_data)) + 1
                                 pick = int(json_find("PickNumber", draft_data)) + 1
                                 
-                                pack_index = (pick - 1) % 8
+                                pack_index = (pick - 1) % self.number_of_players
 
                                 if self.current_pack != pack:
-                                    self.initial_pack = [[]] * 8
+                                    self.initial_pack = [[]] * self.number_of_players
 
                                 if len(self.initial_pack[pack_index]) == 0:
                                     self.initial_pack[pack_index] = pack_cards
@@ -713,20 +724,20 @@ class ArenaScanner:
                             pack = int(json_find("PackNumber", draft_data)) + 1
                             pick = int(json_find("PickNumber", draft_data)) + 1
                             if "CardIds" in entry_string:
-                                card = json_find("CardIds", draft_data)[0]
+                                cards = json_find("CardIds", draft_data)
                             else:
-                                card = str(json_find("CardId", draft_data))
+                                cards = [str(json_find("CardId", draft_data))]
 
-                            pack_index = (pick - 1) % 8
+                            pack_index = (pick - 1) % self.number_of_players
 
                             if self.previous_picked_pack != pack:
-                                self.picked_cards = [[] for i in range(8)]
+                                self.picked_cards = [[] for i in range(self.number_of_players)]
 
                             self.previous_picked_pack = pack
                             self.current_picked_pick = pick
 
-                            self.picked_cards[pack_index].append(card)
-                            self.taken_cards.append(card)
+                            self.picked_cards[pack_index].extend(cards)
+                            self.taken_cards.extend(cards)
 
                             if self.step_through:
                                 break
@@ -777,10 +788,10 @@ class ArenaScanner:
                             if pack != 1 or pick != 1:
                                 break
 
-                            pack_index = (pick - 1) % 8
+                            pack_index = (pick - 1) % self.number_of_players
 
                             if self.current_pack != pack:
-                                self.initial_pack = [[]] * 8
+                                self.initial_pack = [[]] * self.number_of_players
 
                             if len(self.initial_pack[pack_index]) == 0:
                                 self.initial_pack[pack_index] = pack_cards
@@ -833,17 +844,17 @@ class ArenaScanner:
                             pack = int(json_find("Pack", draft_data))
                             pick = int(json_find("Pick", draft_data))
                             if "GrpIds" in entry_string:
-                                card = json_find("GrpIds", draft_data)[0]
+                                cards = json_find("GrpIds", draft_data)
                             else:
-                                card = str(json_find("GrpId", draft_data))
+                                cards = [str(json_find("GrpId", draft_data))]
 
-                            pack_index = (pick - 1) % 8
+                            pack_index = (pick - 1) % self.number_of_players
 
                             if self.previous_picked_pack != pack:
-                                self.picked_cards = [[] for i in range(8)]
+                                self.picked_cards = [[] for i in range(self.number_of_players)]
 
-                            self.picked_cards[pack_index].append(card)
-                            self.taken_cards.append(card)
+                            self.picked_cards[pack_index].extend(cards)
+                            self.taken_cards.extend(cards)
 
                             self.previous_picked_pack = pack
                             self.current_picked_pick = pick
@@ -893,10 +904,10 @@ class ArenaScanner:
                             pack = json_find("SelfPack", draft_data)
                             pick = json_find("SelfPick", draft_data)
 
-                            pack_index = (pick - 1) % 8
+                            pack_index = (pick - 1) % self.number_of_players
 
                             if self.current_pack != pack:
-                                self.initial_pack = [[]] * 8
+                                self.initial_pack = [[]] * self.number_of_players
 
                             if len(self.initial_pack[pack_index]) == 0:
                                 self.initial_pack[pack_index] = pack_cards
@@ -1059,7 +1070,7 @@ class ArenaScanner:
         '''Return the card data for the card that was picked from the current pack'''
         picked_cards = []
 
-        pack_index = max(self.current_pick - 1, 0) % 8
+        pack_index = max(self.current_pick - 1, 0) % self.number_of_players
 
         if pack_index < len(self.picked_cards):
             picked_cards = self.set_data.get_data_by_id(self.picked_cards[pack_index])
@@ -1071,7 +1082,7 @@ class ArenaScanner:
         missing_cards = []
 
         try:
-            pack_index = max(self.current_pick - 1, 0) % 8
+            pack_index = max(self.current_pick - 1, 0) % self.number_of_players
 
             if pack_index < len(self.pack_cards):
                 # Retrieve the cards from the current pack
@@ -1094,7 +1105,7 @@ class ArenaScanner:
         '''Return the cards from the current pack'''
         pack_cards = []
 
-        pack_index = max(self.current_pick - 1, 0) % 8
+        pack_index = max(self.current_pick - 1, 0) % self.number_of_players
 
         if pack_index < len(self.pack_cards):
             pack_cards = self.set_data.get_data_by_id(self.pack_cards[pack_index])
