@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Tuple
 import requests
 from src.logger import create_logger
 from src.constants import (
@@ -11,7 +11,8 @@ from src.constants import (
     FILTER_OPTION_ALL_DECKS,
     DATA_FIELD_IWD,
     DATA_FIELD_ATA,
-    DATA_FIELD_ALSA
+    DATA_FIELD_ALSA,
+    DATA_SECTION_RATINGS
 )
 
 URL_17LANDS = "https://www.17lands.com"
@@ -24,28 +25,6 @@ REQUEST_TIMEOUT = 30
 COLOR_WIN_RATE_GAME_COUNT_THRESHOLD = 5000
 
 logger = create_logger()
-
-@dataclass
-class CardRating:
-    deck_colors: Dict[str, Dict[str, float]] = field(default_factory=dict)
-    images: List[str] = field(default_factory=list)
-    ratings: List[Dict[str, Any]] = field(default_factory=list)
-
-@dataclass
-class ColorRating:
-    color: str
-    winrate: float
-    games: int
-
-@dataclass
-class ColorRatings:
-    game_count: int = 0
-    colors: List[ColorRating] = field(default_factory=list)
-
-@dataclass
-class SetInfo:
-    code: str
-    start_date: str
 
 class Seventeenlands():
     def _build_card_ratings_url(self, set_code, draft, start_date, end_date, user_group, color):
@@ -66,8 +45,8 @@ class Seventeenlands():
         start_date: str,
         end_date: str,
         user_group: str,
-        card_data: Dict[str: CardRating]
-    ) -> Dict[str: CardRating]:
+        card_data: Dict
+    ):
         """
         Fetch card ratings from 17Lands with retry, progress, and UI update logic.
         """
@@ -76,11 +55,10 @@ class Seventeenlands():
             response = requests.get(url, timeout=REQUEST_TIMEOUT)
             response.raise_for_status()
             set_json_data = response.json()
-            return self._process_card_ratings(colors, set_json_data, card_data)
+            self._process_card_ratings(colors, set_json_data, card_data)
         except Exception as error:
             logger.error(url)
             logger.error(error)
-            return card_data
 
     def download_color_ratings(
         self,
@@ -90,7 +68,7 @@ class Seventeenlands():
         end_date: str,
         user_group: str,
         color_filter: List = None
-    ) -> ColorRatings:
+    ):
         color_filter = color_filter or COLOR_FILTER
         url = self._build_color_ratings_url(set_code, draft, start_date, end_date, user_group)
         try:
@@ -101,19 +79,19 @@ class Seventeenlands():
         except Exception as error:
             logger.error(url)
             logger.error(error)
-            return ColorRatings(game_count=0, colors=[])
+            return ({}, 0)
 
     def _process_card_ratings(
         self,
         color: str,
         cards: Dict[str, Any],
-        card_data: Dict[str: CardRating]
-    ) -> Dict[str: CardRating]:
+        card_data: Dict
+    ) -> Dict:
         for card in cards:
             try:
                 name = card.get(DATA_FIELD_NAME, "")
                 if name not in card_data:
-                    card_data[name] = CardRating()
+                    card_data[name] = {DATA_SECTION_RATINGS: [], DATA_SECTION_IMAGES: []}
                 # Images
                 for data_field in DATA_FIELD_17LANDS_DICT[DATA_SECTION_IMAGES]:
                     if data_field in card and card[data_field]:
@@ -122,8 +100,8 @@ class Seventeenlands():
                             if card[data_field].startswith(IMAGE_17LANDS_SITE_PREFIX)
                             else card[data_field]
                         )
-                        if image_url not in card_data[name].images:
-                            card_data[name].images.append(image_url)
+                        if image_url not in card_data[name][DATA_SECTION_IMAGES]:
+                            card_data[name][DATA_SECTION_IMAGES].append(image_url)
                 # Ratings
                 color_data = {color: {}}
                 for key, value in DATA_FIELD_17LANDS_DICT.items():
@@ -136,7 +114,7 @@ class Seventeenlands():
                             color_data[color][key] = round(float(card[value] or 0.0), 2)
                         else:
                             color_data[color][key] = int(card[value] or 0)
-                card_data[name].ratings.append(color_data)
+                card_data[name][DATA_SECTION_RATINGS].append(color_data)
             except Exception as error:
                 logger.error(error)
         return card_data
@@ -149,8 +127,13 @@ class Seventeenlands():
             f"{user_group_param}&combine_splash=true"
         )
 
-    def _process_color_ratings(self, colors: dict, color_filter: list) -> ColorRatings:
-        color_ratings = ColorRatings()
+    def _process_color_ratings(
+        self,
+        colors: dict,
+        color_filter: list
+    ):
+        color_ratings = {}
+        game_count = 0
         for color in colors:
             try:
                 if not color["is_summary"] and color["games"] > COLOR_WIN_RATE_GAME_COUNT_THRESHOLD:
@@ -158,13 +141,9 @@ class Seventeenlands():
                     winrate = round((float(color["wins"]) / color["games"]) * 100, 1)
                     if color_filter and color_name not in color_filter:
                         continue
-                    color_ratings.colors.append(ColorRating(color=color_name, winrate=winrate, games=color["games"]))
+                    color_ratings[color_name] = winrate
                 elif color["is_summary"] and color["color_name"] == "All Decks":
-                    color_ratings.game_count = color.get("games", 0)
+                    game_count = color.get("games", 0)
             except Exception as error:
                 logger.error(error)
-        return color_ratings
-    
-    
-Seventeenlands().download_card_ratings("eoe", "All Decks", "PremierDraft", self.start_date, self.end_date, "All", card_ratings)
-print(test)
+        return (color_ratings, game_count)

@@ -1,5 +1,6 @@
 import tkinter
 import tkinter.messagebox
+from dataclasses import dataclass
 from tkinter.ttk import Label, Button, OptionMenu, Progressbar, Separator
 from datetime import date, datetime, UTC
 from src.scaled_window import ScaledWindow, identify_safe_coordinates
@@ -8,7 +9,7 @@ from src.logger import create_logger
 from src.utils import retrieve_local_set_list
 from src.file_extractor import FileExtractor
 from src.configuration import write_configuration
-from dataclasses import dataclass
+
 
 logger = create_logger()
 
@@ -24,7 +25,20 @@ class DownloadArgs:
     list_box: tkinter.Widget
     sets: dict
     status: tkinter.StringVar
-    version: str
+    game_count: int = 0
+    version: str = DATA_SET_VERSION_3
+    color_ratings: dict = None
+    enable_rate_limit: bool = True
+
+@dataclass
+class DatasetArgs:
+    draft_set: str
+    draft: str
+    start: str
+    end: str
+    user_group: str
+    game_count: int
+    color_ratings: dict = None
 
 class DownloadDatasetWindow(ScaledWindow):
     """Tkinter window for downloading and managing datasets."""
@@ -39,7 +53,7 @@ class DownloadDatasetWindow(ScaledWindow):
             configuration,
             add_set_callback=None,
             update_set_table_callback=None,
-            download_args=None
+            dataset_args=None
         ):
         if DownloadDatasetWindow._instance_open:
             return
@@ -51,10 +65,9 @@ class DownloadDatasetWindow(ScaledWindow):
         self.fonts_dict = fonts_dict
         self.add_set_callback = add_set_callback
         self.update_set_table_callback = update_set_table_callback
-        self.download_args = download_args
+        self.dataset_args = dataset_args
         self._auto_add_set_ran = False  # Track if auto add_set has run
         self.configuration = configuration
-        self.last_download = 0
         self.__enter()
 
     def __enter(self):
@@ -165,22 +178,22 @@ class DownloadDatasetWindow(ScaledWindow):
                 "status_text": status_text,
                 "sets": sets,
             }
-
+        
             add_button = Button(
                 self.window,
                 command=lambda: self.__add_set(
                     DownloadArgs(
-                        draft_set=set_value,
-                        draft=event_value,
-                        start=start_entry,
-                        end=end_entry,
-                        user_group=group_value,
                         button=add_button,
                         progress=progress,
                         list_box=self.list_box,
                         sets=sets,
                         status=status_text,
-                        version=DATA_SET_VERSION_3
+                        draft_set=set_value,
+                        draft=event_value,
+                        start=start_entry,
+                        end=end_entry,
+                        user_group=group_value,
+                        game_count = 0,
                     )
                 ),
                 text="DOWNLOAD"
@@ -218,11 +231,29 @@ class DownloadDatasetWindow(ScaledWindow):
             self.window.update()
 
             # If download_args was provided, populate widgets and auto-run __add_set once
-            if self.download_args and not self._auto_add_set_ran:
-                self._populate_widgets_from_args(self.download_args)
+            if self.dataset_args and not self._auto_add_set_ran:
+                set_string = [k for k, v in sets.items() if v.seventeenlands[0] == self.dataset_args.draft_set]
+                if set_string:
+                    self.dataset_args.draft_set = set_string[0]
+                self._populate_widgets_from_args(self.dataset_args)
                 self.window.update()
                 self._auto_add_set_ran = True
-                self.__add_set(self.download_args)
+                self.__add_set(
+                    DownloadArgs(
+                        button=add_button,
+                        progress=progress,
+                        list_box=self.list_box,
+                        sets=sets,
+                        status=status_text,
+                        draft_set=set_value,
+                        draft=event_value,
+                        start=start_entry,
+                        end=end_entry,
+                        user_group=group_value,
+                        game_count = self.dataset_args.game_count,
+                        color_ratings = self.dataset_args.color_ratings,
+                    )
+                )
 
         except Exception as error:
             logger.error(error)
@@ -231,13 +262,13 @@ class DownloadDatasetWindow(ScaledWindow):
         """Populate the widgets with values from DownloadArgs."""
         refs = self._widget_refs
         try:
-            refs["set_value"].set(args.draft_set.get() if hasattr(args.draft_set, "get") else args.draft_set)
-            refs["event_value"].set(args.draft.get() if hasattr(args.draft, "get") else args.draft)
+            refs["set_value"].set(args.draft_set)
+            refs["event_value"].set(args.draft)
             refs["start_entry"].delete(0, tkinter.END)
-            refs["start_entry"].insert(0, args.start.get() if hasattr(args.start, "get") else args.start)
+            refs["start_entry"].insert(0, args.start)
             refs["end_entry"].delete(0, tkinter.END)
-            refs["end_entry"].insert(0, args.end.get() if hasattr(args.end, "get") else args.end)
-            refs["group_value"].set(args.user_group.get() if hasattr(args.user_group, "get") else args.user_group)
+            refs["end_entry"].insert(0, args.end)
+            refs["group_value"].set(args.user_group)
         except Exception as error:
             logger.error(f"Failed to populate widgets from DownloadArgs: {error}")
 
@@ -257,57 +288,66 @@ class DownloadDatasetWindow(ScaledWindow):
         except Exception as error:
             logger.error(error)
 
-    def __add_set(self, args: DownloadArgs):
+    def __add_set(self, download_args: DownloadArgs):
         """Initiates the set download process when the Download Dataset button is clicked."""
-        args = self.download_args or args
-        extractor = FileExtractor(self.configuration.settings.database_location)
+        extractor = FileExtractor(self.configuration.settings.database_location, download_args.progress, download_args.status, self.window)
         current_time = datetime.now().timestamp()
 
         try:
-            if not self._rate_limit_check(current_time, args):
-                return
+            if download_args.enable_rate_limit:
+                if not self._rate_limit_check(current_time, download_args):
+                    return
 
-            self._setup_extractor(extractor, args)
-            self.last_download = current_time
+            self._setup_extractor(extractor, download_args)
+            self.configuration.card_data.last_check = current_time
+            write_configuration(self.configuration)
 
-            set_codes = [v.seventeenlands[0] for v in args.sets.values()]
+            set_codes = [v.seventeenlands[0] for v in download_args.sets.values()]
             file_list, error_list = retrieve_local_set_list(set_codes)
             for error_string in error_list:
                 logger.error(error_string)
 
-            args.status.set("Downloading Color Ratings")
+            download_args.status.set("Downloading Color Ratings")
             self.window.update()
-            download_success, game_count = extractor.retrieve_17lands_color_ratings()
+            if not download_args.color_ratings:
+                download_success, game_count = extractor.retrieve_17lands_color_ratings()
+            else:
+                game_count = download_args.game_count
+                extractor.set_game_count(game_count)
+                extractor.set_color_ratings(download_args.color_ratings)
+                download_success = True
 
-            if not self._handle_game_count_and_notify(download_success, game_count, file_list, args):
+            if not self._handle_game_count_and_notify(download_success, game_count, file_list, download_args):
+                download_args.button['state'] = 'normal'
+                self.window.update()
                 return
 
-            download_success, result_string, temp_size = extractor.download_card_data(
-                self.window, args.progress, args.status, self.configuration.card_data.database_size
-            )
+            download_success, result_string, temp_size = extractor.download_card_data(self.configuration.card_data.database_size)
             if not download_success:
-                self._handle_failure(args, result_string)
+                self._handle_failure(download_args, result_string)
                 return
 
-            if not extractor.export_card_data():
-                self._handle_failure(args, "File Write Failure")
+            dataset_name = extractor.export_card_data()
+            if not dataset_name:
+                self._handle_failure(download_args, "File Write Failure")
                 return
 
-            args.progress['value'] = 100
+            download_args.progress['value'] = 100
             self.window.update()
-            args.status.set("Updating Set List")
-            self.__update_set_table(args.list_box, args.sets)
-            args.status.set("Download Complete")
-            args.button['state'] = 'normal'
+            download_args.status.set("Updating Set List")
+            self.__update_set_table(download_args.list_box, download_args.sets)
+            download_args.status.set("Download Complete")
+            download_args.button['state'] = 'normal'
             self.configuration.card_data.database_size = temp_size
+            self.configuration.card_data.latest_dataset = dataset_name
             write_configuration(self.configuration)
             self.window.update()
 
         except Exception as error:
-            self._handle_failure(args, error)
+            self._handle_failure(download_args, error)
 
     def _rate_limit_check(self, current_time, args):
-        time_difference = current_time - self.last_download
+        time_difference = current_time - self.configuration.card_data.last_check
         if time_difference < DATASET_DOWNLOAD_RATE_LIMIT_SEC:
             tkinter.messagebox.showinfo(
                 title="Download",
@@ -321,43 +361,43 @@ class DownloadDatasetWindow(ScaledWindow):
         )
         return confirm
 
-    def _setup_extractor(self, extractor, args):
-        args.status.set("Starting Download Process")
+    def _setup_extractor(self, extractor, download_args):
+        download_args.status.set("Starting Download Process")
         extractor.clear_data()
-        args.button['state'] = 'disabled'
-        args.progress['value'] = 0
+        download_args.button['state'] = 'disabled'
+        download_args.progress['value'] = 0
         self.window.update()
-        extractor.select_sets(args.sets[args.draft_set.get()])
-        extractor.set_draft_type(args.draft.get())
-        if not extractor.set_start_date(args.start.get()):
+        extractor.select_sets(download_args.sets[download_args.draft_set.get()])
+        extractor.set_draft_type(download_args.draft.get())
+        if not extractor.set_start_date(download_args.start.get()):
             raise ValueError("Invalid Start Date (YYYY-MM-DD)")
-        if not extractor.set_end_date(args.end.get()):
+        if not extractor.set_end_date(download_args.end.get()):
             raise ValueError("Invalid End Date (YYYY-MM-DD)")
-        extractor.set_user_group(args.user_group.get())
-        extractor.set_version(args.version)
+        extractor.set_user_group(download_args.user_group.get())
+        extractor.set_version(download_args.version)
 
-    def _handle_game_count_and_notify(self, download_success, game_count, file_list, args):
+    def _handle_game_count_and_notify(self, download_success, game_count, file_list, download_args):
         if download_success and file_list:
             if game_count == 0:
                 message_box = tkinter.messagebox.askyesno(
                     title="Download",
-                    message=f"17Lands doesn't currently have card statistics for {args.draft_set.get()} {args.draft.get()} {args.start.get()} to {args.end.get()}.\n\n"
+                    message=f"17Lands doesn't currently have card statistics for {download_args.draft_set.get()} {download_args.draft.get()} {download_args.start.get()} to {download_args.end.get()}.\n\n"
                             "If you plan to use a tier list, you will still need to download this dataset so this application can read the Arena log.\n\n"
                             "Would you like to continue with the download?"
                 )
                 if not message_box:
-                    args.status.set("Download Cancelled")
+                    download_args.status.set("Download Cancelled")
                     return False
             else:
                 notify = False
-                set_code = args.sets[args.draft_set.get()].seventeenlands[0]
+                set_code = download_args.sets[download_args.draft_set.get()].seventeenlands[0]
                 for file in file_list:
                     if (
                         set_code == file[0] and
-                        args.draft.get() == file[1] and
-                        args.user_group.get() == file[2] and
-                        args.start.get() == file[3] and
-                        (args.end.get() == file[4] or args.end.get() > file[4]) and
+                        download_args.draft.get() == file[1] and
+                        download_args.user_group.get() == file[2] and
+                        download_args.start.get() == file[3] and
+                        (download_args.end.get() == file[4] or download_args.end.get() > file[4]) and
                         game_count == file[5]
                     ):
                         notify = True
@@ -371,7 +411,7 @@ class DownloadDatasetWindow(ScaledWindow):
                                 "Would you still like to continue with the download?"
                     )
                     if not message_box:
-                        args.status.set("Download Cancelled")
+                        download_args.status.set("Download Cancelled")
                         return False
         return True
 

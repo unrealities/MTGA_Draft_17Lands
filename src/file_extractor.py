@@ -184,8 +184,8 @@ def check_date(date):
 class FileExtractor(UIProgress):
     '''Class that handles the creation of set files and the retrieval of platform information'''
 
-    def __init__(self, directory):
-        super().__init__()  # Initialize UIProgress
+    def __init__(self, directory, progress, status, ui):
+        super().__init__(progress, status, ui)  # Initialize UIProgress
         self.selected_sets = []
         self.set_list = []
         self.draft = ""
@@ -245,6 +245,14 @@ class FileExtractor(UIProgress):
         '''Sets the version in a set file'''
         self.combined_data["meta"]["version"] = version
 
+    def set_game_count(self, game_count):
+        '''Sets the game count in a dataset'''
+        self.combined_data["meta"]["game_count"] = game_count
+
+    def set_color_ratings(self, color_ratings):
+        '''Sets the color ratings in a dataset'''
+        self.combined_data["color_ratings"] = color_ratings
+
     def download_card_data(self, database_size):
         '''Wrapper function for starting the set file download/creation process'''
         result = False
@@ -273,17 +281,10 @@ class FileExtractor(UIProgress):
         try:
             while True:
                 #progress_bar['value'] = 5
-                self._update_progress(5, False)
-
+                self._update_progress(5, True)
                 result, result_string, temp_size = self._retrieve_local_arena_data(database_size)
-
-                if not result:
-                    result, result_string = self._retrieve_scryfall_data()
-                    if not result:
-                        break
-
                 #progress_bar['value'] = 10
-                self._update_progress(10, False)
+                self._update_progress(10, True)
                 #status.set("Collecting 17Lands Data")
                 self._update_status("Collecting 17Lands Data")
 
@@ -653,6 +654,7 @@ class FileExtractor(UIProgress):
         self.card_ratings = {}
         current_progress = 0
         result = False
+        seventeenlands = Seventeenlands()
         for set_code in sets:
             for color in deck_colors:
                 retry = constants.CARD_RATINGS_ATTEMPT_MAX
@@ -660,7 +662,7 @@ class FileExtractor(UIProgress):
                 while retry:
                     try:
                         self._update_status(f"Collecting {color} 17Lands Data")
-                        Seventeenlands().download_card_ratings(set_code, color, self.draft, self.start_date, self.end_date, self.user_group, self.card_ratings)
+                        seventeenlands.download_card_ratings(set_code, color, self.draft, self.start_date, self.end_date, self.user_group, self.card_ratings)
                         result = True
                         break
                     except Exception as error:
@@ -673,9 +675,7 @@ class FileExtractor(UIProgress):
                             time.sleep(constants.CARD_RATINGS_BACKOFF_DELAY_SECONDS)
 
                 if result:
-                    current_progress += (3 / len(self.selected_sets.seventeenlands))
-                    #progress['value'] = current_progress + initial_progress
-                    #root.update()
+                    current_progress = (3 / len(self.selected_sets.seventeenlands))
                     self._update_progress(current_progress, True)
                 else:
                     break
@@ -691,7 +691,29 @@ class FileExtractor(UIProgress):
                 self.combined_data["card_ratings"][card] = card_data
             elif not matching_only:
                 self.combined_data["card_ratings"][card] = card_data
-
+                
+    def retrieve_17lands_color_ratings(self):
+        '''Use 17Lands endpoint to collect the data from the color_ratings page'''
+        result = True
+        game_count = 0
+        seventeenlands = Seventeenlands()
+        try:
+            #if self.user_group == constants.LIMITED_USER_GROUP_ALL:
+            #    user_group = ""
+            #else:
+            #    user_group = "&user_group=" + self.user_group.lower()
+            #url = f"https://www.17lands.com/color_ratings/data?expansion={self.selected_sets.seventeenlands[0]}&event_type={self.draft}&start_date={self.start_date}&end_date={self.end_date}{user_group}&combine_splash=true"
+            #url_data = urllib.request.urlopen(url, context=self.context).read()
+#
+            #color_json_data = json.loads(url_data)
+            #game_count = self._process_17lands_color_ratings(color_json_data)
+            self.combined_data["color_ratings"], game_count = seventeenlands.download_color_ratings(self.selected_sets.seventeenlands[0], self.draft, self.start_date, self.end_date, self.user_group)
+            self.set_game_count(game_count)
+        except Exception as error:
+            result = False
+            #logger.error(url)
+            logger.error(error)
+        return result, game_count
     #def retrieve_17lands_color_ratings(self):
     #    '''Use 17Lands endpoint to collect the data from the color_ratings page'''
     #    result = True
@@ -884,7 +906,6 @@ class FileExtractor(UIProgress):
 
     def export_card_data(self):
         '''Build the file for the set data'''
-        result = True
         try:
             output_file = "_".join(
                 (self.selected_sets.seventeenlands[0], self.draft, self.user_group, constants.SET_FILE_SUFFIX))
@@ -897,10 +918,11 @@ class FileExtractor(UIProgress):
             write_data = check_file_integrity(location)
 
             if write_data[0] != Result.VALID:
-                result = False
+                os.remove(output_file)
+                output_file = ""
 
         except Exception as error:
             logger.error(error)
-            result = False
+            output_file = ""
 
-        return result
+        return output_file
