@@ -311,7 +311,7 @@ class Overlay(ScaledWindow):
         self.filemenu.add_command(label="Read Player.log", command=lambda: self.__open_draft_log(self.configuration.settings.arena_log_location))
         self.filemenu.add_command(label="Open Player.log", command=lambda: open_file(self.configuration.settings.arena_log_location))
         self.datamenu = tkinter.Menu(self.menubar, tearoff=0)
-        self.datamenu.add_command(label="Download Dataset", command=lambda: DownloadDatasetWindow(self.root, self.limited_sets, self.scale_factor, self.fonts_dict, self.configuration))
+        self.datamenu.add_command(label="Download Dataset", command=lambda: DownloadDatasetWindow(self.root, self.limited_sets, self.scale_factor, self.fonts_dict, self.configuration, self.__update_event_files_callback))
         self.datamenu.add_command(label="Download Tier List", command=lambda : TierWindow(self.scale_factor, self.fonts_dict, self.__update_source_callback))
         self.cardmenu = tkinter.Menu(self.menubar, tearoff=0)
         self.cardmenu.add_command(
@@ -376,6 +376,8 @@ class Overlay(ScaledWindow):
         self.data_source_checkbox_value = tkinter.IntVar(self.root)
         self.deck_filter_checkbox_value = tkinter.IntVar(self.root)
         self.refresh_button_checkbox_value = tkinter.IntVar(self.root)
+        self.update_notifications_checkbox_value = tkinter.IntVar(self.root)
+        self.missing_notifications_checkbox_value = tkinter.IntVar(self.root)
 
         self.taken_type_creature_checkbox_value = tkinter.IntVar(self.root)
         self.taken_type_creature_checkbox_value.set(True)
@@ -551,14 +553,21 @@ class Overlay(ScaledWindow):
 
         self.root.attributes("-topmost", True)
         self.__initialize_overlay_widgets()
-        notifications = Notifications(
-            self.configuration, 
+        self.notifications = Notifications(
             self.root,
             self.limited_sets,
-            self.scale_factor,
-            self.fonts_dict
+            self.configuration,
+            DownloadDatasetWindow(
+                self.root,
+                self.limited_sets,
+                self.scale_factor,
+                self.fonts_dict,
+                self.configuration,
+                False,
+                self.__update_event_files_callback
+            )
         )
-        if notifications.check_for_updates():
+        if self.notifications.check_for_updates():
             self.__arena_log_check()
             self.__control_trace(True)
 
@@ -1319,6 +1328,8 @@ class Overlay(ScaledWindow):
         self.main_options_dict = constants.COLUMNS_OPTIONS_EXTRA_DICT.copy()
         for key, value in tier_dict.items():
             self.main_options_dict[key] = value
+        if self.configuration.settings.missing_notifications_enabled:
+            self.notifications.check_for_missing_dataset(event_set, self.data_sources[self.data_source_selection.get()])
 
     def __update_draft(self, source):
         '''Function that that triggers a search of the Arena log for draft data'''
@@ -1413,6 +1424,10 @@ class Overlay(ScaledWindow):
                 self.deck_filter_checkbox_value.get())
             self.configuration.settings.refresh_button_enabled = bool(
                 self.refresh_button_checkbox_value.get())
+            self.configuration.settings.update_notifications_enabled = bool(
+                self.update_notifications_checkbox_value.get())
+            self.configuration.settings.missing_notifications_enabled = bool(
+                self.missing_notifications_checkbox_value.get())
             write_configuration(self.configuration)
         except Exception as error:
             logger.error(error)
@@ -1498,6 +1513,10 @@ class Overlay(ScaledWindow):
                 self.configuration.settings.deck_filter_enabled)
             self.refresh_button_checkbox_value.set(
                 self.configuration.settings.refresh_button_enabled)
+            self.update_notifications_checkbox_value.set(
+                self.configuration.settings.update_notifications_enabled)
+            self.missing_notifications_checkbox_value.set(
+                self.configuration.settings.missing_notifications_enabled)
         except Exception as error:
             logger.error(error)
         self.__control_trace(True)
@@ -2150,6 +2169,20 @@ class Overlay(ScaledWindow):
                                                   variable=self.refresh_button_checkbox_value,
                                                   onvalue=1,
                                                   offvalue=0)
+            
+            update_notifications_label = Label(
+                popup, text="Enable Dataset Update Notifications:", style="MainSectionsBold.TLabel", anchor="e")
+            update_notifications_checkbox = Checkbutton(popup,
+                                                  variable=self.update_notifications_checkbox_value,
+                                                  onvalue=1,
+                                                  offvalue=0)
+            
+            missing_notifications_label = Label(
+                popup, text="Enable Missing Dataset Notifications:", style="MainSectionsBold.TLabel", anchor="e")
+            missing_notifications_checkbox = Checkbutton(popup,
+                                                  variable=self.missing_notifications_checkbox_value,
+                                                  onvalue=1,
+                                                  offvalue=0)
 
             self.column_2_options = OptionMenu(popup, self.column_2_selection, self.column_2_selection.get(
             ), *self.column_2_list, style="All.TMenubutton")
@@ -2366,6 +2399,22 @@ class Overlay(ScaledWindow):
                 padx=row_padding_x, pady=row_padding_y)
             row_count += 1
 
+            update_notifications_label.grid(
+                row=row_count, column=0, columnspan=1, sticky="nsew",
+                padx=row_padding_x, pady=row_padding_y)
+            update_notifications_checkbox.grid(
+                row=row_count, column=1, columnspan=1, sticky="nsew",
+                padx=row_padding_x, pady=row_padding_y)
+            row_count += 1
+
+            missing_notifications_label.grid(
+                row=row_count, column=0, columnspan=1, sticky="nsew",
+                padx=row_padding_x, pady=row_padding_y)
+            missing_notifications_checkbox.grid(
+                row=row_count, column=1, columnspan=1, sticky="nsew",
+                padx=row_padding_x, pady=row_padding_y)
+            row_count += 1
+
             default_button.grid(row=row_count, column=0,
                                 columnspan=2, sticky="nsew")
 
@@ -2541,16 +2590,19 @@ class Overlay(ScaledWindow):
         
         if filename:  # Process the file if a valid filename is provided
             self.arena_file = filename
-            self.__reset_draft(True)
             self.draft.set_arena_file(filename)
-            self.draft.log_suspend(True)
-            self.__update_overlay_callback(True)
-            self.draft.log_suspend(False)
+            self.__update_event_files_callback()
     
             # Update configuration if the log file matches the expected name
             if constants.LOG_NAME in self.arena_file:
                 self.configuration.settings.arena_log_location = self.arena_file
                 write_configuration(self.configuration)
+
+    def __update_event_files_callback(self):
+        self.__reset_draft(True)
+        self.draft.log_suspend(True)
+        self.__update_overlay_callback(True)
+        self.draft.log_suspend(False)
 
     def __control_trace(self, enabled):
         '''Enable/Disable all of the overlay widget traces. This function is used when the application needs
@@ -2636,6 +2688,10 @@ class Overlay(ScaledWindow):
                     "w", self.__update_taken_table)),
                 (self.taken_type_other_checkbox_value, lambda: self.taken_type_other_checkbox_value.trace(
                     "w", self.__update_taken_table)),
+                (self.update_notifications_checkbox_value, lambda: self.update_notifications_checkbox_value.trace(
+                    "w", self.__update_settings_callback)),
+                (self.missing_notifications_checkbox_value, lambda: self.missing_notifications_checkbox_value.trace(
+                    "w", self.__update_settings_callback)),
             ]
 
             if enabled:

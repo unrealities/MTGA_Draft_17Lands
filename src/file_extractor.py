@@ -280,12 +280,12 @@ class FileExtractor(UIProgress):
         temp_size = 0
         try:
             while True:
-                #progress_bar['value'] = 5
                 self._update_progress(5, True)
                 result, result_string, temp_size = self._retrieve_local_arena_data(database_size)
-                #progress_bar['value'] = 10
+                if not result:
+                    break
+
                 self._update_progress(10, True)
-                #status.set("Collecting 17Lands Data")
                 self._update_status("Collecting 17Lands Data")
 
                 if not self.retrieve_17lands_data(self.selected_sets.seventeenlands, self.deck_colors):
@@ -298,8 +298,6 @@ class FileExtractor(UIProgress):
                 if not matching_only:
                     self._initialize_17lands_data()
 
-                #status.set("Building Data Set File")
-                #ui_root.update()
                 self._update_status("Building Data Set File")
                 self._assemble_set(matching_only)
                 check_set_data(
@@ -314,12 +312,10 @@ class FileExtractor(UIProgress):
 
     def _retrieve_local_arena_data(self, previous_database_size):
         '''Builds a card data file from raw Arena files'''
-        result_string = "Couldn't Collect Local Card Data"
+        result_string = "Unable to access local Arena data. Log in to MTGA and try again."
         result = False
         self.card_dict = {}
         database_size = 0
-        #status.set("Searching Local Files")
-        #root.update()
         self._update_status("Searching Local Files")
         if sys.platform == constants.PLATFORM_ID_OSX:
             directory = os.path.join(os.path.expanduser('~'),
@@ -360,8 +356,6 @@ class FileExtractor(UIProgress):
                     logger.info(
                         "Local Database Data: Searching File Path %s",
                         arena_database_locations[0])
-                    #status.set("Retrieving Localization Data")
-                    #root.update()
                     self._update_status("Retrieving Localization Data")
                     result, card_text, card_enumerators, raw_card_data = self._retrieve_local_database(
                         arena_database_locations[0])
@@ -369,8 +363,6 @@ class FileExtractor(UIProgress):
                     if not result:
                         break
 
-                    #status.set("Building Temporary Card Data File")
-                    #root.update()
                     self._update_status("Building Temporary Card Data File")
                     result = self._assemble_stored_data(
                         card_text, card_enumerators, raw_card_data)
@@ -378,9 +370,6 @@ class FileExtractor(UIProgress):
                     if not result:
                         break
 
-                # Assemble information for local data set
-                #status.set("Retrieving Temporary Card Data")
-                #root.update()
                 self._update_status("Retrieving Temporary Card Data")
                 result = self._retrieve_stored_data(self.selected_sets.arena)
 
@@ -711,7 +700,6 @@ class FileExtractor(UIProgress):
             self.set_game_count(game_count)
         except Exception as error:
             result = False
-            #logger.error(url)
             logger.error(error)
         return result, game_count
     #def retrieve_17lands_color_ratings(self):

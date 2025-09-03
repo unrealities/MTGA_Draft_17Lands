@@ -51,14 +51,10 @@ class Seventeenlands():
         Fetch card ratings from 17Lands with retry, progress, and UI update logic.
         """
         url = self._build_card_ratings_url(set_code, draft, start_date, end_date, user_group, colors)
-        try:
-            response = requests.get(url, timeout=REQUEST_TIMEOUT)
-            response.raise_for_status()
-            set_json_data = response.json()
-            self._process_card_ratings(colors, set_json_data, card_data)
-        except Exception as error:
-            logger.error(url)
-            logger.error(error)
+        response = requests.get(url, timeout=REQUEST_TIMEOUT)
+        response.raise_for_status()
+        set_json_data = response.json()
+        self._process_card_ratings(colors, set_json_data, card_data)
 
     def download_color_ratings(
         self,
@@ -71,15 +67,10 @@ class Seventeenlands():
     ):
         color_filter = color_filter or COLOR_FILTER
         url = self._build_color_ratings_url(set_code, draft, start_date, end_date, user_group)
-        try:
-            response = requests.get(url, timeout=REQUEST_TIMEOUT)
-            response.raise_for_status()
-            color_json_data = response.json()
-            return self._process_color_ratings(color_json_data, color_filter)
-        except Exception as error:
-            logger.error(url)
-            logger.error(error)
-            return ({}, 0)
+        response = requests.get(url, timeout=REQUEST_TIMEOUT)
+        response.raise_for_status()
+        color_json_data = response.json()
+        return self._process_color_ratings(color_json_data, color_filter)
 
     def _process_card_ratings(
         self,

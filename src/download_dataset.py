@@ -51,27 +51,25 @@ class DownloadDatasetWindow(ScaledWindow):
             scale_factor,
             fonts_dict,
             configuration,
-            add_set_callback=None,
-            update_set_table_callback=None,
-            dataset_args=None
+            auto_enter=True,
+            update_event_files_callback=None,
         ):
-        if DownloadDatasetWindow._instance_open:
-            return
-        DownloadDatasetWindow._instance_open = True
         super().__init__()
         self.root = root
         self.limited_sets = limited_sets
         self.scale_factor = scale_factor
         self.fonts_dict = fonts_dict
-        self.add_set_callback = add_set_callback
-        self.update_set_table_callback = update_set_table_callback
-        self.dataset_args = dataset_args
+        self.update_event_files_callback = update_event_files_callback
         self._auto_add_set_ran = False  # Track if auto add_set has run
         self.configuration = configuration
-        self.__enter()
+        if auto_enter:
+            self.enter()
 
-    def __enter(self):
+    def enter(self, dataset_args: DatasetArgs = None):
         """Initialize the window and its widgets."""
+        if DownloadDatasetWindow._instance_open:
+            return
+        DownloadDatasetWindow._instance_open = True
         self.window = tkinter.Toplevel(self.root)
         self.window.wm_title("Download Dataset")
         self.window.protocol("WM_DELETE_WINDOW", lambda window=self.window: self.__exit(window))
@@ -230,12 +228,12 @@ class DownloadDatasetWindow(ScaledWindow):
             status_text.set("")
             self.window.update()
 
-            # If download_args was provided, populate widgets and auto-run __add_set once
-            if self.dataset_args and not self._auto_add_set_ran:
-                set_string = [k for k, v in sets.items() if v.seventeenlands[0] == self.dataset_args.draft_set]
+            # If download_args was provided, populate widgets and auto-run add_set once
+            if dataset_args and not self._auto_add_set_ran:
+                set_string = [k for k, v in sets.items() if v.seventeenlands[0] == dataset_args.draft_set]
                 if set_string:
-                    self.dataset_args.draft_set = set_string[0]
-                self._populate_widgets_from_args(self.dataset_args)
+                    dataset_args.draft_set = set_string[0]
+                self._populate_widgets_from_args(dataset_args)
                 self.window.update()
                 self._auto_add_set_ran = True
                 self.__add_set(
@@ -250,13 +248,18 @@ class DownloadDatasetWindow(ScaledWindow):
                         start=start_entry,
                         end=end_entry,
                         user_group=group_value,
-                        game_count = self.dataset_args.game_count,
-                        color_ratings = self.dataset_args.color_ratings,
+                        game_count = dataset_args.game_count,
+                        color_ratings = dataset_args.color_ratings,
+                        enable_rate_limit=False
                     )
                 )
 
         except Exception as error:
             logger.error(error)
+
+    def check_instance_open(self):
+        """Check if an instance of the DownloadDatasetWindow is already open."""
+        return DownloadDatasetWindow._instance_open
 
     def _populate_widgets_from_args(self, args):
         """Populate the widgets with values from DownloadArgs."""
@@ -336,6 +339,7 @@ class DownloadDatasetWindow(ScaledWindow):
             self.window.update()
             download_args.status.set("Updating Set List")
             self.__update_set_table(download_args.list_box, download_args.sets)
+            self.update_event_files_callback()
             download_args.status.set("Download Complete")
             download_args.button['state'] = 'normal'
             self.configuration.card_data.database_size = temp_size

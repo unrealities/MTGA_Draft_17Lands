@@ -47,6 +47,8 @@ class Settings(BaseModel):
     data_source_enabled: bool = True
     deck_filter_enabled: bool = True
     refresh_button_enabled: bool = True
+    update_notifications_enabled: bool = True
+    missing_notifications_enabled: bool = True
     taken_alsa_enabled: bool = False
     taken_ata_enabled: bool = False
     taken_gpwr_enabled: bool = False
@@ -118,6 +120,7 @@ class CardData(BaseModel):
     database_size: int = 0
     latest_dataset: str = ""
     last_check: float = 0
+    last_auto_check: float = 0
 
 
 class Configuration(BaseModel):
