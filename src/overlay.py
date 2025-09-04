@@ -2,7 +2,7 @@
 import tkinter
 from tkinter.ttk import Progressbar, Treeview, Style, OptionMenu, Button, Checkbutton, Label, Separator, Entry
 from tkinter import filedialog, messagebox, font
-import urllib
+import requests
 import sys
 import io
 import math
@@ -661,14 +661,8 @@ class Overlay(ScaledWindow):
             style.configure("MainSectionsBold.TLabel", font=(constants.FONT_SANS_SERIF,
                                                              self._scale_value(-12),
                                                              "bold"))
-
             style.configure("MainSections.TLabel", font=(constants.FONT_SANS_SERIF,
                                                          self._scale_value(-12)))
-
-            # style.configure("Url.TLabel", font=(constants.FONT_SANS_SERIF,
-            #                                             self._scale_value(-12),
-            #                                             fg="blue",
-            #                                             cursor="hand2"))
 
             style.configure("CurrentDraft.TLabel", font=(constants.FONT_SANS_SERIF,
                                                          self._scale_value(-12)))
@@ -679,6 +673,19 @@ class Overlay(ScaledWindow):
             style.configure("TooltipHeader.TLabel", font=(constants.FONT_SANS_SERIF,
                                                           self._scale_value(-17),
                                                           "bold"))
+            
+            style.configure(
+                "TooltipTable.TLabel", 
+                background="#3d3d3d",
+                foreground="#e6ecec",
+                relief="raised",
+                borderwidth=1,
+                font=(
+                    constants.FONT_SANS_SERIF,
+                    self._scale_value(-12),
+                    "bold"
+                )
+            )
 
             style.configure("Status.TLabel", font=(constants.FONT_SANS_SERIF,
                                                    self._scale_value(-15),
@@ -2754,7 +2761,7 @@ class CreateCardToolTip(ScaledWindow):
         self.images_enabled = images_enabled
         self.widget.bind("<Leave>", self.__leave)
         self.widget.bind("<ButtonPress-1>", self.__leave, add="+")
-        self.table_rows = 17
+        self.table_rows = 16
 
         self.id = None
         self.tw = None
@@ -2799,6 +2806,8 @@ class CreateCardToolTip(ScaledWindow):
                 self.tw.wm_overrideredirect(False)
 
             tt_frame = tkinter.Frame(self.tw, borderwidth=5, relief="solid")
+            archetype_frame = tkinter.Frame(tt_frame)
+            stats_frame = tkinter.Frame(tt_frame)
 
             tkinter.Grid.rowconfigure(tt_frame, 2, weight=1)
 
@@ -2812,7 +2821,7 @@ class CreateCardToolTip(ScaledWindow):
             column_offset = 0
             # Add scryfall image
             if self.images_enabled:
-                image_size_y = len(stats_data) * row_height
+                image_size_y = (len(stats_data) + 1) * row_height
                 width = self._scale_value(280)
                 size = width, image_size_y
                 self.images = []
@@ -2820,11 +2829,8 @@ class CreateCardToolTip(ScaledWindow):
                 for count, picture_url in enumerate(self.image):
                     try:
                         if picture_url:
-                            image_request = urllib.request.Request(
-                                url=picture_url, headers=request_header)
-                            raw_data = urllib.request.urlopen(
-                                image_request).read()
-                            im = Image.open(io.BytesIO(raw_data))
+                            response = requests.get(picture_url, headers=request_header, timeout=5)
+                            im = Image.open(io.BytesIO(response.content))
                             im.thumbnail(size, Image.Resampling.LANCZOS)
                             image = ImageTk.PhotoImage(im)
                             image_label = Label(tt_frame, image=image)
@@ -2841,7 +2847,7 @@ class CreateCardToolTip(ScaledWindow):
             if arch_data:
                 archetype_table = self._create_header(
                                         "tooltip_table",
-                                        tt_frame,
+                                        archetype_frame,
                                         0,
                                         self.fonts_dict["All.TableRow"],
                                         arch_headers,
@@ -2857,14 +2863,22 @@ class CreateCardToolTip(ScaledWindow):
                 for count, row_values in enumerate(arch_data):
                     row_tag = self._identify_table_row_tag(False, "", count)
                     archetype_table.insert("", index=count, iid=count, values=row_values, tag=(row_tag,))
-                
+
+                archetype_label = Label(archetype_frame,
+                   text="Deck GIHWR",
+                   style="TooltipTable.TLabel",
+                   anchor="c"
+                )
+                archetype_label.grid(row=0, column=column_offset, sticky="nsew", ipady=self._scale_value(2))
                 archetype_table.grid(row=1, column=column_offset)
+                archetype_frame.grid(row=1, column=column_offset, sticky="n")
+                
                 column_offset += 1
                 tt_width += arch_width
                 
             stats_main_table = self._create_header(
                                     "tooltip_table",
-                                    tt_frame, 
+                                    stats_frame, 
                                     0, 
                                     self.fonts_dict["All.TableRow"], 
                                     stats_headers, 
@@ -2881,7 +2895,14 @@ class CreateCardToolTip(ScaledWindow):
                 row_tag = self._identify_table_row_tag(False, "", count)
                 stats_main_table.insert("", index=count, iid=count, values=row_values, tag=(row_tag,))
 
+            stats_label = Label(stats_frame,
+                text="17Lands Stats",
+                style="TooltipTable.TLabel",
+                anchor="c"
+            )
+            stats_label.grid(row=0, column=column_offset, sticky="nsew", ipady=self._scale_value(2))
             stats_main_table.grid(row=1, column=column_offset)
+            stats_frame.grid(row=1, column=column_offset, sticky="n")
             column_offset += 1
             
             card_label = Label(tt_frame,
