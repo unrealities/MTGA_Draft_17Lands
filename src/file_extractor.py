@@ -332,11 +332,8 @@ class FileExtractor:
                                      constants.LOCAL_DATA_FOLDER_PATH_OSX) if not self.directory else self.directory
             paths = [os.path.join(directory, constants.LOCAL_DOWNLOADS_DATA)]
         elif sys.platform == constants.PLATFORM_ID_LINUX:
-            if constants.LOCAL_DATA_FOLDER_PATH_LINUX:
-                directory = constants.LOCAL_DATA_FOLDER_PATH_LINUX if not self.directory else self.directory
-                paths = [os.path.join(directory, constants.LOCAL_DOWNLOADS_DATA)]
-            else:
-                paths = [] # program was giving errors on WSL without this
+            directory = self.directory or constants.LOCAL_DATA_FOLDER_PATH_LINUX
+            paths = [os.path.join(directory, constants.LOCAL_DOWNLOADS_DATA)] if directory else []
         else:
             if not self.directory:
                 path_list = [constants.WINDOWS_DRIVES, constants.WINDOWS_PROGRAM_FILES, [

@@ -195,6 +195,9 @@ LOCAL_DATA_FOLDER_PATH_LINUX = next(filter(os.path.exists, [
     # Steam
     os.path.join(os.path.expanduser("~"), ".local", "share", "Steam", "steamapps", "common", "MTGA", "MTGA_Data"),
 
+    # Steam (debian)
+    os.path.join(os.path.expanduser("~"), ".steam", "debian-installation", "steamapps", "common", "MTGA", "MTGA_Data"),
+
     # Lutris
     os.path.join(os.path.expanduser("~"), "Games", "magic-the-gathering-arena", "drive_c", "Program Files", "Wizards of the Coast", "MTGA", "MTGA_Data"),
 
