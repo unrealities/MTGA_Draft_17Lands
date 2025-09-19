@@ -178,3 +178,4 @@ cython_debug/
 MTGA_Draft_17Lands.code-workspace
 start.sh
 test_tkinter.py
+.python-version
