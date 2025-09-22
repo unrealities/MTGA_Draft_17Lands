@@ -571,17 +571,6 @@ class Overlay(ScaledWindow):
             self.__arena_log_check()
             self.__control_trace(True)
 
-        if self.arena_file:
-            logger.info("Arena Player Log Location: %s", self.arena_file)
-        else:
-            logger.error("Arena Player Log Missing")
-            tkinter.messagebox.showinfo(
-                title="Arena Player Log Missing", message="Unable to locate the Arena player log.\n\n"
-                "Please set the log location by clicking File->Read Player.log and selecting the Arena log file (Player.log).\n\n"
-                "This log is typically located at the following location:\n"
-                " - PC: <Drive>/Users/<User>/AppData/LocalLow/Wizards Of The Coast/MTGA\n"
-                " - MAC: <User>/Library/Logs/Wizards Of The Coast/MTGA")
-
         if self.configuration.features.hotkey_enabled:
             self.__start_hotkey_listener()
 
@@ -1330,13 +1319,13 @@ class Overlay(ScaledWindow):
         self.draft.retrieve_set_data(self.data_sources[self.data_source_selection.get()])
         self.set_metrics = self.draft.retrieve_set_metrics()
         self.deck_colors = self.draft.retrieve_color_win_rate(self.filter_format_selection.get())
-        event_set, _ = self.draft.retrieve_current_limited_event()
+        event_set, event_type = self.draft.retrieve_current_limited_event()
         self.tier_data, tier_dict = self.tier_list.retrieve_data(event_set)
         self.main_options_dict = constants.COLUMNS_OPTIONS_EXTRA_DICT.copy()
         for key, value in tier_dict.items():
             self.main_options_dict[key] = value
         if self.configuration.settings.missing_notifications_enabled:
-            self.notifications.check_for_missing_dataset(event_set, self.data_sources[self.data_source_selection.get()])
+            self.notifications.check_for_missing_dataset(event_set, event_type, self.data_sources[self.data_source_selection.get()])
 
     def __update_draft(self, source):
         '''Function that that triggers a search of the Arena log for draft data'''

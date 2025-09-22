@@ -6,11 +6,18 @@ from datetime import datetime, date
 from src.configuration import Configuration
 from src.app_update import AppUpdate
 from src.logger import create_logger
-from src.constants import PLATFORM_ID_WINDOWS, APPLICATION_VERSION, START_DATE_DEFAULT, LIMITED_TYPE_STRING_DRAFT_PREMIER, LIMITED_USER_GROUP_ALL
 from src.utils import retrieve_local_set_list, read_dataset_info
 from src.configuration import write_configuration, read_configuration
 from src.seventeenlands import Seventeenlands
 from src.download_dataset import DownloadDatasetWindow, DatasetArgs
+from src.constants import (
+    PLATFORM_ID_WINDOWS,
+    APPLICATION_VERSION,
+    START_DATE_DEFAULT,
+    LIMITED_TYPE_STRING_DRAFT_PREMIER,
+    LIMITED_TYPE_STRING_DRAFT_TRAD,
+    LIMITED_USER_GROUP_ALL
+)
 try:
     import win32api
 except ImportError:
@@ -40,12 +47,16 @@ class Notifications:
         self._check_dataset()
         return True
 
-    def check_for_missing_dataset(self, expansion_code: str, dataset_location: str):
+    def check_for_missing_dataset(self, expansion_code: str, event_type: str, dataset_location: str):
         """Check if a dataset exists for this event."""
         try:
-            if not expansion_code:
-                return
-            if self.dataset_window.check_instance_open():
+            if (
+                not expansion_code or
+                expansion_code not in self.expansions or
+                event_type == LIMITED_TYPE_STRING_DRAFT_PREMIER or
+                event_type == LIMITED_TYPE_STRING_DRAFT_TRAD or
+                self.dataset_window.check_instance_open()
+            ):
                 return
 
             dataset_name = os.path.basename(dataset_location)
@@ -59,10 +70,9 @@ class Notifications:
 
             if self.configuration.card_data.latest_dataset:
                 return
-            logger.info("No dataset found for expansion {self.expansions[expansion_code]}.")
+            logger.info(f"No dataset found for expansion {self.expansions[expansion_code]}.")
             message_string = (
                 f"No dataset found for the {self.expansions[expansion_code]} expansion.\n\n"
-                "Downloading a dataset may take 1-2 minutes.\n\n"
                 "Would you like to download the dataset now?\n\n"
                 "Tip: To stop seeing this message, open the Settings menu and uncheck 'Enable Missing Dataset Notifications'."
             )
