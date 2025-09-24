@@ -1,3 +1,7 @@
+===================== RELEASE NOTES 3.33 =====================
+* FiYir: Pick-Two Support for Omenpath
+* p3p3fr0g: Linux Pathfix
+
 ===================== RELEASE NOTES 3.32 =====================
 * FiYir: Fix: Add logic to support card database path extraction from the Arena log for Linux users ([Bug]: error in file_extractor: card missing #78)
 * FiYir: Fix: Update query to support card database changes from the recent Arena patch ([Bug]: database changes after recent patch #80)

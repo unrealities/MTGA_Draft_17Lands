@@ -37,6 +37,7 @@ share/python-wheels/
 .installed.cfg
 *.egg
 MANIFEST
+.python-version
 
 # PyInstaller
 #  Usually these files are written by a python script from a template
@@ -173,9 +174,3 @@ cython_debug/
 
 # MacOS
 .DS_Store
-
-# My local stuff
-MTGA_Draft_17Lands.code-workspace
-start.sh
-test_tkinter.py
-.python-version
