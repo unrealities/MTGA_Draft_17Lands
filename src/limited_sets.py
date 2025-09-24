@@ -31,6 +31,7 @@ class SpecialEvent(BaseModel):
     type: str = ""
     set_code: str = ""
     keywords: List[str] = Field(default_factory=list)
+    number_of_players: int = 8
 
 class SetDictionary(BaseModel):
     version: int = 0
