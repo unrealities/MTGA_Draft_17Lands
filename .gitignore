@@ -173,3 +173,9 @@ cython_debug/
 
 # MacOS
 .DS_Store
+
+# My local stuff
+MTGA_Draft_17Lands.code-workspace
+start.sh
+test_tkinter.py
+.python-version
