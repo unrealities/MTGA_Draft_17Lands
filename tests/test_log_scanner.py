@@ -821,7 +821,7 @@ OM1_PICK_TWO_PREMIER_DRAFT_ENTRIES = [
             new_event=True,
             data_update=False,
             current_set="OM1",
-            current_event="PremierDraft",
+            current_event="PickTwoDraft",
             current_pack=0,
             current_pick=0,
             picks=[],
@@ -837,7 +837,7 @@ OM1_PICK_TWO_PREMIER_DRAFT_ENTRIES = [
             new_event=False,
             data_update=True,
             current_set="OM1",
-            current_event="PremierDraft",
+            current_event="PickTwoDraft",
             current_pack=1,
             current_pick=1,
             picks=[],
@@ -854,7 +854,7 @@ OM1_PICK_TWO_PREMIER_DRAFT_ENTRIES = [
             new_event=False,
             data_update=True,
             current_set="OM1",
-            current_event="PremierDraft",
+            current_event="PickTwoDraft",
             current_pack=1,
             current_pick=1,
             picks=["97923","97977"],
@@ -870,7 +870,7 @@ OM1_PICK_TWO_PREMIER_DRAFT_ENTRIES = [
             new_event=False,
             data_update=True,
             current_set="OM1",
-            current_event="PremierDraft",
+            current_event="PickTwoDraft",
             current_pack=1,
             current_pick=5,
             picks=["97923","97977"],
@@ -886,7 +886,7 @@ OM1_PICK_TWO_PREMIER_DRAFT_ENTRIES = [
             new_event=False,
             data_update=True,
             current_set="OM1",
-            current_event="PremierDraft",
+            current_event="PickTwoDraft",
             current_pack=1,
             current_pick=5,
             picks=["97923","97977","97918","97864"],
@@ -1060,7 +1060,7 @@ def test_dsk_sealed(session_scanner, entry_label, expected, entry_string):
     ):
         event_test_cases(session_scanner, "New DSK Sealed", entry_label, expected, entry_string, mock_ocr)
 
-@pytest.mark.parametrize("entry_label, expected, entry_string", OM1_FOUR_PLAYER_PREMIER_DRAFT_ENTRIES)
+@pytest.mark.parametrize("entry_label, expected, entry_string", OM1_PICK_TWO_PREMIER_DRAFT_ENTRIES)
 def test_om1_pick_two_premier(session_scanner, entry_label, expected, entry_string):
     """
     Verify that the OM1 Pick Two Premier Draft entries can be processed
