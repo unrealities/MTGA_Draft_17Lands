@@ -211,7 +211,7 @@ class ArenaScanner:
                 # Truncate the string to prevent the label from increasing the width of the main window when displayed
                 event_label = event.label[:12]
                 event_set = [event.set_code]
-                number_of_players = 4 if constants.DRAFT_FOUR_PLAYERS_STRING in event_name else 8
+                number_of_players = 4 if constants.PICK_TWO_EVENT_STRING in event_name else event.number_of_players
                 event_match = True
                 break
                 
@@ -249,8 +249,7 @@ class ArenaScanner:
                 event_type = events[0]
             event_label = event_type
             event_match = True
-            if constants.DRAFT_FOUR_PLAYERS_STRING in event_name:
-                number_of_players = 4
+            number_of_players = 4 if constants.PICK_TWO_EVENT_STRING in event_name else 8
             
         return event_match, event_type, event_label, event_set, number_of_players
                 
@@ -262,7 +261,10 @@ class ArenaScanner:
         previous_pack = self.current_pack
         previous_picked = self.current_picked_pick
 
-        if self.draft_type == constants.LIMITED_TYPE_DRAFT_PREMIER_V1:
+        if (
+            self.draft_type == constants.LIMITED_TYPE_DRAFT_PREMIER_V1 or
+            self.draft_type == constants.LIMITED_TYPE_DRAFT_PICK_TWO
+        ):
             # Use OCR to retrieve P1P1
             if use_ocr:
                 self.__get_ocr_pack(save_screenshot)
@@ -277,10 +279,16 @@ class ArenaScanner:
             self.__draft_pack_search_premier_p1p1()
             self.__draft_pack_search_premier_v2()
             self.__draft_picked_search_premier_v2()
-        elif self.draft_type == constants.LIMITED_TYPE_DRAFT_QUICK:
+        elif (
+            self.draft_type == constants.LIMITED_TYPE_DRAFT_QUICK or
+            self.draft_type == constants.LIMITED_TYPE_DRAFT_PICK_TWO_QUICK
+        ):
             self.__draft_picked_search_quick()
             self.__draft_pack_search_quick()
-        elif self.draft_type == constants.LIMITED_TYPE_DRAFT_TRADITIONAL:
+        elif (
+            self.draft_type == constants.LIMITED_TYPE_DRAFT_TRADITIONAL or
+            self.draft_type == constants.LIMITED_TYPE_DRAFT_PICK_TWO_TRAD
+        ):
             # Use OCR to retrieve P1P1
             if use_ocr:
                 self.__get_ocr_pack(save_screenshot)
