@@ -721,7 +721,8 @@ class FileExtractor:
                             user_group = ""
                         else:
                             user_group = "&user_group=" + self.user_group.lower()
-                        url = f"https://www.17lands.com/card_ratings/data?expansion={set_code}&format={self.draft}&start_date={self.start_date}&end_date={self.end_date}{user_group}"
+                        safe_set_code = urllib.parse.quote(set_code)
+                        url = f"https://www.17lands.com/card_ratings/data?expansion={safe_set_code}&format={self.draft}&start_date={self.start_date}&end_date={self.end_date}{user_group}"            
                         if color != constants.FILTER_OPTION_ALL_DECKS:
                             url += "&colors=" + color
                         url_data = urllib.request.urlopen(
@@ -732,7 +733,7 @@ class FileExtractor:
                         result = True
                         break
                     except Exception as error:
-                        logger.error(url)
+                        logger.error(f"Failed URL: {url}")
                         logger.error(error)
                         retry -= 1
 
