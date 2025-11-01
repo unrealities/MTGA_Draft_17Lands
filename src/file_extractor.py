@@ -755,6 +755,7 @@ class FileExtractor:
                 time.sleep(constants.CARD_RATINGS_INTER_DELAY_SECONDS)
 
         return result
+
     def _assemble_set(self, matching_only):
         '''Combine the 17Lands ratings and the card data to form the complete set data'''
         self.combined_data["card_ratings"] = {}
@@ -773,7 +774,8 @@ class FileExtractor:
                 user_group = ""
             else:
                 user_group = "&user_group=" + self.user_group.lower()
-            url = f"https://www.17lands.com/color_ratings/data?expansion={self.selected_sets.seventeenlands[0]}&event_type={self.draft}&start_date={self.start_date}&end_date={self.end_date}{user_group}&combine_splash=true"
+            safe_set_code = quote(self.selected_sets.seventeenlands[0], safe='')
+            url = f"https://www.17lands.com/color_ratings/data?expansion={safe_set_code}&event_type={self.draft}&start_date={self.start_date}&end_date={self.end_date}{user_group}&combine_splash=true"
             url_data = urllib.request.urlopen(url, context=self.context).read()
 
             color_json_data = json.loads(url_data)

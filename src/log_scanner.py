@@ -222,7 +222,7 @@ class ArenaScanner:
         event_match = False
         event_type = ""
         event_label = ""
-        event_set = ""
+        event_set = []
         number_of_players = 8
         event_sections = event_name.split('_')
         
@@ -234,11 +234,31 @@ class ArenaScanner:
             events.append(constants.LIMITED_TYPE_STRING_DRAFT_PREMIER)
 
         if events:
-            # Find set name within the event string
-            event_set = [i.seventeenlands[0] for i in self.set_list.data.values(
-            ) for x in event_sections if i.seventeenlands[0].lower() in x.lower()]
-            # Remove duplicates while retaining order
-            event_set = list(dict.fromkeys(event_set))
+            # Handle Cube events specifically to be more future-proof
+            if "Cube" in event_name:
+                # Find all known cube sets from the available data
+                cube_sets = {name: info for name, info in self.set_list.data.items() if "Cube" in name}
+                
+                # Sort by name length, descending, to match more specific variants first (e.g., "Powered Cube" before "Arena Cube")
+                sorted_cube_names = sorted(cube_sets.keys(), key=len, reverse=True)
+
+                # Look for a keyword from the known cube names (e.g., "Powered") in the event string
+                for cube_name in sorted_cube_names:
+                    # Strip "Cube" and whitespace to get the unique keyword, e.g., "Powered"
+                    keyword = cube_name.replace("Cube", "").strip() 
+                    if keyword and keyword.lower() in event_name.lower():
+                        event_set = cube_sets[cube_name].seventeenlands
+                        break  # Found the most specific match, stop searching
+                
+                # If no specific variant was found, default to generic "CUBE"
+                if not event_set:
+                    event_set = ["CUBE"]
+            else:
+                # Find set name within the event string for non-Cube events
+                event_set = [i.seventeenlands[0] for i in self.set_list.data.values()
+                             for x in event_sections if i.seventeenlands[0].lower() in x.lower()]
+                # Remove duplicates while retaining order
+                event_set = list(dict.fromkeys(event_set))
 
             event_set = ["UNKN"] if not event_set else event_set
 
