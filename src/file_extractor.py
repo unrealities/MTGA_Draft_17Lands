@@ -1,5 +1,5 @@
 """This module contains the functions and classes that are used for building the set files and communicating with platforms"""
-from urllib.parse import quote as urlencode
+from urllib.parse import quote
 import sys
 import os
 import time
@@ -660,7 +660,7 @@ class FileExtractor:
                     status.set("Collecting Scryfall Data")
                     root.update()
                     url = "https://api.scryfall.com/cards/search?order=set&unique=prints&q=e" + \
-                        urlencode(':', safe='') + f"{card_set}"
+                        quote(':', safe='') + f"{card_set}"
                     url_data = urllib.request.urlopen(
                         url, context=self.context).read()
 
@@ -721,8 +721,8 @@ class FileExtractor:
                             user_group = ""
                         else:
                             user_group = "&user_group=" + self.user_group.lower()
-                        safe_set_code = urllib.parse.quote(set_code)
-                        url = f"https://www.17lands.com/card_ratings/data?expansion={safe_set_code}&format={self.draft}&start_date={self.start_date}&end_date={self.end_date}{user_group}"            
+                        safe_set_code = quote(set_code, safe='')
+                        url = f"https://www.17lands.com/card_ratings/data?expansion={safe_set_code}&format={self.draft}&start_date={self.start_date}&end_date={self.end_date}{user_group}"
                         if color != constants.FILTER_OPTION_ALL_DECKS:
                             url += "&colors=" + color
                         url_data = urllib.request.urlopen(
@@ -755,7 +755,6 @@ class FileExtractor:
                 time.sleep(constants.CARD_RATINGS_INTER_DELAY_SECONDS)
 
         return result
-
     def _assemble_set(self, matching_only):
         '''Combine the 17Lands ratings and the card data to form the complete set data'''
         self.combined_data["card_ratings"] = {}

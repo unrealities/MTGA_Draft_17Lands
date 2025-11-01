@@ -1,5 +1,6 @@
 import pytest
 import json
+import os
 from unittest.mock import patch, MagicMock, mock_open
 from src.file_extractor import (
     FileExtractor,
@@ -9,6 +10,7 @@ from src.file_extractor import (
     check_date,
 )
 from src import constants
+from src.utils import Result
 
 # --- Fixtures ---
 
@@ -97,6 +99,17 @@ def test_retrieve_17lands_data_url_encoding(mock_urlopen, file_extractor, set_co
     mock_response.read.return_value = b'[]'
     mock_urlopen.return_value = mock_response
 
+    # The UI elements must be mocked to avoid AttributeErrors on `None`.
+    mock_root = MagicMock()
+    mock_progress = MagicMock()
+    mock_status = MagicMock()
+    
+    # FIX: Set up self.selected_sets correctly before calling the method under test.
+    # This state is normally set by the `select_sets` method.
+    mock_set_info = MagicMock()
+    mock_set_info.seventeenlands = [set_code]
+    file_extractor.select_sets(mock_set_info)
+
     expected_url = (
         f"https://www.17lands.com/card_ratings/data?expansion={expected_encoded_set_code}"
         f"&format={file_extractor.draft}"
@@ -104,9 +117,18 @@ def test_retrieve_17lands_data_url_encoding(mock_urlopen, file_extractor, set_co
         f"&end_date={file_extractor.end_date}"
     )
 
-    file_extractor.retrieve_17lands_data([set_code], [constants.FILTER_OPTION_ALL_DECKS], None, None, 0, None)
-    mock_urlopen.assert_called_once_with(expected_url, context=file_extractor.context)
+    file_extractor.retrieve_17lands_data(
+        sets=[set_code],
+        deck_colors=[constants.FILTER_OPTION_ALL_DECKS],
+        root=mock_root,
+        progress=mock_progress,
+        initial_progress=0,
+        status=mock_status
+    )
 
+    # Assert
+    # Check that urlopen was called with the correctly formatted and encoded URL.
+    mock_urlopen.assert_called_once_with(expected_url, context=file_extractor.context)
 
 def test_process_17lands_data(file_extractor):
     """
