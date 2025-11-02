@@ -16,7 +16,7 @@ from src.configuration import read_configuration, write_configuration, reset_con
 from src.limited_sets import LimitedSets, START_DATE_DEFAULT
 from src.log_scanner import ArenaScanner, Source
 from src.file_extractor import FileExtractor, search_arena_log_locations, retrieve_arena_directory
-from src.utils import retrieve_local_set_list, open_file
+from src.utils import retrieve_local_set_list, open_file, clean_string
 from src import constants
 from src.logger import create_logger
 from src.app_update import AppUpdate
@@ -1617,10 +1617,29 @@ class Overlay(ScaledWindow):
         try:
             set_data = set_list[selection.get()]
 
-            if set_data.start_date:
+            if set_data.formats:
                 start.delete(0, tkinter.END)
                 start.insert(tkinter.END, set_data.start_date)
 
+            self.root.update()
+        except Exception as error:
+            logger.error(error)
+
+    def __update_event_format(self, event_widget, event_selection, set_selection, format_list, *_):
+        '''Function that's used to update the Event options in the Download Dataset window
+           Example: When a user selects a set, the available event formats (e.g., PremierDraft, Sealed)
+           are refreshed in the Event dropdown so that only formats valid for that set are shown
+        '''
+        try:
+            set_data = format_list[set_selection.get()]
+
+            if set_data.formats:
+                menu = event_widget['menu']
+                menu.delete(0, tkinter.END)
+                for event_format in set_data.formats:
+                    menu.add_command(label=event_format, command=lambda value=event_format: event_selection.set(value))  # add new ones
+
+                event_selection.set(set_data.formats[0])
             self.root.update()
         except Exception as error:
             logger.error(error)
@@ -1728,6 +1747,9 @@ class Overlay(ScaledWindow):
             set_value.trace_add("write", lambda *args, start=start_entry, selection=set_value,
                             set_list=sets: self.__update_set_start_date(start, selection, set_list, *args))
 
+            set_value.trace_add("write", lambda *args, event_widget=event_entry, event_selection=event_value, set_selection=set_value,
+                            set_list=sets: self.__update_event_format(event_widget, event_selection, set_selection, set_list, *args))
+
             draft_groups = constants.LIMITED_GROUPS_LIST
             group_value = tkinter.StringVar(self.root)
             group_entry = OptionMenu(popup, group_value, draft_groups[0], *draft_groups)
@@ -1777,6 +1799,8 @@ class Overlay(ScaledWindow):
             list_box.pack(expand=True, fill="both")
 
             self.__update_set_table(list_box, sets)
+            self.__update_set_start_date(start_entry, set_value, sets)
+            self.__update_event_format(event_entry, event_value, set_value, sets)
             status_text.set("")
             popup.update()
 
@@ -2714,7 +2738,7 @@ class Overlay(ScaledWindow):
                             break
                     else:
                         notify = False
-                        set_code = sets[draft_set.get()].seventeenlands[0]
+                        set_code = clean_string(sets[draft_set.get()].seventeenlands[0])
                         for file in file_list:
                             if(
                                 set_code == file[0] and

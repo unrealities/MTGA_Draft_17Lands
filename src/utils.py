@@ -69,6 +69,7 @@ def retrieve_local_set_list(codes, names = None):
     '''Scans the Sets folder and returns a list of valid set files'''
     file_list = []
     error_list = []
+    cleaned_codes = [clean_string(code) for code in codes]
     for file in os.listdir(SETS_FOLDER):
         try:
             name_segments = file.split("_")
@@ -80,14 +81,14 @@ def retrieve_local_set_list(codes, names = None):
             else:
                 continue
                 
-            if ((set_code not in codes) or
+            if ((set_code not in cleaned_codes) or
                 (event_type not in LIMITED_TYPES_DICT) or
                 (user_group not in LIMITED_GROUPS_LIST) or
                 (file_suffix != SET_FILE_SUFFIX)):
                 continue
                 
             if names:
-                set_name = list(names)[list(codes).index(name_segments[0].upper())]
+                set_name = list(names)[list(cleaned_codes).index(name_segments[0].upper())]
             else:
                 set_name = set_code
             
@@ -213,3 +214,10 @@ def open_file(file_path: str):
         subprocess.call(['open', file_path])
     else:  # Linux and other Unix-based systems
         subprocess.call(['xdg-open', file_path])
+
+def clean_string(input_string: str, uppercase: bool = True) -> str:
+    '''Cleans a string by removing unwanted characters'''
+    unwanted_chars = [' ', '.', '/', '_']
+    for char in unwanted_chars:
+        input_string = input_string.replace(char, '')
+    return input_string.upper() if uppercase else input_string

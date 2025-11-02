@@ -1,5 +1,5 @@
 """This module contains the functions and classes that are used for building the set files and communicating with platforms"""
-from urllib.parse import quote as urlencode
+from urllib.parse import quote
 import sys
 import os
 import time
@@ -12,7 +12,7 @@ import re
 import sqlite3
 from src import constants
 from src.logger import create_logger
-from src.utils import Result, check_file_integrity
+from src.utils import Result, check_file_integrity, clean_string
 
 logger = create_logger()
 
@@ -223,7 +223,8 @@ class FileExtractor:
         result = False
         if check_date(start_date):
             result = True
-            self.start_date = start_date
+            # 17Lands API rejects dates unless months and days are zero-padded to two digits
+            self.start_date = datetime.datetime.strptime(start_date, "%Y-%m-%d").strftime("%Y-%m-%d")
             self.combined_data["meta"]["start_date"] = self.start_date
         return result
 
@@ -232,7 +233,8 @@ class FileExtractor:
         result = False
         if check_date(end_date):
             result = True
-            self.end_date = end_date
+            # 17Lands API rejects dates unless months and days are zero-padded to two digits
+            self.end_date = datetime.datetime.strptime(end_date, "%Y-%m-%d").strftime("%Y-%m-%d")
             self.combined_data["meta"]["end_date"] = self.end_date
         return result
     
@@ -660,7 +662,7 @@ class FileExtractor:
                     status.set("Collecting Scryfall Data")
                     root.update()
                     url = "https://api.scryfall.com/cards/search?order=set&unique=prints&q=e" + \
-                        urlencode(':', safe='') + f"{card_set}"
+                        quote(':', safe='') + f"{card_set}"
                     url_data = urllib.request.urlopen(
                         url, context=self.context).read()
 
@@ -721,7 +723,8 @@ class FileExtractor:
                             user_group = ""
                         else:
                             user_group = "&user_group=" + self.user_group.lower()
-                        url = f"https://www.17lands.com/card_ratings/data?expansion={set_code}&format={self.draft}&start_date={self.start_date}&end_date={self.end_date}{user_group}"
+                        safe_set_code = quote(set_code, safe='')
+                        url = f"https://www.17lands.com/card_ratings/data?expansion={safe_set_code}&format={self.draft}&start_date={self.start_date}&end_date={self.end_date}{user_group}"
                         if color != constants.FILTER_OPTION_ALL_DECKS:
                             url += "&colors=" + color
                         url_data = urllib.request.urlopen(
@@ -773,7 +776,8 @@ class FileExtractor:
                 user_group = ""
             else:
                 user_group = "&user_group=" + self.user_group.lower()
-            url = f"https://www.17lands.com/color_ratings/data?expansion={self.selected_sets.seventeenlands[0]}&event_type={self.draft}&start_date={self.start_date}&end_date={self.end_date}{user_group}&combine_splash=true"
+            safe_set_code = quote(self.selected_sets.seventeenlands[0], safe='')
+            url = f"https://www.17lands.com/color_ratings/data?expansion={safe_set_code}&event_type={self.draft}&start_date={self.start_date}&end_date={self.end_date}{user_group}&combine_splash=true"
             url_data = urllib.request.urlopen(url, context=self.context).read()
 
             color_json_data = json.loads(url_data)
@@ -958,8 +962,8 @@ class FileExtractor:
         '''Build the file for the set data'''
         result = True
         try:
-            output_file = "_".join(
-                (self.selected_sets.seventeenlands[0], self.draft, self.user_group, constants.SET_FILE_SUFFIX))
+            # Reformat the 17Lands set string so "Cube - Powered" becomes "CUBE-POWERED" in the dataset filename
+            output_file = "_".join((clean_string(self.selected_sets.seventeenlands[0]), self.draft, self.user_group, constants.SET_FILE_SUFFIX))
             location = os.path.join(constants.SETS_FOLDER, output_file)
 
             with open(location, 'w', encoding="utf-8", errors="replace") as file:
