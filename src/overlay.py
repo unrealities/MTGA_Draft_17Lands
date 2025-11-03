@@ -1617,7 +1617,7 @@ class Overlay(ScaledWindow):
         try:
             set_data = set_list[selection.get()]
 
-            if set_data.formats:
+            if set_data.start_date:
                 start.delete(0, tkinter.END)
                 start.insert(tkinter.END, set_data.start_date)
 
