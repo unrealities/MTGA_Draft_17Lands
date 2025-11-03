@@ -1,3 +1,7 @@
+===================== RELEASE NOTES 3.34 =====================
+* FiYir: Handle Powered Cube Draft (BUG-95)
+* Unrealities: File extractor test
+
 ===================== RELEASE NOTES 3.33 =====================
 * FiYir: Pick-Two Support for Omenpath
 * p3p3fr0g: Linux Pathfix
