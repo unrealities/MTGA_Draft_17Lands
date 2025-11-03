@@ -1022,7 +1022,8 @@ class ArenaScanner:
                     elif re.search(r'[.\-/]', set_code):
                         # For sets with delimiters, use the naming pattern [@@@] {event_type} ({user_group}),
                         # where @@@ represents the first three letters of the last word, to distinguish the dataset
-                        type_string = f"[{re.split(r'[.\-/]', set_code)[-1][0:3]}] {event_type} ({user_group})"
+                        dataset_type = re.split(r'[.\-/]', set_code)[-1]
+                        type_string = f"[{dataset_type[0:3]}] {event_type} ({user_group})"
                     else:
                         type_string = f"{event_type} ({user_group})"
                     data_sources[type_string] = location

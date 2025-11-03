@@ -14,7 +14,7 @@ from src.limited_sets import (
 # Test data
 SETS_FILE_LOCATION = os.path.join(os.getcwd(), "Temp", "unit_test_sets.json")
 CHECKED_SETS_COMBINED = {
-    "Through the Omenpaths": SetInfo(arena=["ALL"],scryfall=[],seventeenlands=["OM1"],start_date="2025-09-23",keywords="OM1",formats=["PickTwoDraft","PickTwoTradDraft","QuickDraft","Sealed","TradSealed","PremierDraft","TradDraft"]),
+    "Through the Omenpaths": SetInfo(arena=["ALL"],scryfall=[],seventeenlands=["OM1"],start_date="2025-09-23",set_code="OM1",formats=["PickTwoDraft","PickTwoTradDraft","QuickDraft","Sealed","TradSealed","PremierDraft","TradDraft"]),
     "Outlaws of Thunder Junction" : SetInfo(arena=["ALL"],scryfall=[],seventeenlands=["OTJ"],start_date="2024-04-16",set_code="OTJ",formats=["PremierDraft","TradDraft","QuickDraft","Sealed","TradSealed","PickTwoDraft","PickTwoTradDraft"]),
     "Wilds of Eldraine" : SetInfo(arena=["ALL"],scryfall=[],seventeenlands=["WOE"],start_date="2023-09-05",set_code="WOE",formats=["PremierDraft","TradDraft","QuickDraft","Sealed","TradSealed","PickTwoDraft","PickTwoTradDraft"]),
     "March of the Machine" : SetInfo(arena=["ALL"],scryfall=[],seventeenlands=["MOM"],start_date="2023-04-18",set_code="MOM",formats=["PremierDraft","TradDraft","QuickDraft","Sealed","TradSealed","PickTwoDraft","PickTwoTradDraft"]),
