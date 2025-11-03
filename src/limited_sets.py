@@ -25,7 +25,7 @@ class SetInfo(BaseModel):
     scryfall: List[str] = Field(default_factory=list)
     seventeenlands: List[str] = Field(default_factory=list)
     formats: List[str] = Field(default_factory=list)
-    event_id: str = ""
+    set_code: str = ""
     start_date: str = START_DATE_DEFAULT
 
 class SpecialEvent(BaseModel):
@@ -283,7 +283,7 @@ class LimitedSets:
                 self.sets_17lands.data[card_set] = SetInfo(arena=[constants.SET_SELECTION_ALL],
                                                                    scryfall=[],
                                                                    seventeenlands=[card_set],
-                                                                   event_id=card_set.split(" ")[0].upper())
+                                                                   set_code=card_set.split(" ")[0].upper())
             for card_set, date_string in data["start_dates"].items():
                 if card_set in self.sets_17lands.data:
                     self.sets_17lands.data[card_set].start_date = REPLACE_PHRASE_DATE_SHIFT if "Cube" in card_set else date_string.split('T')[0]
@@ -294,7 +294,8 @@ class LimitedSets:
                     self.sets_17lands.data[card_set].formats = [x for x in formats if x in constants.LIMITED_TYPE_LIST] + [x for x in constants.LIMITED_TYPE_LIST if x not in formats]
             
             # Retrieve the latest set code from the 17Lands expansions list
-            self.latest_set = next(iter(self.sets_17lands.data))
+            if self.sets_17lands.data:
+                self.latest_set = self.sets_17lands.data[next(iter(self.sets_17lands.data))].set_code
         except Exception as error:
             logger.error(error)
 

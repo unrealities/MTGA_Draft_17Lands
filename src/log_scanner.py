@@ -235,8 +235,8 @@ class ArenaScanner:
 
         if events:
             # Find set name within the event string
-            event_set = [i.event_id for i in self.set_list.data.values(
-            ) for x in event_sections if i.event_id.lower() in x.lower()]
+            event_set = [i.set_code for i in self.set_list.data.values(
+            ) for x in event_sections if i.set_code.lower() in x.lower()]
             # Remove duplicates while retaining order
             event_set = list(dict.fromkeys(event_set))
 

@@ -33,13 +33,13 @@ OTJ_P1P1_CARD_NAMES =[
 OTJ_P1P2_ENTRY_SKIP = r'[UnityCrossThreadLogger]==> LogBusinessEvents {"id":"972efef7-cd60-4254-ae18-634210287c95","request":"{\"PlayerId\":null,\"ClientPlatform\":null,\"DraftId\":\"87b408d1-43e0-4fb5-8c74-a1257fde087c\",\"EventId\":\"PremierDraft_OTJ_20240416\",\"SeatNumber\":1,\"PackNumber\":1,\"PickNumber\":2,\"PickGrpId\":90701,\"CardsInPack\":[90702,90417,90607,90524,90481,90588,90440,90418,90353,90494,90360,90609,90548],\"AutoPick\":false,\"TimeRemainingOnPick\":30.8176479,\"EventType\":24,\"EventTime\":\"2024-05-08T00:57:07.6027017Z\"}"}'
 
 TEST_SETS = SetDictionary(data={
-    "OM1" : SetInfo(seventeenlands=["OM1"]),
-    "TDM" : SetInfo(seventeenlands=["TDM"]),
-    "DSK" : SetInfo(seventeenlands=["DSK"]),
-    "MH3" : SetInfo(seventeenlands=["MH3"]),
-    "OTJ" : SetInfo(seventeenlands=["OTJ"]),
-    "MKM" : SetInfo(seventeenlands=["MKM"]),
-    "DMU" : SetInfo(seventeenlands=["DMU"]),
+    "OM1" : SetInfo(seventeenlands=["OM1"],set_code="OM1"),
+    "TDM" : SetInfo(seventeenlands=["TDM"],set_code="TDM"),
+    "DSK" : SetInfo(seventeenlands=["DSK"],set_code="DSK"),
+    "MH3" : SetInfo(seventeenlands=["MH3"],set_code="MH3"),
+    "OTJ" : SetInfo(seventeenlands=["OTJ"],set_code="OTJ"),
+    "MKM" : SetInfo(seventeenlands=["MKM"],set_code="MKM"),
+    "DMU" : SetInfo(seventeenlands=["DMU"],set_code="DMU"),
     },
     special_events=[
         SpecialEvent(
@@ -895,6 +895,25 @@ OM1_PICK_TWO_PREMIER_DRAFT_ENTRIES = [
             missing=["97995","97827","97992","97842","97878","97977","97923","97911"]
         ),
         r'[UnityCrossThreadLogger]==> EventPlayerDraftMakePick {"id":"c6948135-4148-4104-8a6a-c8accde18edd","request":"{\"DraftId\":\"dbd971d5-5bee-4d10-a2ec-eac0530d6553\",\"GrpIds\":[97918,97864],\"Pack\":1,\"Pick\":5}"}'
+    ),
+]
+
+POWERED_CUBE_DRAFT_ENTRIES = [
+(
+        "Event Start",
+        EventResults(
+            new_event=True,
+            data_update=False,
+            current_set="CUBE-POWERED",
+            current_event="PremierDraft",
+            current_pack=0,
+            current_pick=0,
+            picks=[],
+            pack=[],
+            card_pool=[],
+            missing=[]
+        ),
+        r'[UnityCrossThreadLogger]==> EventJoin {"id":"23c1c6a7-3ce2-4a8c-88cf-88ef6dbc266b","request":"{\"EventName\":\"CubeDraft_Powered_20251028\",\"EntryCurrencyType\":\"Gem\",\"EntryCurrencyPaid\":1500,\"CustomTokenId\":null,\"EventChoice\":\"\"}"}'
     ),
 ]
 
