@@ -55,6 +55,8 @@ class CardResult:
                     elif option == constants.DATA_FIELD_WHEEL:
                         selected_card["results"][count] = self.__process_wheel_normalized(
                             card, wheel_sum)
+                    elif option == constants.DATA_FIELD_ALSA_DIFF:
+                        selected_card["results"][count] = self.__process_alsa_diff(card)
                     elif option in card:
                         selected_card["results"][count] = card[option]
                     else:
@@ -138,6 +140,23 @@ class CardResult:
             result = self.__process_wheel(card)
 
             result = round((result / total_sum)*100, 1) if total_sum > 0 else 0
+        except Exception as error:
+            logger.error(error)
+
+        return result
+
+    def __process_alsa_diff(self, card):
+        """Calculate ALSA difference (ALSA - current pick number)"""
+        result = constants.RESULT_UNKNOWN_STRING
+
+        try:
+            if constants.DATA_FIELD_DECK_COLORS in card:
+                all_decks = card[constants.DATA_FIELD_DECK_COLORS].get(
+                    constants.FILTER_OPTION_ALL_DECKS, {})
+                alsa = all_decks.get(constants.DATA_FIELD_ALSA, 0)
+
+                if alsa > 0 and self.pick_number > 0:
+                    result = round(alsa - self.pick_number, 1)
         except Exception as error:
             logger.error(error)
 
