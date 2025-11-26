@@ -9,7 +9,7 @@ import re
 import sqlite3
 from src import constants
 from src.logger import create_logger
-from src.utils import Result, check_file_integrity
+from src.utils import Result, check_file_integrity, clean_string
 from src.ui_progress import UIProgress
 from src.seventeenlands import Seventeenlands
 
@@ -650,6 +650,8 @@ class FileExtractor(UIProgress):
                 result = False
                 while retry:
                     try:
+                        #safe_set_code = quote(set_code, safe='')
+                        #url = f"https://www.17lands.com/card_ratings/data?expansion={safe_set_code}&format={self.draft}&start_date={self.start_date}&end_date={self.end_date}{user_group}"
                         self._update_status(f"Collecting {color} 17Lands Data")
                         seventeenlands.download_card_ratings(set_code, color, self.draft, self.start_date, self.end_date, self.user_group, self.card_ratings)
                         result = True
@@ -687,6 +689,8 @@ class FileExtractor(UIProgress):
         game_count = 0
         seventeenlands = Seventeenlands()
         try:
+            #safe_set_code = quote(self.selected_sets.seventeenlands[0], safe='')
+            #url = f"https://www.17lands.com/color_ratings/data?expansion={safe_set_code}&event_type={self.draft}&start_date={self.start_date}&end_date={self.end_date}{user_group}&combine_splash=true"
             #if self.user_group == constants.LIMITED_USER_GROUP_ALL:
             #    user_group = ""
             #else:
@@ -700,69 +704,11 @@ class FileExtractor(UIProgress):
             self.set_game_count(game_count)
         except Exception as error:
             result = False
+            logger.error(url)
             logger.error(error)
         return result, game_count
-    #def retrieve_17lands_color_ratings(self):
-    #    '''Use 17Lands endpoint to collect the data from the color_ratings page'''
-    #    result = True
-    #    game_count = 0
-    #    try:
-    #        if self.user_group == constants.LIMITED_USER_GROUP_ALL:
-    #            user_group = ""
-    #        else:
-    #            user_group = "&user_group=" + self.user_group.lower()
-    #        url = f"https://www.17lands.com/color_ratings/data?expansion={self.selected_sets.seventeenlands[0]}&event_type={self.draft}&start_date={self.start_date}&end_date={self.end_date}{user_group}&combine_splash=true"
-    #        url_data = urllib.request.urlopen(url, context=self.context).read()
-#
-    #        color_json_data = json.loads(url_data)
-    #        game_count = self._process_17lands_color_ratings(color_json_data)
-#
-    #    except Exception as error:
-    #        result = False
-    #        logger.error(url)
-    #        logger.error(error)
-    #    return result, game_count
 
-    #def _process_17lands_data(self, colors, cards):
-    #    '''Parse the 17Lands json data to extract the card ratings'''
-    #    result = True
-#
-    #    for card in cards:
-    #        try:
-    #            card_data = {constants.DATA_SECTION_RATINGS: [],
-    #                         constants.DATA_SECTION_IMAGES: []}
-    #            color_data = {colors: {}}
-    #            for key, value in constants.DATA_FIELD_17LANDS_DICT.items():
-    #                if key == constants.DATA_SECTION_IMAGES:
-    #                    for field in value:
-    #                        if field in card and len(card[field]):
-    #                            image_url = f"{constants.URL_17LANDS}{card[field]}" if card[field].startswith(
-    #                                constants.IMAGE_17LANDS_SITE_PREFIX) else card[field]
-    #                            card_data[constants.DATA_SECTION_IMAGES].append(
-    #                                image_url)
-    #                elif value in card:
-    #                    if (key in constants.WIN_RATE_OPTIONS) or (key == constants.DATA_FIELD_IWD):
-    #                        color_data[colors][key] = round(
-    #                            float(card[value]) * 100.0, 2) if card[value] else 0.0
-    #                    elif ((key == constants.DATA_FIELD_ATA) or
-    #                          (key == constants.DATA_FIELD_ALSA)):
-    #                        color_data[colors][key] = round(float(card[value] if card[value] else 0.0), 2)
-    #                    else:
-    #                        color_data[colors][key] = int(card[value] if card[value] else 0)
-#
-    #            card_name = card[constants.DATA_FIELD_NAME]
-#
-    #            if card_name not in self.card_ratings:
-    #                self.card_ratings[card_name] = card_data
-#
-    #            self.card_ratings[card_name][constants.DATA_SECTION_RATINGS].append(
-    #                color_data)
-#
-    #        except Exception as error:
-    #            result = False
-    #            logger.error(error)
-#
-    #    return result
+
 
     #def _process_17lands_color_ratings(self, colors):
     #    '''Parse the 17Lands json data to collect the color ratings'''
@@ -895,8 +841,7 @@ class FileExtractor(UIProgress):
     def export_card_data(self):
         '''Build the file for the set data'''
         try:
-            output_file = "_".join(
-                (self.selected_sets.seventeenlands[0], self.draft, self.user_group, constants.SET_FILE_SUFFIX))
+            output_file = "_".join((clean_string(self.selected_sets.seventeenlands[0]), self.draft, self.user_group, constants.SET_FILE_SUFFIX))
             location = os.path.join(constants.SETS_FOLDER, output_file)
 
             with open(location, 'w', encoding="utf-8", errors="replace") as file:

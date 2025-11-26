@@ -1,5 +1,5 @@
-from dataclasses import dataclass, field
-from typing import List, Dict, Any, Tuple
+
+from typing import List, Dict, Any
 import requests
 from src.logger import create_logger
 from src.constants import (

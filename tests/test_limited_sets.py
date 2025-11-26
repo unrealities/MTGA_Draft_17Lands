@@ -7,25 +7,28 @@ from src.limited_sets import (
     LimitedSets,
     SetInfo,
     SetDictionary,
-    LIMITED_SETS_VERSION
+    LIMITED_SETS_VERSION,
+    REPLACE_PHRASE_DATE_SHIFT
 )
 
 # Test data
 SETS_FILE_LOCATION = os.path.join(os.getcwd(), "Temp", "unit_test_sets.json")
 CHECKED_SETS_COMBINED = {
-    "Outlaws of Thunder Junction" : SetInfo(arena=["ALL"],scryfall=[],seventeenlands=["OTJ"]),
-    "Wilds of Eldraine" : SetInfo(arena=["ALL"],scryfall=[],seventeenlands=["WOE"]),
-    "March of the Machine" : SetInfo(arena=["ALL"],scryfall=[],seventeenlands=["MOM"]),
-    "March of the Machine: The Aftermath": SetInfo(arena=["ALL"],scryfall=[],seventeenlands=["MAT"]),
-    "Shadows over Innistrad Remastered": SetInfo(arena=["ALL"],scryfall=[],seventeenlands=["SIR"]),
-    "Phyrexia: All Will Be One": SetInfo(arena=["ALL"],scryfall=[],seventeenlands=["ONE"]), 
-    "Alchemy: Phyrexia": SetInfo(arena=["ALL"],scryfall=[],seventeenlands=["Y23ONE"]), 
-    "The Brothers' War": SetInfo(arena=["ALL"],scryfall=[],seventeenlands=["BRO"]), 
-    "Alchemy: The Brothers' War": SetInfo(arena=["ALL"],scryfall=[],seventeenlands=["Y23BRO"]),
-    "CORE": SetInfo(arena=["ALL"],scryfall=[],seventeenlands=["CORE"],start_date="2021-03-26"),
+    "Through the Omenpaths": SetInfo(arena=["ALL"],scryfall=[],seventeenlands=["OM1"],start_date="2025-09-23",set_code="OM1",formats=["PickTwoDraft","PickTwoTradDraft","QuickDraft","Sealed","TradSealed","PremierDraft","TradDraft"]),
+    "Outlaws of Thunder Junction" : SetInfo(arena=["ALL"],scryfall=[],seventeenlands=["OTJ"],start_date="2024-04-16",set_code="OTJ",formats=["PremierDraft","TradDraft","QuickDraft","Sealed","TradSealed","PickTwoDraft","PickTwoTradDraft"]),
+    "Wilds of Eldraine" : SetInfo(arena=["ALL"],scryfall=[],seventeenlands=["WOE"],start_date="2023-09-05",set_code="WOE",formats=["PremierDraft","TradDraft","QuickDraft","Sealed","TradSealed","PickTwoDraft","PickTwoTradDraft"]),
+    "March of the Machine" : SetInfo(arena=["ALL"],scryfall=[],seventeenlands=["MOM"],start_date="2023-04-18",set_code="MOM",formats=["PremierDraft","TradDraft","QuickDraft","Sealed","TradSealed","PickTwoDraft","PickTwoTradDraft"]),
+    "March of the Machine: The Aftermath": SetInfo(arena=["ALL"],scryfall=[],seventeenlands=["MAT"],start_date="2023-05-09",set_code="MAT",formats=["PremierDraft","QuickDraft","TradDraft","Sealed","TradSealed","PickTwoDraft","PickTwoTradDraft"]),
+    "Shadows over Innistrad Remastered": SetInfo(arena=["ALL"],scryfall=[],seventeenlands=["SIR"],start_date="2023-03-21",set_code="SIR",formats=["PremierDraft","TradDraft","Sealed","TradSealed","QuickDraft","PickTwoDraft","PickTwoTradDraft"]),
+    "Phyrexia: All Will Be One": SetInfo(arena=["ALL"],scryfall=[],seventeenlands=["ONE"],start_date="2023-02-07",set_code="ONE",formats=["PremierDraft","TradDraft","QuickDraft","Sealed","TradSealed","PickTwoDraft","PickTwoTradDraft"]), 
+    "Alchemy: Phyrexia": SetInfo(arena=["ALL"],scryfall=[],seventeenlands=["Y23ONE"],start_date="2023-02-28",set_code="Y23ONE",formats=["PremierDraft","QuickDraft","TradDraft","Sealed","TradSealed","PickTwoDraft","PickTwoTradDraft"]), 
+    "The Brothers' War": SetInfo(arena=["ALL"],scryfall=[],seventeenlands=["BRO"],start_date="2022-11-15",set_code="BRO",formats=["PremierDraft","TradDraft","QuickDraft","Sealed","TradSealed","PickTwoDraft","PickTwoTradDraft"]), 
+    "Alchemy: The Brothers' War": SetInfo(arena=["ALL"],scryfall=[],seventeenlands=["Y23BRO"],start_date="2022-12-13",set_code="Y23BRO",formats=["PremierDraft","QuickDraft","TradDraft","Sealed","TradSealed","PickTwoDraft","PickTwoTradDraft"]),
+    "CORE": SetInfo(arena=["ALL"],scryfall=[],seventeenlands=["CORE"],start_date="2021-03-26",set_code="CORE",formats=["PremierDraft","QuickDraft","TradDraft","Sealed","TradSealed","PickTwoDraft","PickTwoTradDraft"]),
 }
 
 CHECKED_SETS_SCRYFALL = {
+    "Through the Omenpaths" : SetInfo(arena=["ALL"],scryfall=[],seventeenlands=["OM1"]),
     "Outlaws of Thunder Junction" : SetInfo(arena=["ALL"],scryfall=[],seventeenlands=["OTJ"]),
     "Wilds of Eldraine" : SetInfo(arena=["ALL"],scryfall=[],seventeenlands=["WOE"]),
     "March of the Machine" : SetInfo(arena=["ALL"],scryfall=[],seventeenlands=["MOM"]),
@@ -38,15 +41,18 @@ CHECKED_SETS_SCRYFALL = {
 }
 
 CHECKED_SETS_17LANDS = {
-    "OTJ" : SetInfo(arena=["ALL"],scryfall=[],seventeenlands=["OTJ"],start_date="2024-04-16"),
-    "WOE" : SetInfo(arena=["ALL"],scryfall=[],seventeenlands=["WOE"],start_date="2023-09-05"),
-    "MOM" : SetInfo(arena=["ALL"],scryfall=[],seventeenlands=["MOM"],start_date="2023-04-18"),
-    "MAT": SetInfo(arena=["ALL"],scryfall=[],seventeenlands=["MAT"],start_date="2023-05-09"),
-    "SIR": SetInfo(arena=["ALL"],scryfall=[],seventeenlands=["SIR"],start_date="2023-03-21"),
-    "ONE": SetInfo(arena=["ALL"],scryfall=[],seventeenlands=["ONE"],start_date="2023-02-07"),
-    "Y23ONE": SetInfo(arena=["ALL"],scryfall=[],seventeenlands=["Y23ONE"],start_date="2023-02-28"),
-    "BRO": SetInfo(arena=["ALL"],scryfall=[],seventeenlands=["BRO"],start_date="2022-11-15"),
-    "Y23BRO": SetInfo(arena=["ALL"],scryfall=[],seventeenlands=["Y23BRO"],start_date="2022-12-13"),
+    "OM1": SetInfo(arena=["ALL"],scryfall=[],seventeenlands=["OM1"],start_date="2025-09-23",set_code="OM1",formats=["PickTwoDraft","PickTwoTradDraft","QuickDraft","Sealed","TradSealed","PremierDraft","TradDraft"]),
+    "Cube - Powered": SetInfo(arena=["ALL"],scryfall=[],seventeenlands=["Cube - Powered"],start_date=REPLACE_PHRASE_DATE_SHIFT,set_code="CUBE",formats=["PremierDraft","TradDraft","QuickDraft","Sealed","TradSealed","PickTwoDraft","PickTwoTradDraft"]),
+    "Cube": SetInfo(arena=["ALL"],scryfall=[],seventeenlands=["Cube"],start_date=REPLACE_PHRASE_DATE_SHIFT,set_code="CUBE",formats=["PremierDraft","TradDraft","QuickDraft","Sealed","TradSealed","PickTwoDraft","PickTwoTradDraft"]),
+    "OTJ" : SetInfo(arena=["ALL"],scryfall=[],seventeenlands=["OTJ"],start_date="2024-04-16",set_code="OTJ",formats=["PremierDraft","TradDraft","QuickDraft","Sealed","TradSealed","PickTwoDraft","PickTwoTradDraft"]),
+    "WOE" : SetInfo(arena=["ALL"],scryfall=[],seventeenlands=["WOE"],start_date="2023-09-05",set_code="WOE",formats=["PremierDraft","TradDraft","QuickDraft","Sealed","TradSealed","PickTwoDraft","PickTwoTradDraft"]),
+    "MOM" : SetInfo(arena=["ALL"],scryfall=[],seventeenlands=["MOM"],start_date="2023-04-18",set_code="MOM",formats=["PremierDraft","TradDraft","QuickDraft","Sealed","TradSealed","PickTwoDraft","PickTwoTradDraft"]),
+    "MAT": SetInfo(arena=["ALL"],scryfall=[],seventeenlands=["MAT"],start_date="2023-05-09",set_code="MAT",formats=["PremierDraft","QuickDraft","TradDraft","Sealed","TradSealed","PickTwoDraft","PickTwoTradDraft"]),
+    "SIR": SetInfo(arena=["ALL"],scryfall=[],seventeenlands=["SIR"],start_date="2023-03-21",set_code="SIR",formats=["PremierDraft","TradDraft","Sealed","TradSealed","QuickDraft","PickTwoDraft","PickTwoTradDraft"]),
+    "ONE": SetInfo(arena=["ALL"],scryfall=[],seventeenlands=["ONE"],start_date="2023-02-07",set_code="ONE",formats=["PremierDraft","TradDraft","QuickDraft","Sealed","TradSealed","PickTwoDraft","PickTwoTradDraft"]), 
+    "Y23ONE": SetInfo(arena=["ALL"],scryfall=[],seventeenlands=["Y23ONE"],start_date="2023-02-28",set_code="Y23ONE",formats=["PremierDraft","QuickDraft","TradDraft","Sealed","TradSealed","PickTwoDraft","PickTwoTradDraft"]), 
+    "BRO": SetInfo(arena=["ALL"],scryfall=[],seventeenlands=["BRO"],start_date="2022-11-15",set_code="BRO",formats=["PremierDraft","TradDraft","QuickDraft","Sealed","TradSealed","PickTwoDraft","PickTwoTradDraft"]), 
+    "Y23BRO": SetInfo(arena=["ALL"],scryfall=[],seventeenlands=["Y23BRO"],start_date="2022-12-13",set_code="Y23BRO",formats=["PremierDraft","QuickDraft","TradDraft","Sealed","TradSealed","PickTwoDraft","PickTwoTradDraft"]),
 }
 
 TEST_SETS = {
@@ -67,6 +73,7 @@ OLD_SETS_FORMAT = {
 
 MOCK_URL_RESPONSE_17LANDS_FILTERS = b'''{
     "expansions":[
+        "OM1",
         "MH3",
         "OTJ",
         "Y24OTJ",
@@ -115,10 +122,12 @@ MOCK_URL_RESPONSE_17LANDS_FILTERS = b'''{
         "RNA",
         "KTK",
         "XLN",
+        "Cube - Powered",
         "Cube",
         "Chaos"
     ],
     "start_dates":{
+        "OM1":"2025-09-23T15:00:00Z",
         "2X2":"2022-07-08T00:00:00Z",
         "2XM":"2000-03-01T00:00:00Z",
         "AFR":"2021-07-08T00:00:00Z",
@@ -127,6 +136,7 @@ MOCK_URL_RESPONSE_17LANDS_FILTERS = b'''{
         "CLB":"2022-06-10T00:00:00Z",
         "CORE":"2021-03-26T00:00:00Z",
         "Chaos":"2024-06-03T18:31:12.496525Z",
+        "Cube - Powered":"2025-10-03T14:04:46.735569Z",
         "Cube":"2024-06-03T18:31:12.496522Z",
         "DBL":"2022-01-28T00:00:00Z",
         "DMR":"2023-01-13T00:00:00Z",
@@ -177,12 +187,84 @@ MOCK_URL_RESPONSE_17LANDS_FILTERS = b'''{
         "Y24OTJ":"2024-05-07T15:00:00Z",
         "Y24WOE":"2023-10-10T15:00:00Z",
         "ZNR":"2020-09-16T00:00:00Z"
-    }
+    },
+    "formats_by_expansion":{
+        "AFR":["PremierDraft","TradDraft","QuickDraft","Sealed","TradSealed","DraftChallenge"],
+        "AKR":["PremierDraft","Sealed"],
+        "BLB":["PremierDraft","TradDraft","QuickDraft","Sealed","TradSealed","ArenaDirect_Sealed","MidWeekSealed","OpenDraft_D2_Draft1_Bo3","OpenDraft_D2_Draft2B_Bo3","OpenDraft_D2_Draft2_Bo3","OpenSealed_D1_Bo1","OpenSealed_D1_Bo3","QualifierPlayInSealed","QualifierPlayInTradSealed","Qualifier_D1_Sealed","Qualifier_D2_Sealed"],
+        "BRO":["PremierDraft","TradDraft","QuickDraft","Sealed","TradSealed","DecathlonTradDraft","MidWeekQuickDraft","OpenDraft_D2_Draft1_Bo3","OpenDraft_D2_Draft2B_Bo3","OpenDraft_D2_Draft2_Bo3","OpenSealed_D1_Bo1","OpenSealed_D1_Bo3","QualifierPlayInSealed","QualifierPlayInTradSealed","Qualifier_D1_Sealed","Qualifier_D2_Sealed"],
+        "CORE":["PremierDraft"],"Chaos":["PremierDraft","TradDraft","DecathlonFinals2023","FIAB_Sealed","MidWeekSealed","PremierDraftRemixArtifacts"],
+        "Cube":["PremierDraft","TradDraft","CubeSealed","DecathlonFinals2022","OpenDraft_D1_Bo1","OpenDraft_D1_Bo3","OpenDraft_D2_Draft1_Bo3","OpenDraft_D2_Draft2B_Bo3","OpenDraft_D2_Draft2_Bo3"],
+        "Cube - Powered":["PremierDraft","TradDraft"],
+        "DBL":["PremierDraft"],
+        "DFT":["PremierDraft","TradDraft","QuickDraft","Sealed","TradSealed","ArenaDirect_Sealed","Emblem_QuickDraft","MidWeekQuickDraft","OpenDraft_D2_Draft1_Bo3","OpenDraft_D2_Draft2B_Bo3","OpenDraft_D2_Draft2_Bo3","OpenSealed_D1_Bo1","OpenSealed_D1_Bo3","QualifierPlayInSealed","QualifierPlayInTradSealed","Qualifier_D1_Sealed","Qualifier_D2_Sealed"],
+        "DMU":["PremierDraft","TradDraft","QuickDraft","Sealed","TradSealed","Esports_Draft","MidWeekQuickDraft","OpenDraft_D2_Draft1_Bo3","OpenDraft_D2_Draft2_Bo3","OpenSealed_D1_Bo1","OpenSealed_D1_Bo3","QualifierPlayInSealed","QualifierPlayInTradSealed","Qualifier_D1_Sealed","Qualifier_D2_Sealed"],
+        "DOM":["PremierDraft","QuickDraft","Sealed","TradSealed","OpenSealed_D1_Bo1","OpenSealed_D1_Bo3","OpenSealed_D2_Bo3","OpenSealed_D2_Sealed1_Bo3","OpenSealed_D2_Sealed2_Bo3"],
+        "DSK":["PremierDraft","TradDraft","QuickDraft","Sealed","TradSealed","ArenaDirect_Draft","ArenaDirect_Sealed","MidWeekQuickDraft","Omniscience_Draft","OpenDraft_D2_Draft1_Bo3","OpenDraft_D2_Draft2B_Bo3","OpenDraft_D2_Draft2_Bo3","OpenSealed_D1_Bo1","OpenSealed_D1_Bo3","QualifierPlayInSealed","QualifierPlayInTradSealed","Qualifier_D1_Sealed","Qualifier_D2_Sealed"],
+        "ELD":["PremierDraft","QuickDraft","Sealed","BotDraft","CompDraft"],
+        "EOE":["PremierDraft","TradDraft","QuickDraft","Sealed","TradSealed","ArenaDirect_Sealed","MidWeekQuickDraft","MidWeekSealed","OpenDraft_D2_Draft1_Bo3","OpenDraft_D2_Draft2B_Bo3","OpenDraft_D2_Draft2_Bo3","OpenSealed_D1_Bo1","OpenSealed_D1_Bo3","QualifierPlayInSealed","QualifierPlayInTradSealed","Qualifier_D1_Sealed","Qualifier_D2_Sealed"],
+        "FDN":["PremierDraft","TradDraft","QuickDraft","Sealed","TradSealed","ArenaDirect_Sealed","MidWeekSealed","Omniscience_Draft","OpenDraft_D2_Draft1_Bo3","OpenDraft_D2_Draft2B_Bo3","OpenDraft_D2_Draft2_Bo3","OpenSealed_D1_Bo1","OpenSealed_D1_Bo3","QualifierPlayInSealed","QualifierPlayInTradSealed","Qualifier_D1_Sealed","Qualifier_D2_Sealed"],
+        "FIN":["PremierDraft","TradDraft","QuickDraft","Sealed","TradSealed","ArenaDirect_Sealed","Emblem_QuickDraft","MidWeekQuickDraft","QualifierPlayInSealed"],
+        "GRN":["PremierDraft","QuickDraft","Sealed"],
+        "HBG":["PremierDraft","TradDraft","QuickDraft","Sealed","TradSealed","OpenDraft_D2_Draft1_Bo3","OpenDraft_D2_Draft2_Bo3","OpenSealed_D1_Bo1","OpenSealed_D1_Bo3","QualifierPlayInSealed","QualifierPlayInTradSealed","Qualifier_D1_Sealed","Qualifier_D2_Draft"],
+        "IKO":["PremierDraft","TradDraft","QuickDraft","Sealed","CompDraft"],
+        "KHM":["PremierDraft","TradDraft","QuickDraft","Sealed","TradSealed","MidWeekQuickDraft","OpenDraft_D2_Draft1_Bo3","OpenDraft_D2_Draft2B_Bo3","OpenDraft_D2_Draft2_Bo3","OpenSealed_D1_Bo1","OpenSealed_D1_Bo3","OpenSealed_D2_Bo3"],
+        "KLR":["PremierDraft","TradDraft","Sealed","DraftChallenge"],
+        "KTK":["PremierDraft","TradDraft","QuickDraft","Sealed","TradSealed","OpenDraft_D2_Draft1_Bo3","OpenDraft_D2_Draft2B_Bo3","OpenDraft_D2_Draft2_Bo3","OpenSealed_D1_Bo1","OpenSealed_D1_Bo3"],
+        "LCI":["PremierDraft","TradDraft","QuickDraft","Sealed","TradSealed","ArenaDirect_Sealed","MidWeekSealed","OpenDraft_D2_Draft1_Bo3","OpenDraft_D2_Draft2B_Bo3","OpenDraft_D2_Draft2_Bo3","OpenSealed_D1_Bo1","OpenSealed_D1_Bo3","QualifierPlayInSealed","QualifierPlayInTradSealed","Qualifier_D1_Sealed","Qualifier_D2_Sealed"],
+        "LTR":["PremierDraft","TradDraft","QuickDraft","Sealed","TradSealed","MidWeekSealed","OpenDraft_D2_Draft1_Bo3","OpenDraft_D2_Draft2B_Bo3","OpenDraft_D2_Draft2_Bo3","OpenSealed_D1_Bo1","OpenSealed_D1_Bo3","QualifierPlayInSealed","QualifierPlayInTradSealed","Qualifier_D1_Sealed","Qualifier_D2_Sealed"],
+        "M19":["PremierDraft","QuickDraft"],
+        "M20":["PremierDraft","QuickDraft","Sealed","CompDraft"],
+        "M21":["PremierDraft","TradDraft","QuickDraft","Sealed"],
+        "MAT":["PremierDraft"],
+        "MH3":["PremierDraft","TradDraft","QuickDraft","Sealed","TradSealed","ArenaDirect_Sealed","Esports_Draft","MidWeekQuickDraft","OpenDraft_D2_Draft1_Bo3","OpenDraft_D2_Draft2B_Bo3","OpenDraft_D2_Draft2_Bo3","OpenSealed_D1_Bo1","OpenSealed_D1_Bo3","QualifierPlayInSealed"],
+        "MID":["PremierDraft","TradDraft","QuickDraft","Sealed","TradSealed","DraftChallenge","MidWeekSealed"],
+        "MKM":["PremierDraft","TradDraft","QuickDraft","Sealed","TradSealed","Esports_Draft","MidWeekSealed","OpenDraft_D2_Draft1_Bo3","OpenDraft_D2_Draft2B_Bo3","OpenDraft_D2_Draft2_Bo3","OpenSealed_D1_Bo1","OpenSealed_D1_Bo3","QualifierPlayInSealed","QualifierPlayInTradSealed","Qualifier_D1_Sealed","Qualifier_D2_Sealed"],
+        "MOM":["PremierDraft","TradDraft","QuickDraft","Sealed","TradSealed","MidWeekSealed","OpenDraft_D2_Draft1_Bo3","OpenDraft_D2_Draft2B_Bo3","OpenDraft_D2_Draft2_Bo3","OpenSealed_D1_Bo1","OpenSealed_D1_Bo3","QualifierPlayInSealed","QualifierPlayInTradSealed","Qualifier_D1_Sealed","Qualifier_D2_Sealed"],
+        "NEO":["PremierDraft","TradDraft","QuickDraft","Sealed","TradSealed","DecathlonQuickDraft","OpenDraft_D2_Bo3","OpenSealed_D1_Bo1","OpenSealed_D1_Bo3"],
+        "OM1":["PickTwoDraft","PickTwoTradDraft","QuickDraft","Sealed","TradSealed","Emblem_QuickDraft","QualifierPlayInSealed","QualifierPlayInTradSealed","Qualifier_D1_Sealed","Qualifier_D2_Sealed"],
+        "ONE":["PremierDraft","TradDraft","QuickDraft","Sealed","TradSealed","MidWeekQuickDraft","MidWeekSealed","OpenDraft_D2_Draft1_Bo3","OpenDraft_D2_Draft2B_Bo3","OpenDraft_D2_Draft2_Bo3","OpenSealed_D1_Bo1","OpenSealed_D1_Bo3","QualifierPlayInSealed","QualifierPlayInTradSealed","Qualifier_D1_Sealed","Qualifier_D2_Sealed"],
+        "OTJ":["PremierDraft","TradDraft","QuickDraft","Sealed","TradSealed","ArenaDirect_Sealed","MidWeekSealed","OpenDraft_D2_Draft1_Bo3","OpenDraft_D2_Draft2B_Bo3","OpenDraft_D2_Draft2_Bo3","OpenSealed_D1_Bo1","OpenSealed_D1_Bo3","QualifierPlayInSealed","QualifierPlayInTradSealed","Qualifier_D1_Sealed","Qualifier_D2_Sealed"],
+        "PIO":["PremierDraft","TradDraft","Sealed","TradSealed","MidWeekSealed","OpenDraft_D2_Draft1_Bo3","OpenDraft_D2_Draft2B_Bo3","OpenDraft_D2_Draft2_Bo3","OpenSealed_D1_Bo1","OpenSealed_D1_Bo3"],
+        "RAVM":["PremierDraft","Sealed"],
+        "RIX":["PremierDraft","QuickDraft"],
+        "RNA":["PremierDraft","QuickDraft","Sealed","CompDraft"],
+        "Ravnica":["Sealed"],
+        "SIR":["PremierDraft","TradDraft","Sealed","TradSealed","MidWeekSealed","OpenDraft_D2_Draft1_Bo3","OpenDraft_D2_Draft2B_Bo3","OpenDraft_D2_Draft2_Bo3","OpenSealed_D1_Bo1","OpenSealed_D1_Bo3"],
+        "SNC":["PremierDraft","TradDraft","QuickDraft","Sealed","TradSealed","OpenDraft_D2_Bo3","OpenSealed_D1_Bo1","OpenSealed_D1_Bo3","QualifierPlayInSealed","QualifierPlayInTradSealed","Qualifier_D1_Sealed","Qualifier_D2_Draft"],
+        "STX":["PremierDraft","TradDraft","QuickDraft","Sealed","TradSealed","DraftChallenge","MidWeekQuickDraft","OpenSealed_D1_Bo1","OpenSealed_D1_Bo3","OpenSealed_D2_Bo3"],
+        "TDM":["PremierDraft","TradDraft","QuickDraft","Sealed","TradSealed","ArenaDirect_Sealed","MidWeekQuickDraft","OpenDraft_D2_Draft1_Bo3","OpenDraft_D2_Draft2B_Bo3","OpenDraft_D2_Draft2_Bo3","OpenSealed_D1_Bo1","OpenSealed_D1_Bo3"],
+        "THB":["PremierDraft","QuickDraft","Sealed","CompDraft"],
+        "VOW":["PremierDraft","TradDraft","QuickDraft","Sealed","TradSealed","EsportsQualifierDraft_D1","EsportsQualifierDraft_D2","MidWeekQuickDraft","MidWeekSealed","OpenDraft_D1_Bo1","OpenDraft_D1_Bo3","OpenDraft_D2_Bo3"],
+        "WAR":["PremierDraft","QuickDraft","Sealed","CompDraft"],
+        "WOE":["PremierDraft","TradDraft","QuickDraft","Sealed","TradSealed","Esports_Draft","MidWeekSealed","OpenDraft_D2_Draft1_Bo3","OpenDraft_D2_Draft2B_Bo3","OpenDraft_D2_Draft2_Bo3","OpenSealed_D1_Bo1","OpenSealed_D1_Bo3","QualifierPlayInSealed","QualifierPlayInTradSealed","Qualifier_D1_Sealed","Qualifier_D2_Sealed"],
+        "Y22SNC":["PremierDraft"],
+        "Y23BRO":["PremierDraft"],
+        "Y23DMU":["PremierDraft"],
+        "Y23ONE":["PremierDraft"],
+        "Y24LCI":["PremierDraft"],
+        "Y24MKM":["PremierDraft"],
+        "Y24OTJ":["PremierDraft"],
+        "Y24WOE":["PremierDraft"],
+        "Y25BLB":["PremierDraft"],
+        "Y25DFT":["PremierDraft"],
+        "Y25DSK":["PremierDraft"],
+        "Y25EOE":["PremierDraft"],
+        "Y25TDM":["PremierDraft"],
+        "ZNR":["PremierDraft","TradDraft","QuickDraft","Sealed"]}
 }'''
 
 
 MOCK_URL_RESPONSE_SCRYFALL_SETS = b'''{
     "object":"list","has_more":false,"data": [
+        {
+            "object":"set",
+            "code":"om1",
+            "arena_code":"om1",
+            "digital":true,
+            "name":"Through the Omenpaths",
+            "set_type":"expansion"
+        },
         {
             "object":"set",
             "code":"mh3",
@@ -283,9 +365,12 @@ def fixture_limited_sets():
 def check_for_sets(sets_data, check_data):
     for key in check_data:
         assert key in sets_data
-        assert check_data[key] == sets_data[key]
+        assert check_data[key] == sets_data[key], f"SetInfo mismatch for set '{key}'"
 
-def test_retrieve_limited_sets_success(limited_sets):
+@patch("src.limited_sets.urllib.request.urlopen")
+def test_retrieve_limited_sets_success(mock_urlopen, limited_sets):
+    # Mock the urlopen responses - 17Lands and then Scryfall
+    mock_urlopen.return_value.read.side_effect = [MOCK_URL_RESPONSE_17LANDS_FILTERS, MOCK_URL_RESPONSE_SCRYFALL_SETS]
     if os.path.exists(SETS_FILE_LOCATION):
         os.remove(SETS_FILE_LOCATION)
         assert os.path.exists(SETS_FILE_LOCATION) == False
@@ -298,15 +383,21 @@ def test_retrieve_limited_sets_success(limited_sets):
     
     check_for_sets(output_sets.data, CHECKED_SETS_COMBINED)
 
-def test_retrieve_scryfall_sets_success(limited_sets):
+@patch("src.limited_sets.urllib.request.urlopen")
+def test_retrieve_scryfall_sets_success(mock_urlopen, limited_sets):
+    # Mock the urlopen responses - 17Lands and then Scryfall
+    mock_urlopen.return_value.read.side_effect = [MOCK_URL_RESPONSE_17LANDS_FILTERS, MOCK_URL_RESPONSE_SCRYFALL_SETS]
     output_sets = limited_sets.retrieve_scryfall_sets()
-    
+
     assert type(output_sets) == SetDictionary
     assert len(output_sets.data) > 0
     
     check_for_sets(output_sets.data, CHECKED_SETS_SCRYFALL)
 
-def test_retrieve_17lands_sets_success(limited_sets):
+@patch("src.limited_sets.urllib.request.urlopen")
+def test_retrieve_17lands_sets_success(mock_urlopen, limited_sets):
+    # Mock the urlopen responses - 17Lands and then Scryfall
+    mock_urlopen.return_value.read.side_effect = [MOCK_URL_RESPONSE_17LANDS_FILTERS, MOCK_URL_RESPONSE_SCRYFALL_SETS]
     output_sets = limited_sets.retrieve_17lands_sets()
     
     assert type(output_sets) == SetDictionary
@@ -432,7 +523,7 @@ def test_substitute_string_latest(mock_urlopen, limited_sets):
     assert limited_sets.write_sets_file(test_data)
 
     # Mock the urlopen responses - 17Lands and then Scryfall
-    test_response = b'{"expansions":["MKM","OTJ"],"start_dates":{"MKM":"2024-02-06T00:00:00Z", "OTJ":"2024-04-16T15:00:00Z"}}'
+    test_response = b'{"expansions":["MKM","OTJ"],"start_dates":{"MKM":"2024-02-06T00:00:00Z", "OTJ":"2024-04-16T15:00:00Z"},"formats_by_expansion":{"MKM":["PremierDraft"],"OTJ":["PremierDraft"]}}'
     mock_urlopen.return_value.read.side_effect = [test_response, MOCK_URL_RESPONSE_SCRYFALL_SETS]
 
     # Read the file back - this will make calls to the mocked urlopen method
@@ -446,7 +537,7 @@ def test_substitute_string_latest(mock_urlopen, limited_sets):
 
     # Mock the urlopen responses - 17Lands and then Scryfall
     # Switch the set codes
-    test_response = b'{"expansions":["OTJ","MKM"],"start_dates":{"MKM":"2024-02-06T00:00:00Z", "OTJ":"2024-04-16T15:00:00Z"}}'
+    test_response = b'{"expansions":["OTJ","MKM"],"start_dates":{"MKM":"2024-02-06T00:00:00Z", "OTJ":"2024-04-16T15:00:00Z"},"formats_by_expansion":{"MKM":["PremierDraft"],"OTJ":["PremierDraft"]}}'
     mock_urlopen.return_value.read.side_effect = [test_response, MOCK_URL_RESPONSE_SCRYFALL_SETS]
 
     # Read the file back - this will make calls to the mocked urlopen method
@@ -482,7 +573,7 @@ def test_substitute_string_date_shift(mock_urlopen, limited_sets):
         output_sets = limited_sets.retrieve_limited_sets()
 
     # Verify that the {DATESHIFT} response is substituted for the expected shift date 
-    assert "Arena Cube" in output_sets.data
-    assert output_sets.data["Arena Cube"].start_date == expected_shift_date
+    assert "Cube" in output_sets.data
+    assert output_sets.data["Cube"].start_date == expected_shift_date
     
 

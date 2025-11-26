@@ -15,7 +15,7 @@ from src.configuration import read_configuration, write_configuration, reset_con
 from src.limited_sets import LimitedSets
 from src.log_scanner import ArenaScanner, Source
 from src.file_extractor import search_arena_log_locations, retrieve_arena_directory
-from src.utils import retrieve_local_set_list, open_file
+from src.utils import open_file
 from src import constants
 from src.logger import create_logger
 from src.scaled_window import ScaledWindow, identify_safe_coordinates
@@ -311,7 +311,7 @@ class Overlay(ScaledWindow):
         self.filemenu.add_command(label="Read Player.log", command=lambda: self.__open_draft_log(self.configuration.settings.arena_log_location))
         self.filemenu.add_command(label="Open Player.log", command=lambda: open_file(self.configuration.settings.arena_log_location))
         self.datamenu = tkinter.Menu(self.menubar, tearoff=0)
-        self.datamenu.add_command(label="Download Dataset", command=lambda: DownloadDatasetWindow(self.root, self.limited_sets, self.scale_factor, self.fonts_dict, self.configuration, self.__update_event_files_callback))
+        self.datamenu.add_command(label="Download Dataset", command=lambda: DownloadDatasetWindow(self.root, self.limited_sets, self.scale_factor, self.fonts_dict, self.configuration, True, self.__update_event_files_callback))
         self.datamenu.add_command(label="Download Tier List", command=lambda : TierWindow(self.scale_factor, self.fonts_dict, self.__update_source_callback))
         self.cardmenu = tkinter.Menu(self.menubar, tearoff=0)
         self.cardmenu.add_command(

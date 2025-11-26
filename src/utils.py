@@ -71,50 +71,7 @@ def retrieve_local_set_list(codes = None, names = None):
     error_list = []
     for file in os.listdir(SETS_FOLDER):
         try:
-            #name_segments = file.split("_")
-            #if len(name_segments) == 4:
-            #    set_code = name_segments[0].upper()
-            #    event_type = name_segments[1]
-            #    user_group = name_segments[2]
-            #    file_suffix = name_segments[3]
-            #else:
-            #    continue
-            #    
-            #if ((codes and set_code not in codes) or
-            #    (event_type not in LIMITED_TYPES_DICT) or
-            #    (user_group not in LIMITED_GROUPS_LIST) or
-            #    (file_suffix != SET_FILE_SUFFIX)):
-            #    continue
-            #    
-            #if names:
-            #    set_name = list(names)[list(codes).index(name_segments[0].upper())]
-            #else:
-            #    set_name = set_code
-            #
-            #file_location = os.path.join(SETS_FOLDER, file)
-            #result, json_data = check_file_integrity(file_location)
-            #
-            #if result == Result.VALID:
-            #    if json_data["meta"]["version"] == 1:
-            #        start_date, end_date = json_data["meta"]["date_range"].split("->")
-            #    else:
-            #        start_date = json_data["meta"]["start_date"]
-            #        end_date = json_data["meta"]["end_date"]
-            #        
-            #    if "game_count" in json_data["meta"]:
-            #        game_count = int(json_data["meta"]["game_count"])
-            #    else:
-            #        game_count = 0
-            #        
-            #    file_list.append((
-            #        set_name,
-            #        event_type,
-            #        user_group,
-            #        start_date,
-            #        end_date,
-            #        game_count,
-            #        file_location,
-            #    ))
+
             dataset_info = read_dataset_info(file, codes, names)
             if dataset_info:
                 file_list.append(dataset_info)
@@ -217,9 +174,17 @@ def open_file(file_path: str):
     else:  # Linux and other Unix-based systems
         subprocess.call(['xdg-open', file_path])
 
+def clean_string(input_string: str, uppercase: bool = True) -> str:
+    '''Cleans a string by removing unwanted characters'''
+    unwanted_chars = [' ', '.', '/', '_']
+    for char in unwanted_chars:
+        input_string = input_string.replace(char, '')
+    return input_string.upper() if uppercase else input_string
+
 def read_dataset_info(filename: str, codes = None, names = None):
     '''Reads the meta section of a dataset file'''
     name_segments = filename.split("_")
+    cleaned_codes = [clean_string(code) for code in codes] if codes else None
     if len(name_segments) == 4:
         set_code = name_segments[0].upper()
         event_type = name_segments[1]
@@ -228,14 +193,14 @@ def read_dataset_info(filename: str, codes = None, names = None):
     else:
         return ()
 
-    if ((codes and set_code not in codes) or
+    if ((cleaned_codes and set_code not in cleaned_codes) or
         (event_type not in LIMITED_TYPES_DICT) or
         (user_group not in LIMITED_GROUPS_LIST) or
         (file_suffix != SET_FILE_SUFFIX)):
         return ()
 
     if names:
-        set_name = list(names)[list(codes).index(name_segments[0].upper())]
+        set_name = list(names)[list(cleaned_codes).index(name_segments[0].upper())]
     else:
         set_name = set_code
 
