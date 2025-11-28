@@ -213,6 +213,7 @@ def read_dataset_info(filename: str, codes = None, names = None):
         else:
             start_date = json_data["meta"]["start_date"]
             end_date = json_data["meta"]["end_date"]
+        collection_date = json_data["meta"].get("collection_date", "")
 
         if "game_count" in json_data["meta"]:
             game_count = int(json_data["meta"]["game_count"])
@@ -227,6 +228,7 @@ def read_dataset_info(filename: str, codes = None, names = None):
             end_date,
             game_count,
             file_location,
+            collection_date
         )
 
     return ()

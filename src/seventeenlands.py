@@ -27,7 +27,7 @@ COLOR_WIN_RATE_GAME_COUNT_THRESHOLD = 5000
 logger = create_logger()
 
 class Seventeenlands():
-    def _build_card_ratings_url(self, set_code, draft, start_date, end_date, user_group, color):
+    def build_card_ratings_url(self, set_code, draft, start_date, end_date, user_group, color):
         user_group_param = "" if user_group == LIMITED_USER_GROUP_ALL else f"&user_group={user_group.lower()}"
         url = (
             f"https://www.17lands.com/card_ratings/data?expansion={set_code}"
@@ -50,11 +50,11 @@ class Seventeenlands():
         """
         Fetch card ratings from 17Lands with retry, progress, and UI update logic.
         """
-        url = self._build_card_ratings_url(set_code, draft, start_date, end_date, user_group, colors)
+        url = self.build_card_ratings_url(set_code, draft, start_date, end_date, user_group, colors)
         response = requests.get(url, timeout=REQUEST_TIMEOUT)
         response.raise_for_status()
         set_json_data = response.json()
-        self._process_card_ratings(colors, set_json_data, card_data)
+        self.process_card_ratings(colors, set_json_data, card_data)
 
     def download_color_ratings(
         self,
@@ -72,10 +72,10 @@ class Seventeenlands():
         color_json_data = response.json()
         return self._process_color_ratings(color_json_data, color_filter)
 
-    def _process_card_ratings(
+    def process_card_ratings(
         self,
         color: str,
-        cards: Dict[str, Any],
+        cards: List[Dict[str, Any]],
         card_data: Dict
     ) -> Dict:
         for card in cards:

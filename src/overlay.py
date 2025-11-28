@@ -64,21 +64,6 @@ def restart_overlay(root):
     root.close_overlay()
     start_overlay()
 
-
-def check_version(update, version):
-    """Compare the application version and the latest version in the repository"""
-    return_value = False
-    file_version, file_location = update.retrieve_file_version()
-    if file_version:
-        file_version = int(file_version)
-        client_version = round(float(version) * 100)
-        if file_version > client_version:
-            return_value = True
-
-        file_version = round(float(file_version) / 100.0, 2)
-    return return_value, file_version, file_location
-
-
 def fixed_map(style, option):
     ''' Returns the style map for 'option' with any styles starting with
      ("!disabled", "!selected", ...) filtered out
@@ -287,7 +272,6 @@ class Overlay(ScaledWindow):
 
         self.step_through = args.step
 
-        #self.extractor = FileExtractor(self.configuration.database_location)
         self.limited_sets = LimitedSets().retrieve_limited_sets()
         self.draft = ArenaScanner(
             self.arena_file, self.limited_sets, step_through=self.step_through)
@@ -1316,16 +1300,18 @@ class Overlay(ScaledWindow):
 
     def __update_draft_data(self):
         '''Function that collects pertinent draft data from the LogScanner class'''
-        self.draft.retrieve_set_data(self.data_sources[self.data_source_selection.get()])
+        dataset_location = self.data_sources[self.data_source_selection.get()]
+        self.draft.retrieve_set_data(dataset_location)
         self.set_metrics = self.draft.retrieve_set_metrics()
         self.deck_colors = self.draft.retrieve_color_win_rate(self.filter_format_selection.get())
         event_set, event_type = self.draft.retrieve_current_limited_event()
         self.tier_data, tier_dict = self.tier_list.retrieve_data(event_set)
         self.main_options_dict = constants.COLUMNS_OPTIONS_EXTRA_DICT.copy()
+        self.notifications.update_latest_dataset(dataset_location)
         for key, value in tier_dict.items():
             self.main_options_dict[key] = value
         if self.configuration.settings.missing_notifications_enabled:
-            self.notifications.check_for_missing_dataset(event_set, event_type, self.data_sources[self.data_source_selection.get()])
+            self.notifications.check_for_missing_dataset(event_set, event_type)
 
     def __update_draft(self, source):
         '''Function that that triggers a search of the Arena log for draft data'''

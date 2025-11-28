@@ -469,7 +469,7 @@ class DownloadDatasetWindow(ScaledWindow):
             list_box.config(height=0)
 
         # Sort list by end date
-        file_list.sort(key=lambda x: x[4], reverse=True)
+        file_list.sort(key=lambda x: x[7], reverse=True)
 
         for count, file in enumerate(file_list):
             row_tag = self._identify_table_row_tag(False, "", count)
