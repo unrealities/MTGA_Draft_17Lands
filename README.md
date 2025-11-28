@@ -285,7 +285,7 @@ MTGA_Draft_17Lands now features integrated support for downloading and using 17L
 
 The application includes notifications to ensure datasets are always up-to-date. These features alert users about missing datasets, prompt downloads for required data, and notify about updates. Notifications can be disabled in the Settings menu.
 
-### No Dataset Found
+### No Datasets Found
 If no local datasets are detected, a notification will appear prompting the user to download the required datasets. This ensures that the tool has the necessary data to function properly.
 
 <img width="408" height="197" alt="No_datasets" src="https://github.com/user-attachments/assets/2eaee3d7-ce9f-48ae-82c9-01037a76782e" />
