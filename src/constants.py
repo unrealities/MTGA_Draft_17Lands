@@ -2,6 +2,7 @@ import os
 import getpass
 
 APPLICATION_VERSION = 3.35
+PREVIOUS_APPLICATION_VERSION = "0334"
 
 FONT_SANS_SERIF = "Arial"
 FONT_MONO_SPACE = "Courier"
