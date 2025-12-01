@@ -1,3 +1,6 @@
+===================== RELEASE NOTES 3.36 =====================
+* FiYir: Address missing dependencies in v3.35
+
 ===================== RELEASE NOTES 3.35 =====================
 * FiYir: Moved the Seventeenlands code to a separate seventeenlands.py file.
 * FiYir: Moved the dataset download code to a separate download_dataset.py file.
