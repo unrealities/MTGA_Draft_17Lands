@@ -2,7 +2,10 @@ import pytest
 import os
 import sys
 from src.app_update import AppUpdate
-from src.constants import PREVIOUS_APPLICATION_VERSION
+from src.constants import (
+    OLD_APPLICATION_VERSION,
+    PREVIOUS_APPLICATION_VERSION
+)
 
 @pytest.fixture
 def app_update():
@@ -42,7 +45,7 @@ def test_retrieve_file_version_latest_success(app_update, valid_search_location_
 @pytest.mark.skipif(sys.platform == 'darwin', reason="Skipping on macOS because of Github API rate limiting")
 def test_retrieve_file_version_old_success(app_update, valid_search_location_old):
     version, file_location = app_update.retrieve_file_version(valid_search_location_old)
-    assert version == PREVIOUS_APPLICATION_VERSION
+    assert version == OLD_APPLICATION_VERSION
 
 @pytest.mark.skipif(sys.platform == 'darwin', reason="Skipping on macOS because of Github API rate limiting")
 def test_retrieve_file_version_failure(app_update, invalid_search_location):
