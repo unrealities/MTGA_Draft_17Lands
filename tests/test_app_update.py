@@ -2,8 +2,10 @@ import pytest
 import os
 import sys
 from src.app_update import AppUpdate
-
-EXPECTED_OLD_VERSION_STRING = "0320"
+from src.constants import (
+    OLD_APPLICATION_VERSION,
+    PREVIOUS_APPLICATION_VERSION
+)
 
 @pytest.fixture
 def app_update():
@@ -27,7 +29,7 @@ def invalid_input_url():
 
 @pytest.fixture
 def valid_input_url_zip():
-    return "https://github.com/unrealities/MTGA_Draft_17Lands/releases/download/MTGA_Draft_Tool_V0329/MTGA_Draft_Tool_V0329.zip"
+    return f'https://github.com/unrealities/MTGA_Draft_17Lands/releases/download/MTGA_Draft_Tool_V{PREVIOUS_APPLICATION_VERSION}/MTGA_Draft_Tool_V{PREVIOUS_APPLICATION_VERSION}.zip'
     
 @pytest.fixture
 def output_filename():
@@ -43,7 +45,7 @@ def test_retrieve_file_version_latest_success(app_update, valid_search_location_
 @pytest.mark.skipif(sys.platform == 'darwin', reason="Skipping on macOS because of Github API rate limiting")
 def test_retrieve_file_version_old_success(app_update, valid_search_location_old):
     version, file_location = app_update.retrieve_file_version(valid_search_location_old)
-    assert version == EXPECTED_OLD_VERSION_STRING
+    assert version == OLD_APPLICATION_VERSION
 
 @pytest.mark.skipif(sys.platform == 'darwin', reason="Skipping on macOS because of Github API rate limiting")
 def test_retrieve_file_version_failure(app_update, invalid_search_location):

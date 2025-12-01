@@ -1,18 +1,17 @@
 """This module contains the functions and classes that are used for building the set files and communicating with platforms"""
-from urllib.parse import quote as urlencode
 import sys
 import os
 import time
 import json
-import urllib.request
 import datetime
-import ssl
 import itertools
 import re
 import sqlite3
 from src import constants
 from src.logger import create_logger
-from src.utils import Result, check_file_integrity
+from src.utils import Result, check_file_integrity, clean_string
+from src.ui_progress import UIProgress
+from src.seventeenlands import Seventeenlands
 
 logger = create_logger()
 
@@ -182,10 +181,11 @@ def check_date(date):
         result = False
     return result
 
-class FileExtractor:
+class FileExtractor(UIProgress):
     '''Class that handles the creation of set files and the retrieval of platform information'''
 
-    def __init__(self, directory):
+    def __init__(self, directory, progress, status, ui):
+        super().__init__(progress, status, ui)  # Initialize UIProgress
         self.selected_sets = []
         self.set_list = []
         self.draft = ""
@@ -194,8 +194,6 @@ class FileExtractor:
         self.end_date = ""
         self.user_group = ""
         self.directory = directory
-        self.context: ssl.SSLContext = ssl.SSLContext(protocol=ssl.PROTOCOL_TLS_CLIENT)
-        self.context.load_default_certs()
         self.card_ratings = {}
         self.combined_data = {
             "meta": {"collection_date": str(datetime.datetime.now())}}
@@ -247,14 +245,21 @@ class FileExtractor:
         '''Sets the version in a set file'''
         self.combined_data["meta"]["version"] = version
 
-    def download_card_data(self, ui_root, progress_bar, status, database_size):
+    def set_game_count(self, game_count):
+        '''Sets the game count in a dataset'''
+        self.combined_data["meta"]["game_count"] = game_count
+
+    def set_color_ratings(self, color_ratings):
+        '''Sets the color ratings in a dataset'''
+        self.combined_data["color_ratings"] = color_ratings
+
+    def download_card_data(self, database_size):
         '''Wrapper function for starting the set file download/creation process'''
         result = False
         result_string = ""
         temp_size = 0
         try:
-            result, result_string, temp_size = self._download_expansion(
-                ui_root, progress_bar, status, database_size)
+            result, result_string, temp_size = self._download_expansion(database_size)
 
         except Exception as error:
             logger.error(error)
@@ -262,7 +267,7 @@ class FileExtractor:
 
         return result, result_string, temp_size
 
-    def _download_expansion(self, ui_root, progress_bar, status, database_size):
+    def _download_expansion(self, database_size):
         ''' Function that performs the following steps:
             1. Build a card data file from local Arena files (stored as temp_card_data.json in the Temp folder)
                - The card sets contains the Arena IDs, card name, mana cost, colors, etc.
@@ -275,28 +280,15 @@ class FileExtractor:
         temp_size = 0
         try:
             while True:
-                progress_bar['value'] = 5
-                ui_root.update()
-
-                result, result_string, temp_size = self._retrieve_local_arena_data(
-                    ui_root, status, database_size)
-
+                self._update_progress(5, True)
+                result, result_string, temp_size = self._retrieve_local_arena_data(database_size)
                 if not result:
-                    result, result_string = self._retrieve_scryfall_data(
-                        ui_root, status)
-                    if not result:
-                        break
+                    break
 
-                progress_bar['value'] = 10
-                status.set("Collecting 17Lands Data")
-                ui_root.update()
+                self._update_progress(10, True)
+                self._update_status("Collecting 17Lands Data")
 
-                if not self.retrieve_17lands_data(self.selected_sets.seventeenlands,
-                                                  self.deck_colors,
-                                                  ui_root,
-                                                  progress_bar,
-                                                  progress_bar['value'],
-                                                  status):
+                if not self.retrieve_17lands_data(self.selected_sets.seventeenlands, self.deck_colors):
                     result = False
                     result_string = "Couldn't Collect 17Lands Data"
                     break
@@ -306,8 +298,7 @@ class FileExtractor:
                 if not matching_only:
                     self._initialize_17lands_data()
 
-                status.set("Building Data Set File")
-                ui_root.update()
+                self._update_status("Building Data Set File")
                 self._assemble_set(matching_only)
                 check_set_data(
                     self.combined_data["card_ratings"], self.card_ratings)
@@ -319,14 +310,13 @@ class FileExtractor:
 
         return result, result_string, temp_size
 
-    def _retrieve_local_arena_data(self, root, status, previous_database_size):
+    def _retrieve_local_arena_data(self, previous_database_size):
         '''Builds a card data file from raw Arena files'''
-        result_string = "Couldn't Collect Local Card Data"
+        result_string = "Unable to access local Arena data. Log in to MTGA and try again."
         result = False
         self.card_dict = {}
         database_size = 0
-        status.set("Searching Local Files")
-        root.update()
+        self._update_status("Searching Local Files")
         if sys.platform == constants.PLATFORM_ID_OSX:
             directory = os.path.join(os.path.expanduser('~'),
                                      constants.LOCAL_DATA_FOLDER_PATH_OSX) if not self.directory else self.directory
@@ -366,27 +356,22 @@ class FileExtractor:
                     logger.info(
                         "Local Database Data: Searching File Path %s",
                         arena_database_locations[0])
-                    status.set("Retrieving Localization Data")
-                    root.update()
+                    self._update_status("Retrieving Localization Data")
                     result, card_text, card_enumerators, raw_card_data = self._retrieve_local_database(
                         arena_database_locations[0])
 
                     if not result:
                         break
 
-                    status.set("Building Temporary Card Data File")
-                    root.update()
+                    self._update_status("Building Temporary Card Data File")
                     result = self._assemble_stored_data(
                         card_text, card_enumerators, raw_card_data)
 
                     if not result:
                         break
 
-                # Assemble information for local data set
-                status.set("Retrieving Temporary Card Data")
-                root.update()
-                result = self._retrieve_stored_data(
-                    self.selected_sets.arena)
+                self._update_status("Retrieving Temporary Card Data")
+                result = self._retrieve_stored_data(self.selected_sets.arena)
 
                 database_size = current_database_size
 
@@ -648,110 +633,41 @@ class FileExtractor:
 
         return result
 
-    def _retrieve_scryfall_data(self, root, status):
-        '''Use the Scryfall API to retrieve the set data needed for building a card set file*
-           - This is a fallback feature feature that's used in case there's an issue with the local Arena files
-        '''
-        result = False
-        self.card_dict = {}
-        result_string = "Couldn't Retrieve Card Data"
-        url = ""
-        for card_set in self.selected_sets.scryfall:
-            retry = constants.SCRYFALL_REQUEST_ATTEMPT_MAX
-            while retry:
-                try:
-                    status.set("Collecting Scryfall Data")
-                    root.update()
-                    url = "https://api.scryfall.com/cards/search?order=set&unique=prints&q=e" + \
-                        urlencode(':', safe='') + f"{card_set}"
-                    url_data = urllib.request.urlopen(
-                        url, context=self.context).read()
-
-                    set_json_data = json.loads(url_data)
-
-                    result, result_string = self._process_scryfall_data(
-                        set_json_data["data"])
-
-                    while set_json_data["has_more"]:
-                        url = set_json_data["next_page"]
-                        url_data = urllib.request.urlopen(
-                            url, context=self.context).read()
-                        set_json_data = json.loads(url_data)
-                        result, result_string = self._process_scryfall_data(
-                            set_json_data["data"])
-
-                    if self.card_dict:
-                        result = True
-                        break
-
-                except Exception as error:
-                    logger.error(url)
-                    logger.error(error)
-
-                if not result:
-                    retry -= 1
-
-                    if retry:
-                        attempt_count = constants.CARD_RATINGS_ATTEMPT_MAX - retry
-                        status.set(
-                            f"""Collecting Scryfall Data - Request Failed ({attempt_count}/{constants.SCRYFALL_REQUEST_ATTEMPT_MAX}) - Retry in {constants.SCRYFALL_REQUEST_BACKOFF_DELAY_SECONDS} seconds""")
-                        root.update()
-                        time.sleep(
-                            constants.SCRYFALL_REQUEST_BACKOFF_DELAY_SECONDS)
-        return result, result_string
-
     def _initialize_17lands_data(self):
         '''Initialize the 17Lands data by setting the fields to 0 in case there are gaps in the downloaded card data'''
         for data in self.card_dict.values():
             initialize_card_data(data)
 
-    def retrieve_17lands_data(self, sets, deck_colors, root, progress, initial_progress, status):
+    def retrieve_17lands_data(self, sets, deck_colors):
         '''Use the 17Lands endpoint to download the card ratings data for all of the deck filter options'''
         self.card_ratings = {}
         current_progress = 0
         result = False
-        url = ""
+        seventeenlands = Seventeenlands()
         for set_code in sets:
             for color in deck_colors:
                 retry = constants.CARD_RATINGS_ATTEMPT_MAX
                 result = False
                 while retry:
-
                     try:
-                        status.set(f"Collecting {color} 17Lands Data")
-                        root.update()
-                        if self.user_group == constants.LIMITED_USER_GROUP_ALL:
-                            user_group = ""
-                        else:
-                            user_group = "&user_group=" + self.user_group.lower()
-                        url = f"https://www.17lands.com/card_ratings/data?expansion={set_code}&format={self.draft}&start_date={self.start_date}&end_date={self.end_date}{user_group}"
-                        if color != constants.FILTER_OPTION_ALL_DECKS:
-                            url += "&colors=" + color
-                        url_data = urllib.request.urlopen(
-                            url, context=self.context).read()
-
-                        set_json_data = json.loads(url_data)
-                        self._process_17lands_data(color, set_json_data)
+                        #safe_set_code = quote(set_code, safe='')
+                        #url = f"https://www.17lands.com/card_ratings/data?expansion={safe_set_code}&format={self.draft}&start_date={self.start_date}&end_date={self.end_date}{user_group}"
+                        self._update_status(f"Collecting {color} 17Lands Data")
+                        seventeenlands.download_card_ratings(set_code, color, self.draft, self.start_date, self.end_date, self.user_group, self.card_ratings)
                         result = True
                         break
                     except Exception as error:
-                        logger.error(url)
                         logger.error(error)
                         retry -= 1
 
                         if retry:
                             attempt_count = constants.CARD_RATINGS_ATTEMPT_MAX - retry
-                            status.set(
-                                f"""Collecting {color} 17Lands Data - Request Failed ({attempt_count}/{constants.CARD_RATINGS_ATTEMPT_MAX}) - Retry in {constants.CARD_RATINGS_BACKOFF_DELAY_SECONDS} seconds""")
-                            root.update()
-                            time.sleep(
-                                constants.CARD_RATINGS_BACKOFF_DELAY_SECONDS)
+                            self._update_status(f"""Collecting {color} 17Lands Data - Request Failed ({attempt_count}/{constants.CARD_RATINGS_ATTEMPT_MAX}) - Retry in {constants.CARD_RATINGS_BACKOFF_DELAY_SECONDS} seconds""")
+                            time.sleep(constants.CARD_RATINGS_BACKOFF_DELAY_SECONDS)
 
                 if result:
-                    current_progress += (3 /
-                                         len(self.selected_sets.seventeenlands))
-                    progress['value'] = current_progress + initial_progress
-                    root.update()
+                    current_progress = (3 / len(self.selected_sets.seventeenlands))
+                    self._update_progress(current_progress, True)
                 else:
                     break
                 time.sleep(constants.CARD_RATINGS_INTER_DELAY_SECONDS)
@@ -766,169 +682,134 @@ class FileExtractor:
                 self.combined_data["card_ratings"][card] = card_data
             elif not matching_only:
                 self.combined_data["card_ratings"][card] = card_data
-
+                
     def retrieve_17lands_color_ratings(self):
         '''Use 17Lands endpoint to collect the data from the color_ratings page'''
         result = True
         game_count = 0
+        seventeenlands = Seventeenlands()
         try:
-            if self.user_group == constants.LIMITED_USER_GROUP_ALL:
-                user_group = ""
-            else:
-                user_group = "&user_group=" + self.user_group.lower()
-            url = f"https://www.17lands.com/color_ratings/data?expansion={self.selected_sets.seventeenlands[0]}&event_type={self.draft}&start_date={self.start_date}&end_date={self.end_date}{user_group}&combine_splash=true"
-            url_data = urllib.request.urlopen(url, context=self.context).read()
-
-            color_json_data = json.loads(url_data)
-            game_count = self._process_17lands_color_ratings(color_json_data)
-
+            #safe_set_code = quote(self.selected_sets.seventeenlands[0], safe='')
+            #url = f"https://www.17lands.com/color_ratings/data?expansion={safe_set_code}&event_type={self.draft}&start_date={self.start_date}&end_date={self.end_date}{user_group}&combine_splash=true"
+            #if self.user_group == constants.LIMITED_USER_GROUP_ALL:
+            #    user_group = ""
+            #else:
+            #    user_group = "&user_group=" + self.user_group.lower()
+            #url = f"https://www.17lands.com/color_ratings/data?expansion={self.selected_sets.seventeenlands[0]}&event_type={self.draft}&start_date={self.start_date}&end_date={self.end_date}{user_group}&combine_splash=true"
+            #url_data = urllib.request.urlopen(url, context=self.context).read()
+#
+            #color_json_data = json.loads(url_data)
+            #game_count = self._process_17lands_color_ratings(color_json_data)
+            self.combined_data["color_ratings"], game_count = seventeenlands.download_color_ratings(self.selected_sets.seventeenlands[0], self.draft, self.start_date, self.end_date, self.user_group)
+            self.set_game_count(game_count)
         except Exception as error:
             result = False
             logger.error(url)
             logger.error(error)
         return result, game_count
 
-    def _process_17lands_data(self, colors, cards):
-        '''Parse the 17Lands json data to extract the card ratings'''
-        result = True
 
-        for card in cards:
-            try:
-                card_data = {constants.DATA_SECTION_RATINGS: [],
-                             constants.DATA_SECTION_IMAGES: []}
-                color_data = {colors: {}}
-                for key, value in constants.DATA_FIELD_17LANDS_DICT.items():
-                    if key == constants.DATA_SECTION_IMAGES:
-                        for field in value:
-                            if field in card and len(card[field]):
-                                image_url = f"{constants.URL_17LANDS}{card[field]}" if card[field].startswith(
-                                    constants.IMAGE_17LANDS_SITE_PREFIX) else card[field]
-                                card_data[constants.DATA_SECTION_IMAGES].append(
-                                    image_url)
-                    elif value in card:
-                        if (key in constants.WIN_RATE_OPTIONS) or (key == constants.DATA_FIELD_IWD):
-                            color_data[colors][key] = round(
-                                float(card[value]) * 100.0, 2) if card[value] else 0.0
-                        elif ((key == constants.DATA_FIELD_ATA) or
-                              (key == constants.DATA_FIELD_ALSA)):
-                            color_data[colors][key] = round(float(card[value] if card[value] else 0.0), 2)
-                        else:
-                            color_data[colors][key] = int(card[value] if card[value] else 0)
 
-                card_name = card[constants.DATA_FIELD_NAME]
+    #def _process_17lands_color_ratings(self, colors):
+    #    '''Parse the 17Lands json data to collect the color ratings'''
+    #    color_ratings_dict = {
+    #        "Mono-White": "W",
+    #        "Mono-Blue": "U",
+    #        "Mono-Black": "B",
+    #        "Mono-Red": "R",
+    #        "Mono-Green": "G",
+    #        "(WU)": "WU",
+    #        "(UB)": "UB",
+    #        "(BR)": "BR",
+    #        "(RG)": "RG",
+    #        "(GW)": "GW",
+    #        "(WB)": "WB",
+    #        "(BG)": "BG",
+    #        "(GU)": "GU",
+    #        "(UR)": "UR",
+    #        "(RW)": "RW",
+    #        "(WUR)": "WUR",
+    #        "(UBG)": "UBG",
+    #        "(BRW)": "BRW",
+    #        "(RGU)": "RGU",
+    #        "(GWB)": "GWB",
+    #        "(WUB)": "WUB",
+    #        "(UBR)": "UBR",
+    #        "(BRG)": "BRG",
+    #        "(RGW)": "RGW",
+    #        "(GWU)": "GWU",
+    #    }
+    #    game_count = 0
+    #    try:
+    #        self.combined_data["color_ratings"] = {}
+    #        for color in colors:
+    #            games = color["games"]
+    #            if not color["is_summary"] and (games > 5000):
+    #                color_name = color["color_name"]
+    #                winrate = round(
+    #                    (float(color["wins"])/color["games"]) * 100, 1)
+#
+    #                color_label = [
+    #                    x for x in color_ratings_dict if x in color_name]
+#
+    #                if color_label:
+#
+    #                    processed_colors = color_ratings_dict[color_label[0]]
+#
+    #                    if processed_colors not in self.combined_data["color_ratings"]:
+    #                        self.combined_data["color_ratings"][processed_colors] = winrate
+    #            elif color["is_summary"] and color["color_name"] == "All Decks":
+    #                game_count = color["games"] if color["games"] else 0
+    #                self.combined_data["meta"]["game_count"] = game_count
+#
+    #    except Exception as error:
+    #        logger.error(error)
+    #    return game_count
 
-                if card_name not in self.card_ratings:
-                    self.card_ratings[card_name] = card_data
-
-                self.card_ratings[card_name][constants.DATA_SECTION_RATINGS].append(
-                    color_data)
-
-            except Exception as error:
-                result = False
-                logger.error(error)
-
-        return result
-
-    def _process_17lands_color_ratings(self, colors):
-        '''Parse the 17Lands json data to collect the color ratings'''
-        color_ratings_dict = {
-            "Mono-White": "W",
-            "Mono-Blue": "U",
-            "Mono-Black": "B",
-            "Mono-Red": "R",
-            "Mono-Green": "G",
-            "(WU)": "WU",
-            "(UB)": "UB",
-            "(BR)": "BR",
-            "(RG)": "RG",
-            "(GW)": "GW",
-            "(WB)": "WB",
-            "(BG)": "BG",
-            "(GU)": "GU",
-            "(UR)": "UR",
-            "(RW)": "RW",
-            "(WUR)": "WUR",
-            "(UBG)": "UBG",
-            "(BRW)": "BRW",
-            "(RGU)": "RGU",
-            "(GWB)": "GWB",
-            "(WUB)": "WUB",
-            "(UBR)": "UBR",
-            "(BRG)": "BRG",
-            "(RGW)": "RGW",
-            "(GWU)": "GWU",
-        }
-        game_count = 0
-        try:
-            self.combined_data["color_ratings"] = {}
-            for color in colors:
-                games = color["games"]
-                if not color["is_summary"] and (games > 5000):
-                    color_name = color["color_name"]
-                    winrate = round(
-                        (float(color["wins"])/color["games"]) * 100, 1)
-
-                    color_label = [
-                        x for x in color_ratings_dict if x in color_name]
-
-                    if color_label:
-
-                        processed_colors = color_ratings_dict[color_label[0]]
-
-                        if processed_colors not in self.combined_data["color_ratings"]:
-                            self.combined_data["color_ratings"][processed_colors] = winrate
-                elif color["is_summary"] and color["color_name"] == "All Decks":
-                    game_count = color["games"] if color["games"] else 0
-                    self.combined_data["meta"]["game_count"] = game_count
-
-        except Exception as error:
-            logger.error(error)
-        return game_count
-
-    def _process_scryfall_data(self, data):
-        '''Parse json data from the Scryfall API to extract pertinent card data'''
-        result = False
-        result_string = "Scryfall Data Unavailable"
-        for card_data in data:
-            try:
-                if "arena_id" not in card_data:
-                    continue
-
-                arena_id = card_data["arena_id"]
-
-                card_name = card_data[constants.DATA_FIELD_NAME]
-
-                if card_data["layout"] == "transform":
-                    card_name = card_name.split(" // ")[0]
-
-                self.card_dict[arena_id] = {
-                    constants.DATA_FIELD_NAME: card_name,
-                    constants.DATA_FIELD_CMC: card_data[constants.DATA_FIELD_CMC],
-                    constants.DATA_FIELD_COLORS: card_data["color_identity"],
-                    constants.DATA_FIELD_TYPES: extract_types(card_data["type_line"]),
-                    constants.DATA_FIELD_MANA_COST: 0,
-                    constants.DATA_SECTION_IMAGES: [],
-                }
-
-                if "card_faces" in card_data:
-                    self.card_dict[arena_id][constants.DATA_FIELD_MANA_COST] = card_data["card_faces"][0][constants.DATA_FIELD_MANA_COST]
-                    self.card_dict[arena_id][constants.DATA_SECTION_IMAGES].append(
-                        card_data["card_faces"][0]["image_uris"]["normal"])
-                    self.card_dict[arena_id][constants.DATA_SECTION_IMAGES].append(
-                        card_data["card_faces"][1]["image_uris"]["normal"])
-
-                else:
-                    self.card_dict[arena_id][constants.DATA_FIELD_MANA_COST] = card_data[constants.DATA_FIELD_MANA_COST]
-                    self.card_dict[arena_id][constants.DATA_SECTION_IMAGES] = [
-                        card_data["image_uris"]["normal"]]
-
-                result = True
-
-            except Exception as error:
-                logger.error(error)
-                result_string = error
-
-        return result, result_string
+    #def _process_scryfall_data(self, data):
+    #    '''Parse json data from the Scryfall API to extract pertinent card data'''
+    #    result = False
+    #    result_string = "Scryfall Data Unavailable"
+    #    for card_data in data:
+    #        try:
+    #            if "arena_id" not in card_data:
+    #                continue
+#
+    #            arena_id = card_data["arena_id"]
+#
+    #            card_name = card_data[constants.DATA_FIELD_NAME]
+#
+    #            if card_data["layout"] == "transform":
+    #                card_name = card_name.split(" // ")[0]
+#
+    #            self.card_dict[arena_id] = {
+    #                constants.DATA_FIELD_NAME: card_name,
+    #                constants.DATA_FIELD_CMC: card_data[constants.DATA_FIELD_CMC],
+    #                constants.DATA_FIELD_COLORS: card_data["color_identity"],
+    #                constants.DATA_FIELD_TYPES: extract_types(card_data["type_line"]),
+    #                constants.DATA_FIELD_MANA_COST: 0,
+    #                constants.DATA_SECTION_IMAGES: [],
+    #            }
+#
+    #            if "card_faces" in card_data:
+    #                self.card_dict[arena_id][constants.DATA_FIELD_MANA_COST] = card_data["card_faces"][0][constants.DATA_FIELD_MANA_COST]
+    #                self.card_dict[arena_id][constants.DATA_SECTION_IMAGES].append(
+    #                    card_data["card_faces"][0]["image_uris"]["normal"])
+    #                self.card_dict[arena_id][constants.DATA_SECTION_IMAGES].append(
+    #                    card_data["card_faces"][1]["image_uris"]["normal"])
+#
+    #            else:
+    #                self.card_dict[arena_id][constants.DATA_FIELD_MANA_COST] = card_data[constants.DATA_FIELD_MANA_COST]
+    #                self.card_dict[arena_id][constants.DATA_SECTION_IMAGES] = [
+    #                    card_data["image_uris"]["normal"]]
+#
+    #            result = True
+#
+    #        except Exception as error:
+    #            logger.error(error)
+    #            result_string = error
+#
+    #    return result, result_string
 
     def _process_card_data(self, card):
         '''Link the 17Lands card ratings with the card data'''
@@ -959,10 +840,8 @@ class FileExtractor:
 
     def export_card_data(self):
         '''Build the file for the set data'''
-        result = True
         try:
-            output_file = "_".join(
-                (self.selected_sets.seventeenlands[0], self.draft, self.user_group, constants.SET_FILE_SUFFIX))
+            output_file = "_".join((clean_string(self.selected_sets.seventeenlands[0]), self.draft, self.user_group, constants.SET_FILE_SUFFIX))
             location = os.path.join(constants.SETS_FOLDER, output_file)
 
             with open(location, 'w', encoding="utf-8", errors="replace") as file:
@@ -972,10 +851,11 @@ class FileExtractor:
             write_data = check_file_integrity(location)
 
             if write_data[0] != Result.VALID:
-                result = False
+                os.remove(output_file)
+                output_file = ""
 
         except Exception as error:
             logger.error(error)
-            result = False
+            output_file = ""
 
-        return result
+        return output_file

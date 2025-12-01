@@ -25,6 +25,7 @@ Magic: The Gathering Arena draft tool that utilizes 17Lands data.
     - [The Solution](#the-solution)
     - [Future Considerations](#future-considerations)
   - [Tier List (API-Based)](#tier-list-api-based)
+  - [Dataset Notifications](#dataset-notifications)
   - [Troubleshooting](#troubleshooting)
     - [Known Issues](#known-issues)
     - [Arena Log Issues](#arena-log-issues)
@@ -279,6 +280,51 @@ MTGA_Draft_17Lands now features integrated support for downloading and using 17L
   - Make sure you have downloaded the dataset for the event from `Data > Download Dataset`. The dataset is required to identify cards in the Arena log, even if it doesn't contain card data.
   - When an event is detected, available tier lists for that set will appear in the column options in the [Settings window](#settings).
   - Card ratings from the selected tier list will be shown in the pack table for your current pack.
+
+## Dataset Notifications
+
+The application includes notifications to ensure datasets are always up-to-date. These features alert users about missing datasets, prompt downloads for required data, and notify about updates. Notifications can be disabled in the Settings menu.
+
+### No Datasets Found
+If no local datasets are detected, a notification will appear prompting the user to download the required datasets. This ensures that the tool has the necessary data to function properly.
+
+<img width="408" height="197" alt="No_datasets" src="https://github.com/user-attachments/assets/2eaee3d7-ce9f-48ae-82c9-01037a76782e" />
+
+**Behavior:**
+- A dialog box will appear with the message: "No datasets detected. Would you like to download a dataset now?"
+- If the user clicks `Yes`, the **Download Dataset** window will open, allowing the user to download a dataset.
+
+**Tip:** To stop seeing this notification, open the `Settings` menu and uncheck the `Enable Missing Dataset Notifications` option.
+
+---
+
+### Missing Dataset
+If a dataset for a detected event is missing, the application will notify the user and provide an option to download the dataset automatically.
+
+<img width="407" height="207" alt="Missing_datasets" src="https://github.com/user-attachments/assets/90466ecf-9e26-41e3-a90e-8eba7a52cfb2" />
+
+**Behavior:**
+- A dialog box will appear with the message: "No dataset found for expansion [Set Name]. Would you like to download the dataset now?"
+- If the user clicks `Yes`, the application will automatically download the dataset for the missing event.
+- This feature is currently limited to Quick Drafts to avoid interfering with timed events such as Premier or Traditional Drafts.
+
+**Tip:** To stop seeing this notification, open the `Settings` menu and uncheck the `Enable Missing Dataset Notifications` option.
+
+---
+
+### Dataset Update Available
+Upon startup, the application checks for updates to the most recently used dataset. If an updated version is available, the user will receive a notification and be prompted to download the update.
+
+<img width="400" height="194" alt="image" src="https://github.com/user-attachments/assets/ed5162f5-7779-49d8-9a8e-48dab464def9" />
+
+**Behavior:**
+- A dialog box will appear with the message: "New data available for [Set Name]. Would you like to update your dataset?"
+- If the user clicks `Yes`, the application will download the updated dataset.
+- This feature is rate-limited to once every 24 hours.
+
+**Tip:** To disable update notifications, open the `Settings` menu and uncheck the `Enable Dataset Update Notifications` option.
+
+---
 
 ## Troubleshooting
 

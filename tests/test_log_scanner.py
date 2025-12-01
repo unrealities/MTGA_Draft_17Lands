@@ -33,12 +33,14 @@ OTJ_P1P1_CARD_NAMES =[
 OTJ_P1P2_ENTRY_SKIP = r'[UnityCrossThreadLogger]==> LogBusinessEvents {"id":"972efef7-cd60-4254-ae18-634210287c95","request":"{\"PlayerId\":null,\"ClientPlatform\":null,\"DraftId\":\"87b408d1-43e0-4fb5-8c74-a1257fde087c\",\"EventId\":\"PremierDraft_OTJ_20240416\",\"SeatNumber\":1,\"PackNumber\":1,\"PickNumber\":2,\"PickGrpId\":90701,\"CardsInPack\":[90702,90417,90607,90524,90481,90588,90440,90418,90353,90494,90360,90609,90548],\"AutoPick\":false,\"TimeRemainingOnPick\":30.8176479,\"EventType\":24,\"EventTime\":\"2024-05-08T00:57:07.6027017Z\"}"}'
 
 TEST_SETS = SetDictionary(data={
-    "TDM" : SetInfo(seventeenlands=["TDM"]),
-    "DSK" : SetInfo(seventeenlands=["DSK"]),
-    "MH3" : SetInfo(seventeenlands=["MH3"]),
-    "OTJ" : SetInfo(seventeenlands=["OTJ"]),
-    "MKM" : SetInfo(seventeenlands=["MKM"]),
-    "DMU" : SetInfo(seventeenlands=["DMU"]),
+    "CUBE-POWERED" : SetInfo(seventeenlands=["Cube - Powered"],set_code="CUBE"),
+    "OM1" : SetInfo(seventeenlands=["OM1"],set_code="OM1"),
+    "TDM" : SetInfo(seventeenlands=["TDM"],set_code="TDM"),
+    "DSK" : SetInfo(seventeenlands=["DSK"],set_code="DSK"),
+    "MH3" : SetInfo(seventeenlands=["MH3"],set_code="MH3"),
+    "OTJ" : SetInfo(seventeenlands=["OTJ"],set_code="OTJ"),
+    "MKM" : SetInfo(seventeenlands=["MKM"],set_code="MKM"),
+    "DMU" : SetInfo(seventeenlands=["DMU"],set_code="DMU"),
     },
     special_events=[
         SpecialEvent(
@@ -813,6 +815,109 @@ ARENA_OPEN_TEST_ENTRIES = [
     ),
 ]
 
+OM1_PICK_TWO_PREMIER_DRAFT_ENTRIES = [
+    (
+        "Event Start",
+        EventResults(
+            new_event=True,
+            data_update=False,
+            current_set="OM1",
+            current_event="PickTwoDraft",
+            current_pack=0,
+            current_pick=0,
+            picks=[],
+            pack=[],
+            card_pool=[],
+            missing=[]
+        ),
+        r'[UnityCrossThreadLogger]==> EventJoin {"id":"b8d5b850-4c86-4fa0-9184-bf238c10a26a","request":"{\"EventName\":\"PickTwoDraft_OM1_20250923\",\"EntryCurrencyType\":\"Gem\",\"EntryCurrencyPaid\":900,\"CustomTokenId\":null,\"EventChoice\":\"\"}"}'
+    ),
+    (
+        "P1P1 - Pack",
+        EventResults(
+            new_event=False,
+            data_update=True,
+            current_set="OM1",
+            current_event="PickTwoDraft",
+            current_pack=1,
+            current_pick=1,
+            picks=[],
+            pack=["97864","97988","97995","97827","97879","97914","97918","97992","97842","97878","97977","97923","97911","95197"],
+            card_pool=[],
+            missing=[],
+        ),
+        # Line 341
+        r'[UnityCrossThreadLogger]==> LogBusinessEvents {"id":"402f96d0-6517-492a-bc9a-1e713838e53c","request":"{\"PlayerId\":null,\"ClientPlatform\":null,\"DraftId\":\"dbd971d5-5bee-4d10-a2ec-eac0530d6553\",\"EventId\":\"PickTwoDraft_OM1_20250923\",\"SeatNumber\":0,\"PackNumber\":1,\"PickNumber\":1,\"PickGrpId\":97923,\"CardsInPack\":[97864,97988,97995,97827,97879,97914,97918,97992,97842,97878,97977,97923,97911,95197],\"AutoPick\":false,\"TimeRemainingOnPick\":47.4696846,\"EventType\":24,\"EventTime\":\"2025-09-23T20:46:55.7381073Z\"}"}'
+    ),
+    (
+        "P1P1 - Pick",
+        EventResults(
+            new_event=False,
+            data_update=True,
+            current_set="OM1",
+            current_event="PickTwoDraft",
+            current_pack=1,
+            current_pick=1,
+            picks=["97923","97977"],
+            pack=["97864","97988","97995","97827","97879","97914","97918","97992","97842","97878","97977","97923","97911","95197"],
+            card_pool=["97923","97977"],
+            missing=[]
+        ),
+        r'[UnityCrossThreadLogger]==> EventPlayerDraftMakePick {"id":"00b09bf6-aec3-490d-8be8-3da6dffa37c8","request":"{\"DraftId\":\"dbd971d5-5bee-4d10-a2ec-eac0530d6553\",\"GrpIds\":[97923,97977],\"Pack\":1,\"Pick\":1}"}'
+    ),
+    (
+        "P1P5 - Pack",
+        EventResults(
+            new_event=False,
+            data_update=True,
+            current_set="OM1",
+            current_event="PickTwoDraft",
+            current_pack=1,
+            current_pick=5,
+            picks=["97923","97977"],
+            pack=["97864","97988","97879","97914","97918","95197"],
+            card_pool=["97923","97977"],
+            missing=["97995","97827","97992","97842","97878","97977","97923","97911"]
+        ),
+        r'[UnityCrossThreadLogger]Draft.Notify {"draftId":"dbd971d5-5bee-4d10-a2ec-eac0530d6553","SelfPick":5,"SelfPack":1,"PackCards":"97864,97988,97879,97914,97918,95197"}'
+    ),
+    (
+        "P1P5 - Pick",
+        EventResults(
+            new_event=False,
+            data_update=True,
+            current_set="OM1",
+            current_event="PickTwoDraft",
+            current_pack=1,
+            current_pick=5,
+            picks=["97923","97977","97918","97864"],
+            pack=["97864","97988","97879","97914","97918","95197"],
+            card_pool=["97923","97977","97918","97864"],
+            missing=["97995","97827","97992","97842","97878","97977","97923","97911"]
+        ),
+        r'[UnityCrossThreadLogger]==> EventPlayerDraftMakePick {"id":"c6948135-4148-4104-8a6a-c8accde18edd","request":"{\"DraftId\":\"dbd971d5-5bee-4d10-a2ec-eac0530d6553\",\"GrpIds\":[97918,97864],\"Pack\":1,\"Pick\":5}"}'
+    ),
+]
+
+POWERED_CUBE_DRAFT_ENTRIES = [
+    (
+        "Event Start",
+        EventResults(
+            new_event=True,
+            data_update=False,
+            current_set="CUBE",
+            current_event="PremierDraft",
+            current_pack=0,
+            current_pick=0,
+            picks=[],
+            pack=[],
+            card_pool=[],
+            missing=[]
+        ),
+        r'[UnityCrossThreadLogger]==> EventJoin {"id":"23c1c6a7-3ce2-4a8c-88cf-88ef6dbc266b","request":"{\"EventName\":\"CubeDraft_Powered_20251028\",\"EntryCurrencyType\":\"Gem\",\"EntryCurrencyPaid\":1500,\"CustomTokenId\":null,\"EventChoice\":\"\"}"}'
+    ),
+]
+
 @pytest.fixture(name="session_scanner",scope="session")
 def fixture_session_scanner():
     scanner = ArenaScanner(TEST_LOG_FILE_LOCATION, TEST_SETS, sets_location = TEST_LOG_DIRECTORY, retrieve_unknown = True)
@@ -974,6 +1079,28 @@ def test_dsk_sealed(session_scanner, entry_label, expected, entry_string):
         patch("src.log_scanner.capture_screen_base64str")
     ):
         event_test_cases(session_scanner, "New DSK Sealed", entry_label, expected, entry_string, mock_ocr)
+
+@pytest.mark.parametrize("entry_label, expected, entry_string", OM1_PICK_TWO_PREMIER_DRAFT_ENTRIES)
+def test_om1_pick_two_premier(session_scanner, entry_label, expected, entry_string):
+    """
+    Verify that the OM1 Pick Two Premier Draft entries can be processed
+    """
+    with (
+        patch("src.log_scanner.OCR.get_pack") as mock_ocr,
+        patch("src.log_scanner.capture_screen_base64str")
+    ):
+        event_test_cases(session_scanner, "Pick Two OM1 Premier Draft ", entry_label, expected, entry_string, mock_ocr)
+
+@pytest.mark.parametrize("entry_label, expected, entry_string", POWERED_CUBE_DRAFT_ENTRIES)
+def test_powered_cube_premier(session_scanner, entry_label, expected, entry_string):
+    """
+    Verify that the Powered Cube Premier Draft entries can be processed
+    """
+    with (
+        patch("src.log_scanner.OCR.get_pack") as mock_ocr,
+        patch("src.log_scanner.capture_screen_base64str")
+    ):
+        event_test_cases(session_scanner, "Powered Cube Premier Draft ", entry_label, expected, entry_string, mock_ocr)
 
 @patch("src.log_scanner.OCR.get_pack")
 @patch("src.log_scanner.capture_screen_base64str")

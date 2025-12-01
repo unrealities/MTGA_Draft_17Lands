@@ -1,3 +1,34 @@
+===================== RELEASE NOTES 3.35 =====================
+* FiYir: Moved the Seventeenlands code to a separate seventeenlands.py file.
+* FiYir: Moved the dataset download code to a separate download_dataset.py file.
+* FiYir: Moved the existing notifications to a separate notifications.py file.
+* FiYir: Added dataset notifications to notifications.py.
+* FiYir: Added a section label to the card tooltip.
+* FiYir: Added ui_progress.py
+* FiYir: Moved APPLICATION_VERSION to constants.py
+
+===================== RELEASE NOTES 3.34 =====================
+* FiYir: Handle Powered Cube Draft (BUG-95)
+* Unrealities: File extractor test
+
+===================== RELEASE NOTES 3.33 =====================
+* FiYir: Pick-Two Support for Omenpath
+* p3p3fr0g: Linux Pathfix
+
+===================== RELEASE NOTES 3.32 =====================
+* FiYir: Fix: Add logic to support card database path extraction from the Arena log for Linux users ([Bug]: error in file_extractor: card missing #78)
+* FiYir: Fix: Update query to support card database changes from the recent Arena patch ([Bug]: database changes after recent patch #80)
+* FiYir: Feature: Replaces the broken Chrome extension (see [Bug]: 17Lands Tier List Scraper Extension is no longer working #62) with an integrated API-based solution. Continues to support old tier lists.
+
+===================== RELEASE NOTES 3.31 =====================
+* FiYir: Fix issue [Bug]: Application not detecting quick draft #71
+* FiYir: Sort the colors of multi-colored cards by WUBRG
+* FiYir: Enable color identity will no longer change the row color of mana fixing cards to gold
+* FiYir: Add "# Games" to the Download Dataset window to help players assess when datasets are large enough for use
+* FiYir: Move all Alchemy sets to the bottom of the set list
+* FiYir: Adjust a few deck suggester parameters to reduce the preference for control decks
+* FiYir: Replace File>Open with File>Read Draft Log, and add File>Read Player.log and File>Open Player.log
+
 ===================== RELEASE NOTES 3.30 =====================
 * Fix issue [Bug]: Application does not track taken cards, but can see offered cards in drafts #70
 * Fix issue [Bug]: Application not detecting quick draft #71

@@ -47,6 +47,8 @@ class Settings(BaseModel):
     data_source_enabled: bool = True
     deck_filter_enabled: bool = True
     refresh_button_enabled: bool = True
+    update_notifications_enabled: bool = True
+    missing_notifications_enabled: bool = True
     taken_alsa_enabled: bool = False
     taken_ata_enabled: bool = False
     taken_gpwr_enabled: bool = False
@@ -56,6 +58,7 @@ class Settings(BaseModel):
     taken_iwd_enabled: bool = False
     taken_wheel_enabled: bool = False
     arena_log_location: str = ""
+    database_location: str = ""
 
     @field_validator('deck_filter')
     @classmethod
@@ -115,6 +118,9 @@ class Features(BaseModel):
 class CardData(BaseModel):
     """This class holds the data used for building a card list from the local Arena files"""
     database_size: int = 0
+    latest_dataset: str = ""
+    last_check: float = 0
+    last_auto_check: float = 0
 
 
 class Configuration(BaseModel):
