@@ -24,6 +24,7 @@ jobs:
         pip install -r requirements.txt
         pip install pywin32==306
         pip install pyinstaller==6.7.0
+        pip install jaraco.text
 
     - name: Build executable
       run: python -m PyInstaller  main.py --onefile --noconsole -n MTGA_Draft_Tool --clean
