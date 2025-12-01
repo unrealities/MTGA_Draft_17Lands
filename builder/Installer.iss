@@ -1,7 +1,7 @@
 ; -- MtgaDraft.iss --
 [Setup]
 AppName=MTGA Draft Tool
-AppVersion=3.35
+AppVersion=3.36
 WizardStyle=modern
 DefaultDirName={sd}\MtgaDraftTool
 DefaultGroupName=MtgaDraftTool
@@ -11,7 +11,7 @@ Compression=lzma2
 UsePreviousAppDir=yes
 SolidCompression=yes
 OutputDir={app}
-OutputBaseFilename=MTGA_Draft_Tool_V0335
+OutputBaseFilename=MTGA_Draft_Tool_V0336
 InfoAfterFile=..\release_notes.txt
 [Files]
 Source: "..\dist\MTGA_Draft_Tool.exe"; DestDir: "{app}"
