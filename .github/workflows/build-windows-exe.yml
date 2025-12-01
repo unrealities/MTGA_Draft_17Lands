@@ -24,9 +24,10 @@ jobs:
         pip install -r requirements.txt
         pip install pywin32==306
         pip install pyinstaller==6.7.0
+        pip install jaraco.text platformdirs importlib-metadata zipp
 
     - name: Build executable
-      run: python -m PyInstaller  main.py --onefile --noconsole -n MTGA_Draft_Tool --clean
+      run: python -m PyInstaller main.spec --clean
 
     - name: Build installer
       run: iscc ./builder/Installer.iss
