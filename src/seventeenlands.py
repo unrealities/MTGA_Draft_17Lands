@@ -18,8 +18,8 @@ from src.constants import (
 URL_17LANDS = "https://www.17lands.com"
 IMAGE_17LANDS_SITE_PREFIX = "/static/images/"
 COLOR_FILTER = [
-    "W", "U", "B", "R", "G", "WU", "UB", "BR", "RG", "GW", "WB", "BG", "GU", "UR", "RW",
-    "WUR", "UBG", "BRW", "RGU", "GWB", "WUB", "UBR", "BRG", "RGW", "GWU",
+    "W", "U", "B", "R", "G", "WU", "UB", "BR", "RG", "WG", "WB", "BG", "UG", "UR", "WR",
+    "WUR", "UBG", "WBR", "URG", "WBG", "WUB", "UBR", "BRG", "WRG", "WUG",
 ]
 REQUEST_TIMEOUT = 30
 COLOR_WIN_RATE_GAME_COUNT_THRESHOLD = 5000
