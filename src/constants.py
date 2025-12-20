@@ -424,7 +424,8 @@ LIMITED_TYPES_DICT = {
 }
 
 COLOR_NAMES_DICT = {
-    "W": "White", "U": "Blue", "B": "Black", "R": "Red", "G": "Green",
+    "W": CARD_COLOR_LABEL_WHITE, "U": CARD_COLOR_LABEL_BLUE, "B": CARD_COLOR_LABEL_BLACK, 
+    "R": CARD_COLOR_LABEL_RED, "G": CARD_COLOR_LABEL_GREEN,
     "WU": "Azorius", "UB": "Dimir", "BR": "Rakdos", "RG": "Gruul", "WG": "Selesnya",
     "WB": "Orzhov", "BG": "Golgari", "UG": "Simic", "UR": "Izzet", "WR": "Boros",
     "WUR": "Jeskai", "UBG": "Sultai", "WBR": "Mardu", "URG": "Temur", "WBG": "Abzan",
