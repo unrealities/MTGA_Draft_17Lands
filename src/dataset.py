@@ -24,17 +24,25 @@ class Dataset:
         self._dataset = None
         
     def open_file(self, file_location: str):
+        """
+        Open the the dataset file
+        """
         from src.utils import normalize_color_string
         result = Result.ERROR_MISSING_FILE
-        if not file_location: return result
-        result, json_data = check_file_integrity(file_location)
-        if result != Result.VALID: return result
 
-        # Fix color keys in memory so old files work immediately
+        if not file_location:
+            return result
+        
+        result, json_data = check_file_integrity(file_location)
+
+        if result != Result.VALID:
+            return result
+
         if "color_ratings" in json_data:
             json_data["color_ratings"] = {
                 normalize_color_string(k): v for k, v in json_data["color_ratings"].items()
             }
+
         if "card_ratings" in json_data:
             for card in json_data["card_ratings"].values():
                 if "deck_colors" in card:
@@ -302,9 +310,13 @@ class Dataset:
             ]
         """
         archetype_list = []
-        if field not in WIN_RATE_OPTIONS: return archetype_list
+
+        if field not in WIN_RATE_OPTIONS: 
+            return archetype_list
         card_data = self.get_data_by_name([card_name])
-        if not card_data: return archetype_list
+        
+        if not card_data:
+            return archetype_list
 
         deck_stats = card_data[0].get(DATA_FIELD_DECK_COLORS, {})
         all_decks = deck_stats.get("All Decks", {})

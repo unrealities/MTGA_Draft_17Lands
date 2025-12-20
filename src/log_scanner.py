@@ -1056,6 +1056,7 @@ class ArenaScanner:
         return set_metrics
 
     def retrieve_color_win_rate(self, label_type):
+        '''Parse set data and return a list of color win rates'''
         from src.utils import normalize_color_string
         deck_colors = {}
         for filter_key in constants.DECK_FILTERS:
