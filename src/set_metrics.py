@@ -6,17 +6,20 @@ from src.constants import (
     DECK_COLORS,
     DATA_FIELD_NAME,
     DATA_FIELD_DECK_COLORS,
-    WIN_RATE_OPTIONS
+    WIN_RATE_OPTIONS,
 )
+
 
 class ColorMetrics(BaseModel):
     mean: float = 0.0
     std: float = 0.0
 
+
 class SetMetrics:
     """
     This class is used to calculate the mean, standard deviation for a MTG set dataset.
     """
+
     def __init__(self, dataset: Dataset, digits: int = 2):
         self._color_metrics: dict = {}
         self._digits: int = digits
@@ -55,9 +58,13 @@ class SetMetrics:
         for field in WIN_RATE_OPTIONS:
             self._color_metrics[field] = {}
             for color in DECK_COLORS:
-                self._color_metrics[field][color] = self.generate_color_metrics(color, field, dataset)
+                self._color_metrics[field][color] = self.generate_color_metrics(
+                    color, field, dataset
+                )
 
-    def generate_color_metrics(self, color: str, field: str, dataset: Dataset) -> ColorMetrics:
+    def generate_color_metrics(
+        self, color: str, field: str, dataset: Dataset
+    ) -> ColorMetrics:
         """
         Calculate the mean and standard deviation for a specific color and field
         """
@@ -66,10 +73,10 @@ class SetMetrics:
         processed_cards = []
         unique_gihwr = []
         dataset = dataset.get_card_ratings()
-        
+
         if not dataset:
             return metrics
-            
+
         # Iterate over the card list and retrieve the GIHWR for unique cards (remove duplicates and 0.0 values)
         for card_data in dataset.values():
             card_name = card_data[DATA_FIELD_NAME]
@@ -77,16 +84,17 @@ class SetMetrics:
                 processed_cards.append(card_name)
 
                 from src.utils import normalize_color_string
+
                 std_color = normalize_color_string(color)
-                
+
                 deck_stats = card_data.get(DATA_FIELD_DECK_COLORS, {})
                 if std_color not in deck_stats:
                     continue
-                
+
                 color_stats = deck_stats[std_color]
                 if field not in color_stats:
                     continue
-                
+
                 val = color_stats[field]
                 if val != 0.0:
                     unique_gihwr.append(round(val, self._digits))

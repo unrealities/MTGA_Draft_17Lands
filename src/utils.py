@@ -25,18 +25,21 @@ from src.constants import (
     DATA_SECTION_IMAGES,
     FILTER_OPTION_ALL_DECKS,
     SCREENSHOT_FOLDER,
-    SCREENSHOT_PREFIX
+    SCREENSHOT_PREFIX,
 )
 
+
 class Result(Enum):
-    '''Enumeration class for file integrity results'''
+    """Enumeration class for file integrity results"""
+
     VALID = 0
     ERROR_MISSING_FILE = 1
     ERROR_UNREADABLE_FILE = 2
 
+
 def process_json(obj):
-    """ 
-    Convert JSON string with escape characters to a nested dictionary 
+    """
+    Convert JSON string with escape characters to a nested dictionary
     """
     if isinstance(obj, dict):
         return {key: process_json(value) for key, value in obj.items()}
@@ -48,9 +51,10 @@ def process_json(obj):
             return obj
     else:
         return obj
-        
+
+
 def json_find(key, obj):
-    """ 
+    """
     Retrieve a value from a nested dictionary using a specified key.
     """
     result = None
@@ -64,8 +68,9 @@ def json_find(key, obj):
                     break
     return result
 
-def retrieve_local_set_list(codes = None, names = None):
-    '''Scans the Sets folder and returns a list of valid set files'''
+
+def retrieve_local_set_list(codes=None, names=None):
+    """Scans the Sets folder and returns a list of valid set files"""
     file_list = []
     error_list = []
     for file in os.listdir(SETS_FOLDER):
@@ -78,13 +83,14 @@ def retrieve_local_set_list(codes = None, names = None):
             error_list.append(error)
     return file_list, error_list
 
+
 def check_file_integrity(filename):
-    '''Extracts data from a file to determine if it's formatted correctly'''
+    """Extracts data from a file to determine if it's formatted correctly"""
     result = Result.VALID
     json_data = {}
 
     try:
-        with open(filename, 'r', encoding="utf-8", errors="replace") as json_file:
+        with open(filename, "r", encoding="utf-8", errors="replace") as json_file:
             json_data = json_file.read()
     except FileNotFoundError:
         return Result.ERROR_MISSING_FILE, json_data
@@ -112,7 +118,9 @@ def check_file_integrity(filename):
                 card.get(DATA_FIELD_TYPES)
                 card.get(DATA_FIELD_MANA_COST)
                 card.get(DATA_SECTION_IMAGES)
-                deck_colors = card.get(DATA_FIELD_DECK_COLORS, {}).get(FILTER_OPTION_ALL_DECKS, {})
+                deck_colors = card.get(DATA_FIELD_DECK_COLORS, {}).get(
+                    FILTER_OPTION_ALL_DECKS, {}
+                )
                 deck_colors.get(DATA_FIELD_GIHWR)
                 deck_colors.get(DATA_FIELD_ALSA)
                 deck_colors.get(DATA_FIELD_IWD)
@@ -125,8 +133,9 @@ def check_file_integrity(filename):
 
     return result, json_data
 
+
 def capture_screen_base64str(persist):
-    '''takes a screenshot and returns it as a base64 encoded string'''
+    """takes a screenshot and returns it as a base64 encoded string"""
     screenshot = ImageGrab.grab()
     buffered = BytesIO()
     screenshot.save(buffered, format="PNG")
@@ -139,8 +148,11 @@ def capture_screen_base64str(persist):
 
     return base64.b64encode(buffered.getvalue()).decode("utf-8")
 
-def detect_string(search_line: str, search_strings: List[str], replace: str = '_') -> int:
-    '''Search a line for a string and return the offset at the end of the string.'''
+
+def detect_string(
+    search_line: str, search_strings: List[str], replace: str = "_"
+) -> int:
+    """Search a line for a string and return the offset at the end of the string."""
     # Extend search strings with modified versions (replacing 'replace' character)
     modified_strings = search_strings + [
         string.replace(replace, "") for string in search_strings
@@ -151,6 +163,7 @@ def detect_string(search_line: str, search_strings: List[str], replace: str = '_
             return search_line.find(string) + len(string)
     # Return -1 if no match is found
     return -1
+
 
 def open_file(file_path: str):
     """
@@ -163,25 +176,27 @@ def open_file(file_path: str):
         - On Windows: Uses os.startfile() to open the file with the default application.
         - On macOS: Uses the 'open' command via subprocess to open the file.
         - On Linux/Unix: Uses the 'xdg-open' command via subprocess to open the file.
-    
+
     This function ensures cross-platform compatibility for opening files.
     """
-    if platform.system() == 'Windows':
+    if platform.system() == "Windows":
         os.startfile(file_path)
-    elif platform.system() == 'Darwin':  # macOS
-        subprocess.call(['open', file_path])
+    elif platform.system() == "Darwin":  # macOS
+        subprocess.call(["open", file_path])
     else:  # Linux and other Unix-based systems
-        subprocess.call(['xdg-open', file_path])
+        subprocess.call(["xdg-open", file_path])
+
 
 def clean_string(input_string: str, uppercase: bool = True) -> str:
-    '''Cleans a string by removing unwanted characters'''
-    unwanted_chars = [' ', '.', '/', '_']
+    """Cleans a string by removing unwanted characters"""
+    unwanted_chars = [" ", ".", "/", "_"]
     for char in unwanted_chars:
-        input_string = input_string.replace(char, '')
+        input_string = input_string.replace(char, "")
     return input_string.upper() if uppercase else input_string
 
-def read_dataset_info(filename: str, codes = None, names = None):
-    '''Reads the meta section of a dataset file'''
+
+def read_dataset_info(filename: str, codes=None, names=None):
+    """Reads the meta section of a dataset file"""
     name_segments = filename.split("_")
     cleaned_codes = [clean_string(code) for code in codes] if codes else None
     if len(name_segments) == 4:
@@ -192,10 +207,12 @@ def read_dataset_info(filename: str, codes = None, names = None):
     else:
         return ()
 
-    if ((cleaned_codes and set_code not in cleaned_codes) or
-        (event_type not in LIMITED_TYPES_DICT) or
-        (user_group not in LIMITED_GROUPS_LIST) or
-        (file_suffix != SET_FILE_SUFFIX)):
+    if (
+        (cleaned_codes and set_code not in cleaned_codes)
+        or (event_type not in LIMITED_TYPES_DICT)
+        or (user_group not in LIMITED_GROUPS_LIST)
+        or (file_suffix != SET_FILE_SUFFIX)
+    ):
         return ()
 
     if names:
@@ -227,26 +244,27 @@ def read_dataset_info(filename: str, codes = None, names = None):
             end_date,
             game_count,
             file_location,
-            collection_date
+            collection_date,
         )
 
     return ()
 
+
 def normalize_color_string(color_string: str) -> str:
     """
-    Standardizes any combination of color symbols (GW, WG, RUG) 
+    Standardizes any combination of color symbols (GW, WG, RUG)
     to MTG WUBRG order (WG, WR, URG).
     """
-    from src.constants import CARD_COLORS # ["W", "U", "B", "R", "G"]
-    
+    from src.constants import CARD_COLORS  # ["W", "U", "B", "R", "G"]
+
     if not color_string or color_string in ["All Decks", "Auto"]:
         return color_string
 
     # Clean input: Keep only valid WUBRG symbols
     symbols = [c for c in str(color_string).upper() if c in CARD_COLORS]
-    
+
     # Sort based on the WUBRG index defined in constants
     # White(0) < Blue(1) < Black(2) < Red(3) < Green(4)
     sorted_symbols = sorted(list(set(symbols)), key=lambda x: CARD_COLORS.index(x))
-    
+
     return "".join(sorted_symbols)
