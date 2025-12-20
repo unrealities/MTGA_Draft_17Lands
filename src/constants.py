@@ -140,10 +140,7 @@ WIN_RATE_OPTIONS = [DATA_FIELD_GIHWR, DATA_FIELD_OHWR,
                     DATA_FIELD_GPWR, DATA_FIELD_GNSWR, DATA_FIELD_GDWR]
 NON_COLORS_OPTIONS = WIN_RATE_OPTIONS + \
     [DATA_FIELD_IWD, DATA_FIELD_ALSA, DATA_FIELD_ATA]
-DECK_COLORS = [FILTER_OPTION_ALL_DECKS, CARD_COLOR_SYMBOL_WHITE, CARD_COLOR_SYMBOL_BLUE, CARD_COLOR_SYMBOL_BLACK, CARD_COLOR_SYMBOL_RED,
-               CARD_COLOR_SYMBOL_GREEN, "WU", "WB", "WR", "WG", "UB", "UR", "UG", "BR", "BG", "RG", "WUB", "WUR", "WUG", "WBR", "WBG", "WRG", "UBR", "UBG", "URG", "BRG"]
 COLUMN_OPTIONS = NON_COLORS_OPTIONS
-DECK_FILTERS = [FILTER_OPTION_AUTO] + DECK_COLORS
 
 COLUMN_2_DEFAULT = FIELD_LABEL_GIHWR
 COLUMN_3_DEFAULT = FIELD_LABEL_DISABLED
@@ -427,32 +424,16 @@ LIMITED_TYPES_DICT = {
 }
 
 COLOR_NAMES_DICT = {
-    CARD_COLOR_SYMBOL_WHITE: CARD_COLOR_LABEL_WHITE,
-    CARD_COLOR_SYMBOL_BLUE: CARD_COLOR_LABEL_BLUE,
-    CARD_COLOR_SYMBOL_BLACK: CARD_COLOR_LABEL_BLACK,
-    CARD_COLOR_SYMBOL_RED: CARD_COLOR_LABEL_RED,
-    CARD_COLOR_SYMBOL_GREEN: CARD_COLOR_LABEL_GREEN,
-    "WU": "Azorius",
-    "UB": "Dimir",
-    "BR": "Rakdos",
-    "RG": "Gruul",
-    "WG": "Selesnya",
-    "WB": "Orzhov",
-    "BG": "Golgari",
-    "UG": "Simic",
-    "UR": "Izzet",
-    "WR": "Boros",
-    "WUR": "Jeskai",
-    "UBG": "Sultai",
-    "WBR": "Mardu",
-    "URG": "Temur",
-    "WBG": "Abzan",
-    "WUB": "Esper",
-    "UBR": "Grixis",
-    "BRG": "Jund",
-    "WRG": "Naya",
-    "WUG": "Bant",
+    "W": "White", "U": "Blue", "B": "Black", "R": "Red", "G": "Green",
+    "WU": "Azorius", "UB": "Dimir", "BR": "Rakdos", "RG": "Gruul", "WG": "Selesnya",
+    "WB": "Orzhov", "BG": "Golgari", "UG": "Simic", "UR": "Izzet", "WR": "Boros",
+    "WUR": "Jeskai", "UBG": "Sultai", "WBR": "Mardu", "URG": "Temur", "WBG": "Abzan",
+    "WUB": "Esper", "UBR": "Grixis", "BRG": "Jund", "WRG": "Naya", "WUG": "Bant",
+    "WUBR": "Not-Green", "UBRG": "Not-White", "WBRG": "Not-Blue", "WURG": "Not-Black", 
+    "WUBG": "Not-Red", "WUBRG": "Five-Color"
 }
+DECK_COLORS = [FILTER_OPTION_ALL_DECKS] + [k for k in COLOR_NAMES_DICT.keys()]
+DECK_FILTERS = [FILTER_OPTION_AUTO] + DECK_COLORS
 
 CARD_COLORS_DICT = {
     CARD_COLOR_LABEL_WHITE: CARD_COLOR_SYMBOL_WHITE,

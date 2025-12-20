@@ -175,4 +175,4 @@ cython_debug/
 .DS_Store
 
 # Repomix for outputing files: repomix --ignore "tests/data/**"
-repomix-output.txt
+repomix-output.*

@@ -52,7 +52,7 @@ def test_initialize_card_data():
     assert constants.DATA_FIELD_DECK_COLORS in card
     assert constants.FILTER_OPTION_ALL_DECKS in card[constants.DATA_FIELD_DECK_COLORS]
     assert "W" in card[constants.DATA_FIELD_DECK_COLORS]
-    assert "WUBRG" not in card[constants.DATA_FIELD_DECK_COLORS] # Example of a non-standard color combo
+    assert "WUBRG" in card[constants.DATA_FIELD_DECK_COLORS]
     for color in constants.DECK_COLORS:
         assert color in card[constants.DATA_FIELD_DECK_COLORS]
         assert constants.DATA_FIELD_GIHWR in card[constants.DATA_FIELD_DECK_COLORS][color]

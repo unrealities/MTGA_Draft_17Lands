@@ -73,20 +73,23 @@ class SetMetrics:
         # Iterate over the card list and retrieve the GIHWR for unique cards (remove duplicates and 0.0 values)
         for card_data in dataset.values():
             card_name = card_data[DATA_FIELD_NAME]
-            # Check if the card name is not already in the processed_cards list
             if card_name not in processed_cards:
-                # Add the card to the processed_cards list
                 processed_cards.append(card_name)
-                # Check if the color is in the set data
-                if color not in card_data[DATA_FIELD_DECK_COLORS]:
-                    break
-                # Check if the field is in the set data
-                if field not in card_data[DATA_FIELD_DECK_COLORS][color]:
-                    break
-                # Add the color GIHWR to the unique_gihwr list if it's a non-zero value
-                gihwr = card_data[DATA_FIELD_DECK_COLORS][color][field]
-                if gihwr != 0.0:
-                    unique_gihwr.append(round(gihwr, self._digits))
+
+                from src.utils import normalize_color_string
+                std_color = normalize_color_string(color)
+                
+                deck_stats = card_data.get(DATA_FIELD_DECK_COLORS, {})
+                if std_color not in deck_stats:
+                    continue
+                
+                color_stats = deck_stats[std_color]
+                if field not in color_stats:
+                    continue
+                
+                val = color_stats[field]
+                if val != 0.0:
+                    unique_gihwr.append(round(val, self._digits))
 
         if not unique_gihwr:
             return metrics

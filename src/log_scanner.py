@@ -1056,33 +1056,29 @@ class ArenaScanner:
         return set_metrics
 
     def retrieve_color_win_rate(self, label_type):
-        '''Parse set data and return a list of color win rates'''
+        from src.utils import normalize_color_string
         deck_colors = {}
-        for colors in constants.DECK_FILTERS:
-            deck_color = colors
-            if (label_type == constants.DECK_FILTER_FORMAT_NAMES) and (deck_color in constants.COLOR_NAMES_DICT):
-                deck_color = constants.COLOR_NAMES_DICT[deck_color]
-            deck_colors[colors] = deck_color
+        for filter_key in constants.DECK_FILTERS:
+            std_key = normalize_color_string(filter_key)
+            display_label = std_key
+            if (label_type == constants.DECK_FILTER_FORMAT_NAMES) and (std_key in constants.COLOR_NAMES_DICT):
+                display_label = constants.COLOR_NAMES_DICT[std_key]
+            elif label_type == constants.DECK_FILTER_FORMAT_COLORS:
+                display_label = std_key
+            deck_colors[filter_key] = display_label
 
         try:
-            color_ratings = self.set_data.get_color_ratings()
-            if color_ratings:
-                for colors in color_ratings:
-                    for deck_color in deck_colors:
-                        if (len(deck_color) == len(colors)) and set(deck_color).issubset(colors):
-                            filter_label = deck_color
-                            if (label_type == constants.DECK_FILTER_FORMAT_NAMES) and (deck_color in constants.COLOR_NAMES_DICT):
-                                filter_label = constants.COLOR_NAMES_DICT[deck_color]
-                            ratings_string = filter_label + \
-                                f' ({color_ratings[colors]}%)'
-                            deck_colors[deck_color] = ratings_string
+            ratings = self.set_data.get_color_ratings()
+            if ratings:
+                for filter_key in list(deck_colors.keys()):
+                    std_menu_key = normalize_color_string(filter_key)
+                    if std_menu_key in ratings:
+                        winrate = ratings[std_menu_key]
+                        deck_colors[filter_key] = f"{deck_colors[filter_key]} ({winrate}%)"
         except Exception as error:
             logger.error(error)
 
-        # Switch key and value
-        deck_colors = {v: k for k, v in deck_colors.items()}
-
-        return deck_colors
+        return {v: k for k, v in deck_colors.items()}
 
     def retrieve_current_picked_cards(self):
         '''Return the card data for the card that was picked from the current pack'''

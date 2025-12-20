@@ -9,7 +9,6 @@ from io import BytesIO
 from PIL import ImageGrab
 from typing import List
 from src.constants import (
-    LIMITED_USER_GROUP_ALL,
     LIMITED_TYPES_DICT,
     LIMITED_GROUPS_LIST,
     SET_FILE_SUFFIX,
@@ -232,3 +231,22 @@ def read_dataset_info(filename: str, codes = None, names = None):
         )
 
     return ()
+
+def normalize_color_string(color_string: str) -> str:
+    """
+    Standardizes any combination of color symbols (GW, WG, RUG) 
+    to MTG WUBRG order (WG, WR, URG).
+    """
+    from src.constants import CARD_COLORS # ["W", "U", "B", "R", "G"]
+    
+    if not color_string or color_string in ["All Decks", "Auto"]:
+        return color_string
+
+    # Clean input: Keep only valid WUBRG symbols
+    symbols = [c for c in str(color_string).upper() if c in CARD_COLORS]
+    
+    # Sort based on the WUBRG index defined in constants
+    # White(0) < Blue(1) < Black(2) < Red(3) < Green(4)
+    sorted_symbols = sorted(list(set(symbols)), key=lambda x: CARD_COLORS.index(x))
+    
+    return "".join(sorted_symbols)

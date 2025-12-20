@@ -6,7 +6,6 @@ from src.constants import (
     DATA_FIELD_MANA_COST,
     DATA_FIELD_TYPES,
     DATA_FIELD_DECK_COLORS,
-    DATA_FIELD_COLORS,
     DATA_SECTION_IMAGES,
     COLOR_NAMES_DICT,
     WIN_RATE_OPTIONS,
@@ -24,22 +23,27 @@ class Dataset:
         """
         self._dataset = None
         
-    def open_file(self, file_location: str) -> None:
-        """
-        Open the the dataset file
-        """
+    def open_file(self, file_location: str):
+        from src.utils import normalize_color_string
         result = Result.ERROR_MISSING_FILE
-        
-        if not file_location:
-            return result
-            
+        if not file_location: return result
         result, json_data = check_file_integrity(file_location)
-        
-        if result != Result.VALID:
-            return result
-            
+        if result != Result.VALID: return result
+
+        # Fix color keys in memory so old files work immediately
+        if "color_ratings" in json_data:
+            json_data["color_ratings"] = {
+                normalize_color_string(k): v for k, v in json_data["color_ratings"].items()
+            }
+        if "card_ratings" in json_data:
+            for card in json_data["card_ratings"].values():
+                if "deck_colors" in card:
+                    card["deck_colors"] = {
+                        normalize_color_string(k): v for k, v in card["deck_colors"].items()
+                    }
+
         self._dataset = json_data
-        
+
         return result
 
     def get_data_by_id(self, id_list: List[str]) -> List[Dict]:
@@ -298,40 +302,29 @@ class Dataset:
             ]
         """
         archetype_list = []
-
-        if field not in WIN_RATE_OPTIONS:
-            return archetype_list
-
+        if field not in WIN_RATE_OPTIONS: return archetype_list
         card_data = self.get_data_by_name([card_name])
+        if not card_data: return archetype_list
 
-        if not card_data:
-            return archetype_list
+        deck_stats = card_data[0].get(DATA_FIELD_DECK_COLORS, {})
+        all_decks = deck_stats.get("All Decks", {})
+        win_rate = all_decks.get(field, 0.0)
+        
+        # Strict check for 0.0 value fix
+        if not win_rate or win_rate == 0.0:
+            return []
 
-        win_rate = card_data[0][DATA_FIELD_DECK_COLORS]["All Decks"][field]
-        game_count = card_data[0][DATA_FIELD_DECK_COLORS]["All Decks"][WIN_RATE_FIELDS_DICT[field]]
-        if not win_rate:
-            return archetype_list
-        else:
-            archetype_list.append(["", "All Decks", win_rate, game_count])
+        archetype_list.append(["", "All Decks", win_rate, all_decks.get(WIN_RATE_FIELDS_DICT[field], 0)])
 
         temp_list = []
-
         for color, name in COLOR_NAMES_DICT.items():
-            win_rate = card_data[0][DATA_FIELD_DECK_COLORS][color][field]
-            game_count = card_data[0][DATA_FIELD_DECK_COLORS][color][WIN_RATE_FIELDS_DICT[field]]
-            if win_rate != 0:
-                temp_list.append([
-                    name,
-                    color,
-                    win_rate,
-                    game_count
-                ])
+            if color in deck_stats:
+                spec_stats = deck_stats[color]
+                wr, gc = spec_stats.get(field, 0), spec_stats.get(WIN_RATE_FIELDS_DICT[field], 0)
+                if wr != 0:
+                    temp_list.append([name, color, wr, gc])
 
-        # Sort the list by the field (highest to lowest)
-        if temp_list:
-            temp_list.sort(key=lambda x: x[3], reverse=True)
-
-        # Combine lists
+        if temp_list: temp_list.sort(key=lambda x: x[3], reverse=True)
         archetype_list.extend(temp_list)
 
         return archetype_list
