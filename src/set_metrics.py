@@ -6,7 +6,7 @@ from src.constants import (
     DECK_COLORS,
     DATA_FIELD_NAME,
     DATA_FIELD_DECK_COLORS,
-    WIN_RATE_OPTIONS
+    WIN_RATE_OPTIONS,
 )
 
 class ColorMetrics(BaseModel):
@@ -17,6 +17,7 @@ class SetMetrics:
     """
     This class is used to calculate the mean, standard deviation for a MTG set dataset.
     """
+
     def __init__(self, dataset: Dataset, digits: int = 2):
         self._color_metrics: dict = {}
         self._digits: int = digits
@@ -55,9 +56,13 @@ class SetMetrics:
         for field in WIN_RATE_OPTIONS:
             self._color_metrics[field] = {}
             for color in DECK_COLORS:
-                self._color_metrics[field][color] = self.generate_color_metrics(color, field, dataset)
+                self._color_metrics[field][color] = self.generate_color_metrics(
+                    color, field, dataset
+                )
 
-    def generate_color_metrics(self, color: str, field: str, dataset: Dataset) -> ColorMetrics:
+    def generate_color_metrics(
+        self, color: str, field: str, dataset: Dataset
+    ) -> ColorMetrics:
         """
         Calculate the mean and standard deviation for a specific color and field
         """
@@ -66,27 +71,31 @@ class SetMetrics:
         processed_cards = []
         unique_gihwr = []
         dataset = dataset.get_card_ratings()
-        
+
         if not dataset:
             return metrics
-            
+
         # Iterate over the card list and retrieve the GIHWR for unique cards (remove duplicates and 0.0 values)
         for card_data in dataset.values():
             card_name = card_data[DATA_FIELD_NAME]
-            # Check if the card name is not already in the processed_cards list
             if card_name not in processed_cards:
-                # Add the card to the processed_cards list
                 processed_cards.append(card_name)
-                # Check if the color is in the set data
-                if color not in card_data[DATA_FIELD_DECK_COLORS]:
-                    break
-                # Check if the field is in the set data
-                if field not in card_data[DATA_FIELD_DECK_COLORS][color]:
-                    break
-                # Add the color GIHWR to the unique_gihwr list if it's a non-zero value
-                gihwr = card_data[DATA_FIELD_DECK_COLORS][color][field]
-                if gihwr != 0.0:
-                    unique_gihwr.append(round(gihwr, self._digits))
+
+                from src.utils import normalize_color_string
+
+                std_color = normalize_color_string(color)
+
+                deck_stats = card_data.get(DATA_FIELD_DECK_COLORS, {})
+                if std_color not in deck_stats:
+                    continue
+
+                color_stats = deck_stats[std_color]
+                if field not in color_stats:
+                    continue
+
+                val = color_stats[field]
+                if val != 0.0:
+                    unique_gihwr.append(round(val, self._digits))
 
         if not unique_gihwr:
             return metrics

@@ -6,6 +6,7 @@ from pydantic import Field
 from unittest.mock import patch
 from src.log_scanner import ArenaScanner, Source
 from src.limited_sets import SetDictionary, SetInfo, SpecialEvent
+from unittest.mock import patch, MagicMock
 
 TEST_LOG_DIRECTORY = os.path.join(os.getcwd(), "tests")
 TEST_LOG_FILE_LOCATION = os.path.join(os.getcwd(), "tests", "Player.log")
@@ -1198,3 +1199,27 @@ def test_otj_premier_p1p1_ocr_disabled(mock_screenshot, mock_ocr, function_scann
     # Verify that the OCR method was not called
     assert mock_ocr.call_count == 0
     mock_screenshot.return_value = 0
+    
+def test_scanner_retrieve_color_win_rate_mismatch_handling():
+        """
+        Verify that ArenaScanner correctly maps dataset keys to UI labels even if they are stored differently.
+        """
+        scanner = ArenaScanner("log.txt", MagicMock(), retrieve_unknown=False)
+    
+        # Mock dataset returning ratings with normalized keys (e.g., "WG")
+        scanner.set_data.get_color_ratings = MagicMock(return_value={
+            "WG": 55.5,
+            "WR": 60.0
+        })
+    
+        # Mock constants to simulate the issue: DECK_FILTERS has "GW" (non-standard), data has "WG"
+        with patch("src.constants.DECK_FILTERS", ["GW", "WR", "All Decks"]):
+            deck_colors = scanner.retrieve_color_win_rate("Colors")
+    
+            # The key in the returned dict is the UI Label. 
+            # Since the code normalizes "GW" to "WG", the label becomes "WG (55.5%)"
+            expected_label = "WG (55.5%)"
+    
+            # Verify the mapping exists: { Label : Original Filter Key }
+            assert expected_label in deck_colors
+            assert deck_colors[expected_label] == "GW"

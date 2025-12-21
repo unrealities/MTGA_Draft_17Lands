@@ -1,3 +1,4 @@
+import pytest
 import unittest
 from unittest.mock import patch, MagicMock
 import os
@@ -7,6 +8,7 @@ from src.utils import (
     retrieve_local_set_list,
     Result
 )
+from src.utils import normalize_color_string
 
 SCREENSHOT_FOLDER = os.path.join(os.getcwd(), "Screenshots")
 SCREENSHOT_PREFIX = "p1p1_screenshot_"
@@ -97,3 +99,21 @@ def test_retrieve_local_set_list_skip_old(mock_integrity, mock_listdir):
 
     assert not error_list
     assert file_list == MOCKED_DATASETS_LIST_VALID
+
+@pytest.mark.parametrize("input_color, expected_output", [
+    ("RW", "WR"),
+    ("GW", "WG"),
+    ("UG", "UG"),
+    ("GU", "UG"),
+    ("WUBRG", "WUBRG"),
+    ("GRBUW", "WUBRG"),
+    ("U", "U"),
+    ("", ""),
+    ("All Decks", "All Decks"),
+    ("Auto", "Auto")
+])
+def test_normalize_color_string(input_color, expected_output):
+    """
+    Verify that color strings are normalized to WUBRG order.
+    """
+    assert normalize_color_string(input_color) == expected_output

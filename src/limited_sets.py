@@ -80,7 +80,6 @@ def shift_date(start_date, shifted_days, string_format, next_dow=None):
 
     return shifted_date, shifted_date_string
 
-
 class LimitedSets:
     def __init__(self, sets_file_location: str = TEMP_LIMITED_SETS):
         self.sets_file_location: str = sets_file_location

@@ -80,7 +80,6 @@ def test_build_card_ratings_url(seventeenlands):
     )
     assert url == expected_url
 
-
 @patch("src.seventeenlands.requests.get")
 def test_download_card_ratings(mock_get, seventeenlands):
     """
@@ -117,7 +116,6 @@ def test_download_card_ratings(mock_get, seventeenlands):
     assert len(card_data["Test Card"][constants.DATA_SECTION_RATINGS]) == 1
     mock_get.assert_called_once()
 
-
 @patch("src.seventeenlands.requests.get")
 def test_download_color_ratings(mock_get, seventeenlands):
     """
@@ -153,3 +151,65 @@ def test_download_color_ratings(mock_get, seventeenlands):
     assert color_ratings["W"] == 50.0  # 3000 wins out of 6000 games
     assert game_count == 10000
     mock_get.assert_called_once()
+    
+def test_seventeenlands_color_ratings_normalization():
+    """
+    Verify that download_color_ratings normalizes keys from the API response.
+    If the API returns "GW" but the app expects "WG", this method should handle it.
+    """
+    # Mock API response with non-standard order ("GW" instead of "WG")
+    mock_api_response = [
+        {"short_name": "GW", "is_summary": False, "games": 6000, "wins": 3000},
+        {"color_name": "All Decks", "is_summary": True, "games": 10000}
+    ]
+    
+    with patch("src.seventeenlands.requests.get") as mock_get:
+        mock_get.return_value.json.return_value = mock_api_response
+        mock_get.return_value.raise_for_status = MagicMock()
+        
+        sl = Seventeenlands()
+        # We pass a filter that includes the *Normalized* key "WG"
+        # The function should be able to map "GW" from API to "WG"
+        ratings, game_count = sl.download_color_ratings(
+            "SET", "Draft", "Start", "End", "User", color_filter=["WG"]
+        )
+        
+        # Check that the key in the returned dictionary is normalized to "WG"
+        assert "WG" in ratings
+        assert ratings["WG"] == 50.0
+        assert "GW" not in ratings # Should not contain the raw key if it was normalized
+
+def test_process_color_ratings_fallback_logic():
+    """
+    Verify that _process_color_ratings handles entries missing 'short_name'
+    by parsing 'color_name' (e.g. "(UB)") as a fallback.
+    """
+    sl = Seventeenlands()
+    
+    # Mock data where 'short_name' is missing (older API style or edge case)
+    mock_api_data = [
+        {
+            "color_name": "Dimir (UB)",
+            # "short_name": "UB", <--- MISSING
+            "is_summary": False,
+            "games": 6000,
+            "wins": 3000
+        },
+        {
+            "color_name": "Simic (GU)", # Non-standard order in name
+            "short_name": "", # Empty string
+            "is_summary": False,
+            "games": 10000,
+            "wins": 6000
+        }
+    ]
+    
+    ratings, game_count = sl._process_color_ratings(mock_api_data, None)
+    
+    # "UB" extracted from "Dimir (UB)"
+    assert "UB" in ratings
+    assert ratings["UB"] == 50.0
+    
+    # "GU" extracted from "Simic (GU)" and normalized to "UG"
+    assert "UG" in ratings
+    assert ratings["UG"] == 60.0

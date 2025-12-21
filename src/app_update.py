@@ -18,7 +18,6 @@ UPDATE_FILENAME = "MTGA_Draft_Tool_Setup.exe"
 if not os.path.exists(DOWNLOADS_FOLDER):
     os.makedirs(DOWNLOADS_FOLDER)
 
-
 class AppUpdate:
     def __init__(self):
         self.version: str = ""

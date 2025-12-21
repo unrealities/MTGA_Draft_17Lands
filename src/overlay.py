@@ -58,7 +58,6 @@ def start_overlay():
 
     overlay.main_loop()
 
-
 def restart_overlay(root):
     """Close/destroy the current overlay object and create a new instance"""
     root.close_overlay()
@@ -71,7 +70,6 @@ def fixed_map(style, option):
      be future-safe'''
     return [elm for elm in style.map("Treeview", query_opt=option)
             if elm[:2] != ("!disabled", "!selected")]
-
 
 def control_table_column(table, column_fields, table_width=None):
     """Hide disabled table columns"""
@@ -104,7 +102,6 @@ def control_table_column(table, column_fields, table_width=None):
 
     return last_field_index, visible_columns
 
-
 def copy_suggested(deck_colors, deck, color_options):
     """Copy the deck and sideboard list from the Suggest Deck window"""
     colors = color_options[deck_colors.get()]
@@ -116,7 +113,6 @@ def copy_suggested(deck_colors, deck, color_options):
     except Exception as error:
         logger.error(error)
     return
-
 
 def copy_taken(taken_cards):
     """Copy the card list from the Taken Cards window"""
@@ -130,7 +126,6 @@ def copy_taken(taken_cards):
     except Exception as error:
         logger.error(error)
     return
-
 
 def copy_clipboard(copy):
     """Send the copied data to the clipboard"""
@@ -2719,7 +2714,6 @@ class Overlay(ScaledWindow):
             toggle_widget(self.separator_frame_draft, True)
         else:
             toggle_widget(self.separator_frame_draft, False)
-
 
 class CreateCardToolTip(ScaledWindow):
     '''Class that's used to create the card tooltip that appears when a table row is clicked'''
