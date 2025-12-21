@@ -1,9 +1,10 @@
 import pytest
 import os
+import json
 from src.dataset import Dataset
 from src.utils import Result
 from src.constants import DATA_FIELD_GIHWR
-
+from unittest.mock import patch
 # 17Lands OTJ data from 2024-4-16 to 2024-5-3
 OTJ_PREMIER_SNAPSHOT = os.path.join(os.getcwd(), "tests", "data","OTJ_PremierDraft_Data_2024_5_3.json")
 
@@ -505,3 +506,41 @@ def test_get_card_archetypes_by_field_pass(otj_dataset):
     archetype_list = otj_dataset.get_card_archetypes_by_field("Hardbristle Bandit", DATA_FIELD_GIHWR)
     assert archetype_list == OTJ_HARDBRISTLE_BANDIT_ARCHETYPE_DATA
     
+def test_dataset_normalization_on_load(tmp_path):
+    """
+    Verify that non-standard color keys in the JSON are normalized upon loading.
+    """
+    # Create a dummy dataset with "flipped" colors
+    bad_data = {
+        "color_ratings": {
+            "GW": 55.0, # Should be WG
+            "RW": 52.0  # Should be WR
+        },
+        "card_ratings": {
+            "1": {
+                "name": "Test Card",
+                "deck_colors": {
+                    "GW": {"gihwr": 55.0}, # Should be WG
+                    "RW": {"gihwr": 52.0}  # Should be WR
+                }
+            }
+        }
+    }
+
+    # We mock check_file_integrity so it returns VALID and our data dict directly
+    # This avoids writing to a file and bypassing strict validation logic
+    with patch("src.dataset.check_file_integrity", return_value=(Result.VALID, bad_data)):
+        ds = Dataset()
+        # We pass a dummy path because we are mocking the return value anyway
+        ds.open_file("dummy_path.json")
+        
+        # Check Color Ratings
+        colors = ds.get_color_ratings()
+        assert "WG" in colors
+        assert "GW" not in colors
+        
+        # Check Card Ratings
+        cards = ds.get_card_ratings()
+        card_colors = cards["1"]["deck_colors"]
+        assert "WG" in card_colors
+        assert "GW" not in card_colors

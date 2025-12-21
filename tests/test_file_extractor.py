@@ -10,12 +10,8 @@ from src.file_extractor import (
     check_date,
 )
 from src import constants
-from src.utils import Result
-
-# --- Fixtures ---
-
-# --- Test Standalone Utility Functions ---
-
+from src.utils import Result, normalize_color_string
+from src.constants import DECK_COLORS
 
 @pytest.mark.parametrize(
     "encoded_cost, expected_decoded, expected_cmc",
@@ -86,5 +82,17 @@ def test_check_date(date_str, expected_result):
     """Tests the date validation utility function."""
     assert check_date(date_str) == expected_result
 
-
-# --- Test FileExtractor Class Methods ---
+def test_initialize_card_data_keys_normalized():
+    """
+    Verify that initialize_card_data creates keys that match the normalized format.
+    This prevents the 'missing W' bug from reappearing.
+    """
+    card_data = {}
+    initialize_card_data(card_data)
+    
+    deck_colors_keys = card_data[constants.DATA_FIELD_DECK_COLORS].keys()
+    
+    for color in DECK_COLORS:
+        # The keys in the initialized data must match the normalized version of the constants
+        normalized_color = normalize_color_string(color)
+        assert normalized_color in deck_colors_keys
