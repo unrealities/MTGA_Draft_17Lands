@@ -28,14 +28,12 @@ from src.constants import (
     SCREENSHOT_PREFIX,
 )
 
-
 class Result(Enum):
     """Enumeration class for file integrity results"""
 
     VALID = 0
     ERROR_MISSING_FILE = 1
     ERROR_UNREADABLE_FILE = 2
-
 
 def process_json(obj):
     """
@@ -52,7 +50,6 @@ def process_json(obj):
     else:
         return obj
 
-
 def json_find(key, obj):
     """
     Retrieve a value from a nested dictionary using a specified key.
@@ -68,7 +65,6 @@ def json_find(key, obj):
                     break
     return result
 
-
 def retrieve_local_set_list(codes=None, names=None):
     """Scans the Sets folder and returns a list of valid set files"""
     file_list = []
@@ -82,7 +78,6 @@ def retrieve_local_set_list(codes=None, names=None):
         except Exception as error:
             error_list.append(error)
     return file_list, error_list
-
 
 def check_file_integrity(filename):
     """Extracts data from a file to determine if it's formatted correctly"""
@@ -133,7 +128,6 @@ def check_file_integrity(filename):
 
     return result, json_data
 
-
 def capture_screen_base64str(persist):
     """takes a screenshot and returns it as a base64 encoded string"""
     screenshot = ImageGrab.grab()
@@ -147,7 +141,6 @@ def capture_screen_base64str(persist):
         screenshot.save(os.path.join(SCREENSHOT_FOLDER, filename), format="PNG")
 
     return base64.b64encode(buffered.getvalue()).decode("utf-8")
-
 
 def detect_string(
     search_line: str, search_strings: List[str], replace: str = "_"
@@ -163,7 +156,6 @@ def detect_string(
             return search_line.find(string) + len(string)
     # Return -1 if no match is found
     return -1
-
 
 def open_file(file_path: str):
     """
@@ -186,14 +178,12 @@ def open_file(file_path: str):
     else:  # Linux and other Unix-based systems
         subprocess.call(["xdg-open", file_path])
 
-
 def clean_string(input_string: str, uppercase: bool = True) -> str:
     """Cleans a string by removing unwanted characters"""
     unwanted_chars = [" ", ".", "/", "_"]
     for char in unwanted_chars:
         input_string = input_string.replace(char, "")
     return input_string.upper() if uppercase else input_string
-
 
 def read_dataset_info(filename: str, codes=None, names=None):
     """Reads the meta section of a dataset file"""
@@ -248,7 +238,6 @@ def read_dataset_info(filename: str, codes=None, names=None):
         )
 
     return ()
-
 
 def normalize_color_string(color_string: str) -> str:
     """

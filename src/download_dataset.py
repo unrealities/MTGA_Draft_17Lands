@@ -277,7 +277,6 @@ class DownloadDatasetWindow(ScaledWindow):
         except Exception as error:
             logger.error(f"Failed to populate widgets from DownloadArgs: {error}")
 
-
     def __exit(self, window):
         DownloadDatasetWindow._instance_open = False
         window.destroy()

@@ -9,11 +9,9 @@ from src.constants import (
     WIN_RATE_OPTIONS,
 )
 
-
 class ColorMetrics(BaseModel):
     mean: float = 0.0
     std: float = 0.0
-
 
 class SetMetrics:
     """

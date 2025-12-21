@@ -250,7 +250,6 @@
 ** The Deck Filter drop-down has been detached from the column drop-downs and now sets the filter value for all of the fields in a table (no more All GIHWR or All ALSA)
 ** Tables can be sorted by clicking on the column header
 
-
 ===================== RELEASE NOTES 2.96 =====================
 * Bug Fix: The application will now support back-to-back drafts
 
@@ -399,7 +398,6 @@
 * New Feature: Added support for MWM bot draft
 
 * Bug Fix: Restarting is no longer required when playing consecutive drafts
-
 
 ===================== RELEASE NOTES 2.70 =====================
 

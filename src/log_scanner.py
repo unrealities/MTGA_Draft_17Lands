@@ -19,6 +19,7 @@ from src.utils import (
     retrieve_local_set_list,
     capture_screen_base64str,
     detect_string,
+    normalize_color_string,
 )
 
 if not os.path.exists(constants.DRAFT_LOG_FOLDER):
@@ -1057,7 +1058,6 @@ class ArenaScanner:
 
     def retrieve_color_win_rate(self, label_type):
         '''Parse set data and return a list of color win rates'''
-        from src.utils import normalize_color_string
         deck_colors = {}
         for filter_key in constants.DECK_FILTERS:
             std_key = normalize_color_string(filter_key)

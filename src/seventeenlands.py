@@ -24,7 +24,6 @@ COLOR_WIN_RATE_GAME_COUNT_THRESHOLD = 5000
 
 logger = create_logger()
 
-
 class Seventeenlands:
     def build_card_ratings_url(
         self, set_code, draft, start_date, end_date, user_group, color

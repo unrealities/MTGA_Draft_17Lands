@@ -254,7 +254,6 @@ MOCK_URL_RESPONSE_17LANDS_FILTERS = b'''{
         "ZNR":["PremierDraft","TradDraft","QuickDraft","Sealed"]}
 }'''
 
-
 MOCK_URL_RESPONSE_SCRYFALL_SETS = b'''{
     "object":"list","has_more":false,"data": [
         {

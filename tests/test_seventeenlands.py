@@ -80,7 +80,6 @@ def test_build_card_ratings_url(seventeenlands):
     )
     assert url == expected_url
 
-
 @patch("src.seventeenlands.requests.get")
 def test_download_card_ratings(mock_get, seventeenlands):
     """
@@ -116,7 +115,6 @@ def test_download_card_ratings(mock_get, seventeenlands):
     assert card_data["Test Card"][constants.DATA_SECTION_IMAGES] == ["https://www.17lands.com/static/images/cards/test_card.jpg"]
     assert len(card_data["Test Card"][constants.DATA_SECTION_RATINGS]) == 1
     mock_get.assert_called_once()
-
 
 @patch("src.seventeenlands.requests.get")
 def test_download_color_ratings(mock_get, seventeenlands):

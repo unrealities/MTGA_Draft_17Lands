@@ -12,7 +12,6 @@ from src.constants import (
     WIN_RATE_FIELDS_DICT,
 )
 
-
 class Dataset:
     def __init__(self, retrieve_unknown: bool = False):
         self._dataset = None
