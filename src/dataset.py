@@ -1,4 +1,4 @@
-from src.utils import Result, check_file_integrity
+from src.utils import Result, check_file_integrity, normalize_color_string
 from src.file_extractor import initialize_card_data
 from typing import List, Dict, Tuple
 from src.constants import (
@@ -27,7 +27,6 @@ class Dataset:
         """
         Open the the dataset file
         """
-        from src.utils import normalize_color_string
 
         result = Result.ERROR_MISSING_FILE
 
