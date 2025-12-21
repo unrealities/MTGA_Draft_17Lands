@@ -4,11 +4,18 @@ from dataclasses import dataclass
 from tkinter.ttk import Label, Button, OptionMenu, Progressbar, Separator
 from datetime import date, datetime, UTC
 from src.scaled_window import ScaledWindow, identify_safe_coordinates
-from src.constants import START_DATE_DEFAULT, LIMITED_TYPE_LIST, LIMITED_GROUPS_LIST, DATA_SET_VERSION_3, DATASET_DOWNLOAD_RATE_LIMIT_SEC
 from src.logger import create_logger
 from src.utils import retrieve_local_set_list, clean_string
 from src.file_extractor import FileExtractor
 from src.configuration import write_configuration
+from src.constants import (
+    START_DATE_DEFAULT, 
+    LIMITED_TYPE_LIST, 
+    LIMITED_GROUPS_LIST, 
+    DATA_SET_VERSION_3, 
+    DATASET_DOWNLOAD_RATE_LIMIT_SEC,
+    COLOR_WIN_RATE_GAME_COUNT_THRESHOLD_DEFAULT
+)
 
 logger = create_logger()
 
@@ -19,6 +26,7 @@ class DownloadArgs:
     start: tkinter.Entry
     end: tkinter.Entry
     user_group: tkinter.StringVar
+    game_threshold: tkinter.Entry
     button: Button
     progress: Progressbar
     list_box: tkinter.Widget
@@ -128,6 +136,7 @@ class DownloadDatasetWindow(ScaledWindow):
             start_label = Label(self.window, text="Start Date:", style="SetOptions.TLabel", anchor="e")
             end_label = Label(self.window, text="End Date:", style="SetOptions.TLabel", anchor="e")
             group_label = Label(self.window, text="User Group:", style="SetOptions.TLabel", anchor="e")
+            threshold_label = Label(self.window, text="Min Games:", style="SetOptions.TLabel", anchor="e")
 
             draft_choices = LIMITED_TYPE_LIST
             status_text = tkinter.StringVar()
@@ -144,6 +153,9 @@ class DownloadDatasetWindow(ScaledWindow):
             start_entry.insert(tkinter.END, START_DATE_DEFAULT)
             end_entry = tkinter.Entry(self.window)
             end_entry.insert(tkinter.END, str(date.today()))
+            
+            threshold_entry = tkinter.Entry(self.window)
+            threshold_entry.insert(tkinter.END, str(COLOR_WIN_RATE_GAME_COUNT_THRESHOLD_DEFAULT))
 
             set_choices = list(sets)
             set_value = tkinter.StringVar(self.root)
@@ -191,6 +203,7 @@ class DownloadDatasetWindow(ScaledWindow):
                         start=start_entry,
                         end=end_entry,
                         user_group=group_value,
+                        game_threshold=threshold_entry,
                         game_count = 0,
                     )
                 ),
@@ -201,12 +214,13 @@ class DownloadDatasetWindow(ScaledWindow):
             event_separator = Separator(self.window, orient='vertical')
             set_separator = Separator(self.window, orient='vertical')
             group_separator = Separator(self.window, orient='vertical')
+            date_separator = Separator(self.window, orient='vertical')
 
-            notice_label.grid(row=0, column=0, columnspan=13, sticky='nsew')
-            list_box_frame.grid(row=1, column=0, columnspan=13, sticky='nsew')
-            add_button.grid(row=3, column=0, columnspan=13, sticky='nsew')
-            progress.grid(row=4, column=0, columnspan=13, sticky='nsew')
-            status_label.grid(row=5, column=0, columnspan=13, sticky='nsew')
+            notice_label.grid(row=0, column=0, columnspan=16, sticky='nsew') 
+            list_box_frame.grid(row=1, column=0, columnspan=16, sticky='nsew')
+            add_button.grid(row=3, column=0, columnspan=16, sticky='nsew')
+            progress.grid(row=4, column=0, columnspan=16, sticky='nsew')
+            status_label.grid(row=5, column=0, columnspan=16, sticky='nsew')
 
             set_label.grid(row=2, column=0, sticky='nsew')
             set_entry.grid(row=2, column=1, sticky='nsew')
@@ -221,6 +235,9 @@ class DownloadDatasetWindow(ScaledWindow):
             start_entry.grid(row=2, column=10, sticky='nsew')
             end_label.grid(row=2, column=11, sticky='nsew')
             end_entry.grid(row=2, column=12, sticky='nsew')
+            date_separator.grid(row=2, column=13, sticky='nsew')
+            threshold_label.grid(row=2, column=14, sticky='nsew')   
+            threshold_entry.grid(row=2, column=15, sticky='nsew')
 
             self.list_box.pack(expand=True, fill="both")
 
@@ -250,6 +267,7 @@ class DownloadDatasetWindow(ScaledWindow):
                         start=start_entry,
                         end=end_entry,
                         user_group=group_value,
+                        game_threshold=threshold_entry,
                         game_count = dataset_args.game_count,
                         color_ratings = dataset_args.color_ratings,
                         enable_rate_limit=False
@@ -313,7 +331,21 @@ class DownloadDatasetWindow(ScaledWindow):
 
     def __add_set(self, download_args: DownloadArgs):
         """Initiates the set download process when the Download Dataset button is clicked."""
-        extractor = FileExtractor(self.configuration.settings.database_location, download_args.progress, download_args.status, self.window)
+        
+        # Parse threshold
+        try:
+            threshold_val = int(download_args.game_threshold.get())
+        except ValueError:
+            threshold_val = COLOR_WIN_RATE_GAME_COUNT_THRESHOLD_DEFAULT
+            
+        extractor = FileExtractor(
+            self.configuration.settings.database_location, 
+            download_args.progress, 
+            download_args.status, 
+            self.window,
+            threshold=threshold_val
+        )
+        
         current_time = datetime.now().timestamp()
 
         try:

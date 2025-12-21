@@ -2,6 +2,7 @@ import pytest
 import logging
 from unittest.mock import patch, MagicMock
 from src.overlay import start_overlay
+from src.configuration import Configuration
 
 @pytest.fixture(autouse=True)
 def catch_log_errors(caplog):
@@ -43,6 +44,7 @@ def test_start_overlay_pass(mock_scanner):
         patch("tkinter.messagebox.showinfo", return_value=None),
         patch("src.overlay.stat", return_value=MagicMock(st_mtime=0)),
         patch("src.overlay.write_configuration", return_value=True),
+        patch("src.overlay.read_configuration", return_value=(Configuration(), True)),
         patch("src.overlay.LimitedSets.retrieve_limited_sets", return_value=None),
         patch("src.overlay.Notifications.check_for_updates", return_value=("","")),
         patch("src.overlay.ArenaScanner", return_value=mock_scanner),
