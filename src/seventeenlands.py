@@ -24,6 +24,7 @@ REQUEST_TIMEOUT = 30
 
 logger = create_logger()
 
+
 class Seventeenlands:
     def build_card_ratings_url(
         self, set_code, draft, start_date, end_date, user_group, color
@@ -59,14 +60,14 @@ class Seventeenlands:
         )
 
     def download_color_ratings(
-        self, 
-        set_code, 
-        draft, 
-        start_date, 
-        end_date, 
-        user_group, 
+        self,
+        set_code,
+        draft,
+        start_date,
+        end_date,
+        user_group,
         color_filter=None,
-        threshold=COLOR_WIN_RATE_GAME_COUNT_THRESHOLD_DEFAULT
+        threshold=COLOR_WIN_RATE_GAME_COUNT_THRESHOLD_DEFAULT,
     ):
         url = self._build_color_ratings_url(
             set_code, draft, start_date, end_date, user_group
@@ -125,7 +126,9 @@ class Seventeenlands:
         )
         return f"https://www.17lands.com/color_ratings/data?expansion={set_code}&event_type={draft}&start_date={start_date}&end_date={end_date}{user_group_param}&combine_splash=true"
 
-    def _process_color_ratings(self, colors_json: List[Dict], color_filter: list, threshold: int):
+    def _process_color_ratings(
+        self, colors_json: List[Dict], color_filter: list, threshold: int
+    ):
         from src.utils import normalize_color_string
 
         color_ratings = {}
@@ -146,7 +149,7 @@ class Seventeenlands:
                     continue
                 std_key = normalize_color_string(raw_code)
 
-                if entry.get("games", 0) >= threshold: 
+                if entry.get("games", 0) >= threshold:
                     winrate = round(
                         (float(entry.get("wins", 0)) / entry.get("games", 1)) * 100, 1
                     )

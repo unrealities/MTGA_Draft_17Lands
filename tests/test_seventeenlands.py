@@ -249,7 +249,7 @@ def test_process_color_ratings_fallback_logic():
     # Mock data where 'short_name' is missing (older API style or edge case)
     mock_api_data = [
         {
-            "color_name": "Dimir (UB)", 
+            "color_name": "Dimir (UB)",
             # "short_name": "UB", <--- MISSING
             "is_summary": False,
             "games": 6000,
