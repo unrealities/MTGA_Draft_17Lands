@@ -5,12 +5,15 @@ from src import constants
 
 # --- Fixtures ---
 
+
 @pytest.fixture
 def seventeenlands():
     """Fixture to create a Seventeenlands instance for testing."""
     return Seventeenlands()
 
+
 # --- Test Cases ---
+
 
 def test_process_card_ratings(seventeenlands):
     """
@@ -29,34 +32,41 @@ def test_process_card_ratings(seventeenlands):
         {
             "name": "Island",
             "url": "https://c1.scryfall.com/island.jpg",
-            "ever_drawn_win_rate": None, # Test null value
+            "ever_drawn_win_rate": None,  # Test null value
             "avg_seen": 9.5,
             "drawn_improvement_win_rate": -0.05,
             "drawn_game_count": 500,
-        }
+        },
     ]
     color = "All Decks"
     card_data = {}
 
     # Act
     seventeenlands.process_card_ratings(color, mock_api_data, card_data)
-    
+
     # Assert
     assert "Sol Ring" in card_data
     assert "Island" in card_data
-    
+
     sol_ring_data = card_data["Sol Ring"]
-    assert sol_ring_data[constants.DATA_SECTION_IMAGES] == ["https://www.17lands.com/static/images/cards/s_123.jpg"]
-    
+    assert sol_ring_data[constants.DATA_SECTION_IMAGES] == [
+        "https://www.17lands.com/static/images/cards/s_123.jpg"
+    ]
+
     sol_ring_ratings = sol_ring_data[constants.DATA_SECTION_RATINGS][0][color]
-    assert sol_ring_ratings[constants.DATA_FIELD_GIHWR] == 65.0  # Check percentage conversion
+    assert (
+        sol_ring_ratings[constants.DATA_FIELD_GIHWR] == 65.0
+    )  # Check percentage conversion
     assert sol_ring_ratings[constants.DATA_FIELD_ALSA] == 1.1
-    assert sol_ring_ratings[constants.DATA_FIELD_IWD] == 10.0 # Check percentage conversion
+    assert (
+        sol_ring_ratings[constants.DATA_FIELD_IWD] == 10.0
+    )  # Check percentage conversion
     assert sol_ring_ratings[constants.DATA_FIELD_NGD] == 1000
 
     island_ratings = card_data["Island"][constants.DATA_SECTION_RATINGS][0][color]
     assert island_ratings[constants.DATA_FIELD_GIHWR] == 0.0  # Check null handling
-    assert island_ratings[constants.DATA_FIELD_IWD] == -5.0 # Check negative percentage
+    assert island_ratings[constants.DATA_FIELD_IWD] == -5.0  # Check negative percentage
+
 
 def test_build_card_ratings_url(seventeenlands):
     """
@@ -71,7 +81,9 @@ def test_build_card_ratings_url(seventeenlands):
     color = constants.FILTER_OPTION_ALL_DECKS
 
     # Act
-    url = seventeenlands.build_card_ratings_url(set_code, draft, start_date, end_date, user_group, color)
+    url = seventeenlands.build_card_ratings_url(
+        set_code, draft, start_date, end_date, user_group, color
+    )
 
     # Assert
     expected_url = (
@@ -79,6 +91,7 @@ def test_build_card_ratings_url(seventeenlands):
         "&format=PremierDraft&start_date=2023-01-01&end_date=2025-11-28"
     )
     assert url == expected_url
+
 
 @patch("src.seventeenlands.requests.get")
 def test_download_card_ratings(mock_get, seventeenlands):
@@ -108,13 +121,18 @@ def test_download_card_ratings(mock_get, seventeenlands):
     card_data = {}
 
     # Act
-    seventeenlands.download_card_ratings(set_code, color, draft, start_date, end_date, user_group, card_data)
+    seventeenlands.download_card_ratings(
+        set_code, color, draft, start_date, end_date, user_group, card_data
+    )
 
     # Assert
     assert "Test Card" in card_data
-    assert card_data["Test Card"][constants.DATA_SECTION_IMAGES] == ["https://www.17lands.com/static/images/cards/test_card.jpg"]
+    assert card_data["Test Card"][constants.DATA_SECTION_IMAGES] == [
+        "https://www.17lands.com/static/images/cards/test_card.jpg"
+    ]
     assert len(card_data["Test Card"][constants.DATA_SECTION_RATINGS]) == 1
     mock_get.assert_called_once()
+
 
 @patch("src.seventeenlands.requests.get")
 def test_download_color_ratings(mock_get, seventeenlands):
@@ -134,7 +152,7 @@ def test_download_color_ratings(mock_get, seventeenlands):
             "color_name": "All Decks",
             "is_summary": True,
             "games": 10000,
-        }
+        },
     ]
     mock_get.return_value = mock_response
 
@@ -145,13 +163,16 @@ def test_download_color_ratings(mock_get, seventeenlands):
     user_group = constants.LIMITED_USER_GROUP_ALL
 
     # Act
-    color_ratings, game_count = seventeenlands.download_color_ratings(set_code, draft, start_date, end_date, user_group)
+    color_ratings, game_count = seventeenlands.download_color_ratings(
+        set_code, draft, start_date, end_date, user_group
+    )
 
     # Assert
     assert color_ratings["W"] == 50.0  # 3000 wins out of 6000 games
     assert game_count == 10000
     mock_get.assert_called_once()
-    
+
+
 def test_seventeenlands_color_ratings_normalization():
     """
     Verify that download_color_ratings normalizes keys from the API response.
@@ -160,24 +181,27 @@ def test_seventeenlands_color_ratings_normalization():
     # Mock API response with non-standard order ("GW" instead of "WG")
     mock_api_response = [
         {"short_name": "GW", "is_summary": False, "games": 6000, "wins": 3000},
-        {"color_name": "All Decks", "is_summary": True, "games": 10000}
+        {"color_name": "All Decks", "is_summary": True, "games": 10000},
     ]
-    
+
     with patch("src.seventeenlands.requests.get") as mock_get:
         mock_get.return_value.json.return_value = mock_api_response
         mock_get.return_value.raise_for_status = MagicMock()
-        
+
         sl = Seventeenlands()
         # We pass a filter that includes the *Normalized* key "WG"
         # The function should be able to map "GW" from API to "WG"
         ratings, game_count = sl.download_color_ratings(
             "SET", "Draft", "Start", "End", "User", color_filter=["WG"]
         )
-        
+
         # Check that the key in the returned dictionary is normalized to "WG"
         assert "WG" in ratings
         assert ratings["WG"] == 50.0
-        assert "GW" not in ratings # Should not contain the raw key if it was normalized
+        assert (
+            "GW" not in ratings
+        )  # Should not contain the raw key if it was normalized
+
 
 def test_process_color_ratings_fallback_logic():
     """
@@ -185,7 +209,7 @@ def test_process_color_ratings_fallback_logic():
     by parsing 'color_name' (e.g. "(UB)") as a fallback.
     """
     sl = Seventeenlands()
-    
+
     # Mock data where 'short_name' is missing (older API style or edge case)
     mock_api_data = [
         {
@@ -193,23 +217,60 @@ def test_process_color_ratings_fallback_logic():
             # "short_name": "UB", <--- MISSING
             "is_summary": False,
             "games": 6000,
-            "wins": 3000
+            "wins": 3000,
         },
         {
-            "color_name": "Simic (GU)", # Non-standard order in name
-            "short_name": "", # Empty string
+            "color_name": "Simic (GU)",  # Non-standard order in name
+            "short_name": "",  # Empty string
             "is_summary": False,
             "games": 10000,
-            "wins": 6000
-        }
+            "wins": 6000,
+        },
     ]
-    
+
     ratings, game_count = sl._process_color_ratings(mock_api_data, None)
-    
+
     # "UB" extracted from "Dimir (UB)"
     assert "UB" in ratings
     assert ratings["UB"] == 50.0
-    
+
+    # "GU" extracted from "Simic (GU)" and normalized to "UG"
+    assert "UG" in ratings
+    assert ratings["UG"] == 60.0
+
+
+def test_process_color_ratings_fallback_logic():
+    """
+    Verify that _process_color_ratings handles entries missing 'short_name'
+    by parsing 'color_name' (e.g. "(UB)") as a fallback.
+    """
+    sl = Seventeenlands()
+
+    # Mock data where 'short_name' is missing (older API style or edge case)
+    mock_api_data = [
+        {
+            "color_name": "Dimir (UB)",
+            # "short_name": "UB", <--- MISSING
+            "is_summary": False,
+            "games": 6000,
+            "wins": 3000,
+        },
+        {
+            "color_name": "Simic (GU)",  # Non-standard order in name
+            "short_name": "",  # Empty string
+            "is_summary": False,
+            "games": 10000,
+            "wins": 6000,
+        },
+    ]
+
+    # Pass a threshold (e.g., 5000)
+    ratings, game_count = sl._process_color_ratings(mock_api_data, None, 5000)
+
+    # "UB" extracted from "Dimir (UB)"
+    assert "UB" in ratings
+    assert ratings["UB"] == 50.0
+
     # "GU" extracted from "Simic (GU)" and normalized to "UG"
     assert "UG" in ratings
     assert ratings["UG"] == 60.0

@@ -14,15 +14,16 @@ from src.constants import (
     DATA_FIELD_ALSA,
     DATA_SECTION_RATINGS,
     DECK_COLORS,
+    COLOR_WIN_RATE_GAME_COUNT_THRESHOLD_DEFAULT,
 )
 
 URL_17LANDS = "https://www.17lands.com"
 IMAGE_17LANDS_SITE_PREFIX = "/static/images/"
 COLOR_FILTER = [c for c in DECK_COLORS if c not in [FILTER_OPTION_ALL_DECKS, "Auto"]]
 REQUEST_TIMEOUT = 30
-COLOR_WIN_RATE_GAME_COUNT_THRESHOLD = 5000
 
 logger = create_logger()
+
 
 class Seventeenlands:
     def build_card_ratings_url(
@@ -59,7 +60,14 @@ class Seventeenlands:
         )
 
     def download_color_ratings(
-        self, set_code, draft, start_date, end_date, user_group, color_filter=None
+        self,
+        set_code,
+        draft,
+        start_date,
+        end_date,
+        user_group,
+        color_filter=None,
+        threshold=COLOR_WIN_RATE_GAME_COUNT_THRESHOLD_DEFAULT,
     ):
         url = self._build_color_ratings_url(
             set_code, draft, start_date, end_date, user_group
@@ -67,7 +75,7 @@ class Seventeenlands:
         response = requests.get(url, timeout=REQUEST_TIMEOUT)
         response.raise_for_status()
         return self._process_color_ratings(
-            response.json(), color_filter or COLOR_FILTER
+            response.json(), color_filter or COLOR_FILTER, threshold
         )
 
     def process_card_ratings(self, color, cards, card_data):
@@ -118,7 +126,9 @@ class Seventeenlands:
         )
         return f"https://www.17lands.com/color_ratings/data?expansion={set_code}&event_type={draft}&start_date={start_date}&end_date={end_date}{user_group_param}&combine_splash=true"
 
-    def _process_color_ratings(self, colors_json: List[Dict], color_filter: list):
+    def _process_color_ratings(
+        self, colors_json: List[Dict], color_filter: list, threshold: int
+    ):
         from src.utils import normalize_color_string
 
         color_ratings = {}
@@ -139,7 +149,7 @@ class Seventeenlands:
                     continue
                 std_key = normalize_color_string(raw_code)
 
-                if entry.get("games", 0) >= COLOR_WIN_RATE_GAME_COUNT_THRESHOLD:
+                if entry.get("games", 0) >= threshold:
                     winrate = round(
                         (float(entry.get("wins", 0)) / entry.get("games", 1)) * 100, 1
                     )

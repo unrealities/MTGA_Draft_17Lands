@@ -2,18 +2,27 @@ import pytest
 import logging
 from unittest.mock import patch, MagicMock
 from src.overlay import start_overlay
+from src.configuration import Configuration
+
 
 @pytest.fixture(autouse=True)
 def catch_log_errors(caplog):
     """
-    Verify that the app is not generating any logging errors. 
-    
-    This function catches any logging errors in the app by checking log records. 
+    Verify that the app is not generating any logging errors.
+
+    This function catches any logging errors in the app by checking log records.
     """
     yield
-    errors = [record for record in caplog.get_records("call") if record.levelno >= logging.ERROR]
-    assert not errors, f"Log error detected - resolve any errors that appear in the captured log call"
-            
+    errors = [
+        record
+        for record in caplog.get_records("call")
+        if record.levelno >= logging.ERROR
+    ]
+    assert (
+        not errors
+    ), f"Log error detected - resolve any errors that appear in the captured log call"
+
+
 @pytest.fixture(name="mock_scanner")
 def fixture_mock_scanner():
     """
@@ -21,15 +30,16 @@ def fixture_mock_scanner():
     """
     mock_instance = MagicMock()
     mock_instance.retrieve_color_win_rate.return_value = {"Auto": 0.0}
-    mock_instance.retrieve_data_sources.return_value = {"None" : ""}
+    mock_instance.retrieve_data_sources.return_value = {"None": ""}
     mock_instance.retrieve_tier_source.return_value = []
     mock_instance.retrieve_set_metrics.return_value = None
-    mock_instance.retrieve_tier_data.return_value = ({},{})
+    mock_instance.retrieve_tier_data.return_value = ({}, {})
     mock_instance.draft_start_search.return_value = False
-    mock_instance.retrieve_current_pack_and_pick.return_value = (0,0)
-    mock_instance.retrieve_current_limited_event.return_value = ("","")  
+    mock_instance.retrieve_current_pack_and_pick.return_value = (0, 0)
+    mock_instance.retrieve_current_limited_event.return_value = ("", "")
     yield mock_instance
-    
+
+
 def test_start_overlay_pass(mock_scanner):
     """
     Verify that the app starts up without generating exceptions or logging errors.
@@ -43,8 +53,9 @@ def test_start_overlay_pass(mock_scanner):
         patch("tkinter.messagebox.showinfo", return_value=None),
         patch("src.overlay.stat", return_value=MagicMock(st_mtime=0)),
         patch("src.overlay.write_configuration", return_value=True),
+        patch("src.overlay.read_configuration", return_value=(Configuration(), True)),
         patch("src.overlay.LimitedSets.retrieve_limited_sets", return_value=None),
-        patch("src.overlay.Notifications.check_for_updates", return_value=("","")),
+        patch("src.overlay.Notifications.check_for_updates", return_value=("", "")),
         patch("src.overlay.ArenaScanner", return_value=mock_scanner),
         patch("src.overlay.filter_options", return_value=["All Decks"]),
         patch("src.overlay.retrieve_arena_directory", return_value="fake_location"),
@@ -54,6 +65,6 @@ def test_start_overlay_pass(mock_scanner):
             start_overlay()
         except Exception as e:
             pytest.fail(f"Exception occurred: {e}")
-            
 
-#TODO: create a test for CreateCardToolTip
+
+# TODO: create a test for CreateCardToolTip

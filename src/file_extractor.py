@@ -12,6 +12,7 @@ from src.logger import create_logger
 from src.utils import Result, check_file_integrity, clean_string
 from src.ui_progress import UIProgress
 from src.seventeenlands import Seventeenlands
+from src.constants import COLOR_WIN_RATE_GAME_COUNT_THRESHOLD_DEFAULT
 
 logger = create_logger()
 
@@ -184,8 +185,8 @@ def check_date(date):
 class FileExtractor(UIProgress):
     '''Class that handles the creation of set files and the retrieval of platform information'''
 
-    def __init__(self, directory, progress, status, ui):
-        super().__init__(progress, status, ui)  # Initialize UIProgress
+    def __init__(self, directory, progress, status, ui, threshold=COLOR_WIN_RATE_GAME_COUNT_THRESHOLD_DEFAULT):
+        super().__init__(progress, status, ui)
         self.selected_sets = []
         self.set_list = []
         self.draft = ""
@@ -200,6 +201,7 @@ class FileExtractor(UIProgress):
         self.card_dict = {}
         self.deck_colors = constants.DECK_COLORS
         self.sets_17lands = []
+        self.threshold = threshold 
 
     def clear_data(self):
         '''Clear stored set information'''
@@ -689,127 +691,20 @@ class FileExtractor(UIProgress):
         game_count = 0
         seventeenlands = Seventeenlands()
         try:
-            #safe_set_code = quote(self.selected_sets.seventeenlands[0], safe='')
-            #url = f"https://www.17lands.com/color_ratings/data?expansion={safe_set_code}&event_type={self.draft}&start_date={self.start_date}&end_date={self.end_date}{user_group}&combine_splash=true"
-            #if self.user_group == constants.LIMITED_USER_GROUP_ALL:
-            #    user_group = ""
-            #else:
-            #    user_group = "&user_group=" + self.user_group.lower()
-            #url = f"https://www.17lands.com/color_ratings/data?expansion={self.selected_sets.seventeenlands[0]}&event_type={self.draft}&start_date={self.start_date}&end_date={self.end_date}{user_group}&combine_splash=true"
-            #url_data = urllib.request.urlopen(url, context=self.context).read()
-#
-            #color_json_data = json.loads(url_data)
-            #game_count = self._process_17lands_color_ratings(color_json_data)
-            self.combined_data["color_ratings"], game_count = seventeenlands.download_color_ratings(self.selected_sets.seventeenlands[0], self.draft, self.start_date, self.end_date, self.user_group)
+            self.combined_data["color_ratings"], game_count = seventeenlands.download_color_ratings(
+                self.selected_sets.seventeenlands[0], 
+                self.draft, 
+                self.start_date, 
+                self.end_date, 
+                self.user_group,
+                threshold=self.threshold
+            )
             self.set_game_count(game_count)
         except Exception as error:
             result = False
             logger.error(url)
             logger.error(error)
         return result, game_count
-
-
-
-    #def _process_17lands_color_ratings(self, colors):
-    #    '''Parse the 17Lands json data to collect the color ratings'''
-    #    color_ratings_dict = {
-    #        "Mono-White": "W",
-    #        "Mono-Blue": "U",
-    #        "Mono-Black": "B",
-    #        "Mono-Red": "R",
-    #        "Mono-Green": "G",
-    #        "(WU)": "WU",
-    #        "(UB)": "UB",
-    #        "(BR)": "BR",
-    #        "(RG)": "RG",
-    #        "(GW)": "GW",
-    #        "(WB)": "WB",
-    #        "(BG)": "BG",
-    #        "(GU)": "GU",
-    #        "(UR)": "UR",
-    #        "(RW)": "RW",
-    #        "(WUR)": "WUR",
-    #        "(UBG)": "UBG",
-    #        "(BRW)": "BRW",
-    #        "(RGU)": "RGU",
-    #        "(GWB)": "GWB",
-    #        "(WUB)": "WUB",
-    #        "(UBR)": "UBR",
-    #        "(BRG)": "BRG",
-    #        "(RGW)": "RGW",
-    #        "(GWU)": "GWU",
-    #    }
-    #    game_count = 0
-    #    try:
-    #        self.combined_data["color_ratings"] = {}
-    #        for color in colors:
-    #            games = color["games"]
-    #            if not color["is_summary"] and (games > 5000):
-    #                color_name = color["color_name"]
-    #                winrate = round(
-    #                    (float(color["wins"])/color["games"]) * 100, 1)
-#
-    #                color_label = [
-    #                    x for x in color_ratings_dict if x in color_name]
-#
-    #                if color_label:
-#
-    #                    processed_colors = color_ratings_dict[color_label[0]]
-#
-    #                    if processed_colors not in self.combined_data["color_ratings"]:
-    #                        self.combined_data["color_ratings"][processed_colors] = winrate
-    #            elif color["is_summary"] and color["color_name"] == "All Decks":
-    #                game_count = color["games"] if color["games"] else 0
-    #                self.combined_data["meta"]["game_count"] = game_count
-#
-    #    except Exception as error:
-    #        logger.error(error)
-    #    return game_count
-
-    #def _process_scryfall_data(self, data):
-    #    '''Parse json data from the Scryfall API to extract pertinent card data'''
-    #    result = False
-    #    result_string = "Scryfall Data Unavailable"
-    #    for card_data in data:
-    #        try:
-    #            if "arena_id" not in card_data:
-    #                continue
-#
-    #            arena_id = card_data["arena_id"]
-#
-    #            card_name = card_data[constants.DATA_FIELD_NAME]
-#
-    #            if card_data["layout"] == "transform":
-    #                card_name = card_name.split(" // ")[0]
-#
-    #            self.card_dict[arena_id] = {
-    #                constants.DATA_FIELD_NAME: card_name,
-    #                constants.DATA_FIELD_CMC: card_data[constants.DATA_FIELD_CMC],
-    #                constants.DATA_FIELD_COLORS: card_data["color_identity"],
-    #                constants.DATA_FIELD_TYPES: extract_types(card_data["type_line"]),
-    #                constants.DATA_FIELD_MANA_COST: 0,
-    #                constants.DATA_SECTION_IMAGES: [],
-    #            }
-#
-    #            if "card_faces" in card_data:
-    #                self.card_dict[arena_id][constants.DATA_FIELD_MANA_COST] = card_data["card_faces"][0][constants.DATA_FIELD_MANA_COST]
-    #                self.card_dict[arena_id][constants.DATA_SECTION_IMAGES].append(
-    #                    card_data["card_faces"][0]["image_uris"]["normal"])
-    #                self.card_dict[arena_id][constants.DATA_SECTION_IMAGES].append(
-    #                    card_data["card_faces"][1]["image_uris"]["normal"])
-#
-    #            else:
-    #                self.card_dict[arena_id][constants.DATA_FIELD_MANA_COST] = card_data[constants.DATA_FIELD_MANA_COST]
-    #                self.card_dict[arena_id][constants.DATA_SECTION_IMAGES] = [
-    #                    card_data["image_uris"]["normal"]]
-#
-    #            result = True
-#
-    #        except Exception as error:
-    #            logger.error(error)
-    #            result_string = error
-#
-    #    return result, result_string
 
     def _process_card_data(self, card):
         '''Link the 17Lands card ratings with the card data'''
