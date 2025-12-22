@@ -119,7 +119,6 @@ def test_otj_grades(otj_premier, card_name, colors, field, expected_grade):
 
 
 def test_export_draft_to_csv():
-    # Mock History
     history = [
         {"Pack": 1, "Pick": 1, "Cards": ["123", "789"]},
     ]
@@ -155,7 +154,6 @@ def test_export_draft_to_csv():
 
 
 def test_export_draft_to_json():
-    # ... similar update ...
     history = [{"Pack": 1, "Pick": 1, "Cards": ["123"]}]
     picked_cards = [["123"]]
 
