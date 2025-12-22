@@ -25,10 +25,18 @@ Magic: The Gathering Arena draft tool that utilizes 17Lands data.
     - [The Solution](#the-solution)
     - [Future Considerations](#future-considerations)
   - [Tier List (API-Based)](#tier-list-api-based)
+    - [How It Works](#how-it-works)
+    - [How to Use](#how-to-use)
   - [Dataset Notifications](#dataset-notifications)
+    - [No Datasets Found](#no-datasets-found)
+    - [Missing Dataset](#missing-dataset)
+    - [Dataset Update Available](#dataset-update-available)
   - [Troubleshooting](#troubleshooting)
     - [Known Issues](#known-issues)
     - [Arena Log Issues](#arena-log-issues)
+      - [Premier and Traditional Drafts](#premier-and-traditional-drafts)
+      - [Quick Drafts](#quick-drafts)
+      - [Sealed and Traditional Sealed](#sealed-and-traditional-sealed)
 
 ## Run Steps: Windows Executable (Windows Only)
 
@@ -87,6 +95,7 @@ Magic: The Gathering Arena draft tool that utilizes 17Lands data.
   - The sealed card pool can be found in the [Taken Cards window](#menu-features).
 
 ## Steps to Build the Windows Executable
+
 **Note:** This project uses a [GitHub Action](https://github.com/unrealities/MTGA_Draft_17Lands/actions/workflows/build-windows-exe.yml) to perform the following steps.
 
 - **Step 1:** Download and install Python 3.12.
@@ -135,7 +144,11 @@ Magic: The Gathering Arena draft tool that utilizes 17Lands data.
 ![Settings_Colors](https://github.com/unrealities/MTGA_Draft_17Lands/blob/main/assets/96687942/90c6b3df-0ade-4f32-a1be-b2ef40cedc32.png)
 
 - **Read Draft Logs:** Read the log file from a draft by selecting `File->Read Draft Log`. Select a file that has the following naming scheme `DraftLog_<Set>_<Draft Type>_<Draft_ID>.log` file to read the file.
+- **Export Draft Data:** Export the full history of the current draft (every pack seen and pick made) to a CSV or JSON file by selecting `File->Export Draft Data`.
+  - This is useful for analyzing your draft path, signals, and wheel percentages in external tools (Excel, Python, etc.).
+  - The export includes card identity, 17Lands statistics, and a "Picked" flag.
 - **Download Set Data:** Open the Download Dataset window by selecting `Data->Download Dataset`. Enter the set information and click the ADD SET button to begin downloading the set data.
+  - **Min Games:** You can adjust the minimum number of games required for color ratings (default: 5000). Lowering this is useful for low-population formats like Cube or Flashback drafts where data is scarce.
   - The download can take several minutes.
   - 17Lands will timeout the request if too many requests are made within a short period.
 - **List Taken Cards:** Get to the Taken Cards window by selecting `Cards->Taken Cards`.
@@ -272,25 +285,29 @@ MTGA_Draft_17Lands now features integrated support for downloading and using 17L
 ### How to Use
 
 1. **Download a Tier List**
-  - In the application menu, go to `Data > Download Tier List`.
-  - Enter the 17Lands tier list URL and a label for the tier list.
-  - The tier list will be saved to the `Tier` folder.
 
-2. **Use Tier Lists in Drafts**
-  - Make sure you have downloaded the dataset for the event from `Data > Download Dataset`. The dataset is required to identify cards in the Arena log, even if it doesn't contain card data.
-  - When an event is detected, available tier lists for that set will appear in the column options in the [Settings window](#settings).
-  - Card ratings from the selected tier list will be shown in the pack table for your current pack.
+- In the application menu, go to `Data > Download Tier List`.
+- Enter the 17Lands tier list URL and a label for the tier list.
+- The tier list will be saved to the `Tier` folder.
+
+1. **Use Tier Lists in Drafts**
+
+- Make sure you have downloaded the dataset for the event from `Data > Download Dataset`. The dataset is required to identify cards in the Arena log, even if it doesn't contain card data.
+- When an event is detected, available tier lists for that set will appear in the column options in the [Settings window](#settings).
+- Card ratings from the selected tier list will be shown in the pack table for your current pack.
 
 ## Dataset Notifications
 
 The application includes notifications to ensure datasets are always up-to-date. These features alert users about missing datasets, prompt downloads for required data, and notify about updates. Notifications can be disabled in the Settings menu.
 
 ### No Datasets Found
+
 If no local datasets are detected, a notification will appear prompting the user to download the required datasets. This ensures that the tool has the necessary data to function properly.
 
 <img width="408" height="197" alt="No_datasets" src="https://github.com/user-attachments/assets/2eaee3d7-ce9f-48ae-82c9-01037a76782e" />
 
 **Behavior:**
+
 - A dialog box will appear with the message: "No datasets detected. Would you like to download a dataset now?"
 - If the user clicks `Yes`, the **Download Dataset** window will open, allowing the user to download a dataset.
 
@@ -299,11 +316,13 @@ If no local datasets are detected, a notification will appear prompting the user
 ---
 
 ### Missing Dataset
+
 If a dataset for a detected event is missing, the application will notify the user and provide an option to download the dataset automatically.
 
 <img width="407" height="207" alt="Missing_datasets" src="https://github.com/user-attachments/assets/90466ecf-9e26-41e3-a90e-8eba7a52cfb2" />
 
 **Behavior:**
+
 - A dialog box will appear with the message: "No dataset found for expansion [Set Name]. Would you like to download the dataset now?"
 - If the user clicks `Yes`, the application will automatically download the dataset for the missing event.
 - This feature is currently limited to Quick Drafts to avoid interfering with timed events such as Premier or Traditional Drafts.
@@ -313,11 +332,13 @@ If a dataset for a detected event is missing, the application will notify the us
 ---
 
 ### Dataset Update Available
+
 Upon startup, the application checks for updates to the most recently used dataset. If an updated version is available, the user will receive a notification and be prompted to download the update.
 
 <img width="400" height="194" alt="image" src="https://github.com/user-attachments/assets/ed5162f5-7779-49d8-9a8e-48dab464def9" />
 
 **Behavior:**
+
 - A dialog box will appear with the message: "New data available for [Set Name]. Would you like to update your dataset?"
 - If the user clicks `Yes`, the application will download the updated dataset.
 - This feature is rate-limited to once every 24 hours.
@@ -340,7 +361,7 @@ Upon startup, the application checks for updates to the most recently used datas
 - **SSL errors in log on MacOS: `ERROR - limited_sets.retrieve_scryfall_sets - <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1000)`** Install SSL certificates via /Applications/Python 3.12/Install Certificates.command
 - **The application displays the wrong set when joining an Arena Open or qualifier event:** The log entries for these events do not specify the set, so the application defaults to the latest released set. If the event is not for the latest set, you can open the `Temp/temp_set_list.json` file and replace `"{LATEST}"` with the correct set code, such as `"TDM"` for Tarkir: Dragonstorm
 
-### Arena Log Issues 
+### Arena Log Issues
 
 Arena updates may occasionally modify the log entries that this application reads. If the application cannot detect an active event, or if pack data is missing, please click `File > Open Player.log` and search for the following strings in the log file. If you find entries that contain similar strings, please create a bug report and include the log entry.
 
@@ -348,14 +369,14 @@ Arena updates may occasionally modify the log entries that this application read
 
 - **Event Detection:** `[UnityCrossThreadLogger]==> EventJoin` or `[UnityCrossThreadLogger]==> Event_Join`, `id`, and `EventName`
 - **Pack 1, Pick 1:** `CardsInPack`, `id`, `PackNumber`, and `PickNumber`
-- **Packs:** `[UnityCrossThreadLogger]Draft.Notify `, `draftId`, `PackCards`, `SelfPack`, and `SelfPick`
-- **Picks:** `[UnityCrossThreadLogger]==> EventPlayerDraftMakePick ` or `[UnityCrossThreadLogger]==> Event_PlayerDraftMakePick `, `id`, `Pack`, `Pick`, and `GrpIds` or `GrpId`
+- **Packs:** `[UnityCrossThreadLogger]Draft.Notify`, `draftId`, `PackCards`, `SelfPack`, and `SelfPick`
+- **Picks:** `[UnityCrossThreadLogger]==> EventPlayerDraftMakePick` or `[UnityCrossThreadLogger]==> Event_PlayerDraftMakePick`, `id`, `Pack`, `Pick`, and `GrpIds` or `GrpId`
 
 #### Quick Drafts
 
-- **Event Detection:** `[UnityCrossThreadLogger]==> BotDraftDraftStatus ` or `[UnityCrossThreadLogger]==> BotDraft_DraftStatus `, `id`, and `EventName` 
+- **Event Detection:** `[UnityCrossThreadLogger]==> BotDraftDraftStatus` or `[UnityCrossThreadLogger]==> BotDraft_DraftStatus`, `id`, and `EventName`
 - **Packs:** `DraftPack`, `CurrentModule`, `DraftStatus`, `PickNext`, `PackNumber`, `PickNumber`, and `PickedCards`
-- **Picks:** `[UnityCrossThreadLogger]==> BotDraftDraftPick ` or `[UnityCrossThreadLogger]==> BotDraft_DraftPick `, `PackNumber`, `PickNumber`, and `CardIds` or `CardId`
+- **Picks:** `[UnityCrossThreadLogger]==> BotDraftDraftPick` or `[UnityCrossThreadLogger]==> BotDraft_DraftPick`, `PackNumber`, `PickNumber`, and `CardIds` or `CardId`
 
 #### Sealed and Traditional Sealed
 
