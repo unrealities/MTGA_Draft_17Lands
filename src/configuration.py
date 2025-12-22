@@ -1,20 +1,42 @@
 """This module encompasses functions for reading from, writing to, and resetting the configuration file"""
+
 import json
 import os
+import sys
 from pydantic import BaseModel, field_validator, Field
 from typing import Tuple
 from src import constants
 from src.logger import create_logger
 
-CONFIG_FILE = os.path.join(os.getcwd(), "config.json")
-
 logger = create_logger()
+
+
+def get_config_path():
+    """Returns the platform-specific path for the configuration file."""
+    app_name = "MTGA_Draft_Tool"
+    if sys.platform == "win32":
+        base_path = os.getenv("APPDATA")
+    elif sys.platform == "darwin":
+        base_path = os.path.expanduser("~/Library/Application Support")
+    else:  # Linux/Unix
+        base_path = os.path.expanduser("~/.config")
+
+    config_dir = os.path.join(base_path, app_name)
+    if not os.path.exists(config_dir):
+        os.makedirs(config_dir)
+
+    return os.path.join(config_dir, "config.json")
+
+
+# Use local config if it exists (Development mode), otherwise use User Data path
+LOCAL_CONFIG = os.path.join(os.getcwd(), "config.json")
+CONFIG_FILE = LOCAL_CONFIG if os.path.exists(LOCAL_CONFIG) else get_config_path()
 
 
 class DeckType(BaseModel):
     """This class holds the data for the various deck types (Aggro, Mid, and Control)"""
-    distribution: list = Field(
-        default_factory=lambda: [0, 0, 0, 0, 0, 0, 0])
+
+    distribution: list = Field(default_factory=lambda: [0, 0, 0, 0, 0, 0, 0])
     maximum_card_count: int = 0
     recommended_creature_count: int = 0
     cmc_average: float = 0.0
@@ -22,6 +44,7 @@ class DeckType(BaseModel):
 
 class Settings(BaseModel):
     """This class holds UI settings"""
+
     table_width: int = 270
     column_2: str = constants.COLUMNS_OPTIONS_EXTRA_DICT[constants.COLUMN_2_DEFAULT]
     column_3: str = constants.COLUMNS_OPTIONS_EXTRA_DICT[constants.COLUMN_3_DEFAULT]
@@ -59,8 +82,9 @@ class Settings(BaseModel):
     taken_wheel_enabled: bool = False
     arena_log_location: str = ""
     database_location: str = ""
+    signals_enabled: bool = True
 
-    @field_validator('deck_filter')
+    @field_validator("deck_filter")
     @classmethod
     def validate_deck_filter(cls, value, info):
         allowed_values = constants.DECK_FILTERS  # List of options
@@ -68,7 +92,7 @@ class Settings(BaseModel):
             return cls.model_fields[info.field_name].default
         return value
 
-    @field_validator('filter_format')
+    @field_validator("filter_format")
     @classmethod
     def validate_filter_format(cls, value, info):
         allowed_values = constants.DECK_FILTER_FORMAT_LIST  # List of options
@@ -76,7 +100,7 @@ class Settings(BaseModel):
             return cls.model_fields[info.field_name].default
         return value
 
-    @field_validator('result_format')
+    @field_validator("result_format")
     @classmethod
     def validate_result_format(cls, value, info):
         allowed_values = constants.RESULT_FORMAT_LIST  # List of options
@@ -84,7 +108,7 @@ class Settings(BaseModel):
             return cls.model_fields[info.field_name].default
         return value
 
-    @field_validator('ui_size')
+    @field_validator("ui_size")
     @classmethod
     def validate_ui_size(cls, value, info):
         allowed_values = constants.UI_SIZE_DICT  # List of options
@@ -95,21 +119,35 @@ class Settings(BaseModel):
 
 class CardLogic(BaseModel):
     """This class represents the configuration for card logic within the application"""
+
     minimum_creatures: int = 9
     minimum_noncreatures: int = 6
     ratings_threshold: int = 500
     alsa_weight: float = 0.0
     iwd_weight: float = 0.0
-    deck_mid: DeckType = DeckType(distribution=[
-                                  0, 0, 4, 3, 2, 1, 0], maximum_card_count=23, recommended_creature_count=15, cmc_average=3.04)
-    deck_aggro: DeckType = DeckType(distribution=[
-                                    0, 2, 5, 3, 0, 0, 0], maximum_card_count=24, recommended_creature_count=17, cmc_average=2.40)
-    deck_control: DeckType = DeckType(distribution=[
-                                      0, 0, 3, 2, 2, 1, 0], maximum_card_count=22, recommended_creature_count=10, cmc_average=3.68)
+    deck_mid: DeckType = DeckType(
+        distribution=[0, 0, 4, 3, 2, 1, 0],
+        maximum_card_count=23,
+        recommended_creature_count=15,
+        cmc_average=3.04,
+    )
+    deck_aggro: DeckType = DeckType(
+        distribution=[0, 2, 5, 3, 0, 0, 0],
+        maximum_card_count=24,
+        recommended_creature_count=17,
+        cmc_average=2.40,
+    )
+    deck_control: DeckType = DeckType(
+        distribution=[0, 0, 3, 2, 2, 1, 0],
+        maximum_card_count=22,
+        recommended_creature_count=10,
+        cmc_average=3.68,
+    )
 
 
 class Features(BaseModel):
     """This class represents a collection of features that can be enabled or disabled within the overlay"""
+
     override_scale_factor: float = 0.0
     hotkey_enabled: bool = True
     images_enabled: bool = True
@@ -117,6 +155,7 @@ class Features(BaseModel):
 
 class CardData(BaseModel):
     """This class holds the data used for building a card list from the local Arena files"""
+
     database_size: int = 0
     latest_dataset: str = ""
     last_check: float = 0
@@ -125,6 +164,7 @@ class CardData(BaseModel):
 
 class Configuration(BaseModel):
     """This class groups together the data stored in the config.json file"""
+
     settings: Settings = Field(default_factory=lambda: Settings())
     card_logic: CardLogic = Field(default_factory=lambda: CardLogic())
     features: Features = Field(default_factory=lambda: Features())
@@ -132,12 +172,12 @@ class Configuration(BaseModel):
 
 
 def read_configuration(file_location: str = CONFIG_FILE) -> Tuple[Configuration, bool]:
-    '''function is responsible for reading the contents of file and storing it as a Configuration object'''
+    """function is responsible for reading the contents of file and storing it as a Configuration object"""
     config_object = Configuration()
     success = False
 
     try:
-        with open(file_location, 'r', encoding="utf8", errors="replace") as data:
+        with open(file_location, "r", encoding="utf8", errors="replace") as data:
             config_data = json.loads(data.read())
 
         config_object = Configuration.model_validate(config_data)
@@ -148,12 +188,14 @@ def read_configuration(file_location: str = CONFIG_FILE) -> Tuple[Configuration,
     return config_object, success
 
 
-def write_configuration(config_object: Configuration, file_location: str = CONFIG_FILE) -> bool:
-    '''function is responsible for writing the contents of a Configuration object to a specified file location'''
+def write_configuration(
+    config_object: Configuration, file_location: str = CONFIG_FILE
+) -> bool:
+    """function is responsible for writing the contents of a Configuration object to a specified file location"""
     success = False
 
     try:
-        with open(file_location, 'w', encoding="utf8", errors="replace") as data:
+        with open(file_location, "w", encoding="utf8", errors="replace") as data:
             json.dump(config_object.model_dump(), data, ensure_ascii=False, indent=4)
         success = True
     except (FileNotFoundError, TypeError, OSError) as error:
@@ -163,11 +205,11 @@ def write_configuration(config_object: Configuration, file_location: str = CONFI
 
 
 def reset_configuration(file_location: str = CONFIG_FILE) -> bool:
-    '''function is responsible for reseting the contents of a Configuration object to a specified file location'''
+    """function is responsible for reseting the contents of a Configuration object to a specified file location"""
     config_object = Configuration()
     success = False
     try:
-        with open(file_location, 'w', encoding="utf8", errors="replace") as data:
+        with open(file_location, "w", encoding="utf8", errors="replace") as data:
             json.dump(config_object.model_dump(), data, ensure_ascii=False, indent=4)
         success = True
     except (FileNotFoundError, TypeError, OSError) as error:
