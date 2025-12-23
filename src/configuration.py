@@ -30,7 +30,12 @@ def get_config_path():
 
 # Use local config if it exists (Development mode), otherwise use User Data path
 LOCAL_CONFIG = os.path.join(os.getcwd(), "config.json")
-CONFIG_FILE = LOCAL_CONFIG if os.path.exists(LOCAL_CONFIG) else get_config_path()
+if os.path.exists(LOCAL_CONFIG):
+    CONFIG_FILE = LOCAL_CONFIG
+    logger.info(f"Using local configuration file: {CONFIG_FILE}")
+else:
+    CONFIG_FILE = get_config_path()
+    logger.info(f"Using system configuration file: {CONFIG_FILE}")
 
 
 class DeckType(BaseModel):
