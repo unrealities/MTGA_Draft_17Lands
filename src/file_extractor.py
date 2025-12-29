@@ -320,9 +320,22 @@ class FileExtractor(UIProgress):
         database_size = 0
         self._update_status("Searching Local Files")
         if sys.platform == constants.PLATFORM_ID_OSX:
-            directory = os.path.join(os.path.expanduser('~'),
-                                     constants.LOCAL_DATA_FOLDER_PATH_OSX) if not self.directory else self.directory
-            paths = [os.path.join(directory, constants.LOCAL_DOWNLOADS_DATA)]
+            if not self.directory:
+                # Standard MTGA installation path
+                standard_path = os.path.join(
+                    os.path.expanduser('~'),
+                    constants.LOCAL_DATA_FOLDER_PATH_OSX,
+                    constants.LOCAL_DOWNLOADS_DATA
+                )
+                # Steam installation path
+                steam_path = os.path.join(
+                    os.path.expanduser('~'),
+                    constants.LOCAL_DATA_FOLDER_PATH_OSX_STEAM,
+                    constants.LOCAL_DOWNLOADS_DATA
+                )
+                paths = [standard_path, steam_path]
+            else:
+                paths = [os.path.join(self.directory, constants.LOCAL_DOWNLOADS_DATA)]
         elif sys.platform == constants.PLATFORM_ID_LINUX:
             if constants.LOCAL_DATA_FOLDER_PATH_LINUX:
                 directory = constants.LOCAL_DATA_FOLDER_PATH_LINUX if not self.directory else self.directory
@@ -331,10 +344,20 @@ class FileExtractor(UIProgress):
                 paths = [] # program was giving errors on WSL without this
         else:
             if not self.directory:
-                path_list = [constants.WINDOWS_DRIVES, constants.WINDOWS_PROGRAM_FILES, [
+                # Standard MTGA installation paths
+                standard_path_list = [constants.WINDOWS_DRIVES, constants.WINDOWS_PROGRAM_FILES, [
                     constants.LOCAL_DATA_FOLDER_PATH_WINDOWS]]
-                paths = [os.path.join(*x)
-                         for x in itertools.product(*path_list)]
+                standard_paths = [os.path.join(*x, constants.LOCAL_DOWNLOADS_DATA)
+                                 for x in itertools.product(*standard_path_list)]
+                
+                # Steam installation paths
+                steam_path_list = [constants.WINDOWS_DRIVES, constants.WINDOWS_PROGRAM_FILES, [
+                    constants.LOCAL_DATA_FOLDER_PATH_WINDOWS_STEAM]]
+                steam_paths = [os.path.join(*x, constants.LOCAL_DOWNLOADS_DATA)
+                               for x in itertools.product(*steam_path_list)]
+                
+                # Combine both path sets
+                paths = standard_paths + steam_paths
             else:
                 paths = [os.path.join(
                     self.directory, constants.LOCAL_DOWNLOADS_DATA)]
