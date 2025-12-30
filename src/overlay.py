@@ -49,7 +49,9 @@ from src.card_logic import (
     suggest_deck,
     export_draft_to_csv,
     export_draft_to_json,
+    copy_pack_to_clipboard,
 )
+from src.signals import SignalCalculator
 
 try:
     import win32api
@@ -309,7 +311,10 @@ class Overlay(ScaledWindow):
 
         self.limited_sets = LimitedSets().retrieve_limited_sets()
         self.draft = ArenaScanner(
-            self.arena_file, self.limited_sets, step_through=self.step_through
+            self.arena_file,
+            self.limited_sets,
+            step_through=self.step_through,
+            retrieve_unknown=True,
         )
 
         self.trace_ids = []
@@ -419,6 +424,7 @@ class Overlay(ScaledWindow):
         self.data_source_list = self.data_sources
 
         self.deck_stats_checkbox_value = tkinter.IntVar(self.root)
+        self.signals_checkbox_value = tkinter.IntVar(self.root)
         self.missing_cards_checkbox_value = tkinter.IntVar(self.root)
         self.auto_highest_checkbox_value = tkinter.IntVar(self.root)
         self.curve_bonus_checkbox_value = tkinter.IntVar(self.root)
@@ -523,6 +529,15 @@ class Overlay(ScaledWindow):
         self.pack_pick_label = Label(
             self.status_frame, text="Pack 0, Pick 0", style="MainSectionsBold.TLabel"
         )
+        self.pack_pick_label.pack(side=tkinter.LEFT, padx=5)
+
+        self.copy_pack_button = Button(
+            self.status_frame,
+            text="Copy Data",
+            command=self.__copy_pack_data,
+            # width=8 # Width not supported by ttk.Button in standard themes usually, but fine to omit
+        )
+        self.copy_pack_button.pack(side=tkinter.RIGHT, padx=5)
 
         self.pack_table_frame = tkinter.Frame(self.root, width=10)
 
@@ -609,6 +624,29 @@ class Overlay(ScaledWindow):
         menu = self.root.nametowidget(self.stat_options["menu"])
         menu.config(font=self.fonts_dict["All.TMenubutton"])
 
+        # --- SIGNAL TABLE INITIALIZATION ---
+        self.signal_frame = tkinter.Frame(self.root)
+        self.signal_label = Label(
+            self.signal_frame, text="Signals (P1/P3)", style="MainSectionsBold.TLabel"
+        )
+
+        signal_headers = {
+            "COLOR": {"width": 0.50, "anchor": tkinter.W},
+            "SCORE": {"width": 0.50, "anchor": tkinter.CENTER},
+        }
+        self.signal_table = self._create_header(
+            "signal_table",
+            self.signal_frame,
+            0,  # Height 0 initially
+            self.fonts_dict["All.TableRow"],
+            signal_headers,
+            self.table_width,
+            True,
+            True,
+            constants.TABLE_STYLE,
+            False,
+        )
+
         self.separator_frame_citation = Separator(self.root, orient="horizontal")
         title_label = Label(
             self.root, text="MTGA Draft 17Lands", style="MainSectionsBold.TLabel"
@@ -657,11 +695,16 @@ class Overlay(ScaledWindow):
         self.missing_table_frame.grid(row=12, column=0, columnspan=2)
         self.stat_frame.grid(row=13, column=0, columnspan=2, sticky="nsew")
         self.stat_table.grid(row=14, column=0, columnspan=2, sticky="nsew")
-        footnote_label.grid(row=15, column=0, columnspan=2)
+
+        # Signals Table (Row 15)
+        self.signal_frame.grid(row=15, column=0, columnspan=2, sticky="nsew")
+        self.signal_label.pack(anchor="w")
+        self.signal_table.pack(expand=True, fill="both")
+
+        footnote_label.grid(row=16, column=0, columnspan=2)
 
         self.refresh_button.pack(expand=True, fill="both")
 
-        self.pack_pick_label.pack(expand=False, fill=None)
         self.pack_table.pack(expand=True, fill="both")
         self.missing_cards_label.pack(expand=False, fill=None)
         self.missing_table.pack(expand=True, fill="both")
@@ -702,6 +745,17 @@ class Overlay(ScaledWindow):
 
         if self.configuration.features.hotkey_enabled:
             self.__start_hotkey_listener()
+
+    def __copy_pack_data(self):
+        """Copy the current pack table data to clipboard as CSV"""
+        try:
+            pack_cards = self.draft.retrieve_current_pack_cards()
+            if pack_cards:
+                csv_text = copy_pack_to_clipboard(pack_cards)
+                copy_clipboard(csv_text)
+                # Optional visual feedback could go here
+        except Exception as error:
+            logger.error(error)
 
     def close_overlay(self):
         if self.log_check_id is not None:
@@ -915,6 +969,19 @@ class Overlay(ScaledWindow):
             result_list = result_class.return_results(
                 card_list, filtered_colors, fields.values()
             )
+
+            # Filter out basic lands and unknown cards (numeric IDs) for the UI
+            # We keep them in the backend for the CSV export, but hide them here to keep the view clean.
+            filtered_result_list = []
+            for card in result_list:
+                name = card.get(constants.DATA_FIELD_NAME, "")
+                if name in constants.BASIC_LANDS:
+                    continue
+                if name.isdigit():
+                    continue
+                filtered_result_list.append(card)
+
+            result_list = filtered_result_list
 
             # clear the previous rows
             for row in self.pack_table.get_children():
@@ -1780,6 +1847,9 @@ class Overlay(ScaledWindow):
             self.configuration.settings.stats_enabled = bool(
                 self.deck_stats_checkbox_value.get()
             )
+            self.configuration.settings.signals_enabled = bool(
+                self.signals_checkbox_value.get()
+            )
             self.configuration.settings.auto_highest_enabled = bool(
                 self.auto_highest_checkbox_value.get()
             )
@@ -1916,6 +1986,7 @@ class Overlay(ScaledWindow):
             self.deck_stats_checkbox_value.set(
                 self.configuration.settings.stats_enabled
             )
+            self.signals_checkbox_value.set(self.configuration.settings.signals_enabled)
             self.missing_cards_checkbox_value.set(
                 self.configuration.settings.missing_enabled
             )
@@ -1992,10 +2063,81 @@ class Overlay(ScaledWindow):
         if not self.step_through:
             self.draft.log_enable(self.configuration.settings.draft_log_enabled)
 
+    def __update_signals(self):
+        """Calculates and displays signal scores."""
+        try:
+            # Clear if draft is empty
+            if not self.draft.retrieve_draft_history() or not self.set_metrics:
+                self.signal_table.config(height=0)
+                # Clear existing rows
+                for row in self.signal_table.get_children():
+                    self.signal_table.delete(row)
+                return
+
+            history = self.draft.retrieve_draft_history()
+            calculator = SignalCalculator(self.set_metrics)
+            total_scores = {c: 0.0 for c in constants.CARD_COLORS}
+
+            for entry in history:
+                pack_num = entry["Pack"]
+                # Only Pack 1 and 3 are passed from the left (Signals)
+                if pack_num == 2:
+                    continue
+
+                cards = self.draft.set_data.get_data_by_id(entry["Cards"])
+                pick_num = entry["Pick"]
+
+                scores = calculator.calculate_pack_signals(cards, pick_num)
+
+                for color, score in scores.items():
+                    total_scores[color] += score
+
+            # Update Table
+            for row in self.signal_table.get_children():
+                self.signal_table.delete(row)
+
+            sorted_scores = sorted(
+                total_scores.items(), key=lambda x: x[1], reverse=True
+            )
+
+            self.signal_table.config(height=5)
+
+            # Map Symbols to Full Names
+            symbol_to_name = {
+                v: k
+                for k, v in constants.CARD_COLORS_DICT.items()
+                if v in constants.CARD_COLORS
+            }
+
+            for count, (color, score) in enumerate(sorted_scores):
+                # Row styling based on color
+                row_tag = self._identify_table_row_tag(
+                    self.configuration.settings.card_colors_enabled, [color], count
+                )
+
+                name_label = symbol_to_name.get(color, color)
+                score_label = f"{score:.1f}"
+
+                self.signal_table.insert(
+                    "", index=count, values=(name_label, score_label), tag=(row_tag,)
+                )
+
+        except Exception as error:
+            logger.error(error)
+
     def __initialize_overlay_widgets(self):
         """Set the overlay widgets in the main window to a known state at startup"""
         self.__update_data_source_options(False)
         self.__update_column_options()
+
+        # Add Export options to File Menu
+        self.filemenu.add_separator()
+        self.filemenu.add_command(
+            label="Export Draft (CSV)", command=self.__export_csv, state="disabled"
+        )
+        self.filemenu.add_command(
+            label="Export Draft (JSON)", command=self.__export_json, state="disabled"
+        )
 
         self.__display_widgets()
 
@@ -2018,18 +2160,10 @@ class Overlay(ScaledWindow):
 
         self.__update_missing_table([], {}, self.deck_filter_selection.get(), fields)
 
-        # Add Export options to File Menu
-        self.filemenu.add_separator()
-        self.filemenu.add_command(
-            label="Export Draft (CSV)", command=self.__export_csv, state="disabled"
-        )
-        self.filemenu.add_command(
-            label="Export Draft (JSON)", command=self.__export_json, state="disabled"
-        )
-
         self.root.update()
 
         self.__update_deck_stats_callback()
+        self.__update_signals()
 
         self.root.update()
 
@@ -2078,6 +2212,16 @@ class Overlay(ScaledWindow):
         self.__update_deck_stats_callback()
         self.__update_taken_table()
         self.__update_compare_table()
+
+        if (
+            event_type == constants.LIMITED_TYPE_STRING_SEALED
+            or event_type == constants.LIMITED_TYPE_STRING_TRAD_SEALED
+        ):
+            self.__open_taken_cards_window()
+
+        self.__update_file_menu_state()
+
+        self.__update_signals()
 
         if (
             event_type == constants.LIMITED_TYPE_STRING_SEALED
@@ -2727,6 +2871,15 @@ class Overlay(ScaledWindow):
             deck_stats_checkbox = Checkbutton(
                 popup, variable=self.deck_stats_checkbox_value, onvalue=1, offvalue=0
             )
+            signals_label = Label(
+                popup,
+                text="Enable Signals:",
+                style="MainSectionsBold.TLabel",
+                anchor="e",
+            )
+            signals_checkbox = Checkbutton(
+                popup, variable=self.signals_checkbox_value, onvalue=1, offvalue=0
+            )
             missing_cards_label = Label(
                 popup,
                 text="Enable Missing Cards:",
@@ -3222,6 +3375,24 @@ class Overlay(ScaledWindow):
             )
             row_count += 1
 
+            signals_label.grid(
+                row=row_count,
+                column=0,
+                columnspan=1,
+                sticky="nsew",
+                padx=row_padding_x,
+                pady=row_padding_y,
+            )
+            signals_checkbox.grid(
+                row=row_count,
+                column=1,
+                columnspan=1,
+                sticky="nsew",
+                padx=row_padding_x,
+                pady=row_padding_y,
+            )
+            row_count += 1
+
             missing_cards_label.grid(
                 row=row_count,
                 column=0,
@@ -3622,6 +3793,12 @@ class Overlay(ScaledWindow):
                     ),
                 ),
                 (
+                    self.signals_checkbox_value,
+                    lambda: self.signals_checkbox_value.trace(
+                        "w", self.__update_settings_callback
+                    ),
+                ),
+                (
                     self.missing_cards_checkbox_value,
                     lambda: self.missing_cards_checkbox_value.trace(
                         "w", self.__update_settings_callback
@@ -3846,6 +4023,7 @@ class Overlay(ScaledWindow):
         """Hide/Display widgets based on the application settings"""
         toggle_widget(self.stat_frame, self.deck_stats_checkbox_value.get())
         toggle_widget(self.stat_table, self.deck_stats_checkbox_value.get())
+        toggle_widget(self.signal_frame, self.signals_checkbox_value.get())
         toggle_widget(self.missing_frame, self.missing_cards_checkbox_value.get())
         toggle_widget(self.missing_table_frame, self.missing_cards_checkbox_value.get())
 

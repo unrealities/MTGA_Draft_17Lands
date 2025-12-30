@@ -1365,3 +1365,89 @@ def export_draft_to_json(history, dataset, picked_cards_map):
         export_data.append(pack_data)
 
     return json.dumps(export_data, indent=4)
+
+
+def copy_pack_to_clipboard(card_list):
+    """Formats the current pack data as a CSV string for clipboard export"""
+    output = io.StringIO()
+    writer = csv.writer(output)
+
+    headers = [
+        "Name",
+        "CMC",
+        "Mana Cost",
+        "Colors",
+        "Types",
+        "Rarity",
+        "GIHWR",
+        "OHWR",
+        "GPWR",
+        "GNSWR",
+        "GDWR",
+        "IWD",
+        "ALSA",
+        "ATA",
+        "Games In Hand",
+        "Games Played",
+        "Games Drawn",
+        "Games Not Seen",
+        "Games Opening Hand",
+    ]
+    writer.writerow(headers)
+
+    for card in card_list:
+        try:
+            name = card.get(constants.DATA_FIELD_NAME, "")
+            cmc = card.get(constants.DATA_FIELD_CMC, 0)
+            mana_cost = card.get(constants.DATA_FIELD_MANA_COST, "")
+            colors = "".join(card.get(constants.DATA_FIELD_COLORS, []))
+            types = " ".join(card.get(constants.DATA_FIELD_TYPES, []))
+            rarity = card.get(constants.DATA_FIELD_RARITY, "")
+
+            deck_colors = card.get(constants.DATA_FIELD_DECK_COLORS, {})
+            stats = deck_colors.get(constants.FILTER_OPTION_ALL_DECKS, {})
+
+            gihwr = stats.get(constants.DATA_FIELD_GIHWR, "")
+            ohwr = stats.get(constants.DATA_FIELD_OHWR, "")
+            gpwr = stats.get(constants.DATA_FIELD_GPWR, "")
+            gnswr = stats.get(constants.DATA_FIELD_GNSWR, "")
+            gdwr = stats.get(constants.DATA_FIELD_GDWR, "")
+            iwd = stats.get(constants.DATA_FIELD_IWD, "")
+            alsa = stats.get(constants.DATA_FIELD_ALSA, "")
+            ata = stats.get(constants.DATA_FIELD_ATA, "")
+
+            gih = stats.get(constants.DATA_FIELD_GIH, 0)
+            ngp = stats.get(constants.DATA_FIELD_NGP, 0)
+            ngd = stats.get(constants.DATA_FIELD_NGD, 0)
+            ngnd = stats.get(constants.DATA_FIELD_NGND, 0)
+            ngoh = stats.get(constants.DATA_FIELD_NGOH, 0)
+
+            writer.writerow(
+                [
+                    name,
+                    cmc,
+                    mana_cost,
+                    colors,
+                    types,
+                    rarity,
+                    gihwr,
+                    ohwr,
+                    gpwr,
+                    gnswr,
+                    gdwr,
+                    iwd,
+                    alsa,
+                    ata,
+                    gih,
+                    ngp,
+                    ngd,
+                    ngnd,
+                    ngoh,
+                ]
+            )
+
+        except Exception as error:
+            logger.error(f"Error exporting card: {error}")
+            continue
+
+    return output.getvalue()

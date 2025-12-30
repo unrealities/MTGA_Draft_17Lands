@@ -19,6 +19,10 @@ Magic: The Gathering Arena draft tool that utilizes 17Lands data.
   - [Menu Features](#menu-features)
   - [Additional Features](#additional-features)
   - [Settings](#settings)
+  - [File Locations](#file-locations)
+    - [Configuration (`config.json`)](#configuration-configjson)
+    - [Datasets](#datasets)
+    - [Logs](#logs)
   - [Card Logic](#card-logic)
   - [The P1P1 Solution](#the-p1p1-solution)
     - [The Problem](#the-problem)
@@ -27,6 +31,7 @@ Magic: The Gathering Arena draft tool that utilizes 17Lands data.
   - [Tier List (API-Based)](#tier-list-api-based)
     - [How It Works](#how-it-works)
     - [How to Use](#how-to-use)
+  - [Signal Detection (Beta)](#signal-detection-beta)
   - [Dataset Notifications](#dataset-notifications)
     - [No Datasets Found](#no-datasets-found)
     - [Missing Dataset](#missing-dataset)
@@ -137,6 +142,8 @@ Magic: The Gathering Arena draft tool that utilizes 17Lands data.
 - **Draft Stats Table:** This table lists the card distribution and total for creatures, non-creatures, and all cards taken during the draft.
   - The numbered columns represent the cost of the card (CMC).
   - You can hide this feature by deselecting `Enable Draft Stats` in the [Settings window](#settings)
+- **Signals Table:** This table displays calculated "Signal Scores" for each of the 5 colors. See [Signal Detection](#signal-detection-beta) for details.
+  - You can hide this feature by deselecting `Enable Signals` in the [Settings window](#settings)
 
 ## Menu Features
 
@@ -148,9 +155,9 @@ Magic: The Gathering Arena draft tool that utilizes 17Lands data.
   - This is useful for analyzing your draft path, signals, and wheel percentages in external tools (Excel, Python, etc.).
   - The export includes card identity, 17Lands statistics, and a "Picked" flag.
 - **Download Set Data:** Open the Download Dataset window by selecting `Data->Download Dataset`. Enter the set information and click the ADD SET button to begin downloading the set data.
-  - **Min Games:** You can adjust the minimum number of games required for color ratings (default: 5000). Lowering this is useful for low-population formats like Cube or Flashback drafts where data is scarce.
   - The download can take several minutes.
   - 17Lands will timeout the request if too many requests are made within a short period.
+  - **Min Games:** You can adjust the minimum number of games required for color ratings (default: 5000). Lowering this is useful for low-population formats like Cube or Flashback drafts where data is scarce.
 - **List Taken Cards:** Get to the Taken Cards window by selecting `Cards->Taken Cards`.
   - This table lists the cards that were taken by the user throughout the draft.
 - **List Suggested Decks:** Get to the Suggested Decks window by selecting `Cards->Suggest Decksa`.
@@ -180,6 +187,7 @@ Magic: The Gathering Arena draft tool that utilizes 17Lands data.
 - **Enable Row Colors:** Sets the row color to the card color.
 - **Enable Color Identity:** Once activated, the Colors field will showcase the mana symbols representing both the mana cost and abilities of a card, such as kicker, activated abilities, and more.
 - **Enable Draft Stats:** Displays the draft stats table and drop-down in the main window.
+- **Enable Signals:** Displays the signal detection table (Beta feature).
 - **Enable Missing Cards:** Displays the missing cards table in the main window.
 - **Enable Highest Rated:** Enables the highest-rated card logic for the `Auto` filter. See the auto-highest rating note in the [Card Logic](#card-logic) section.
 - **Enable Bayesian Average:** Enables the Bayesian average logic for all win rate fields. See the Bayesian average note in the [Card Logic](#card-logic) section.
@@ -188,6 +196,28 @@ Magic: The Gathering Arena draft tool that utilizes 17Lands data.
 - **UI Size:** Increase or decrease the application text and image size.
 - **Enable P1P1 OCR:** Enables [The P1P1 Solution](#the-p1p1-solution).
 - **Save P1P1 Screenshots:** When using [The P1P1 Solution](#the-p1p1-solution) screenshots will be saved to the `./Screenshots` folder.
+
+## File Locations
+
+The application stores your settings and data in specific locations to ensure they persist across updates.
+
+### Configuration (`config.json`)
+
+The application looks for the configuration file in the following order:
+
+1. **Local Folder:** If `config.json` exists in the same folder as the application, it is used. This allows for "Portable Mode" (e.g., running from a USB drive).
+2. **System User Folder:** If no local file is found, the application uses the standard user data directory:
+    - **Windows:** `%APPDATA%\MTGA_Draft_Tool\config.json`
+    - **Mac:** `~/Library/Application Support/MTGA_Draft_Tool/config.json`
+    - **Linux:** `~/.config/MTGA_Draft_Tool/config.json`
+
+### Datasets
+
+Downloaded card data is stored in the `Sets` folder located in the same directory as the application executable.
+
+### Logs
+
+Application debug logs are stored in the `Debug` folder, and draft logs are stored in the `Logs` folder, both located in the same directory as the application executable.
 
 ## Card Logic
 
@@ -295,6 +325,18 @@ MTGA_Draft_17Lands now features integrated support for downloading and using 17L
 - Make sure you have downloaded the dataset for the event from `Data > Download Dataset`. The dataset is required to identify cards in the Arena log, even if it doesn't contain card data.
 - When an event is detected, available tier lists for that set will appear in the column options in the [Settings window](#settings).
 - Card ratings from the selected tier list will be shown in the pack table for your current pack.
+
+## Signal Detection (Beta)
+
+This feature attempts to identify "Open Lanes" by analyzing the cards passed to you during the draft.
+
+- **How it works:** The tool scans every pack you see in **Pack 1** and **Pack 3** (when cards are passed from the left). It calculates a "Signal Score" for every card based on its quality (GIHWR) and how late you are seeing it compared to its Average Taken At (ATA).
+- **The Logic:** Seeing a high-win-rate card later than it is usually taken generates a positive signal score for that card's color(s).
+- **The Table:** The "Signals" table sums up these scores for each of the 5 colors.
+  - **High Score:** Indicates the color is flowing freely. A score of **20+** typically suggests a very open lane.
+  - **Low Score (or 0):** Indicates the color is being cut by your neighbors.
+- **Note:** This feature ignores Pack 2 (passed from the right) to focus on the signals that determine your rewards in Pack 3.
+- **Configuration:** You can enable/disable this feature in the Settings menu (`Enable Signals`).
 
 ## Dataset Notifications
 
