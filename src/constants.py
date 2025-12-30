@@ -203,8 +203,14 @@ RESULT_UNKNOWN_VALUE = 0.0
 LOCAL_DATA_FOLDER_PATH_WINDOWS = os.path.join(
     "Wizards of the Coast", "MTGA", "MTGA_Data"
 )
+LOCAL_DATA_FOLDER_PATH_WINDOWS_STEAM = os.path.join(
+    "Steam", "steamapps", "common", "MTGA", "MTGA_Data"
+)
 LOCAL_DATA_FOLDER_PATH_OSX = os.path.join(
     "Library", "Application Support", "com.wizards.mtga"
+)
+LOCAL_DATA_FOLDER_PATH_OSX_STEAM = os.path.join(
+    "Library", "Application Support", "Steam", "steamapps", "common", "MTGA", "MTGA_Data"
 )
 LOCAL_DATA_FOLDER_PATH_LINUX = next(
     filter(
