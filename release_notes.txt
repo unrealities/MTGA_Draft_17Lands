@@ -1,3 +1,10 @@
+===================== RELEASE NOTES 3.37 =====================
+* jsherin & unrealities: [Bug]: Color pair win percentages missing #108
+* unrealities: Dynamic User Game Count: dynamic threshold for card color ratings. The default is 5000
+* unrealities: Allow User to Export Draft Data via JSON or CSV
+* unrealities: Beta Setup for Signals and Persist Settings
+* dhannum: add support for path when installed via steam
+
 ===================== RELEASE NOTES 3.36 =====================
 * FiYir: Address missing dependencies in v3.35
 
