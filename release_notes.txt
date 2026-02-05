@@ -1,3 +1,9 @@
+===================== RELEASE NOTES 3.38 =====================
+* unrealities: [Bug]: confirmation window hidden #117
+* unrealities: [Bug]: local_data_folder not found when Arena is installed in additional Steam library on second disk #118
+* unrealities: [Bug]: Taken Cards window persists in Sealed play #83
+* unrealities: Added bump_version script
+
 ===================== RELEASE NOTES 3.37 =====================
 * jsherin & unrealities: [Bug]: Color pair win percentages missing #108
 * unrealities: Dynamic User Game Count: dynamic threshold for card color ratings. The default is 5000

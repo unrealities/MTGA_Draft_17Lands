@@ -1246,6 +1246,29 @@ ARENA_OPEN_TEST_ENTRIES = [
     ),
 ]
 
+DSK_SEALED_NAVIGATION_ENTRY = [
+    (
+        "Event Start",
+        EventResults(
+            new_event=True,
+            data_update=False,
+            current_set="DSK",
+            current_event="Sealed",
+        ),
+        r'[UnityCrossThreadLogger]==> Event_Join {"id":"54d60b67-59a9-4188-bc42-ab78fed44fad","request":"{\"EventName\":\"Sealed_DSK_20240924\",\"EntryCurrencyType\":\"Gem\",\"EntryCurrencyPaid\":2000,\"CustomTokenId\":null}"}',
+    ),
+    (
+        "Navigation Event (Duplicate)",
+        EventResults(
+            new_event=False,
+            data_update=False,
+            current_set="DSK",
+            current_event="Sealed",
+        ),
+        r'[UnityCrossThreadLogger]==> Event_Join {"id":"duplicate-id-1234","request":"{\"EventName\":\"Sealed_DSK_20240924\",\"EntryCurrencyType\":\"Gem\",\"EntryCurrencyPaid\":2000,\"CustomTokenId\":null}"}',
+    ),
+]
+
 OM1_PICK_TWO_PREMIER_DRAFT_ENTRIES = [
     (
         "Event Start",
@@ -1677,6 +1700,56 @@ def test_dsk_sealed(session_scanner, entry_label, expected, entry_string):
         event_test_cases(
             session_scanner,
             "New DSK Sealed",
+            entry_label,
+            expected,
+            entry_string,
+            mock_ocr,
+        )
+
+
+@pytest.mark.parametrize(
+    "entry_label, expected, entry_string", DSK_SEALED_ENTRIES_2024_9_24
+)
+def test_dsk_sealed(session_scanner, entry_label, expected, entry_string):
+    """
+    Verify that the sealed event entries can be processed
+    """
+    with (
+        patch("src.log_scanner.OCR.get_pack") as mock_ocr,
+        patch("src.log_scanner.capture_screen_base64str"),
+    ):
+        event_test_cases(
+            session_scanner,
+            "New DSK Sealed",
+            entry_label,
+            expected,
+            entry_string,
+            mock_ocr,
+        )
+
+
+@pytest.mark.parametrize(
+    "entry_label, expected, entry_string", DSK_SEALED_NAVIGATION_ENTRY
+)
+def test_dsk_sealed_navigation(function_scanner, entry_label, expected, entry_string):
+    """
+    Verify that duplicate event entries (navigation) do not trigger new event logic.
+    """
+    # Pre-set the event string to simulate an active event
+    # This mimics the state after the first "Event Start" entry is processed
+    if "Duplicate" in entry_label:
+        function_scanner.event_string = "Sealed_DSK_20240924"
+        # ADD THESE TWO LINES TO FIX THE TEST:
+        function_scanner.draft_sets = ["DSK"]
+        function_scanner.draft_label = "Sealed"
+
+    with (
+        patch("src.log_scanner.OCR.get_pack") as mock_ocr,
+        patch("src.log_scanner.capture_screen_base64str"),
+    ):
+        event_test_cases(
+            function_scanner,
+            "DSK Sealed Navigation",
             entry_label,
             expected,
             entry_string,

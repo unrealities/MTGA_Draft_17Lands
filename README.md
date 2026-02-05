@@ -5,7 +5,7 @@ Magic: The Gathering Arena draft tool that utilizes 17Lands data.
 **This application will automatically support new sets as soon as the sets are released on Arena _and_ the data is available on the [17Lands card ratings](https://www.17lands.com/card_ratings) page.**
 
 **Supported Events:** Premier Draft, Traditional Draft, Quick Draft, Sealed, and Traditional Sealed
-  
+
 ![Premier_Draft](https://github.com/unrealities/MTGA_Draft_17Lands/blob/main/assets/96687942/9d7283ff-cb8b-46f9-8d72-7bf531d707b1.png)
 
 ## Table of Contents
@@ -14,7 +14,6 @@ Magic: The Gathering Arena draft tool that utilizes 17Lands data.
   - [Table of Contents](#table-of-contents)
   - [Run Steps: Windows Executable (Windows Only)](#run-steps-windows-executable-windows-only)
   - [Run Steps: Python (Windows/Mac/Linux)](#run-steps-python-windowsmaclinux)
-  - [Steps to Build the Windows Executable](#steps-to-build-the-windows-executable)
   - [UI Features](#ui-features)
   - [Menu Features](#menu-features)
   - [Additional Features](#additional-features)
@@ -42,6 +41,11 @@ Magic: The Gathering Arena draft tool that utilizes 17Lands data.
       - [Premier and Traditional Drafts](#premier-and-traditional-drafts)
       - [Quick Drafts](#quick-drafts)
       - [Sealed and Traditional Sealed](#sealed-and-traditional-sealed)
+  - [Development](#development)
+    - [Environment Setup](#environment-setup)
+    - [Running Tests](#running-tests)
+    - [Version Management](#version-management)
+    - [Building the Executable](#building-the-executable)
 
 ## Run Steps: Windows Executable (Windows Only)
 
@@ -53,7 +57,7 @@ Magic: The Gathering Arena draft tool that utilizes 17Lands data.
 - **Step 4:** In Arena, go to Adjust Options, Account, and then check the Detailed Logs (Plugin Support) check box.
 - **Step 5:** Double-click `MTGA_Draft_Tool.exe` to start the program.
 - **Step 6:** Download the sets you plan to use (`Data->Download Dataset`).
- Event datasets can be used for different events (e.g., the premier draft dataset can be used for a sealed event).
+  Event datasets can be used for different events (e.g., the premier draft dataset can be used for a sealed event).
   - Quick draft players should consider using the premier draft dataset when quick draft initially becomes available.
 - **Step 7:** Configure the tool through the [Settings window](#settings).
   - Users that are new to 17Lands might find the [Win Rate Grades](#card-logic) (`Win Rate Format: Grade`) more valuable than the win rate percentages.
@@ -72,14 +76,14 @@ Magic: The Gathering Arena draft tool that utilizes 17Lands data.
   - [Windows](https://www.python.org/downloads/windows/).
   - [Mac](https://www.python.org/downloads/macos/).
   - [Linux](https://wiki.python.org/moin/BeginnersGuide/Download#Linux).
-- **Step 3:** Confirm that you're running Python 3.12 by opening the terminal, entering ```python --version```, and checking for a ```Python 3.12.*``` result.
-- **Step 4:** Install the Python package installer Pip by entering ```python -m ensurepip --upgrade```.
-- **Step 5:** Open the terminal and install the Python dependencies by entering ```pip install -r requirements.txt```.
+- **Step 3:** Confirm that you're running Python 3.12 by opening the terminal, entering `python --version`, and checking for a `Python 3.12.*` result.
+- **Step 4:** Install the Python package installer Pip by entering `python -m ensurepip --upgrade`.
+- **Step 5:** Open the terminal and install the Python dependencies by entering `pip install -r requirements.txt`.
 - **Step 6:**
   - (Mac Only) Install web certificates by going to `/Applications/Python 3.##/` and double-clicking the file `Install Certificates.command`.
   - (Linux only) [Install Tk](https://tkdocs.com/tutorial/install.html#installlinux)
 - **Step 7:** In Arena, go to Adjust Options, Account, and then check the Detailed Logs (Plugin Support) check box.
-- **Step 8:** Start the application by opening the terminal and entering ```python main.py```.
+- **Step 8:** Start the application by opening the terminal and entering `python main.py`.
 - **Step 9:** If the application asks you for the location of the Arena player log, then click `File->Read Player.log` and select the log file from one of the following locations:
   - **Windows:** {drive}/Users/{username}/AppData/LocalLow/Wizards Of The Coast/MTGA/Player.log
   - **Mac:** {username}/Library/Logs/Wizards Of The Coast/MTGA/Player.log
@@ -98,22 +102,6 @@ Magic: The Gathering Arena draft tool that utilizes 17Lands data.
   - Pressing the `Refresh` button will help OCR identify the cards in your first pack. For more information on this feature, see [The P1P1 Solution](#the-p1p1-solution).
   - The [Card Compare](#menu-features) feature can be used as a substitute for P1P1.
   - The sealed card pool can be found in the [Taken Cards window](#menu-features).
-
-## Steps to Build the Windows Executable
-
-**Note:** This project uses a [GitHub Action](https://github.com/unrealities/MTGA_Draft_17Lands/actions/workflows/build-windows-exe.yml) to perform the following steps.
-
-- **Step 1:** Download and install Python 3.12.
-- **Step 2:** Install the Python package installer Pip by opening the terminal and entering ```python -m ensurepip --upgrade```.
-- **Step 3:** Open the terminal and enter the following commands.
-  - ```pip install -r requirements.txt```
-  - ```pip install pywin32==306```
-  - ```pip install pyinstaller==6.7.0```
-- **Step 4:** [Download Inno Setup](https://jrsoftware.org/isdl.php#stable)
-- **Step 5:** Build MTGA_Draft_Tool.exe by opening the terminal and entering ```python -m PyInstaller  main.py --onefile --noconsole -n MTGA_Draft_Tool --clean```
-  - If this fails to build, you must add an exclusion in your Windows virus & threat protection.
-- **Step 6:** Open `Installer.iss` in Inno Setup and click Build->Compile.
-  - In the `{app}` folder, rename the mysetup.exe file to `setup.exe` and move the file to the main `MTGA_Draft_17Lands` folder.
 
 ## UI Features
 
@@ -134,7 +122,7 @@ Magic: The Gathering Arena draft tool that utilizes 17Lands data.
   - Can find cards for P1P1 using [The P1P1 Solution](#the-p1p1-solution)
   - The application will automatically read new log entries, so this button is only required if you use an outdated operating system (Windows 7 or 8).
   - You can hide this feature by deselecting `Enable Refresh Button` in the [Settings window](#settings)
-- **Pack / Pick Table:** This table displays the cards included in the current pack.  
+- **Pack / Pick Table:** This table displays the cards included in the current pack.
   - This table will show a number under the name column if a dataset is missing `Data Source: None` or an unrecognized card is listed.
 - **Missing Cards Table:** This table displays the cards missing from an already seen pack.
   - The user's chosen card will have an asterisk next to the name.
@@ -163,7 +151,7 @@ Magic: The Gathering Arena draft tool that utilizes 17Lands data.
 - **List Suggested Decks:** Get to the Suggested Decks window by selecting `Cards->Suggest Decksa`.
   - This table displays a 40-card deck created by the application using the cards you have obtained during the event. Sometimes, multiple decks may be shown if the application can make them.
   - The application may be unable to generate any decks if this option is selected before the event concludes or if an insufficient number of creatures are chosen.
-   -The application constructs decks according to various criteria, including each card's Games in Hand Win Rate. The rating indicated represents the combined Games in Hand Win Rate of all cards in the deck.
+  - The application constructs decks according to various criteria, including each card's Games in Hand Win Rate. The rating indicated represents the combined Games in Hand Win Rate of all cards in the deck.
 - **Card Compare:** Get to the Card Compare window by selecting `Cards->Compare Cards`. You can compare the cards you have entered using this window.
   - This feature can quickly compare cards for P1P1 of the Premier and Traditional drafts.
 
@@ -207,9 +195,9 @@ The application looks for the configuration file in the following order:
 
 1. **Local Folder:** If `config.json` exists in the same folder as the application, it is used. This allows for "Portable Mode" (e.g., running from a USB drive).
 2. **System User Folder:** If no local file is found, the application uses the standard user data directory:
-    - **Windows:** `%APPDATA%\MTGA_Draft_Tool\config.json`
-    - **Mac:** `~/Library/Application Support/MTGA_Draft_Tool/config.json`
-    - **Linux:** `~/.config/MTGA_Draft_Tool/config.json`
+   - **Windows:** `%APPDATA%\MTGA_Draft_Tool\config.json`
+   - **Mac:** `~/Library/Application Support/MTGA_Draft_Tool/config.json`
+   - **Linux:** `~/.config/MTGA_Draft_Tool/config.json`
 
 ### Datasets
 
@@ -224,21 +212,21 @@ Application debug logs are stored in the `Debug` folder, and draft logs are stor
 - **Win Rate Grades:** The application calculates the mean and standard deviation for all of the win rate fields (GIHWR, OHWR, GPWR, GDWR, etc.) and assigns a letter grade based on the number of standard deviations from the mean.
 - Example: If the mean OHWR for the set is 56.8% and the standard deviation is 4.68, then a card with an OHWR of 62% will have a letter grade of B+ since it's between 1 standard deviation (`56.8 + 1 * 4.68 = 61.48%`) and 1.33 standard deviations (`56.8 + 1.33 * 4.68 = 63.02%`) from the mean (see the table below).
 
-| Letter Grade     | Standard Deviations|
-|:----------------:|:------------------:|
-| A+               | >= 2.00            |
-| A                | >= 1.67            |
-| A-               | >= 1.33            |
-| B+               | >= 1.00            |
-| B                | >= 0.67            |
-| B-               | >= 0.33            |
-| C+               | >= 0               |
-| C                | >= -0.33           |
-| C-               | >= -0.67           |
-| D+               | >= -1.00           |
-| D                | >= -1.33           |
-| D-               | >= -1.67           |
-| F                | <  -1.67           |
+| Letter Grade | Standard Deviations |
+| :----------: | :-----------------: |
+|      A+      |       >= 2.00       |
+|      A       |       >= 1.67       |
+|      A-      |       >= 1.33       |
+|      B+      |       >= 1.00       |
+|      B       |       >= 0.67       |
+|      B-      |       >= 0.33       |
+|      C+      |        >= 0         |
+|      C       |      >= -0.33       |
+|      C-      |      >= -0.67       |
+|      D+      |      >= -1.00       |
+|      D       |      >= -1.33       |
+|      D-      |      >= -1.67       |
+|      F       |       < -1.67       |
 
 - **Win Rate Ratings:** The application will calculate the mean and standard deviation to identify an upper and lower limit (-1.67 to 2.00 standard deviations from the mean) and perform the following calculation to determine a card's rating: `((card_gihwr - lower_limit) / (upper_limit - lower_limit)) * 5.0`
   - Example: If the calculated mean and standard deviation for a set are 56.8% and 4.68, then the upper limit will be `56.8 + 2.00 * 4.68 = 66.16%`, the lower limit will be `56.8 - 1.67 * 4.68 = 48.98%`, and the resulting rating for a card with a win rate of 62% will be `(((62 - 48.98) / (66.16 - 48.98)) * 5.0 = 3.7)`
@@ -397,7 +385,7 @@ Upon startup, the application checks for updates to the most recently used datas
 - **The application can't generate set or debug files:** Windows users might need to run the application as an administrator if the application is installed in a directory with restricted write access.
 - **My sealed card pool is missing after restarting Arena:** Arena creates a new player log after every restart, so you will need to open up your sealed event session log by clicking `File->Read Draft Log` and selecting the `DraftLog_<Set>_Sealed` file if you want to see your sealed card pool. Remember that opening a log file will prevent the application from reading the Arena player log. Therefore, you must restart the application if you wish to initiate a new Arena event.
 - **The tables are displaying a win rate of 0% or NA:** The application will display a card win rate value of 0% or NA if that win rate field has fewer than 500 samples (e.g., GIHWR will be 0% or NA if the number of games in hand is less than 500). Users should consider using the premier draft dataset or downloading a [tier list using the API-based method](#tier-list-api-based) for events that have a low player count.
-  - ***As of September 2023, the 17Lands endpoint no longer provides win rate data for cards with fewer than 500 samples.**
+  - **\*As of September 2023, the 17Lands endpoint no longer provides win rate data for cards with fewer than 500 samples.**
 - **CTRL+G doesn't do anything:** If you're a Mac user, this shortcut isn't available. You must run the application as an administrator if you're a Windows user.
 - **The set download process takes 5+ minutes, and I'm seeing _Collecting 17Lands Data - Request Failed_ multiple times:** If you attempt to download too many sets within a short period, 17Lands will impose rate-limiting on your connection. Therefore, when downloading multiple sets, waiting at least 10 minutes between them is advisable.
 - **SSL errors in log on MacOS: `ERROR - limited_sets.retrieve_scryfall_sets - <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1000)`** Install SSL certificates via /Applications/Python 3.12/Install Certificates.command
@@ -424,3 +412,50 @@ Arena updates may occasionally modify the log entries that this application read
 
 - **Event Detection:** `[UnityCrossThreadLogger]==> EventJoin` or `[UnityCrossThreadLogger]==> Event_Join`, `id`, and `EventName`
 - **Cardpool:** `InternalEventName`, `CardPool`, and `Courses` or `Course`
+
+## Development
+
+### Environment Setup
+
+1. **Install Python 3.12**
+2. **Install Dependencies:**
+
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+3. **(Windows Build Only) Install Build Tools:**
+
+   ```bash
+   pip install pywin32==306 pyinstaller==6.7.0
+   ```
+
+### Running Tests
+
+This project uses `pytest` for unit testing.
+
+```bash
+python -m pytest tests/
+```
+
+### Version Management
+
+To automate updating the version number across `src/constants.py`, `builder/Installer.iss`, and creating a new entry in `release_notes.txt`, use the included script:
+
+- **Patch Bump (+0.01):** `python bump_version.py`
+- **Major Bump (+1.0):** `python bump_version.py major`
+- **Manual Set:** `python bump_version.py --set 3.50`
+
+### Building the Executable
+
+This project uses a [GitHub Action](https://github.com/unrealities/MTGA_Draft_17Lands/actions/workflows/build-windows-exe.yml) for official builds. To build locally on Windows:
+
+1. **Build EXE:**
+
+   ```bash
+   python -m PyInstaller main.spec --clean
+   ```
+
+2. **Build Installer:**
+   - [Download Inno Setup](https://jrsoftware.org/isdl.php#stable).
+   - Open `builder/Installer.iss` with Inno Setup and click **Build -> Compile**.

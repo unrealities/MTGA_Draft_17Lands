@@ -155,3 +155,36 @@ def test_file_extractor_default_threshold():
     """Verify FileExtractor defaults to the constant if no threshold is provided."""
     extractor = FileExtractor(None, None, None, None)
     assert extractor.threshold == COLOR_WIN_RATE_GAME_COUNT_THRESHOLD_DEFAULT
+
+
+def test_get_linux_steam_library_paths(file_extractor):
+    """
+    Verify that _get_linux_steam_library_paths parses VDF files correctly using regex.
+    """
+    # Mock VDF content
+    mock_vdf_content = """
+    "libraryfolders"
+    {
+        "0"
+        {
+            "path"      "/home/user/.local/share/Steam"
+            "label"     ""
+        }
+        "1"
+        {
+            "path"      "/mnt/secondary_drive/SteamLibrary"
+            "label"     ""
+        }
+    }
+    """
+
+    with patch("os.path.exists", return_value=True):
+        with patch("builtins.open", mock_open(read_data=mock_vdf_content)):
+            paths = file_extractor._get_linux_steam_library_paths()
+
+            # Should find both paths, repeated 3 times because we check 3 config locations
+            # and we mocked open/exists to always return true/data for this test.
+            # We just want to ensure the regex works.
+            assert "/home/user/.local/share/Steam" in paths
+            assert "/mnt/secondary_drive/SteamLibrary" in paths
+            assert len(paths) > 0

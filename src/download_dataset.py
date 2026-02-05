@@ -460,11 +460,13 @@ class DownloadDatasetWindow(ScaledWindow):
                 title="Download",
                 message="Rate limit reached.\n\n"
                 f"Please wait {int(DATASET_DOWNLOAD_RATE_LIMIT_SEC - time_difference)} seconds before trying again.",
+                parent=self.window,
             )
             return False
         confirm = tkinter.messagebox.askyesno(
             title="Download",
             message=f"Are you sure that you want to download the {args.draft_set.get()} {args.draft.get()} dataset?",
+            parent=self.window,
         )
         return confirm
 
@@ -493,6 +495,7 @@ class DownloadDatasetWindow(ScaledWindow):
                     message=f"17Lands doesn't currently have card statistics for {download_args.draft_set.get()} {download_args.draft.get()} {download_args.start.get()} to {download_args.end.get()}.\n\n"
                     "If you plan to use a tier list, you will still need to download this dataset so this application can read the Arena log.\n\n"
                     "Would you like to continue with the download?",
+                    parent=self.window,
                 )
                 if not message_box:
                     download_args.status.set("Download Cancelled")
@@ -523,6 +526,7 @@ class DownloadDatasetWindow(ScaledWindow):
                         message="Your dataset is already up-to-date.\n\n"
                         f"It's currently {current_time_utc} UTC, and 17Lands updates their card data once a day around 03:00:00 UTC.\n\n"
                         "Would you still like to continue with the download?",
+                        parent=self.window,
                     )
                     if not message_box:
                         download_args.status.set("Download Cancelled")
@@ -534,7 +538,7 @@ class DownloadDatasetWindow(ScaledWindow):
         self.window.update()
         args.button["state"] = "normal"
         message_string = f"Download Failed: {result_string}"
-        tkinter.messagebox.showwarning(title="Error", message=message_string)
+        tkinter.messagebox.showwarning(title="Error", message=message_string, parent=self.window)
         self.window.update()
         logger.error(message_string)
 

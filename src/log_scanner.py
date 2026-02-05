@@ -188,6 +188,11 @@ class ArenaScanner:
         try:
             draft_id = json_find("id", event_data)
             event_name = json_find("EventName", event_data)
+
+            # If the event is the same as the current event, then don't reset the draft data
+            if self.event_string == event_name:
+                return update, event_type, draft_id
+
             logger.info("Event found %s", event_name)
             event_match, event_type, event_label, event_set, number_of_players = (
                 self.__check_special_event(event_name)
@@ -1039,8 +1044,8 @@ class ArenaScanner:
                                 for course in course_data["Courses"]:
                                     if course["InternalEventName"] == self.event_string:
                                         card_pool = [str(x) for x in course["CardPool"]]
-                                        self.__sealed_update(card_pool)
-                                        update = True
+                                        if self.__sealed_update(card_pool):
+                                            update = True
                             elif "Course" in line:
                                 start_offset = line.find('{"Course"')
                                 course_data = process_json(line[start_offset:])
@@ -1052,8 +1057,8 @@ class ArenaScanner:
                                         str(x)
                                         for x in course_data["Course"]["CardPool"]
                                     ]
-                                    self.__sealed_update(card_pool)
-                                    update = True
+                                    if self.__sealed_update(card_pool):
+                                        update = True
                         except Exception as error:
                             self.draft_log.info("__sealed_pack_search Error: %s", error)
 
@@ -1062,9 +1067,14 @@ class ArenaScanner:
         return update
 
     def __sealed_update(self, cards):
-
+        updated = False
         if not self.taken_cards:
             self.taken_cards.extend(cards)
+            updated = True
+        elif sorted(self.taken_cards) != sorted(cards):
+            self.taken_cards = cards
+            updated = True
+        return updated
 
     def retrieve_data_sources(self):
         """Return a list of set files that can be used with the current active draft"""
