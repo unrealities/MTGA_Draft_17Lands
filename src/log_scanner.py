@@ -1,18 +1,23 @@
-"""This module contains the functions that are used for parsing the Arena log"""
+"""
+src/log_scanner.py
+
+This module contains the ArenaScanner class used for parsing the Arena log
+and managing the state of the current draft (packs, picks, event info).
+"""
 
 import os
 import json
 import re
 import logging
-import src.constants as constants
-import src.card_logic as CL
-import src.file_extractor as FE
 from enum import Enum
 from datetime import datetime
+
+import src.constants as constants
 from src.logger import create_logger
 from src.set_metrics import SetMetrics
 from src.dataset import Dataset
 from src.ocr import OCR
+from src.tier_list import TierList
 from src.utils import (
     process_json,
     json_find,
@@ -57,6 +62,7 @@ class ArenaScanner:
 
         self.step_through = step_through
         self.set_data = Dataset(retrieve_unknown)
+        self.tier_list = TierList()
         self.draft_type = constants.LIMITED_TYPE_UNKNOWN
         self.pick_offset = 0
         self.pack_offset = 0
@@ -1162,6 +1168,12 @@ class ArenaScanner:
         set_metrics = SetMetrics(self.set_data)
 
         return set_metrics
+
+    def retrieve_tier_data(self):
+        """Retrieve tier list data for the current event set."""
+        event_set, _ = self.retrieve_current_limited_event()
+        data, _ = self.tier_list.retrieve_data(event_set)
+        return data
 
     def retrieve_color_win_rate(self, label_type):
         """Parse set data and return a list of color win rates"""
