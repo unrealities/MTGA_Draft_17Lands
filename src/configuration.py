@@ -61,6 +61,7 @@ class Settings(BaseModel):
     filter_format: str = constants.DECK_FILTER_FORMAT_COLORS
     result_format: str = constants.RESULT_FORMAT_WIN_RATE
     ui_size: str = constants.UI_SIZE_DEFAULT
+    theme: str = "Dark"
     card_colors_enabled: bool = False
     missing_enabled: bool = True
     stats_enabled: bool = False
@@ -92,7 +93,7 @@ class Settings(BaseModel):
     @field_validator("deck_filter")
     @classmethod
     def validate_deck_filter(cls, value, info):
-        allowed_values = constants.DECK_FILTERS  # List of options
+        allowed_values = constants.DECK_FILTERS
         if value not in allowed_values:
             return cls.model_fields[info.field_name].default
         return value
@@ -100,7 +101,7 @@ class Settings(BaseModel):
     @field_validator("filter_format")
     @classmethod
     def validate_filter_format(cls, value, info):
-        allowed_values = constants.DECK_FILTER_FORMAT_LIST  # List of options
+        allowed_values = constants.DECK_FILTER_FORMAT_LIST
         if value not in allowed_values:
             return cls.model_fields[info.field_name].default
         return value
@@ -108,7 +109,7 @@ class Settings(BaseModel):
     @field_validator("result_format")
     @classmethod
     def validate_result_format(cls, value, info):
-        allowed_values = constants.RESULT_FORMAT_LIST  # List of options
+        allowed_values = constants.RESULT_FORMAT_LIST
         if value not in allowed_values:
             return cls.model_fields[info.field_name].default
         return value
@@ -116,7 +117,7 @@ class Settings(BaseModel):
     @field_validator("ui_size")
     @classmethod
     def validate_ui_size(cls, value, info):
-        allowed_values = constants.UI_SIZE_DICT  # List of options
+        allowed_values = constants.UI_SIZE_DICT
         if value not in allowed_values:
             return cls.model_fields[info.field_name].default
         return value

@@ -19,6 +19,8 @@ TEMP_LIMITED_SETS = os.path.join("Temp", "temp_set_list.json")
 REPLACE_PHRASE_LATEST = "{LATEST}"
 REPLACE_PHRASE_DATE_SHIFT = "{DATESHIFT}"
 START_DATE_DEFAULT = "2019-01-01"
+CACHE_DURATION_SECONDS = 86400  # 24 Hours
+
 
 class SetInfo(BaseModel):
     arena: List[str] = Field(default_factory=list)
@@ -28,12 +30,14 @@ class SetInfo(BaseModel):
     set_code: str = ""
     start_date: str = START_DATE_DEFAULT
 
+
 class SpecialEvent(BaseModel):
     label: str = ""
     type: str = ""
     set_code: str = ""
     keywords: List[str] = Field(default_factory=list)
     number_of_players: int = 8
+
 
 class SetDictionary(BaseModel):
     version: int = 0
@@ -44,41 +48,42 @@ class SetDictionary(BaseModel):
             label="OpenDay1",
             type="Sealed",
             set_code=REPLACE_PHRASE_LATEST,
-            keywords=["ArenaOpen","Day1"]
+            keywords=["ArenaOpen", "Day1"],
         ),
         SpecialEvent(
             label="OpenDay2",
             type="PremierDraft",
             set_code=REPLACE_PHRASE_LATEST,
-            keywords=["ArenaOpen","Day2"]
+            keywords=["ArenaOpen", "Day2"],
         ),
         SpecialEvent(
             label="QualSealed",
             type="Sealed",
             set_code=REPLACE_PHRASE_LATEST,
-            keywords=["Qualifier"]
-        )
+            keywords=["Qualifier"],
+        ),
     ]
 
+
 def shift_date(start_date, shifted_days, string_format, next_dow=None):
-    '''Shifts a date by a certain number of days'''
+    """Shifts a date by a certain number of days"""
     shifted_date_string = ""
     shifted_date = datetime.date.min
     try:
         shifted_date = start_date + datetime.timedelta(days=shifted_days)
 
         if next_dow and (0 <= next_dow <= 6):
-            # Shift the date to the next specified day of the week (0 = Monday, 6 = Sunday)
-            shifted_date += datetime.timedelta(
-                (next_dow - shifted_date.weekday()) % 7)
+            shifted_date += datetime.timedelta((next_dow - shifted_date.weekday()) % 7)
 
-        shifted_date_string = shifted_date.strftime(
-            string_format) if string_format else ""
+        shifted_date_string = (
+            shifted_date.strftime(string_format) if string_format else ""
+        )
 
     except Exception as error:
         logger.error(error)
 
     return shifted_date, shifted_date_string
+
 
 class LimitedSets:
     def __init__(self, sets_file_location: str = TEMP_LIMITED_SETS):
@@ -91,25 +96,16 @@ class LimitedSets:
         self.latest_set = ""
 
     def retrieve_limited_sets(self) -> SetDictionary:
-        '''Retrieve a list of sets from 17Lands and Scryfall
-
-            Set fields
-           . "arena" : The codes for the sets retrieved from the temp_card_data.json.
-               - This is the primary way that this application builds the card dataset
-               - Key word "ALL" can be used (e.g., "arena" : ["ALL"]) if all Arena cards are required (e.g., if you're builing a cube dataset)
-           . "scryfall" : The codes for the sets retrieved using the scryfall API
-               - Example: https://api.scryfall.com/cards/search?order=set&unique=prints&q=e%3AMID
-               - This is the secondary way that this application builds the card dataset, in the event that there's an issue temp_card_data.json
-               - It's not feasible to download data for every card listed on Scryfall so the all keyword can't be used with this field
-           . "17Lands" : The code for the data listed on the https://www.17lands.com/card_ratings page
-               - The dataset file name uses the set code from this field (e.g., MAT_PremierDraft_Data.json)
-               - When searching the Arena player log, the application uses this set code to link the event set to the card dataset
-                   - Examples:
-                        - CubeDraft_Arena_20220812 -> CUBE_PremierDraft_Data.json
-                        - PremierDraft_BRO_20221115 -> BRO_PremierDraft_Data.json
-        '''
+        """Retrieve a list of sets from 17Lands and Scryfall"""
         self.limited_sets = SetDictionary()
 
+        # Check Cache
+        if self._is_cache_valid():
+            logger.info("Using cached set list.")
+            self.limited_sets, _ = self.read_sets_file()
+            return self.limited_sets
+
+        logger.info("Cache expired or missing. Fetching new set list from network.")
         self.retrieve_17lands_sets()
         self.retrieve_scryfall_sets()
 
@@ -117,23 +113,33 @@ class LimitedSets:
         self.__substitute_strings()
         return self.limited_sets
 
+    def _is_cache_valid(self) -> bool:
+        """Check if the local sets file exists and is recent."""
+        if not os.path.exists(self.sets_file_location):
+            return False
+
+        try:
+            mod_time = os.path.getmtime(self.sets_file_location)
+            current_time = time.time()
+            return (current_time - mod_time) < CACHE_DURATION_SECONDS
+        except Exception:
+            return False
+
     def retrieve_scryfall_sets(self, retries: int = 3, wait: int = 5) -> SetDictionary:
-        '''Retrieve a list of Magic sets using the Scryfall API'''
+        """Retrieve a list of Magic sets using the Scryfall API"""
         self.sets_scryfall = SetDictionary()
 
         while retries:
             try:
                 url = "https://api.scryfall.com/sets"
-                url_data = urllib.request.urlopen(
-                    url, context=self.context).read()
+                url_data = urllib.request.urlopen(url, context=self.context).read()
                 set_json_data = json.loads(url_data)
 
                 self.__process_scryfall_sets(set_json_data["data"])
 
                 while set_json_data["has_more"]:
                     url = set_json_data["next_page"]
-                    url_data = urllib.request.urlopen(
-                        url, context=self.context).read()
+                    url_data = urllib.request.urlopen(url, context=self.context).read()
                     set_json_data = json.loads(url_data)
                     self.__process_scryfall_sets(set_json_data["data"])
 
@@ -150,7 +156,7 @@ class LimitedSets:
         return self.sets_scryfall
 
     def retrieve_17lands_sets(self, retries: int = 3, wait: int = 5) -> SetDictionary:
-        '''Retrieve the list of sets that are supported by 17Lands'''
+        """Retrieve the list of sets that are supported by 17Lands"""
         self.sets_17lands = SetDictionary()
         while retries:
             try:
@@ -172,11 +178,13 @@ class LimitedSets:
         return self.sets_17lands
 
     def read_sets_file(self) -> Tuple[SetDictionary, bool]:
-        '''Read the sets file and build the sets object'''
+        """Read the sets file and build the sets object"""
         temp_sets = SetDictionary(version=LIMITED_SETS_VERSION)
         success = False
         try:
-            with open(self.sets_file_location, 'r', encoding="utf-8", errors="replace") as json_file:
+            with open(
+                self.sets_file_location, "r", encoding="utf-8", errors="replace"
+            ) as json_file:
                 json_data = json.loads(json_file.read())
 
             sets_object = SetDictionary.model_validate(json_data)
@@ -203,19 +211,19 @@ class LimitedSets:
         return temp_sets, success
 
     def write_sets_file(self, sets_object: SetDictionary) -> bool:
-        '''Write the sets object data to a local file'''
+        """Write the sets object data to a local file"""
         success = False
         try:
             if type(sets_object) != SetDictionary:
                 raise TypeError("sets_object must be of type SetDictionary")
 
             # Create the directory if it's missing
-            os.makedirs(os.path.dirname(
-                self.sets_file_location), exist_ok=True)
+            os.makedirs(os.path.dirname(self.sets_file_location), exist_ok=True)
 
-            with open(self.sets_file_location, 'w', encoding="utf-8", errors="replace") as file:
-                json.dump(sets_object.model_dump(), file,
-                          ensure_ascii=False, indent=4)
+            with open(
+                self.sets_file_location, "w", encoding="utf-8", errors="replace"
+            ) as file:
+                json.dump(sets_object.model_dump(), file, ensure_ascii=False, indent=4)
 
             success = True
         except (FileNotFoundError, TypeError, OSError) as error:
@@ -224,12 +232,12 @@ class LimitedSets:
         return success
 
     def __assemble_limited_sets(self) -> None:
-        '''Retrieve a stored set dataset and append any missing set that are listed on 17Lands'''
+        """Retrieve a stored set dataset and append any missing set that are listed on 17Lands"""
 
         # Retrieve a stored sets dataset from the Temp folder
         read_sets, _ = self.read_sets_file()
-        
-        # 17Lands might add an Alchemy set to the top of the list and rearrange it within the first day. 
+
+        # 17Lands might add an Alchemy set to the top of the list and rearrange it within the first day.
         # This means the latest set needs updating continuously, not only when a new set is added.
         if self.latest_set:
             read_sets.latest_set = self.latest_set
@@ -246,7 +254,7 @@ class LimitedSets:
         return
 
     def __append_limited_sets(self, read_sets: SetDictionary) -> SetDictionary:
-        '''Create a list of sets using lists collected from 17Lands and Scryfall'''
+        """Create a list of sets using lists collected from 17Lands and Scryfall"""
         temp_dict = SetDictionary(version=LIMITED_SETS_VERSION)
         if self.sets_scryfall.data and self.sets_17lands.data:
             set_codes_to_remove = []
@@ -260,7 +268,7 @@ class LimitedSets:
                     else:
                         temp_dict.data[set_name] = self.sets_17lands.data[set_code]
                     set_codes_to_remove.append(set_code)
-            
+
             # Adding the unknown 17Lands sets to the list
             for set_code, set_fields in self.sets_17lands.data.items():
                 if set_code not in set_codes_to_remove:
@@ -268,7 +276,7 @@ class LimitedSets:
                         alchemy_sets[set_code] = set_fields
                     else:
                         temp_dict.data[set_code] = set_fields
-                    
+
         temp_dict.data.update(read_sets.data)
         temp_dict.data.update(alchemy_sets)
         temp_dict.latest_set = read_sets.latest_set
@@ -276,41 +284,42 @@ class LimitedSets:
         return temp_dict
 
     def __process_17lands_sets(self, data: dict):
-        '''Parse json data from the 17lands filters page'''
+        """Parse json data from the 17lands filters page"""
         try:
             for card_set in data["expansions"]:
-                self.sets_17lands.data[card_set] = SetInfo(arena=[constants.SET_SELECTION_ALL],
-                                                                   scryfall=[],
-                                                                   seventeenlands=[card_set],
-                                                                   set_code=card_set.split(" ")[0].upper())
+                self.sets_17lands.data[card_set] = SetInfo(
+                    arena=[constants.SET_SELECTION_ALL],
+                    scryfall=[],
+                    seventeenlands=[card_set],
+                    set_code=card_set.split(" ")[0].upper(),
+                )
             for card_set, date_string in data["start_dates"].items():
                 if card_set in self.sets_17lands.data:
-                    self.sets_17lands.data[card_set].start_date = REPLACE_PHRASE_DATE_SHIFT if "Cube" in card_set else date_string.split('T')[0]
+                    self.sets_17lands.data[card_set].start_date = (
+                        REPLACE_PHRASE_DATE_SHIFT
+                        if "Cube" in card_set
+                        else date_string.split("T")[0]
+                    )
 
             # Identify formats for each card set
             for card_set, formats in data["formats_by_expansion"].items():
                 if card_set in self.sets_17lands.data:
-                    self.sets_17lands.data[card_set].formats = [x for x in formats if x in constants.LIMITED_TYPE_LIST] + [x for x in constants.LIMITED_TYPE_LIST if x not in formats]
-            
+                    self.sets_17lands.data[card_set].formats = [
+                        x for x in formats if x in constants.LIMITED_TYPE_LIST
+                    ] + [x for x in constants.LIMITED_TYPE_LIST if x not in formats]
+
             # Retrieve the latest set code from the 17Lands expansions list
             if self.sets_17lands.data:
-                self.latest_set = self.sets_17lands.data[next(iter(self.sets_17lands.data))].set_code
+                self.latest_set = self.sets_17lands.data[
+                    next(iter(self.sets_17lands.data))
+                ].set_code
         except Exception as error:
             logger.error(error)
 
         return
 
     def __process_scryfall_sets(self, data: Dict):
-        '''Parse the Scryfall set list data to extract information for sets that are supported by Arena
-           - Scryfall lists all Magic sets (paper and digital), so the application needs to filter out non-Arena sets
-           - The application will only display sets that have been released
-
-           This process links the bonus sheets to the main sets by checking for a "parent_set_code" field and linking the set to its parent.
-           - Examples:
-              - "mul" is linked to "mom" because "mul" has a "parent_set_code" of "mom"
-              - "sis" isn't linked to "sir" because "sis" doens't have a "parent_set_code"
-           - If the set has linked sets that can't be identified using the process above, then they need to be added to the CUSTOM_SETS dictionary
-        '''
+        """Parse the Scryfall set list data to extract information for sets that are supported by Arena"""
         counter = len(self.sets_scryfall.data)
         side_sets = {}
         for card_set in data:
@@ -324,18 +333,23 @@ class LimitedSets:
                     if counter >= TOTAL_SCRYFALL_SETS:
                         break
                     if card_set["set_type"] == constants.SET_TYPE_ALCHEMY:
-                        self.sets_scryfall.data[set_name] = self.__process_scryfall_sets_alchemy(
-                            set_code, card_set)
-                    elif (card_set["set_type"] == constants.SET_TYPE_MASTERS) and (not card_set["digital"]):
+                        self.sets_scryfall.data[set_name] = (
+                            self.__process_scryfall_sets_alchemy(set_code, card_set)
+                        )
+                    elif (card_set["set_type"] == constants.SET_TYPE_MASTERS) and (
+                        not card_set["digital"]
+                    ):
                         continue
                     else:
                         self.sets_scryfall.data[set_name] = SetInfo(
                             arena=[constants.SET_SELECTION_ALL],
-                            seventeenlands=[set_code.upper()]
+                            seventeenlands=[set_code.upper()],
                         )
                     counter += 1
-                elif (card_set["set_type"] == constants.SET_TYPE_MASTERPIECE and
-                      "parent_set_code" in card_set):
+                elif (
+                    card_set["set_type"] == constants.SET_TYPE_MASTERPIECE
+                    and "parent_set_code" in card_set
+                ):
                     # Add the supplementary sets (i.e., mystic archives, retro artifacts)
                     parent_code = card_set["parent_set_code"].upper()
                     if parent_code in side_sets:
@@ -349,45 +363,45 @@ class LimitedSets:
         return
 
     def __process_scryfall_sets_alchemy(self, set_code: str, data: Dict) -> SetInfo:
-        '''Process Scryfall sets for Alchemy specific information'''
+        """Process Scryfall sets for Alchemy specific information"""
         set_entry = SetInfo()
         if ("parent_set_code" in data) and ("block_code" in data):
             set_entry.arena = [constants.SET_SELECTION_ALL]
             set_entry.seventeenlands = [
-                f"{data['block_code'].upper()}{data['parent_set_code'].upper()}"]
+                f"{data['block_code'].upper()}{data['parent_set_code'].upper()}"
+            ]
 
-        elif ("block_code" in data) and (re.findall(r"^[yY]\d{2}$", data["block_code"], re.DOTALL)):
-            parent_code = re.findall(
-                r"^[yY](\w{3})$", set_code, re.DOTALL)
+        elif ("block_code" in data) and (
+            re.findall(r"^[yY]\d{2}$", data["block_code"], re.DOTALL)
+        ):
+            parent_code = re.findall(r"^[yY](\w{3})$", set_code, re.DOTALL)
 
             if parent_code:
                 set_entry.arena = [constants.SET_SELECTION_ALL]
                 set_entry.seventeenlands = [
-                    f"{data['block_code'].upper()}{parent_code[0].upper()}"]
+                    f"{data['block_code'].upper()}{parent_code[0].upper()}"
+                ]
 
             else:
                 set_entry = SetInfo(
                     arena=[constants.SET_SELECTION_ALL],
-                    seventeenlands=[set_code.upper()]
+                    seventeenlands=[set_code.upper()],
                 )
         else:
             set_entry = SetInfo(
-                arena=[constants.SET_SELECTION_ALL],
-                seventeenlands=[set_code.upper()]
+                arena=[constants.SET_SELECTION_ALL], seventeenlands=[set_code.upper()]
             )
         return set_entry
 
     def __substitute_strings(self):
-        '''Substitute any brace strings with the relevant data'''
+        """Substitute any brace strings with the relevant data"""
         # Replace set_code fields with the string {LATEST} with the latest set code from 17Lands
         for event in self.limited_sets.special_events:
             if event.set_code == REPLACE_PHRASE_LATEST and self.latest_set:
                 event.set_code = self.latest_set
-                
+
         for data in self.limited_sets.data.values():
             if data.start_date == REPLACE_PHRASE_DATE_SHIFT:
                 data.start_date = shift_date(
-                                    datetime.date.today(), 
-                                    DATE_SHIFT_OFFSET_DAYS, 
-                                    "%Y-%m-%d"
-                                  )[1]
+                    datetime.date.today(), DATE_SHIFT_OFFSET_DAYS, "%Y-%m-%d"
+                )[1]

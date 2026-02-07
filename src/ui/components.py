@@ -15,9 +15,8 @@ from src import constants
 from src.card_logic import row_color_tag, field_process_sort
 from src.ui.styles import Theme
 
+
 # --- Utility Functions ---
-
-
 def identify_safe_coordinates(
     root: tkinter.Tk | tkinter.Toplevel,
     window_width: int,
@@ -378,7 +377,7 @@ class ModernTreeview(ttk.Treeview):
                     minwidth=50,
                     stretch=True,
                 )
-            elif col in ["Name", "Card", "Column1"]:
+            elif col in ["Name", "Card", "Column1", "Set"]:
                 default_anchor = tkinter.W
                 # Main Name Column: Expand
                 self.column(
@@ -390,12 +389,14 @@ class ModernTreeview(ttk.Treeview):
                 )
             else:
                 # Numeric Columns: Compact
+                # Use specified width or default to 60
+                width = config.get("width", 60)
                 self.column(
                     col,
                     anchor=config.get("anchor", default_anchor),
                     minwidth=40,
                     stretch=False,
-                    width=60,
+                    width=width,
                 )
 
             self.heading(col, text=col, command=lambda c=col: self._sort_column(c))

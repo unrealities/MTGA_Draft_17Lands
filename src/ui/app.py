@@ -8,64 +8,65 @@ import tkinter
 from tkinter import ttk, filedialog, messagebox
 import webbrowser
 import os
-import time
-from typing import Dict, Any
+from typing import Dict
 
 from src import constants
 from src.configuration import Configuration, write_configuration
-from src.log_scanner import ArenaScanner, Source
-from src.card_logic import (
-    CardResult,
-    filter_options,
-    field_process_sort,
-    deck_card_search,
-    get_deck_metrics,
-)
+from src.log_scanner import ArenaScanner
+from src.card_logic import filter_options, field_process_sort
 from src.ui.styles import Theme
-from src.ui.components import ModernTreeview, CardToolTip, identify_safe_coordinates
+from src.ui.components import ModernTreeview, CardToolTip
 from src.ui.windows.settings import SettingsWindow
 from src.ui.windows.taken_cards import TakenCardsWindow
 from src.ui.windows.suggest_deck import SuggestDeckWindow
 from src.ui.windows.compare import CompareWindow
-from src.download_dataset import DownloadDatasetWindow
+from src.ui.windows.download import DownloadWindow
+from src.ui.windows.tier_list import TierListWindow
 from src.notifications import Notifications
-from src.tier_list import TierWindow
+from src.card_logic import CardResult
 
 
 class DraftApp:
-    def __init__(self, scanner: ArenaScanner, configuration: Configuration):
+    def __init__(
+        self, root: tkinter.Tk, scanner: ArenaScanner, configuration: Configuration
+    ):
         self.scanner = scanner
         self.configuration = configuration
+        self.root = root
 
-        self.root = tkinter.Tk()
+        # Clean up Root (Remove Splash widgets if any remain)
+        for widget in self.root.winfo_children():
+            widget.destroy()
+
+        # Configure Root
+        self.root.deiconify()
         self.root.title(f"MTGA Draft Tool v{constants.APPLICATION_VERSION}")
         self.root.protocol("WM_DELETE_WINDOW", self._on_close)
 
-        Theme.apply(self.root)
+        # Re-apply theme just to be safe
+        current_theme = getattr(configuration.settings, "theme", "Dark")
+        Theme.apply(self.root, current_theme)
 
-        # Legacy Font Dict for Download/Tier Windows
-        # These windows expect specific keys for font sizing
-        self.fonts_dict = {
-            "All.TableRow": -12,
-            "Sets.TableRow": -13,
-            "All.TMenubutton": (Theme.FONT_FAMILY, -12),
-        }
-
+        # State
         self.vars: Dict[str, tkinter.Variable] = {}
         self.windows: Dict[str, tkinter.Toplevel] = {}
         self.log_check_id = None
         self.previous_timestamp = 0
         self.deck_filter_map: Dict[str, str] = {}
 
-        self.main_container = None
-        self.frame_tables = None
-        self.current_pack_data = []
-        self.current_missing_data = []
+        # UI Setup
+        self.download_window = DownloadWindow(
+            self.root,
+            self.scanner.set_list,
+            self.configuration,
+            self._on_dataset_update,
+        )
 
         self._setup_variables()
         self._build_layout()
         self._setup_menu()
 
+        # Data Init
         self._update_data_sources()
         self._update_deck_filter_options()
         self._rebuild_tables()
@@ -73,20 +74,12 @@ class DraftApp:
         self._start_log_check()
         self.root.after(1000, self._update_loop)
 
-        # Initialize Notifications (Requires a hidden Download Window instance)
+        # Defer notifications so window renders first
+        self.root.after(500, self._init_notifications)
+
+    def _init_notifications(self):
         self.notifications = Notifications(
-            self.root,
-            self.scanner.set_list,
-            self.configuration,
-            DownloadDatasetWindow(
-                self.root,
-                self.scanner.set_list,
-                1.0,
-                self.fonts_dict,  # Passed populated dict
-                self.configuration,
-                False,
-                self._on_dataset_update,
-            ),
+            self.root, self.scanner.set_list, self.configuration, self.download_window
         )
         self.notifications.check_for_updates()
 
@@ -98,9 +91,6 @@ class DraftApp:
             value=constants.DECK_FILTER_DEFAULT
         )
         self.vars["data_source"] = tkinter.StringVar(value="None")
-        self.vars["stat_filter"] = tkinter.StringVar(
-            value=constants.CARD_TYPE_SELECTION_ALL
-        )
         self.vars["pack_info"] = tkinter.StringVar(value="Pack 0, Pick 0")
 
     def _build_layout(self):
@@ -194,6 +184,7 @@ class DraftApp:
     def _build_footer(self):
         footer = ttk.Frame(self.main_container)
         footer.pack(fill="x", side="bottom", pady=(10, 0))
+
         ttk.Label(footer, text="Not endorsed by 17Lands", style="Muted.TLabel").pack(
             side="right"
         )
@@ -248,6 +239,7 @@ class DraftApp:
         for widget in self.frame_tables.winfo_children():
             widget.destroy()
 
+        # Pack Table
         ttk.Label(
             self.frame_tables, text="Current Pack", style="SubHeader.TLabel"
         ).pack(anchor="w", pady=(0, 5))
@@ -285,6 +277,7 @@ class DraftApp:
             lambda e: self._on_table_select(e, self.table_pack, "pack"),
         )
 
+        # Missing Cards
         if self.configuration.settings.missing_enabled:
             ttk.Label(
                 self.frame_tables, text="Missing Cards", style="SubHeader.TLabel"
@@ -298,6 +291,7 @@ class DraftApp:
                 lambda e: self._on_table_select(e, self.table_missing, "missing"),
             )
 
+        # Signals
         if self.configuration.settings.signals_enabled:
             ttk.Label(
                 self.frame_tables, text="Signals (Pack 1 & 3)", style="SubHeader.TLabel"
@@ -582,18 +576,11 @@ class DraftApp:
             )
 
     def _open_download_window(self):
-        DownloadDatasetWindow(
-            self.root,
-            self.scanner.set_list,
-            1.0,
-            self.fonts_dict,
-            self.configuration,
-            True,
-            self._on_dataset_update,
-        )
+        self.download_window.deiconify()
+        self.download_window.lift()
 
     def _open_tier_window(self):
-        TierWindow(1.0, self.fonts_dict, self._on_dataset_update)
+        TierListWindow(self.root, self._on_dataset_update)
 
     def _open_about(self):
         messagebox.showinfo(
