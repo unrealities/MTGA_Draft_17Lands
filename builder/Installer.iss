@@ -17,7 +17,7 @@ InfoAfterFile=..\release_notes.txt
 Source: "..\dist\MTGA_Draft_Tool.exe"; DestDir: "{app}"
 Source: "..\README.md"; DestDir: "{app}"
 Source: "..\release_notes.txt"; DestDir: "{app}"
-Source: "..\dark_mode.tcl"; DestDir: "{app}"
+Source: "..\themes\*.tcl"; DestDir: "{app}\themes"
 Source: "..\Tools\TierScraper17Lands\src\17LandsTier.css"; DestDir: "{app}\Tools\TierScraper17Lands"
 Source: "..\Tools\TierScraper17Lands\src\17LandsTier.js"; DestDir: "{app}\Tools\TierScraper17Lands"
 Source: "..\Tools\TierScraper17Lands\src\manifest.json"; DestDir: "{app}\Tools\TierScraper17Lands"
@@ -27,3 +27,4 @@ Name: "{group}\MtgaDraftTool"; Filename: "{app}\MTGA_Draft_Tool.exe"
 
 [Dirs]
 Name: {app}\Tools\TierScraper17Lands
+Name: {app}\themes

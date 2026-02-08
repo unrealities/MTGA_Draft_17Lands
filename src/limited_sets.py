@@ -15,7 +15,12 @@ logger = create_logger()
 LIMITED_SETS_VERSION = 7
 TOTAL_SCRYFALL_SETS = 50
 DATE_SHIFT_OFFSET_DAYS = -30
-TEMP_LIMITED_SETS = os.path.join("Temp", "temp_set_list.json")
+
+TEMP_FOLDER = os.path.join(os.getcwd(), "Temp")
+if not os.path.exists(TEMP_FOLDER):
+    os.makedirs(TEMP_FOLDER)
+TEMP_LIMITED_SETS = os.path.join(TEMP_FOLDER, "temp_set_list.json")
+
 REPLACE_PHRASE_LATEST = "{LATEST}"
 REPLACE_PHRASE_DATE_SHIFT = "{DATESHIFT}"
 START_DATE_DEFAULT = "2019-01-01"
@@ -116,13 +121,21 @@ class LimitedSets:
     def _is_cache_valid(self) -> bool:
         """Check if the local sets file exists and is recent."""
         if not os.path.exists(self.sets_file_location):
+            logger.info(f"Cache missing at {self.sets_file_location}")
             return False
 
         try:
             mod_time = os.path.getmtime(self.sets_file_location)
             current_time = time.time()
-            return (current_time - mod_time) < CACHE_DURATION_SECONDS
-        except Exception:
+            age = current_time - mod_time
+            valid = age < CACHE_DURATION_SECONDS
+            if not valid:
+                logger.info(
+                    f"Cache expired. Age: {age}s, Limit: {CACHE_DURATION_SECONDS}s"
+                )
+            return valid
+        except Exception as e:
+            logger.error(f"Error checking cache: {e}")
             return False
 
     def retrieve_scryfall_sets(self, retries: int = 3, wait: int = 5) -> SetDictionary:

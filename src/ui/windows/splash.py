@@ -31,10 +31,10 @@ class SplashWindow:
         logger.info("Initializing Splash Window")
 
         # Configure Root for Splash
-        self.root.overrideredirect(True)
+        self.root.title("MTGA Draft Tool - Loading")
         self.root.configure(bg=Theme.BG_PRIMARY)
 
-        # UI Elements Container 
+        # UI Elements Container
         self.container = ttk.Frame(self.root, padding=20, style="Card.TFrame")
         self.container.pack(fill="both", expand=True)
 
@@ -63,7 +63,9 @@ class SplashWindow:
         y = (sh - h) // 2
         self.root.geometry(f"{w}x{h}+{x}+{y}")
 
-        # Force initial draw
+        # Force visibility
+        self.root.deiconify()
+        self.root.lift()
         self.root.update()
 
         # Start Task with a slight delay to ensure window renders
@@ -71,7 +73,6 @@ class SplashWindow:
 
     def _start_thread(self):
         logger.info("Starting background loading thread")
-        # We pass self._progress_callback to the task so it can update UI
         threading.Thread(target=self._run_task, daemon=True).start()
         self._check_queue()
 
@@ -82,7 +83,6 @@ class SplashWindow:
     def _run_task(self):
         try:
             logger.info("Running loading task...")
-
             result = self.task(self._progress_callback)
             logger.info("Loading task complete.")
             self.queue.put(("success", result))
@@ -117,6 +117,5 @@ class SplashWindow:
     def _cleanup(self):
         """Remove splash widgets and restore window frame."""
         self.progress.stop()
-        self.container.destroy()  # Destroy the splash content
-        self.root.overrideredirect(False)  # Restore window decorations
-        self.root.withdraw()  # Hide root until app is ready to show it
+        self.container.destroy()
+        self.root.withdraw()

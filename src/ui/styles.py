@@ -1,10 +1,14 @@
 import tkinter
 from tkinter import ttk
 import sys
+import os
+from src.logger import create_logger
+
+logger = create_logger()
 
 
 class Theme:
-    # Default Color Variables (will be overwritten by apply)
+    # Default Color Variables
     BG_PRIMARY = "#1e1e1e"
     BG_SECONDARY = "#252526"
     BG_TERTIARY = "#333333"
@@ -25,89 +29,97 @@ class Theme:
     # Defined Palettes
     PALETTES = {
         "Dark": {
-            "BG_PRIMARY": "#1e1e1e",
-            "BG_SECONDARY": "#252526",
-            "BG_TERTIARY": "#333333",
+            "file": "dark_mode.tcl",
+            "BG_PRIMARY": "#333333",
+            "BG_SECONDARY": "#3d3d3d",
+            "BG_TERTIARY": "#3d3d3d",
             "TEXT_MAIN": "#ffffff",
             "TEXT_MUTED": "#858585",
-            "ACCENT": "#007acc",
+            "ACCENT": "#007fff",
             "ACCENT_HOVER": "#0098ff",
             "ERROR": "#f14c4c",
             "SUCCESS": "#4ec9b0",
         },
         "Light": {
-            "BG_PRIMARY": "#f0f0f0",
-            "BG_SECONDARY": "#ffffff",
+            "file": "light_mode.tcl",
+            "BG_PRIMARY": "#ffffff",
+            "BG_SECONDARY": "#f0f0f0",
             "BG_TERTIARY": "#e5e5e5",
-            "TEXT_MAIN": "#202020",
+            "TEXT_MAIN": "#000000",
             "TEXT_MUTED": "#666666",
-            "ACCENT": "#007acc",
+            "ACCENT": "#007fff",
             "ACCENT_HOVER": "#0098ff",
             "ERROR": "#d32f2f",
             "SUCCESS": "#388e3c",
         },
         "Plains": {
-            "BG_PRIMARY": "#fdfbf7",
-            "BG_SECONDARY": "#f2efe9",
-            "BG_TERTIARY": "#e6e2d8",
+            "file": "plains.tcl",
+            "BG_PRIMARY": "#f8f6f1",
+            "BG_SECONDARY": "#fcfbf9",
+            "BG_TERTIARY": "#fcfbf9",
             "TEXT_MAIN": "#2c2825",
             "TEXT_MUTED": "#8a8580",
-            "ACCENT": "#d4af37",
-            "ACCENT_HOVER": "#b8952b",
+            "ACCENT": "#f0e6bc",
+            "ACCENT_HOVER": "#d4af37",
             "ERROR": "#c0392b",
             "SUCCESS": "#27ae60",
         },
         "Island": {
-            "BG_PRIMARY": "#0f172a",
-            "BG_SECONDARY": "#1e293b",
-            "BG_TERTIARY": "#334155",
-            "TEXT_MAIN": "#e2e8f0",
-            "TEXT_MUTED": "#94a3b8",
-            "ACCENT": "#0ea5e9",
+            "file": "island.tcl",
+            "BG_PRIMARY": "#c1d7e9",
+            "BG_SECONDARY": "#dcf0f8",
+            "BG_TERTIARY": "#dcf0f8",
+            "TEXT_MAIN": "#0d1b2a",
+            "TEXT_MUTED": "#415a77",
+            "ACCENT": "#64a7d9",
             "ACCENT_HOVER": "#38bdf8",
             "ERROR": "#ef4444",
             "SUCCESS": "#10b981",
         },
         "Swamp": {
-            "BG_PRIMARY": "#1a161f",
-            "BG_SECONDARY": "#26202e",
-            "BG_TERTIARY": "#3b3247",
-            "TEXT_MAIN": "#eaddf0",
-            "TEXT_MUTED": "#8e8696",
-            "ACCENT": "#a855f7",
+            "file": "swamp.tcl",
+            "BG_PRIMARY": "#2a272a",
+            "BG_SECONDARY": "#3e3b3e",
+            "BG_TERTIARY": "#3e3b3e",
+            "TEXT_MAIN": "#e0d8e0",
+            "TEXT_MUTED": "#a090a0",
+            "ACCENT": "#89718b",
             "ACCENT_HOVER": "#c084fc",
             "ERROR": "#cf6679",
             "SUCCESS": "#03dac6",
         },
         "Mountain": {
-            "BG_PRIMARY": "#261212",
-            "BG_SECONDARY": "#381818",
-            "BG_TERTIARY": "#4f2121",
-            "TEXT_MAIN": "#ffe5e5",
-            "TEXT_MUTED": "#bfa3a3",
-            "ACCENT": "#ff5722",
+            "file": "mountain.tcl",
+            "BG_PRIMARY": "#f4d6cf",
+            "BG_SECONDARY": "#f9e8e3",
+            "BG_TERTIARY": "#f9e8e3",
+            "TEXT_MAIN": "#3b1612",
+            "TEXT_MUTED": "#8a504a",
+            "ACCENT": "#e79c91",
             "ACCENT_HOVER": "#ff8a65",
             "ERROR": "#ff5252",
             "SUCCESS": "#69f0ae",
         },
         "Forest": {
-            "BG_PRIMARY": "#0b1f11",
-            "BG_SECONDARY": "#122e1b",
-            "BG_TERTIARY": "#1b4228",
-            "TEXT_MAIN": "#e8f5e9",
-            "TEXT_MUTED": "#81c784",
-            "ACCENT": "#2ecc71",
+            "file": "forest.tcl",
+            "BG_PRIMARY": "#cbd9c7",
+            "BG_SECONDARY": "#e3ebe1",
+            "BG_TERTIARY": "#e3ebe1",
+            "TEXT_MAIN": "#1a2f1c",
+            "TEXT_MUTED": "#5a7a5e",
+            "ACCENT": "#90b589",
             "ACCENT_HOVER": "#4ade80",
             "ERROR": "#ff6b6b",
             "SUCCESS": "#a3e635",
         },
         "Wastes": {
-            "BG_PRIMARY": "#27272a",
-            "BG_SECONDARY": "#3f3f46",
-            "BG_TERTIARY": "#52525b",
-            "TEXT_MAIN": "#f4f4f5",
-            "TEXT_MUTED": "#a1a1aa",
-            "ACCENT": "#2dd4bf",
+            "file": "wastes.tcl",
+            "BG_PRIMARY": "#d6d4d4",
+            "BG_SECONDARY": "#e8e8e8",
+            "BG_TERTIARY": "#e8e8e8",
+            "TEXT_MAIN": "#2b2b2b",
+            "TEXT_MUTED": "#757575",
+            "ACCENT": "#a9a7a7",
             "ACCENT_HOVER": "#5eead4",
             "ERROR": "#f87171",
             "SUCCESS": "#34d399",
@@ -119,9 +131,12 @@ class Theme:
         """Applies the selected theme to the application."""
         palette = cls.PALETTES.get(theme_name, cls.PALETTES["Dark"])
 
+        # Update Python Color Constants
         for key, value in palette.items():
-            setattr(cls, key, value)
+            if key != "file":
+                setattr(cls, key, value)
 
+        # Configure Tkinter Styles
         style = ttk.Style(root)
         style.theme_use("clam")
 
@@ -180,6 +195,14 @@ class Theme:
         )
         style.map("Treeview.Heading", background=[("active", cls.BG_TERTIARY)])
 
+        # Mapping to prevent color shift on focus loss
+        # We explicitly set selected background for !focus to match selected
+        style.map(
+            "Treeview",
+            background=[("selected", cls.ACCENT)],
+            foreground=[("selected", cls.TEXT_MAIN)],
+        )
+
         # Labels
         style.configure("TLabel", background=cls.BG_PRIMARY, foreground=cls.TEXT_MAIN)
         style.configure(
@@ -216,6 +239,40 @@ class Theme:
         style.configure(
             "TCheckbutton", background=cls.BG_PRIMARY, foreground=cls.TEXT_MAIN
         )
+        style.map("TCheckbutton", background=[("active", cls.BG_PRIMARY)])
 
-        # Apply background to root window
+        # Load TCL File (if exists, to override specific OS behaviors)
+        filename = palette.get("file", "dark_mode.tcl")
+        paths_to_check = [filename, os.path.join("themes", filename)]
+        if hasattr(sys, "_MEIPASS"):
+            paths_to_check.append(os.path.join(sys._MEIPASS, "themes", filename))
+
+        for tcl_file in paths_to_check:
+            if os.path.exists(tcl_file):
+                try:
+                    root.tk.call("source", tcl_file)
+                    break
+                except Exception as e:
+                    logger.error(f"Failed to load theme {tcl_file}: {e}")
+
+        # Force Root Background Update
         root.configure(bg=cls.BG_PRIMARY)
+
+        # Update Toplevels recursively
+        for widget in root.winfo_children():
+            if isinstance(widget, tkinter.Toplevel):
+                widget.configure(bg=cls.BG_PRIMARY)
+                # Force redraw of child widgets
+                for child in widget.winfo_children():
+                    if isinstance(child, ttk.Frame):
+                        # Re-applying the style name forces a refresh
+                        current_style = child.cget("style") or "TFrame"
+                        child.configure(style=current_style)
+
+    @staticmethod
+    def _recursive_configure(widget, **kwargs):
+        try:
+            if isinstance(widget, (tkinter.Toplevel, tkinter.Tk)):
+                widget.configure(**kwargs)
+        except Exception:
+            pass

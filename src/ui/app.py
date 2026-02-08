@@ -34,16 +34,16 @@ class DraftApp:
         self.configuration = configuration
         self.root = root
 
-        # Clean up Root (Remove Splash widgets if any remain)
         for widget in self.root.winfo_children():
             widget.destroy()
 
-        # Configure Root
         self.root.deiconify()
+        self.root.geometry("")
+        self.root.minsize(900, 600)
+
         self.root.title(f"MTGA Draft Tool v{constants.APPLICATION_VERSION}")
         self.root.protocol("WM_DELETE_WINDOW", self._on_close)
 
-        # Re-apply theme just to be safe
         current_theme = getattr(configuration.settings, "theme", "Dark")
         Theme.apply(self.root, current_theme)
 
@@ -73,8 +73,6 @@ class DraftApp:
 
         self._start_log_check()
         self.root.after(1000, self._update_loop)
-
-        # Defer notifications so window renders first
         self.root.after(500, self._init_notifications)
 
     def _init_notifications(self):

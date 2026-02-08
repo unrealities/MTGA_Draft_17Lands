@@ -16,7 +16,6 @@ from src.card_logic import row_color_tag, field_process_sort
 from src.ui.styles import Theme
 
 
-# --- Utility Functions ---
 def identify_safe_coordinates(
     root: tkinter.Tk | tkinter.Toplevel,
     window_width: int,
@@ -49,9 +48,6 @@ def identify_safe_coordinates(
         location_y = offset_y
 
     return location_x, location_y
-
-
-# --- Components ---
 
 
 class AutocompleteEntry(tkinter.Entry):
@@ -370,7 +366,6 @@ class ModernTreeview(ttk.Treeview):
             default_anchor = tkinter.CENTER
 
             if stretch_all:
-                # Fill space evenly
                 self.column(
                     col,
                     anchor=config.get("anchor", default_anchor),
@@ -379,7 +374,6 @@ class ModernTreeview(ttk.Treeview):
                 )
             elif col in ["Name", "Card", "Column1", "Set"]:
                 default_anchor = tkinter.W
-                # Main Name Column: Expand
                 self.column(
                     col,
                     anchor=config.get("anchor", default_anchor),
@@ -388,8 +382,6 @@ class ModernTreeview(ttk.Treeview):
                     width=200,
                 )
             else:
-                # Numeric Columns: Compact
-                # Use specified width or default to 60
                 width = config.get("width", 60)
                 self.column(
                     col,
@@ -419,7 +411,14 @@ class ModernTreeview(ttk.Treeview):
         l = [(self.set(k, col), k) for k in self.get_children("")]
 
         def sort_key(val_tuple):
-            return field_process_sort(val_tuple[0])
+            val = val_tuple[0]
+            processed_val = field_process_sort(val)
+
+            if isinstance(processed_val, (int, float)):
+                return (0, processed_val)
+            else:
+                # Handle None/Empty/Strings
+                return (1, str(processed_val))
 
         l.sort(key=sort_key, reverse=reverse)
         for index, (val, k) in enumerate(l):
