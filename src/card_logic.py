@@ -250,18 +250,26 @@ class CardResult:
 
 
 def field_process_sort(field_value):
-    """This function collects the numeric order of a letter grade for the purpose of sorting"""
+    """
+    Returns the numeric rank of a grade or a float for percentages.
+    Used by UI components for consistent sorting.
+    """
     processed_value = field_value
 
     try:
-        # Remove the tier asterisks before sorting
         if isinstance(field_value, str):
-            field_value = field_value.replace("*", "")
+            # Strip whitespace and remove tier asterisks
+            # This ensures "A " and "A" are treated identically.
+            field_value = field_value.replace("*", "").strip()
+            
         if field_value in constants.GRADE_ORDER_DICT:
             processed_value = constants.GRADE_ORDER_DICT[field_value]
-        elif field_value == constants.RESULT_UNKNOWN_STRING:
+        elif field_value == constants.RESULT_UNKNOWN_STRING or not field_value:
             processed_value = constants.RESULT_UNKNOWN_VALUE
-    except ValueError:
+        else:
+            # Try to convert numeric strings (percentages) to floats
+            processed_value = float(field_value)
+    except (ValueError, TypeError):
         pass
     return processed_value
 
@@ -363,56 +371,40 @@ def deck_card_search(
 
 
 def get_deck_metrics(deck):
-    """This function determines the total CMC, count, and distribution of a collection of cards"""
+    """Calculates distribution and average CMC. Uses safe .get() for startup stability."""
     metrics = DeckMetrics()
     cmc_total = 0
     try:
-
         metrics.total_cards = len(deck)
-
         for card in deck:
-            if any(
-                x in [constants.CARD_TYPE_CREATURE]
-                for x in card[constants.DATA_FIELD_TYPES]
-            ):
+            # Use .get() to avoid crashing if card is temporarily a skeleton object
+            c_types = card.get(constants.DATA_FIELD_TYPES, [])
+            c_cmc = card.get(constants.DATA_FIELD_CMC, 0)
+
+            if constants.CARD_TYPE_CREATURE in c_types:
                 metrics.creature_count += 1
                 metrics.total_non_land_cards += 1
-                cmc_total += card[constants.DATA_FIELD_CMC]
-
-                index = int(
-                    min(
-                        card[constants.DATA_FIELD_CMC],
-                        len(metrics.distribution_creatures) - 1,
-                    )
-                )
-                metrics.distribution_creatures[index] += 1
+                cmc_total += c_cmc
+                idx = int(min(c_cmc, len(metrics.distribution_creatures) - 1))
+                metrics.distribution_creatures[idx] += 1
             else:
-                if constants.CARD_TYPE_LAND not in card[constants.DATA_FIELD_TYPES]:
-                    cmc_total += card[constants.DATA_FIELD_CMC]
+                if constants.CARD_TYPE_LAND not in c_types:
+                    cmc_total += c_cmc
                     metrics.total_non_land_cards += 1
-                    index = int(
-                        min(
-                            card[constants.DATA_FIELD_CMC],
-                            len(metrics.distribution_noncreatures) - 1,
-                        )
-                    )
-                    metrics.distribution_noncreatures[index] += 1
+                    idx = int(min(c_cmc, len(metrics.distribution_noncreatures) - 1))
+                    metrics.distribution_noncreatures[idx] += 1
                 metrics.noncreature_count += 1
 
-            index = int(
-                min(card[constants.DATA_FIELD_CMC], len(metrics.distribution_all) - 1)
-            )
-            metrics.distribution_all[index] += 1
+            idx = int(min(c_cmc, len(metrics.distribution_all) - 1))
+            metrics.distribution_all[idx] += 1
 
         metrics.cmc_average = (
             cmc_total / metrics.total_non_land_cards
             if metrics.total_non_land_cards
             else 0.0
         )
-
     except Exception as error:
-        logger.error(error)
-
+        logger.error(f"card_logic.get_deck_metrics: {error}")
     return metrics
 
 

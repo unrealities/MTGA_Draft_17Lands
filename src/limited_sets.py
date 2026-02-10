@@ -101,13 +101,13 @@ class LimitedSets:
         self.latest_set = ""
 
     def retrieve_limited_sets(self) -> SetDictionary:
-        """Retrieve a list of sets from 17Lands and Scryfall"""
+        """Retrieve a list of sets. Ensures dynamic substitutions always run."""
         self.limited_sets = SetDictionary()
 
-        # Check Cache
         if self._is_cache_valid():
             logger.info("Using cached set list.")
             self.limited_sets, _ = self.read_sets_file()
+            self.__substitute_strings()
             return self.limited_sets
 
         logger.info("Cache expired or missing. Fetching new set list from network.")
@@ -117,6 +117,24 @@ class LimitedSets:
         self.__assemble_limited_sets()
         self.__substitute_strings()
         return self.limited_sets
+
+    def __substitute_strings(self):
+        """Substitute {LATEST} and {DATESHIFT} in the set data."""
+        # Find the latest set code from 17Lands logic
+        latest = self.latest_set
+        if not latest and self.limited_sets.data:
+            # Fallback: get the set code of the first expansion in the dictionary
+            latest = next(iter(self.limited_sets.data.values())).set_code
+
+        for event in self.limited_sets.special_events:
+            if event.set_code == REPLACE_PHRASE_LATEST and latest:
+                event.set_code = latest
+
+        for data in self.limited_sets.data.values():
+            if data.start_date == REPLACE_PHRASE_DATE_SHIFT:
+                data.start_date = shift_date(
+                    datetime.date.today(), DATE_SHIFT_OFFSET_DAYS, "%Y-%m-%d"
+                )[1]
 
     def _is_cache_valid(self) -> bool:
         """Check if the local sets file exists and is recent."""

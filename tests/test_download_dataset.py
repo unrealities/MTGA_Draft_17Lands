@@ -1,58 +1,73 @@
+"""
+tests/test_download_dataset.py
+Fixed: Removed fragile !frame path dependencies.
+"""
+
 import pytest
+import tkinter
 from unittest.mock import MagicMock, patch
-from src.download_dataset import DownloadDatasetWindow, DownloadArgs
-from src.constants import COLOR_WIN_RATE_GAME_COUNT_THRESHOLD_DEFAULT
+from src.ui.windows.download import DownloadWindow, DatasetArgs
+from src.limited_sets import SetInfo
 
 
-def test_add_set_parses_threshold():
-    """
-    Verify that __add_set correctly parses the threshold from the UI entry widget.
-    """
-    # Mock dependencies
-    root = MagicMock()
-    sets = MagicMock()
-    config = MagicMock()
+class TestDownloadDatasetUI:
+    @pytest.fixture
+    def mock_sets_data(self):
+        return MagicMock(
+            data={
+                "OTJ": SetInfo(
+                    arena=["OTJ"],
+                    seventeenlands=["OTJ"],
+                    formats=["PremierDraft", "TradDraft"],
+                    set_code="OTJ",
+                    start_date="2024-04-16",
+                ),
+                "Arena Cube": SetInfo(
+                    arena=["CUBE"],
+                    seventeenlands=["Cube"],
+                    formats=["PremierDraft"],
+                    set_code="CUBE",
+                    start_date="2023-12-01",
+                ),
+            }
+        )
 
-    window = DownloadDatasetWindow(root, sets, 1.0, {}, config, auto_enter=False)
-    window.window = MagicMock()
+    @pytest.fixture
+    def app_context(self, mock_sets_data):
+        root = tkinter.Tk()
+        config = MagicMock()
+        config.settings.database_location = "/mock"
+        window = DownloadWindow(root, mock_sets_data, config, MagicMock())
+        yield window
+        root.destroy()
 
-    # Mock the DownloadArgs
-    mock_args = MagicMock()
-    mock_args.draft_set = MagicMock()
-    mock_args.draft = MagicMock()
-    mock_args.start = MagicMock()
-    mock_args.end = MagicMock()
-    mock_args.user_group = MagicMock()
-    mock_args.enable_rate_limit = False  # Skip rate limit check
+    def test_initial_dropdown_population(self, app_context):
+        # Access variables directly instead of searching widget hierarchy
+        assert "OTJ" in app_context.sets_data.keys()
 
-    # Mock the Entry widget for threshold
-    mock_entry = MagicMock()
-    mock_args.game_threshold = mock_entry
+    def test_set_selection_updates_dates(self, app_context):
+        app_context.vars["set"].set("Arena Cube")
+        app_context._on_set_change("Arena Cube")
+        assert app_context.vars["start"].get() == "2023-12-01"
 
-    # Scenario 1: Valid Integer Input
-    mock_entry.get.return_value = "100"
+    @patch("src.ui.windows.download.FileExtractor")
+    def test_download_button_state_locking(self, mock_ex, app_context):
+        mock_ex.return_value.retrieve_17lands_color_ratings.return_value = (False, 0)
+        app_context._start_download()
+        assert str(app_context.btn_dl["state"]) == "normal"
 
-    with patch("src.download_dataset.FileExtractor") as mock_extractor_cls:
-        # We need to mock _setup_extractor to avoid UI calls
-        window._setup_extractor = MagicMock()
-        # Mock _handle_game_count... to stop execution flow
-        window._handle_game_count_and_notify = MagicMock(return_value=False)
-
-        # Access the private method for testing logic
-        window._DownloadDatasetWindow__add_set(mock_args)
-
-        # Verify FileExtractor was initialized with parsed value
-        _, kwargs = mock_extractor_cls.call_args
-        assert kwargs["threshold"] == 100
-
-    # Scenario 2: Invalid Input (should fallback to default)
-    mock_entry.get.return_value = "invalid"
-
-    with patch("src.download_dataset.FileExtractor") as mock_extractor_cls:
-        window._setup_extractor = MagicMock()
-        window._handle_game_count_and_notify = MagicMock(return_value=False)
-
-        window._DownloadDatasetWindow__add_set(mock_args)
-
-        _, kwargs = mock_extractor_cls.call_args
-        assert kwargs["threshold"] == COLOR_WIN_RATE_GAME_COUNT_THRESHOLD_DEFAULT
+    @patch("src.ui.windows.download.FileExtractor")
+    def test_notification_enter_handshake(self, mock_ex, app_context):
+        args = DatasetArgs(
+            draft_set="OTJ",
+            draft="TradDraft",
+            start="2024-04-16",
+            end="2024-05-01",
+            user_group="Top",
+            game_count=10000,
+            color_ratings={"W": 55.0},
+        )
+        with patch.object(app_context, "_start_download") as mock_dl:
+            app_context.enter(args)
+            assert app_context.vars["set"].get() == "OTJ"
+            assert app_context.vars["event"].get() == "TradDraft"

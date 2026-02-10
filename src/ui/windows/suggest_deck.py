@@ -1,168 +1,156 @@
 """
 src/ui/windows/suggest_deck.py
-
-This module implements the Suggested Decks window.
-It analyzes the user's taken cards and proposes viable deck builds (Aggro, Midrange, Control)
-based on color combinations and win rates.
+Integrated Deck Builder Panel.
 """
 
 import tkinter
 from tkinter import ttk
-from typing import Dict, Any
+from typing import Dict, Any, List
 
 from src import constants
 from src.configuration import Configuration
-from src.card_logic import suggest_deck, copy_deck, get_card_colors
+from src.card_logic import suggest_deck, copy_deck
 from src.ui.styles import Theme
-from src.ui.components import ModernTreeview, identify_safe_coordinates, CardToolTip
+from src.ui.components import ModernTreeview, CardToolTip
 
 
-class SuggestDeckWindow(tkinter.Toplevel):
-    """
-    Window for displaying deck suggestions generated from the taken card pool.
-    """
-
+class SuggestDeckPanel(ttk.Frame):
     def __init__(self, parent, draft_manager, configuration: Configuration):
         super().__init__(parent)
         self.draft = draft_manager
         self.configuration = configuration
 
-        self.title("Suggested Decks")
-        self.resizable(False, True)
-        self.configure(bg=Theme.BG_PRIMARY)
-        self.transient(parent)
-        self.attributes("-topmost", True)
+        self.suggestions: Dict[str, Any] = {}
+        self.current_deck_list: List[Dict] = []
 
-        # State
-        self.suggestions = {}
-        self.current_deck_list = []
-
-        # Build UI
         self._build_ui()
+        self.refresh()
 
-        # Initial Calculation
+    def refresh(self):
+        """Triggers the archetype building algorithm and refreshes the view."""
         self._calculate_suggestions()
 
-        # Position
-        self.update_idletasks()
-        self._position_window(parent)
-
     def _build_ui(self):
-        container = ttk.Frame(self, padding=10)
-        container.pack(fill="both", expand=True)
+        self.header = ttk.Frame(self, style="Card.TFrame", padding=5)
+        self.header.pack(fill="x", pady=(0, 5))
 
-        # --- Controls Area ---
-        controls_frame = ttk.Frame(container, style="Card.TFrame", padding=10)
-        controls_frame.pack(fill="x", pady=(0, 10))
+        ttk.Label(
+            self.header,
+            text="ARCHETYPE:",
+            style="SubHeader.TLabel",
+            background=Theme.BG_SECONDARY,
+        ).pack(side="left", padx=5)
 
-        # Deck Selection Dropdown
-        ttk.Label(controls_frame, text="Archetype:").pack(side="left")
-
-        self.var_deck_selection = tkinter.StringVar()
-        self.om_deck_selection = ttk.OptionMenu(
-            controls_frame,
-            self.var_deck_selection,
-            "",  # Default value
+        self.var_archetype = tkinter.StringVar()
+        self.om_archetype = ttk.OptionMenu(
+            self.header,
+            self.var_archetype,
+            "",
             style="TMenubutton",
-            command=self._on_deck_change,
+            command=self._on_deck_selection_change,
         )
-        self.om_deck_selection.pack(side="left", fill="x", expand=True, padx=10)
+        self.om_archetype.pack(side="left", padx=10, fill="x", expand=True)
 
-        # Copy Button
-        ttk.Button(
-            controls_frame, text="Copy to Clipboard", command=self._copy_to_clipboard
-        ).pack(side="right")
+        ttk.Button(self.header, text="Copy Deck", command=self._copy_to_clipboard).pack(
+            side="right", padx=5
+        )
 
-        # --- Table Area ---
-        columns = ["Card", "Count", "Color", "Cost", "Type"]
+        cols = ["Card", "#", "Cost", "Type"]
         headers = {
-            "Card": {"width": 200, "anchor": tkinter.W},
-            "Count": {"width": 50, "anchor": tkinter.CENTER},
-            "Color": {"width": 50, "anchor": tkinter.CENTER},
+            "Card": {"width": 250, "anchor": tkinter.W},
+            "#": {"width": 40, "anchor": tkinter.CENTER},
             "Cost": {"width": 50, "anchor": tkinter.CENTER},
-            "Type": {"width": 100, "anchor": tkinter.W},
+            "Type": {"width": 120, "anchor": tkinter.W},
         }
 
-        self.table = ModernTreeview(
-            container, columns=columns, headers_config=headers, height=20
-        )
+        self.table = ModernTreeview(self, columns=cols, headers_config=headers)
         self.table.pack(fill="both", expand=True)
         self.table.bind("<<TreeviewSelect>>", self._on_selection)
 
     def _calculate_suggestions(self):
-        """Generates deck suggestions using card_logic."""
+        """Invokes the card_logic to build decks based on current pool."""
         try:
-            taken_cards = self.draft.retrieve_taken_cards()
+            raw_pool = self.draft.retrieve_taken_cards()
             metrics = self.draft.retrieve_set_metrics()
 
-            # This returns a dict: { "WB": { "type": "Mid", "rating": 1234, "deck_cards": [...], ... } }
-            raw_suggestions = suggest_deck(taken_cards, metrics, self.configuration)
+            raw_results = suggest_deck(raw_pool, metrics, self.configuration)
 
-            if not raw_suggestions:
-                self._update_dropdown(["No viable decks found"])
+            if not raw_results:
+                msg = "No viable decks yet"
+                self.suggestions = {}
+                self._update_dropdown_options([msg])
+                self.var_archetype.set(msg)
+                self._clear_table()
                 return
 
-            # Format for dropdown: "WB Mid (Rating: 1357)"
             self.suggestions = {}
-            dropdown_options = []
+            dropdown_labels = []
 
-            # Sort suggestions by rating desc
+            # Sort suggested archetypes by internal 'Deck Rating' descending
             sorted_keys = sorted(
-                raw_suggestions.keys(),
-                key=lambda k: raw_suggestions[k]["rating"],
+                raw_results.keys(),
+                key=lambda k: raw_results[k].get("rating", 0),
                 reverse=True,
             )
 
-            for key in sorted_keys:
-                data = raw_suggestions[key]
-                label = f"{key} {data['type']} (Rating: {data['rating']})"
+            for k in sorted_keys:
+                data = raw_results[k]
+                label = f"{k} {data.get('type', 'Unknown')} (Rating: {data.get('rating', 0)})"
                 self.suggestions[label] = data
-                dropdown_options.append(label)
+                dropdown_labels.append(label)
 
-            self._update_dropdown(dropdown_options)
+            current_sel = self.var_archetype.get()
+            self._update_dropdown_options(dropdown_labels)
 
-            # Select best deck by default
-            if dropdown_options:
-                self.var_deck_selection.set(dropdown_options[0])
-                self._display_deck(dropdown_options[0])
+            # 1% Developer logic: Always ensure the UI reflects a valid state
+            if current_sel in dropdown_labels:
+                self._on_deck_selection_change(current_sel)
+            elif dropdown_labels:
+                self._on_deck_selection_change(dropdown_labels[0])
 
-        except Exception as e:
-            print(f"Error calculating suggestions: {e}")
-            self._update_dropdown(["Error generating decks"])
+        except Exception:
+            msg = "Builder Error"
+            self.suggestions = {}
+            self._update_dropdown_options([msg])
+            self.var_archetype.set(msg)
+            self._clear_table()
 
-    def _update_dropdown(self, options):
-        """Refreshes the OptionMenu items."""
-        menu = self.om_deck_selection["menu"]
+    def _update_dropdown_options(self, options: List[str]):
+        """Safely updates the OptionMenu entries."""
+        menu = self.om_archetype["menu"]
         menu.delete(0, "end")
-
         for opt in options:
+            # We don't manually set the Var here because the callback handles it now
             menu.add_command(
-                label=opt,
-                command=lambda val=opt: [
-                    self.var_deck_selection.set(val),
-                    self._on_deck_change(val),
-                ],
+                label=opt, command=lambda v=opt: self._on_deck_selection_change(v)
             )
 
-        if options:
-            self.var_deck_selection.set(options[0])
+    def _on_deck_selection_change(self, label: str):
+        """
+        Single Source of Truth for deck switching.
+        Updates the variable, the internal cache pointer, and the render.
+        """
+        if label in self.suggestions:
+            self.var_archetype.set(label)  # Sync the UI Label
+            self._render_deck(label)
 
-    def _on_deck_change(self, value):
-        if value in self.suggestions:
-            self._display_deck(value)
-
-    def _display_deck(self, label):
-        """Populates the table with the selected deck's cards."""
-        # 1. Clear Table
+    def _clear_table(self):
         for item in self.table.get_children():
             self.table.delete(item)
+        self.current_deck_list = []
 
+    def _render_deck(self, label: str):
+        """Populates the table with the cards in the chosen deck."""
+        self._clear_table()
         data = self.suggestions.get(label)
         if not data:
             return
 
-        self.current_deck_list = data["deck_cards"]
-        # Sort by CMC for display
+        self.current_deck_list = data.get("deck_cards", [])
+        if not isinstance(self.current_deck_list, list):
+            self.current_deck_list = []
+
+        # Sort deck by CMC -> Name
         self.current_deck_list.sort(
             key=lambda x: (
                 x.get(constants.DATA_FIELD_CMC, 0),
@@ -170,87 +158,45 @@ class SuggestDeckWindow(tkinter.Toplevel):
             )
         )
 
-        # 2. Populate
+        from src.card_logic import row_color_tag
+
         for idx, card in enumerate(self.current_deck_list):
             name = card.get(constants.DATA_FIELD_NAME, "Unknown")
             count = card.get(constants.DATA_FIELD_COUNT, 1)
             cmc = card.get(constants.DATA_FIELD_CMC, 0)
+            types = " ".join(card.get(constants.DATA_FIELD_TYPES, []))
 
-            # Types formatted as string
-            types_list = card.get(constants.DATA_FIELD_TYPES, [])
-            types_str = " ".join(types_list)
-
-            # Colors logic
-            # Use 'colors' field if available (Lands), otherwise calculate from Mana Cost
-            if (
-                constants.CARD_TYPE_LAND in types_list
-                or self.configuration.settings.color_identity_enabled
-            ):
-                colors = "".join(card.get(constants.DATA_FIELD_COLORS, []))
-            else:
-                mana_cost = card.get(constants.DATA_FIELD_MANA_COST, "")
-                colors = "".join(list(get_card_colors(mana_cost).keys()))
-
-            # Row Tag
-            from src.card_logic import row_color_tag
-
-            tag = ""
-            if self.configuration.settings.card_colors_enabled:
-                # We pass 'colors' string or dict depending on what row_color_tag expects
-                # row_color_tag expects a dict of colors usually, or list
-                # Let's convert string "WB" to ["W", "B"]
-                color_list = list(colors)
-                tag = row_color_tag(color_list)
-            else:
-                tag = "bw_odd" if idx % 2 != 0 else "bw_even"
-
+            tag = (
+                row_color_tag(card.get(constants.DATA_FIELD_MANA_COST, ""))
+                if self.configuration.settings.card_colors_enabled
+                else ("bw_odd" if idx % 2 == 0 else "bw_even")
+            )
             self.table.insert(
-                "",
-                "end",
-                iid=idx,
-                values=(name, count, colors, cmc, types_str),
-                tags=(tag,),
+                "", "end", iid=idx, values=(name, count, cmc, types), tags=(tag,)
             )
 
     def _copy_to_clipboard(self):
-        """Formats the current deck for Arena and copies to clipboard."""
-        selection = self.var_deck_selection.get()
+        selection = self.var_archetype.get()
         if selection in self.suggestions:
             deck_data = self.suggestions[selection]
-            deck_str = copy_deck(
-                deck_data["deck_cards"], deck_data.get("sideboard_cards")
+            export_text = copy_deck(
+                deck_data.get("deck_cards", []), deck_data.get("sideboard_cards")
             )
-
             self.clipboard_clear()
-            self.clipboard_append(deck_str)
-            self.update()
+            self.clipboard_append(export_text)
 
     def _on_selection(self, event):
-        """Displays tooltip for selected card."""
         selection = self.table.selection()
         if not selection:
             return
-
         idx = int(selection[0])
         if idx < len(self.current_deck_list):
             card = self.current_deck_list[idx]
-
-            # Prepare data for tooltip
-            stats = card.get(constants.DATA_FIELD_DECK_COLORS, {})
-            images = card.get(constants.DATA_SECTION_IMAGES, [])
-
             CardToolTip(
                 self.table,
-                card[constants.DATA_FIELD_NAME],
-                stats,
-                images,
+                card.get(constants.DATA_FIELD_NAME, "Unknown"),
+                card.get(constants.DATA_FIELD_DECK_COLORS, {}),
+                card.get(constants.DATA_SECTION_IMAGES, []),
                 self.configuration.features.images_enabled,
                 1.0,
-                None,
             )
-
-    def _position_window(self, parent):
-        w = self.winfo_width()
-        h = self.winfo_height()
-        x, y = identify_safe_coordinates(parent, w, h, 400, 50)
-        self.wm_geometry(f"+{x}+{y}")

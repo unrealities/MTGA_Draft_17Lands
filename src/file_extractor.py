@@ -25,6 +25,7 @@ if not os.path.exists(constants.TEMP_FOLDER):
 
 
 def initialize_card_data(card_data):
+    """Initializes a card object with default values to prevent KeyErrors in UI logic."""
     card_data[constants.DATA_FIELD_DECK_COLORS] = {}
     for color in constants.DECK_COLORS:
         card_data[constants.DATA_FIELD_DECK_COLORS][color] = {
@@ -32,6 +33,12 @@ def initialize_card_data(card_data):
             for x in constants.DATA_FIELD_17LANDS_DICT
             if x != constants.DATA_SECTION_IMAGES
         }
+    if constants.DATA_FIELD_CMC not in card_data:
+        card_data[constants.DATA_FIELD_CMC] = 0
+    if constants.DATA_FIELD_TYPES not in card_data:
+        card_data[constants.DATA_FIELD_TYPES] = []
+    if constants.DATA_FIELD_NAME not in card_data:
+        card_data[constants.DATA_FIELD_NAME] = "Unknown Card"
 
 
 def check_set_data(set_data, ratings_data):

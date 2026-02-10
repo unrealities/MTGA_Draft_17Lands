@@ -112,7 +112,8 @@ class SplashWindow:
                     return
 
         except queue.Empty:
-            self.root.after(100, self._check_queue)
+            # Poll frequently for snappy UI updates
+            self.root.after(20, self._check_queue)
 
     def _cleanup(self):
         """Remove splash widgets and restore window frame."""

@@ -2,145 +2,143 @@ import tkinter
 from tkinter import ttk
 import sys
 import os
-from src.logger import create_logger
-
-logger = create_logger()
 
 
 class Theme:
-    # Default Color Variables
+    """
+    Unified Styling Engine.
+    Supports 100% live theme switching by avoiding hardcoded background
+    parameters in UI code and using named ttk Styles instead.
+    """
+
     BG_PRIMARY = "#1e1e1e"
     BG_SECONDARY = "#252526"
     BG_TERTIARY = "#333333"
-
     TEXT_MAIN = "#ffffff"
-    TEXT_MUTED = "#858585"
+    TEXT_MUTED = "#888888"
+    ACCENT = "#4dabff"
+    SUCCESS = "#00e676"
+    ERROR = "#ff5f5f"
+    WARNING = "#ffcc00"
 
-    ACCENT = "#007acc"
-    ACCENT_HOVER = "#0098ff"
+    FONT_FAMILY = "Verdana" if sys.platform == "darwin" else "Segoe UI"
+    FONT_SIZE_SMALL = 8
+    FONT_SIZE_MAIN = 9
 
-    ERROR = "#f14c4c"
-    SUCCESS = "#4ec9b0"
-
-    FONT_FAMILY = "Segoe UI" if sys.platform == "win32" else "San Francisco"
-    FONT_SIZE_MAIN = 10
-    FONT_SIZE_HEADER = 11
-
-    # Defined Palettes
     PALETTES = {
         "Dark": {
             "file": "dark_mode.tcl",
-            "BG_PRIMARY": "#333333",
-            "BG_SECONDARY": "#3d3d3d",
-            "BG_TERTIARY": "#3d3d3d",
-            "TEXT_MAIN": "#ffffff",
-            "TEXT_MUTED": "#858585",
-            "ACCENT": "#007fff",
-            "ACCENT_HOVER": "#0098ff",
-            "ERROR": "#f14c4c",
-            "SUCCESS": "#4ec9b0",
+            "bg": "#1e1e1e",
+            "sec": "#252526",
+            "ter": "#333333",
+            "txt": "#ffffff",
+            "mut": "#888888",
+            "acc": "#4dabff",
+            "err": "#ff5f5f",
+            "suc": "#00e676",
         },
         "Light": {
             "file": "light_mode.tcl",
-            "BG_PRIMARY": "#ffffff",
-            "BG_SECONDARY": "#f0f0f0",
-            "BG_TERTIARY": "#e5e5e5",
-            "TEXT_MAIN": "#000000",
-            "TEXT_MUTED": "#666666",
-            "ACCENT": "#007fff",
-            "ACCENT_HOVER": "#0098ff",
-            "ERROR": "#d32f2f",
-            "SUCCESS": "#388e3c",
-        },
-        "Plains": {
-            "file": "plains.tcl",
-            "BG_PRIMARY": "#f8f6f1",
-            "BG_SECONDARY": "#fcfbf9",
-            "BG_TERTIARY": "#fcfbf9",
-            "TEXT_MAIN": "#2c2825",
-            "TEXT_MUTED": "#8a8580",
-            "ACCENT": "#f0e6bc",
-            "ACCENT_HOVER": "#d4af37",
-            "ERROR": "#c0392b",
-            "SUCCESS": "#27ae60",
-        },
-        "Island": {
-            "file": "island.tcl",
-            "BG_PRIMARY": "#c1d7e9",
-            "BG_SECONDARY": "#dcf0f8",
-            "BG_TERTIARY": "#dcf0f8",
-            "TEXT_MAIN": "#0d1b2a",
-            "TEXT_MUTED": "#415a77",
-            "ACCENT": "#64a7d9",
-            "ACCENT_HOVER": "#38bdf8",
-            "ERROR": "#ef4444",
-            "SUCCESS": "#10b981",
-        },
-        "Swamp": {
-            "file": "swamp.tcl",
-            "BG_PRIMARY": "#2a272a",
-            "BG_SECONDARY": "#3e3b3e",
-            "BG_TERTIARY": "#3e3b3e",
-            "TEXT_MAIN": "#e0d8e0",
-            "TEXT_MUTED": "#a090a0",
-            "ACCENT": "#89718b",
-            "ACCENT_HOVER": "#c084fc",
-            "ERROR": "#cf6679",
-            "SUCCESS": "#03dac6",
-        },
-        "Mountain": {
-            "file": "mountain.tcl",
-            "BG_PRIMARY": "#f4d6cf",
-            "BG_SECONDARY": "#f9e8e3",
-            "BG_TERTIARY": "#f9e8e3",
-            "TEXT_MAIN": "#3b1612",
-            "TEXT_MUTED": "#8a504a",
-            "ACCENT": "#e79c91",
-            "ACCENT_HOVER": "#ff8a65",
-            "ERROR": "#ff5252",
-            "SUCCESS": "#69f0ae",
+            "bg": "#ffffff",
+            "sec": "#f0f0f0",
+            "ter": "#e5e5e5",
+            "txt": "#000000",
+            "mut": "#757575",
+            "acc": "#007acc",
+            "err": "#d32f2f",
+            "suc": "#388e3c",
         },
         "Forest": {
             "file": "forest.tcl",
-            "BG_PRIMARY": "#cbd9c7",
-            "BG_SECONDARY": "#e3ebe1",
-            "BG_TERTIARY": "#e3ebe1",
-            "TEXT_MAIN": "#1a2f1c",
-            "TEXT_MUTED": "#5a7a5e",
-            "ACCENT": "#90b589",
-            "ACCENT_HOVER": "#4ade80",
-            "ERROR": "#ff6b6b",
-            "SUCCESS": "#a3e635",
+            "bg": "#cbd9c7",
+            "sec": "#e3ebe1",
+            "ter": "#90b589",
+            "txt": "#1a2f1c",
+            "mut": "#5a7a5e",
+            "acc": "#2e7d32",
+            "err": "#c0392b",
+            "suc": "#2e7d32",
+        },
+        "Island": {
+            "file": "island.tcl",
+            "bg": "#c1d7e9",
+            "sec": "#dcf0f8",
+            "ter": "#64a7d9",
+            "txt": "#0d1b2a",
+            "mut": "#415a77",
+            "acc": "#0077b6",
+            "err": "#ef4444",
+            "suc": "#10b981",
+        },
+        "Plains": {
+            "file": "plains.tcl",
+            "bg": "#f8f6f1",
+            "sec": "#fcfbf9",
+            "ter": "#f0e6bc",
+            "txt": "#2c2825",
+            "mut": "#8a8580",
+            "acc": "#d4af37",
+            "err": "#c0392b",
+            "suc": "#27ae60",
+        },
+        "Swamp": {
+            "file": "swamp.tcl",
+            "bg": "#2a272a",
+            "sec": "#3e3b3e",
+            "ter": "#5d405d",
+            "txt": "#e0d8e0",
+            "mut": "#a090a0",
+            "acc": "#c084fc",
+            "err": "#cf6679",
+            "suc": "#03dac6",
+        },
+        "Mountain": {
+            "file": "mountain.tcl",
+            "bg": "#f4d6cf",
+            "sec": "#f9e8e3",
+            "ter": "#e79c91",
+            "txt": "#3b1612",
+            "mut": "#8a504a",
+            "acc": "#d35400",
+            "err": "#ff1744",
+            "suc": "#69f0ae",
         },
         "Wastes": {
             "file": "wastes.tcl",
-            "BG_PRIMARY": "#d6d4d4",
-            "BG_SECONDARY": "#e8e8e8",
-            "BG_TERTIARY": "#e8e8e8",
-            "TEXT_MAIN": "#2b2b2b",
-            "TEXT_MUTED": "#757575",
-            "ACCENT": "#a9a7a7",
-            "ACCENT_HOVER": "#5eead4",
-            "ERROR": "#f87171",
-            "SUCCESS": "#34d399",
+            "bg": "#d6d4d4",
+            "sec": "#e8e8e8",
+            "ter": "#a9a7a7",
+            "txt": "#2b2b2b",
+            "mut": "#757575",
+            "acc": "#607d8b",
+            "err": "#f87171",
+            "suc": "#34d399",
         },
     }
 
     @classmethod
     def apply(cls, root, theme_name="Dark"):
-        """Applies the selected theme to the application."""
-        palette = cls.PALETTES.get(theme_name, cls.PALETTES["Dark"])
+        p = cls.PALETTES.get(theme_name, cls.PALETTES["Dark"])
+        cls.BG_PRIMARY, cls.BG_SECONDARY, cls.BG_TERTIARY = p["bg"], p["sec"], p["ter"]
+        cls.TEXT_MAIN, cls.TEXT_MUTED, cls.ACCENT = p["txt"], p["mut"], p["acc"]
+        cls.ERROR, cls.SUCCESS = p["err"], p["suc"]
 
-        # Update Python Color Constants
-        for key, value in palette.items():
-            if key != "file":
-                setattr(cls, key, value)
-
-        # Configure Tkinter Styles
         style = ttk.Style(root)
         style.theme_use("clam")
 
-        # Configure General Views
+        tcl_file = p["file"]
+        paths = [tcl_file, os.path.join("themes", tcl_file)]
+        if hasattr(sys, "_MEIPASS"):
+            paths.append(os.path.join(sys._MEIPASS, "themes", tcl_file))
+        for path in paths:
+            if os.path.exists(path):
+                try:
+                    root.tk.call("source", path)
+                    break
+                except:
+                    pass
+
+        # --- High-Density ttk Style Overrides ---
         style.configure(
             ".",
             background=cls.BG_PRIMARY,
@@ -148,131 +146,76 @@ class Theme:
             font=(cls.FONT_FAMILY, cls.FONT_SIZE_MAIN),
             borderwidth=0,
         )
-
-        # Configure Frames
         style.configure("TFrame", background=cls.BG_PRIMARY)
-        style.configure("Card.TFrame", background=cls.BG_SECONDARY, relief="flat")
 
-        # Configure Buttons
+        # Dashboard Panels (Cards)
+        style.configure("Card.TFrame", background=cls.BG_SECONDARY)
         style.configure(
-            "TButton",
-            background=cls.BG_TERTIARY,
-            foreground=cls.TEXT_MAIN,
-            borderwidth=0,
-            focusthickness=3,
-            focuscolor=cls.ACCENT,
-            padding=(10, 5),
+            "Dashboard.TLabel", background=cls.BG_SECONDARY, foreground=cls.TEXT_MAIN
         )
-        style.map(
-            "TButton",
-            background=[("active", cls.ACCENT), ("disabled", cls.BG_PRIMARY)],
-            foreground=[("disabled", cls.TEXT_MUTED)],
-        )
-
-        # Primary Action Button Style
         style.configure(
-            "Accent.TButton", background=cls.ACCENT, foreground=cls.TEXT_MAIN
+            "Dashboard.Muted.TLabel",
+            background=cls.BG_SECONDARY,
+            foreground=cls.TEXT_MUTED,
+            font=(cls.FONT_FAMILY, 8),
         )
-        style.map("Accent.TButton", background=[("active", cls.ACCENT_HOVER)])
+        style.configure(
+            "Status.TLabel",
+            background=cls.BG_SECONDARY,
+            foreground=cls.ACCENT,
+            font=(cls.FONT_FAMILY, 9, "bold"),
+        )
 
-        # Treeview (Tables)
         style.configure(
             "Treeview",
-            background=cls.BG_PRIMARY,
-            fieldbackground=cls.BG_PRIMARY,
+            background=cls.BG_SECONDARY,
+            fieldbackground=cls.BG_SECONDARY,
             foreground=cls.TEXT_MAIN,
             borderwidth=0,
-            rowheight=30,
-            font=(cls.FONT_FAMILY, cls.FONT_SIZE_MAIN),
+            rowheight=22,
         )
         style.configure(
             "Treeview.Heading",
-            background=cls.BG_SECONDARY,
+            background=cls.BG_TERTIARY,
             foreground=cls.TEXT_MAIN,
-            relief="flat",
-            font=(cls.FONT_FAMILY, cls.FONT_SIZE_HEADER, "bold"),
-            padding=(5, 8),
+            font=(cls.FONT_FAMILY, cls.FONT_SIZE_SMALL, "bold"),
+            padding=(5, 2),
         )
-        style.map("Treeview.Heading", background=[("active", cls.BG_TERTIARY)])
-
-        # Mapping to prevent color shift on focus loss
-        # We explicitly set selected background for !focus to match selected
         style.map(
             "Treeview",
             background=[("selected", cls.ACCENT)],
-            foreground=[("selected", cls.TEXT_MAIN)],
+            foreground=[("selected", cls.BG_PRIMARY)],
         )
 
-        # Labels
-        style.configure("TLabel", background=cls.BG_PRIMARY, foreground=cls.TEXT_MAIN)
-        style.configure(
-            "Header.TLabel", font=(cls.FONT_FAMILY, 14, "bold"), foreground=cls.ACCENT
-        )
-        style.configure(
-            "SubHeader.TLabel",
-            font=(cls.FONT_FAMILY, 12, "bold"),
-            foreground=cls.TEXT_MAIN,
-        )
-        style.configure("Muted.TLabel", foreground=cls.TEXT_MUTED)
-        style.configure("Status.TLabel", background=cls.BG_SECONDARY, padding=5)
-
-        # Inputs/OptionMenus
-        style.configure(
-            "TMenubutton",
-            background=cls.BG_TERTIARY,
-            foreground=cls.TEXT_MAIN,
-            borderwidth=0,
-            padding=(5, 2),
+        style.configure("TNotebook", background=cls.BG_PRIMARY, borderwidth=0)
+        style.configure("TNotebook.Tab", background=cls.BG_TERTIARY, padding=[12, 3])
+        style.map(
+            "TNotebook.Tab",
+            background=[("selected", cls.BG_SECONDARY)],
+            foreground=[("selected", cls.ACCENT)],
         )
 
-        # Text Entries
-        style.configure(
-            "TEntry",
-            fieldbackground=cls.BG_TERTIARY,
-            foreground=cls.TEXT_MAIN,
-            insertcolor=cls.TEXT_MAIN,
-            borderwidth=0,
-            padding=5,
-        )
+        # Force background on standard Tkinter elements
+        cls._force_recursive_update(root)
+        root.event_generate("<<ThemeChanged>>")
 
-        # Checkboxes
-        style.configure(
-            "TCheckbutton", background=cls.BG_PRIMARY, foreground=cls.TEXT_MAIN
-        )
-        style.map("TCheckbutton", background=[("active", cls.BG_PRIMARY)])
-
-        # Load TCL File (if exists, to override specific OS behaviors)
-        filename = palette.get("file", "dark_mode.tcl")
-        paths_to_check = [filename, os.path.join("themes", filename)]
-        if hasattr(sys, "_MEIPASS"):
-            paths_to_check.append(os.path.join(sys._MEIPASS, "themes", filename))
-
-        for tcl_file in paths_to_check:
-            if os.path.exists(tcl_file):
-                try:
-                    root.tk.call("source", tcl_file)
-                    break
-                except Exception as e:
-                    logger.error(f"Failed to load theme {tcl_file}: {e}")
-
-        # Force Root Background Update
-        root.configure(bg=cls.BG_PRIMARY)
-
-        # Update Toplevels recursively
-        for widget in root.winfo_children():
-            if isinstance(widget, tkinter.Toplevel):
-                widget.configure(bg=cls.BG_PRIMARY)
-                # Force redraw of child widgets
-                for child in widget.winfo_children():
-                    if isinstance(child, ttk.Frame):
-                        # Re-applying the style name forces a refresh
-                        current_style = child.cget("style") or "TFrame"
-                        child.configure(style=current_style)
-
-    @staticmethod
-    def _recursive_configure(widget, **kwargs):
+    @classmethod
+    def _force_recursive_update(cls, widget):
+        """Standardizes non-ttk containers and forces refresh on custom ttk styles."""
         try:
-            if isinstance(widget, (tkinter.Toplevel, tkinter.Tk)):
-                widget.configure(**kwargs)
-        except Exception:
+            tk_class = widget.winfo_class()
+
+            # 1. Update standard Tkinter widgets
+            if tk_class in ("Tk", "Toplevel", "Frame", "Canvas", "Label"):
+                widget.configure(bg=cls.BG_PRIMARY)
+
+            # 2. Force refresh on ttk widgets using custom Dashboard styles
+            if hasattr(widget, "cget"):
+                current_style = widget.cget("style")
+                if current_style:
+                    widget.configure(style=current_style)
+
+            for child in widget.winfo_children():
+                cls._force_recursive_update(child)
+        except:
             pass

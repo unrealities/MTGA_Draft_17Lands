@@ -8,6 +8,7 @@ Initializes configuration, scanner, and the main UI application.
 import sys
 import argparse
 import tkinter
+import time  # Import time for UX pacing
 from src.configuration import read_configuration
 from src.limited_sets import LimitedSets
 from src.log_scanner import ArenaScanner
@@ -25,6 +26,7 @@ def load_data(args, config, progress_callback):
     Blocking function to load all necessary data.
     Returns a dictionary of initialized components.
     """
+    # Step 1: Logs
     progress_callback("Locating Logs...")
     logger.info("load_data: Step 1 - Locating Logs")
 
@@ -38,21 +40,26 @@ def load_data(args, config, progress_callback):
     else:
         logger.warning("Player.log not found.")
 
+    # Step 2: Data Directory
     progress_callback("Checking Data Directory...")
     logger.info("load_data: Step 2 - Locating Data Directory")
+
     if args.data:
         config.settings.database_location = args.data
     elif log_path:
         config.settings.database_location = retrieve_arena_directory(log_path)
 
+    # Step 3: Sets
     progress_callback("Loading Sets (Checking 17Lands)...")
     logger.info("load_data: Step 3 - Retrieving Limited Sets (Network Call)")
-    
+
     # This fetches data from 17Lands/Scryfall
     limited_sets = LimitedSets().retrieve_limited_sets()
 
+    # Step 4: Scanner
     progress_callback("Initializing Scanner...")
     logger.info("load_data: Step 4 - Initializing ArenaScanner")
+
     scanner = ArenaScanner(
         filename=log_path,
         set_list=limited_sets,
@@ -60,7 +67,7 @@ def load_data(args, config, progress_callback):
         retrieve_unknown=True,
     )
 
-    progress_callback("Ready!")
+    progress_callback("Launching...")
     logger.info("load_data: Complete")
     return {"scanner": scanner}
 

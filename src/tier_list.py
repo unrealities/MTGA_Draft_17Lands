@@ -2,7 +2,6 @@
 src/tier_list.py
 
 This module defines the data models and logic for fetching/saving Tier Lists.
-UI logic has been moved to src/ui/windows/tier_list.py.
 """
 
 import requests

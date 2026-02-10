@@ -1,9 +1,6 @@
 """
 src/ui/windows/compare.py
-
-This module implements the Card Compare window.
-It allows users to manually add cards to a list to compare their statistics side-by-side.
-This is particularly useful for P1P1 decisions or when logs are unavailable.
+Manual Card Comparison Panel.
 """
 
 import tkinter
@@ -14,85 +11,78 @@ from src import constants
 from src.configuration import Configuration
 from src.card_logic import CardResult, field_process_sort, filter_options
 from src.ui.styles import Theme
-from src.ui.components import (
-    ModernTreeview,
-    AutocompleteEntry,
-    identify_safe_coordinates,
-    CardToolTip,
-)
+from src.ui.components import ModernTreeview, AutocompleteEntry, CardToolTip
 
 
-class CompareWindow(tkinter.Toplevel):
-    """
-    Window for comparing cards side-by-side.
-    """
-
+class ComparePanel(ttk.Frame):
     def __init__(self, parent, draft_manager, configuration: Configuration):
         super().__init__(parent)
         self.draft = draft_manager
         self.configuration = configuration
 
-        self.title("Compare Cards")
-        self.resizable(False, True)
-        self.configure(bg=Theme.BG_PRIMARY)
-        self.transient(parent)
-        self.attributes("-topmost", True)
+        # Internal State
+        self.compare_list: List[Dict] = []  # Stores the source card objects
+        self.card_data_map: Dict[str, Dict] = {}
+        self.current_display_list: List[Dict] = (
+            []
+        )  # Stores processed results for the Treeview
 
-        # State
-        self.compare_list: List[Dict[str, Any]] = []
+        self._build_ui()
+        self.refresh()
+
+    def refresh(self):
+        """
+        Public entry point for state changes.
+        Re-indexes autocomplete and re-calculates comparison stats.
+        """
+        # 1. Update the master mapping from the current scanner dataset
         self.card_data_map = self.draft.set_data.get_card_ratings() or {}
 
-        # Build UI
-        self._build_ui()
+        # 2. Update Autocomplete source names
+        names = [v[constants.DATA_FIELD_NAME] for v in self.card_data_map.values()]
+        self.entry_card.set_completion_list(names)
 
-        # Position
-        self.update_idletasks()
-        self._position_window(parent)
+        # 3. Re-build columns to match current Preferences
+        self._rebuild_columns()
+
+        # 4. Update the actual data rows
+        self._update_content()
 
     def _build_ui(self):
-        container = ttk.Frame(self, padding=10)
-        container.pack(fill="both", expand=True)
+        # --- Control Bar ---
+        self.bar = ttk.Frame(self, style="Card.TFrame", padding=5)
+        self.bar.pack(fill="x", pady=(0, 5))
 
-        # --- Input Area ---
-        input_frame = ttk.Frame(container)
-        input_frame.pack(fill="x", pady=(0, 10))
+        ttk.Label(
+            self.bar,
+            text="SEARCH CARD:",
+            style="SubHeader.TLabel",
+            background=Theme.BG_SECONDARY,
+        ).pack(side="left", padx=5)
 
-        # Autocomplete Entry
-        card_names = [v[constants.DATA_FIELD_NAME] for v in self.card_data_map.values()]
-        self.entry_card = AutocompleteEntry(
-            input_frame, completion_list=card_names, width=40
-        )
-        self.entry_card.pack(side="left", fill="x", expand=True, padx=(0, 10))
+        self.entry_card = AutocompleteEntry(self.bar, completion_list=[], width=40)
+        self.entry_card.pack(side="left", fill="x", expand=True, padx=5)
         self.entry_card.bind("<Return>", self._add_card)
-        self.entry_card.focus_set()
 
-        # Clear Button
-        btn_clear = ttk.Button(input_frame, text="Clear", command=self._clear_table)
-        btn_clear.pack(side="right")
+        ttk.Button(self.bar, text="Add", width=8, command=self._add_card).pack(
+            side="left", padx=2
+        )
+        ttk.Button(self.bar, text="Clear Table", command=self._clear_list).pack(
+            side="right", padx=5
+        )
 
         # --- Table Area ---
-        # Define Columns based on Settings
-        self.cols = ["Card"]
-        # Map config keys to internal data keys using constants
-        # We read from configuration on init
-        self.headers_map = {
-            "Card": {"width": 180, "anchor": tkinter.W},
-        }
+        self.table_container = ttk.Frame(self)
+        self.table_container.pack(fill="both", expand=True)
 
-        # Helper to get field key from config setting
-        def get_field_key(setting_val):
-            from src.constants import COLUMNS_OPTIONS_EXTRA_DICT
-
-            # If the config value is a Label (e.g., "ALSA: ..."), map it back.
-            # If it is already a key, use it.
-            if setting_val in COLUMNS_OPTIONS_EXTRA_DICT.values():
-                return setting_val
-
-            # Try to find it in the dict values (reverse lookup) - simplified assumption here
-            # Ideally config stores the key.
-            return setting_val
-
+    def _rebuild_columns(self):
+        """Syncs the table headers with the global Settings -> Columns configuration."""
         settings = self.configuration.settings
+        cols = ["Card"]
+        headers = {"Card": {"width": 200, "anchor": tkinter.W}}
+        self.active_fields = [constants.DATA_FIELD_NAME]
+
+        # Capture the Dashboard's Column 2-7 preferences
         config_cols = [
             settings.column_2,
             settings.column_3,
@@ -102,168 +92,157 @@ class CompareWindow(tkinter.Toplevel):
             settings.column_7,
         ]
 
-        self.active_fields = [constants.DATA_FIELD_NAME]
+        # Label mapping (e.g., 'ever_drawn_win_rate' -> 'GIHWR')
+        k2l = {
+            v: k.split(":")[0] for k, v in constants.COLUMNS_OPTIONS_EXTRA_DICT.items()
+        }
 
-        for idx, col_setting in enumerate(config_cols):
-            field_key = get_field_key(col_setting)
-            if field_key != constants.DATA_FIELD_DISABLED:
-                col_name = field_key.upper()
-                self.cols.append(col_name)
-                self.headers_map[col_name] = {"width": 60, "anchor": tkinter.CENTER}
-                self.active_fields.append(field_key)
+        for val in config_cols:
+            if val != constants.DATA_FIELD_DISABLED:
+                lbl = k2l.get(val, val.upper())
+                cols.append(lbl)
+                headers[lbl] = {"width": 65, "anchor": tkinter.CENTER}
+                self.active_fields.append(val)
 
-        # Create Table
-        self.table = ModernTreeview(
-            container, columns=self.cols, headers_config=self.headers_map, height=10
-        )
-        self.table.pack(fill="both", expand=True)
-        self.table.bind("<<TreeviewSelect>>", self._on_selection)
+        # Redraw Treeview only if columns actually changed
+        if not hasattr(self, "table") or list(self.table["columns"]) != cols:
+            for w in self.table_container.winfo_children():
+                w.destroy()
+            self.table = ModernTreeview(
+                self.table_container, columns=cols, headers_config=headers
+            )
+            self.table.pack(fill="both", expand=True)
+            self.table.bind("<<TreeviewSelect>>", self._on_selection)
 
     def _add_card(self, event=None):
-        name_input = self.entry_card.get().strip()
-        if not name_input:
+        """Validates input against dataset and adds to the compare list."""
+        typed = self.entry_card.get().strip().lower()
+        if not typed:
             return
 
-        found_card = None
-        # Quick lookup
-        for key, data in self.card_data_map.items():
-            if data[constants.DATA_FIELD_NAME].lower() == name_input.lower():
-                found_card = data
-                break
+        # Search the current set map (Case-Insensitive)
+        found = next(
+            (
+                d
+                for d in self.card_data_map.values()
+                if d[constants.DATA_FIELD_NAME].lower() == typed
+            ),
+            None,
+        )
 
-        if found_card and found_card not in self.compare_list:
-            self.compare_list.append(found_card)
+        if found:
+            if found not in self.compare_list:
+                self.compare_list.append(found)
+                self._update_content()
             self.entry_card.delete(0, tkinter.END)
-            self._update_table()
         else:
-            pass
+            # 1% Dev UX: Visual feedback on 'Not Found'
+            self.entry_card.config(highlightbackground=Theme.ERROR)
+            self.after(
+                500,
+                lambda: self.entry_card.config(highlightbackground=Theme.BG_SECONDARY),
+            )
 
-    def _clear_table(self):
+    def _clear_list(self):
+        """Wipes the manual comparison state."""
         self.compare_list.clear()
-        self._update_table()
+        self._update_content()
 
-    def _update_table(self):
-        # 1. Clear current items
+    def _update_content(self):
+        """Calculates 17Lands stats for the compare list based on active filters."""
+        if not hasattr(self, "table"):
+            return
         for item in self.table.get_children():
             self.table.delete(item)
 
         if not self.compare_list:
             return
 
-        # 2. Determine Deck Colors for Filtering
-        taken_cards = self.draft.retrieve_taken_cards()
-        # Get current deck filter setting
-        deck_filter = self.configuration.settings.deck_filter
-
-        # If 'Auto', calculate colors
-        filtered_colors = [deck_filter]
-        if deck_filter == constants.FILTER_OPTION_AUTO:
-            from src.card_logic import filter_options
-            metrics = self.draft.retrieve_set_metrics()
-            filtered_colors = filter_options(
-                taken_cards, deck_filter, metrics, self.configuration
-            )
-
-        # 3. Process Data
-        # We use CardResult helper to calculate the values for the columns
-        from src.card_logic import CardResult
-
+        # Sync with global filters
         metrics = self.draft.retrieve_set_metrics()
-        tier_data = self.draft.retrieve_tier_data()  # Need method on scanner/manager
+        colors = filter_options(
+            self.draft.retrieve_taken_cards(),
+            self.configuration.settings.deck_filter,
+            metrics,
+            self.configuration,
+        )
 
         processor = CardResult(
-            metrics, tier_data, self.configuration, self.draft.current_pick
+            metrics,
+            self.draft.retrieve_tier_data(),
+            self.configuration,
+            self.draft.current_pick,
         )
 
-        # return_results returns a list of dicts with a "results" key containing the list of values
-        processed_cards = processor.return_results(
-            self.compare_list, filtered_colors, self.active_fields
-        )
-
-        # 4. Sort (Default: Sort by first stats column descending)
-        # If we have at least 2 columns (Name + 1 Stat), sort by that stat
-        sort_index = 1 if len(self.active_fields) > 1 else 0
-
-        processed_cards.sort(
-            key=lambda x: field_process_sort(x["results"][sort_index]), reverse=True
-        )
-
-        # 5. Populate Table
-        for idx, p_card in enumerate(processed_cards):
-            # Row Tag for Coloring
-            from src.card_logic import row_color_tag
-
-            # We need the original card object to check colors for the tag
-            # return_results copies the card, so keys like 'colors'/'mana_cost' should exist
-
-            tag = ""
-            if self.configuration.settings.card_colors_enabled:
-                # Handle Lands vs Spells logic
-                c_colors = p_card.get(constants.DATA_FIELD_MANA_COST, "")
-                if constants.CARD_TYPE_LAND in p_card.get(
-                    constants.DATA_FIELD_TYPES, []
-                ):
-                    c_colors = p_card.get(constants.DATA_FIELD_COLORS, [])
-                tag = row_color_tag(c_colors)
-            else:
-                tag = "bw_odd" if idx % 2 != 0 else "bw_even"
-
-            self.table.insert(
-                "",
-                "end",
-                iid=idx,  # Simple index ID
-                values=p_card["results"],
-                tags=(tag,),
+        # Re-fetch card data from map to handle set changes/updates
+        active_list = []
+        for c in self.compare_list:
+            c_name = c[constants.DATA_FIELD_NAME]
+            # Try to find the same-named card in the NEW set/source
+            actual = next(
+                (
+                    v
+                    for v in self.card_data_map.values()
+                    if v[constants.DATA_FIELD_NAME] == c_name
+                ),
+                None,
             )
+            if actual:
+                active_list.append(actual)
 
-        # Store processed list for selection mapping
-        self.current_display_list = processed_cards
-
-    def _on_selection(self, event):
-        selection = self.table.selection()
-        if not selection:
+        if not active_list:
             return
 
-        # Get the index
-        idx = int(selection[0])
-        if idx < len(self.current_display_list):
-            card_data = self.current_display_list[idx]
+        processed = processor.return_results(active_list, colors, self.active_fields)
 
-            # Show Tooltip
-            # We need to reconstruct the stats dict for the tooltip
-            # This is a bit redundant but ensures the tooltip has full data
-            # including what might not be in the table columns (like images)
+        # Sort by first stat column descending (standard for comparison)
+        sort_idx = 1 if len(self.active_fields) > 1 else 0
+        processed.sort(
+            key=lambda x: field_process_sort(x["results"][sort_idx]), reverse=True
+        )
 
-            # Fetch original data again to get images
-            orig_card = next(
+        self.current_display_list = processed
+
+        from src.card_logic import row_color_tag
+
+        for idx, p_card in enumerate(processed):
+            tag = (
+                row_color_tag(p_card.get(constants.DATA_FIELD_MANA_COST, ""))
+                if self.configuration.settings.card_colors_enabled
+                else ("bw_odd" if idx % 2 == 0 else "bw_even")
+            )
+            self.table.insert("", "end", iid=idx, values=p_card["results"], tags=(tag,))
+
+    def _on_selection(self, event):
+        """Triggers the image tooltip."""
+        sel = self.table.selection()
+        if not sel:
+            return
+        idx = int(sel[0])
+        card_data = self.current_display_list[idx]
+        card_name = card_data["results"][0]
+
+        # Re-map back to original object for image URLs
+        orig = next(
+            (c for c in self.compare_list if c[constants.DATA_FIELD_NAME] == card_name),
+            None,
+        )
+        if not orig:
+            orig = next(
                 (
                     c
-                    for c in self.compare_list
-                    if c[constants.DATA_FIELD_NAME]
-                    == card_data[constants.DATA_FIELD_NAME]
+                    for c in self.card_data_map.values()
+                    if c[constants.DATA_FIELD_NAME] == card_name
                 ),
                 None,
             )
 
-            if orig_card:
-                # Prepare stats structure for tooltip
-                # The tooltip expects { "Color": { "field": val ... } }
-                # The card data from CardResult has nested deck_colors
-                stats = orig_card.get(constants.DATA_FIELD_DECK_COLORS, {})
-                images = orig_card.get(constants.DATA_SECTION_IMAGES, [])
-
-                CardToolTip(
-                    self.table,
-                    orig_card[constants.DATA_FIELD_NAME],
-                    stats,
-                    images,
-                    self.configuration.features.images_enabled,
-                    1.0,  # Scale
-                    None,  # Tier info if available
-                )
-
-    def _position_window(self, parent):
-        w = self.winfo_width()
-        h = self.winfo_height()
-        x, y = identify_safe_coordinates(parent, w, h, 400, 50)
-        self.wm_geometry(f"+{x}+{y}")
+        if orig:
+            CardToolTip(
+                self.table,
+                orig[constants.DATA_FIELD_NAME],
+                orig.get(constants.DATA_FIELD_DECK_COLORS, {}),
+                orig.get(constants.DATA_SECTION_IMAGES, []),
+                self.configuration.features.images_enabled,
+                1.0,
+            )
