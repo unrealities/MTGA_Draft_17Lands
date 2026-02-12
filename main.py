@@ -4,7 +4,7 @@ MTGA Draft Tool - Entry Point.
 Handles Robust Path Discovery and Splash Lifecycle.
 """
 
-import ttkbootstrap as ttk
+import ttkbootstrap as ttk  
 import argparse
 import os
 import logging

@@ -298,26 +298,26 @@ class ModernTreeview(ttk.Treeview):
 
 class SignalMeter(tb.Frame):
     """
-    Vertical Equalizer-style Signal Visualizer.
-    Drastically more compact than the horizontal stack.
+    Compact Signal Visualizer.
     """
 
     def __init__(self, parent, **kwargs):
         super().__init__(parent, **kwargs)
-        self.canvas_height = 80
-        self.bar_width = 15
-        self.gap = 8
+        self.canvas_height = 100
+        self.bar_width = 20
+        self.gap = 4
         self.scores = {}
 
         self.canvas = tb.Canvas(
             self, height=self.canvas_height, bg=Theme.BG_SECONDARY, highlightthickness=0
         )
-        self.canvas.pack(fill=BOTH, expand=True, pady=5)
+        self.canvas.pack(fill=BOTH, expand=True)
+        self.canvas.bind("<Configure>", lambda e: self.redraw())
 
         self.color_map = {
             "W": (Theme.WARNING, "White"),
             "U": (Theme.ACCENT, "Blue"),
-            "B": (Theme.BG_TERTIARY, "Black"),  # Use dark grey for black
+            "B": (Theme.BG_TERTIARY, "Black"),
             "R": (Theme.ERROR, "Red"),
             "G": (Theme.SUCCESS, "Green"),
         }
@@ -328,16 +328,18 @@ class SignalMeter(tb.Frame):
 
     def redraw(self):
         self.canvas.delete("all")
-        w = self.winfo_width()
-        if w < 50:
-            w = 150  # Safety default
+        w = self.canvas.winfo_width()
+        if w < 10:
+            return
 
         colors = ["W", "U", "B", "R", "G"]
-        total_width = (len(colors) * self.bar_width) + ((len(colors) - 1) * self.gap)
-        start_x = (w - total_width) / 2
+        total_content_width = (len(colors) * self.bar_width) + (
+            (len(colors) - 1) * self.gap
+        )
+        start_x = (w - total_content_width) / 2
 
-        max_val = max(max(self.scores.values(), default=1), 20)  # Scale to at least 20
-        scale = (self.canvas_height - 20) / max_val
+        max_val = max(max(self.scores.values(), default=1), 20)
+        scale = (self.canvas_height - 18) / max_val
 
         for i, code in enumerate(colors):
             val = self.scores.get(code, 0.0)
@@ -346,15 +348,14 @@ class SignalMeter(tb.Frame):
 
             color = self.color_map[code][0]
             if code == "B" and color == Theme.BG_TERTIARY:
-                # Ensure Black isn't invisible on dark backgrounds
                 color = "#555555"
 
             # Draw Bar
             self.canvas.create_rectangle(
                 x,
-                self.canvas_height - bar_h - 15,
+                self.canvas_height - bar_h - 12,
                 x + self.bar_width,
-                self.canvas_height - 15,
+                self.canvas_height - 12,
                 fill=color,
                 outline="",
             )
@@ -365,23 +366,13 @@ class SignalMeter(tb.Frame):
                 self.canvas_height - 5,
                 text=code,
                 fill=Theme.TEXT_MUTED,
-                font=("Segoe UI", 8, "bold"),
+                font=("Segoe UI", 7, "bold"),
             )
-
-            # Value above (only if significant)
-            if val > 1:
-                self.canvas.create_text(
-                    x + self.bar_width / 2,
-                    self.canvas_height - bar_h - 22,
-                    text=f"{int(val)}",
-                    fill=Theme.TEXT_MAIN,
-                    font=("Segoe UI", 7),
-                )
 
 
 class ManaCurvePlot(tb.Frame):
     """
-    Updated Curve Plot - Shorter and cleaner.
+    Compact Curve Plot.
     """
 
     def __init__(self, parent, ideal_distribution: List[int], **kwargs):
@@ -389,15 +380,15 @@ class ManaCurvePlot(tb.Frame):
         self.ideal = ideal_distribution
         self.current = [0] * 7
 
-        # Reduced height for compactness
-        self.canvas_height = 80
+        self.canvas_height = 100  # Reduced height
         self.canvas = tb.Canvas(
             self, height=self.canvas_height, bg=Theme.BG_SECONDARY, highlightthickness=0
         )
-        self.canvas.pack(fill=BOTH, expand=True, pady=5)
+        self.canvas.pack(fill=BOTH, expand=True)
+        self.canvas.bind("<Configure>", lambda e: self.redraw())
 
-        self.bar_width = 18  # Slimmer bars
-        self.gap = 4
+        self.bar_width = 14
+        self.gap = 2
 
     def update_curve(self, current_distribution: List[int]):
         self.current = current_distribution
@@ -405,12 +396,15 @@ class ManaCurvePlot(tb.Frame):
 
     def redraw(self):
         self.canvas.delete("all")
-        w = self.winfo_width()
-        if w < 50:
-            w = 200
+        w = self.canvas.winfo_width()
+        if w < 10:
+            return
 
         total_bars = len(self.current)
-        start_x = (w - (total_bars * (self.bar_width + self.gap))) / 2
+        total_content_width = (total_bars * self.bar_width) + (
+            (total_bars - 1) * self.gap
+        )
+        start_x = (w - total_content_width) / 2
 
         max_val = max(max(self.current), max(self.ideal), 5)
         scale = (self.canvas_height - 15) / max_val
@@ -434,8 +428,6 @@ class ManaCurvePlot(tb.Frame):
 
             # Actual
             bar_h = count * scale
-
-            # Logic: Red if > Ideal+2, Yellow if < Ideal, Green otherwise
             color = Theme.ACCENT
             if count > target + 1:
                 color = Theme.ERROR
@@ -457,21 +449,21 @@ class ManaCurvePlot(tb.Frame):
             lbl = str(i) if i < 6 else "6+"
             self.canvas.create_text(
                 x + self.bar_width / 2,
-                self.canvas_height - 3,
+                self.canvas_height - 4,
                 text=lbl,
                 fill=Theme.TEXT_MUTED,
-                font=("Segoe UI", 7),
+                font=("Segoe UI", 6),
             )
 
 
 class TypePieChart(tb.Frame):
     """
-    Donut chart showing Creatures vs Non-Creatures vs Lands.
+    Compact Donut chart.
     """
 
     def __init__(self, parent, **kwargs):
         super().__init__(parent, **kwargs)
-        self.canvas_size = 80
+        self.canvas_size = 100
         self.canvas = tb.Canvas(
             self,
             height=self.canvas_size,
@@ -479,7 +471,10 @@ class TypePieChart(tb.Frame):
             bg=Theme.BG_SECONDARY,
             highlightthickness=0,
         )
-        self.canvas.pack(pady=5)
+        self.canvas.pack(side=LEFT, padx=10)
+        self.legend_frame = tb.Frame(self)
+        self.legend_frame.pack(side=LEFT, fill=Y, padx=5)
+
         self.counts = {"Creatures": 0, "Non-Creatures": 0, "Lands": 0}
 
     def update_counts(self, creatures, non_creatures, lands):
@@ -490,22 +485,39 @@ class TypePieChart(tb.Frame):
 
     def redraw(self):
         self.canvas.delete("all")
+        # Update Legend
+        for w in self.legend_frame.winfo_children():
+            w.destroy()
+
+        # Legend Logic
+        items = [
+            ("Crea", self.counts["Creatures"], Theme.SUCCESS),
+            ("Spell", self.counts["Non-Creatures"], Theme.ACCENT),
+            ("Land", self.counts["Lands"], Theme.BG_TERTIARY),
+        ]
+
+        for lbl, count, col in items:
+            row = tb.Frame(self.legend_frame)
+            row.pack(anchor="w")
+            tb.Label(row, text="●", foreground=col, font=(None, 6)).pack(side=LEFT)
+            tb.Label(row, text=f"{lbl}: {count}", font=("Segoe UI", 10)).pack(
+                side=LEFT, padx=2
+            )
+
+        # Chart Logic
         total = sum(self.counts.values())
         if total == 0:
             return
 
-        angles = []
+        cx, cy = self.canvas_size / 2, self.canvas_size / 2
+        radius = (self.canvas_size / 2) - 2
         current_angle = 90
 
-        # Colors: Creatures=Green, Non=Blue, Land=Grey
         data = [
             (self.counts["Creatures"], Theme.SUCCESS),
             (self.counts["Non-Creatures"], Theme.ACCENT),
             (self.counts["Lands"], Theme.BG_TERTIARY),
         ]
-
-        cx, cy = self.canvas_size / 2, self.canvas_size / 2
-        radius = (self.canvas_size / 2) - 5
 
         for count, color in data:
             if count == 0:
@@ -524,7 +536,6 @@ class TypePieChart(tb.Frame):
             )
             current_angle -= extent
 
-        # Donut Hole
         self.canvas.create_oval(
             cx - radius / 2,
             cy - radius / 2,
@@ -533,8 +544,6 @@ class TypePieChart(tb.Frame):
             fill=Theme.BG_SECONDARY,
             outline="",
         )
-
-        # Center Text (Total Cards)
         self.canvas.create_text(
-            cx, cy, text=str(total), fill=Theme.TEXT_MAIN, font=("Segoe UI", 10, "bold")
+            cx, cy, text=str(total), fill=Theme.TEXT_MAIN, font=("Segoe UI", 8, "bold")
         )

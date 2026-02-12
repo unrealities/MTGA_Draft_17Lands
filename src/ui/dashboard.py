@@ -1,7 +1,6 @@
 """
 src/ui/dashboard.py
 The Live Draft Dashboard Component.
-Compact layout with side-by-side Visuals.
 """
 
 import tkinter
@@ -42,21 +41,20 @@ class DashboardFrame(tb.Frame):
         return self._tree_pack if source_type == "pack" else self._tree_missing
 
     def _build_layout(self):
-        # 3 Column Layout
-        self.columnconfigure(0, weight=5)  # Tables (Wide)
-        self.columnconfigure(1, weight=1)  # Signals (Narrow)
-        self.columnconfigure(2, weight=2)  # Analytics (Medium)
+        # 2 Column Layout: Tables (Left) | Analytics Sidebar (Right)
+        self.columnconfigure(0, weight=4)
+        self.columnconfigure(1, weight=1)
         self.rowconfigure(0, weight=1)
 
-        # --- COL 0: Tables ---
-        f_left = tb.Frame(self)
-        f_left.grid(row=0, column=0, sticky="nsew", padx=(0, 5))
+        # --- LEFT: Tables ---
+        f_main = tb.Frame(self)
+        f_main.grid(row=0, column=0, sticky="nsew", padx=(0, 12))
 
-        # Pack Table
-        self.table_pack = tb.Frame(f_left)
+        # Pack Table (Larger)
+        self.table_pack = tb.Frame(f_main)
         self.table_pack.pack(fill="both", expand=True, pady=(0, 5))
         tb.Label(
-            self.table_pack, text="PACK", bootstyle="secondary", font=(None, 8)
+            self.table_pack, text="PACK", bootstyle="secondary", font=(None, 12, "bold")
         ).pack(anchor="w")
         self._tree_pack, self._fields_pack = self._create_data_tree(
             self.table_pack, "pack"
@@ -64,62 +62,51 @@ class DashboardFrame(tb.Frame):
         self._tree_pack.pack(fill="both", expand=True)
 
         # Missing Table
-        self.table_missing = tb.Frame(f_left)
+        self.table_missing = tb.Frame(f_main)
         self.table_missing.pack(fill="both", expand=True)
         tb.Label(
-            self.table_missing, text="SEEN", bootstyle="secondary", font=(None, 8)
+            self.table_missing,
+            text="SEEN",
+            bootstyle="secondary",
+            font=(None, 12, "bold"),
         ).pack(anchor="w")
         self._tree_missing, self._fields_missing = self._create_data_tree(
             self.table_missing, "missing"
         )
         self._tree_missing.pack(fill="both", expand=True)
 
-        # --- COL 1: Signals ---
-        f_mid = tb.Frame(self)
-        f_mid.grid(row=0, column=1, sticky="ns", padx=5)
+        # --- RIGHT: Sidebar HUD ---
+        # Fixed width container
+        f_side = tb.Frame(self, width=200)
+        f_side.grid(row=0, column=1, sticky="ns")
+        f_side.pack_propagate(False)  # Force fixed width
 
-        tb.Label(f_mid, text="SIGNALS", bootstyle="secondary", font=(None, 8)).pack(
-            anchor="n"
+        # 1. Signals
+        tb.Label(f_side, text="SIGNALS", bootstyle="secondary", font=(None, 12)).pack(
+            anchor="w", pady=(0, 2)
         )
-        self.signal_meter = SignalMeter(f_mid)
-        self.signal_meter.pack(fill=BOTH, expand=True, pady=5)
+        self.signal_meter = SignalMeter(f_side)
+        self.signal_meter.pack(fill=X, pady=(0, 15))
 
-        # --- COL 2: Analytics (Curve + Pie) ---
-        f_right = tb.Frame(self)
-        f_right.grid(row=0, column=2, sticky="nsew", padx=(5, 0))
-
-        # Upper: Curve
-        tb.Label(f_right, text="CURVE", bootstyle="secondary", font=(None, 8)).pack(
-            anchor="w"
+        # 2. Curve
+        tb.Label(f_side, text="MANA CURVE", bootstyle="secondary", font=(None, 12)).pack(
+            anchor="w", pady=(0, 2)
         )
         default_ideal = self.configuration.card_logic.deck_mid.distribution
-        self.curve_plot = ManaCurvePlot(f_right, ideal_distribution=default_ideal)
-        self.curve_plot.pack(fill=X, expand=True, pady=(0, 10))
+        self.curve_plot = ManaCurvePlot(f_side, ideal_distribution=default_ideal)
+        self.curve_plot.pack(fill=X, pady=(0, 15))
 
-        # Lower: Type Balance
-        tb.Label(f_right, text="BALANCE", bootstyle="secondary", font=(None, 8)).pack(
-            anchor="w"
-        )
-        self.type_chart = TypePieChart(f_right)
-        self.type_chart.pack(fill=X, expand=True)
-
-        # Legend for Pie Chart
-        legend = tb.Frame(f_right)
-        legend.pack(fill=X, pady=5)
-        tb.Label(legend, text="● Crea", foreground=Theme.SUCCESS, font=(None, 7)).pack(
-            side=LEFT, padx=2
-        )
-        tb.Label(legend, text="● Spell", foreground=Theme.ACCENT, font=(None, 7)).pack(
-            side=LEFT, padx=2
-        )
+        # 3. Balance
         tb.Label(
-            legend, text="● Land", foreground=Theme.BG_TERTIARY, font=(None, 7)
-        ).pack(side=LEFT, padx=2)
+            f_side, text="DECK BALANCE", bootstyle="secondary", font=(None, 12)
+        ).pack(anchor="w", pady=(0, 2))
+        self.type_chart = TypePieChart(f_side)
+        self.type_chart.pack(fill=X)
 
     def _create_data_tree(
         self, parent, source_type
     ) -> tuple[ModernTreeview, List[str]]:
-        # [Same code as before]
+        # [Existing logic]
         s = self.configuration.settings
         cols = ["Card"]
         hd = {"Card": {"width": 180, "anchor": tkinter.W}}
@@ -151,7 +138,7 @@ class DashboardFrame(tb.Frame):
     def update_pack_data(
         self, cards, colors, metrics, tier_data, current_pick, source_type="pack"
     ):
-        # [Same code as before]
+        # [Existing logic]
         tree = self.get_treeview(source_type)
         fields = self._fields_pack if source_type == "pack" else self._fields_missing
         if not tree:
@@ -187,10 +174,7 @@ class DashboardFrame(tb.Frame):
             self.curve_plot.redraw()
 
     def update_deck_stats(self, taken_cards):
-        """Called by App to update pie chart."""
         if self.type_chart:
-            # We need to calculate creatures vs non-creatures here or pass it in
-            # Assuming you pass the raw card list:
             creatures = 0
             non_creatures = 0
             lands = 0

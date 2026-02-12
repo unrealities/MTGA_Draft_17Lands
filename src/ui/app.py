@@ -16,6 +16,7 @@ from src.ui.components import CardToolTip
 from src.ui.dashboard import DashboardFrame
 from src.ui.orchestrator import DraftOrchestrator
 from src.notifications import Notifications
+from src.ui.windows.overlay import CompactOverlay
 
 # Windows
 from src.ui.windows.taken_cards import TakenCardsPanel
@@ -34,6 +35,7 @@ class DraftApp:
         # 1. State Initialization
         self.vars: Dict[str, tkinter.Variable] = {}
         self.deck_filter_map: Dict[str, str] = {}
+        self.overlay_window: Optional[CompactOverlay] = None
         self._initialized = False
         self._rebuilding_ui = False
         self._loading = False
@@ -121,6 +123,12 @@ class DraftApp:
 
         ctrl = ttk.Frame(bar, style="Card.TFrame")
         ctrl.pack(side="right")
+        ttk.Button(
+            ctrl,
+            text="Overlay Mode",
+            bootstyle="info-outline",
+            command=self._enable_overlay,
+        ).pack(side="right", padx=5)
         self.om_source = ttk.OptionMenu(
             ctrl, self.vars["data_source"], "", style="TMenubutton"
         )
@@ -263,6 +271,12 @@ class DraftApp:
         colors = filter_options(
             taken, self.configuration.settings.deck_filter, metrics, self.configuration
         )
+
+        if self.overlay_window:
+            self.overlay_window.update_data(
+                self.current_pack_data, colors, metrics, tier_data, pi
+            )
+            return
 
         self.current_pack_data = self.orchestrator.scanner.retrieve_current_pack_cards()
         self.current_missing_data = (
@@ -467,4 +481,24 @@ class DraftApp:
 
     def _on_dataset_update(self):
         self._update_data_sources()
+        self._refresh_ui_data()
+
+    def _enable_overlay(self):
+        """Hides Main Window, Shows Overlay"""
+        if self.overlay_window:
+            return
+
+        self.root.withdraw()  # Hide Main
+
+        self.overlay_window = CompactOverlay(
+            self.root, self.orchestrator, self.configuration, self._disable_overlay
+        )
+        self._refresh_ui_data()
+
+    def _disable_overlay(self):
+        """Destroys Overlay, Shows Main Window"""
+        if self.overlay_window:
+            self.overlay_window.destroy()
+            self.overlay_window = None
+        self.root.deiconify()
         self._refresh_ui_data()
