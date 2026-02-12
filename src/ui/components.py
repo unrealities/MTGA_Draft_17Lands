@@ -1,10 +1,13 @@
 """
 src/ui/components.py
 Atomic UI Widgets for the MTGA Draft Tool.
+Includes modern visual components (Meters, Plots) alongside legacy widgets.
 """
 
 import tkinter
 from tkinter import ttk
+import ttkbootstrap as tb
+from ttkbootstrap.constants import *
 import requests
 import io
 from typing import List, Dict, Any, Tuple, Optional
@@ -291,3 +294,247 @@ class ModernTreeview(ttk.Treeview):
             tags = [t for t in self.item(k, "tags") if t not in ("bw_odd", "bw_even")]
             tags.append("bw_odd" if i % 2 == 0 else "bw_even")
             self.item(k, tags=tuple(tags))
+
+
+class SignalMeter(tb.Frame):
+    """
+    Vertical Equalizer-style Signal Visualizer.
+    Drastically more compact than the horizontal stack.
+    """
+
+    def __init__(self, parent, **kwargs):
+        super().__init__(parent, **kwargs)
+        self.canvas_height = 80
+        self.bar_width = 15
+        self.gap = 8
+        self.scores = {}
+
+        self.canvas = tb.Canvas(
+            self, height=self.canvas_height, bg=Theme.BG_SECONDARY, highlightthickness=0
+        )
+        self.canvas.pack(fill=BOTH, expand=True, pady=5)
+
+        self.color_map = {
+            "W": (Theme.WARNING, "White"),
+            "U": (Theme.ACCENT, "Blue"),
+            "B": (Theme.BG_TERTIARY, "Black"),  # Use dark grey for black
+            "R": (Theme.ERROR, "Red"),
+            "G": (Theme.SUCCESS, "Green"),
+        }
+
+    def update_values(self, scores: Dict[str, float]):
+        self.scores = scores
+        self.redraw()
+
+    def redraw(self):
+        self.canvas.delete("all")
+        w = self.winfo_width()
+        if w < 50:
+            w = 150  # Safety default
+
+        colors = ["W", "U", "B", "R", "G"]
+        total_width = (len(colors) * self.bar_width) + ((len(colors) - 1) * self.gap)
+        start_x = (w - total_width) / 2
+
+        max_val = max(max(self.scores.values(), default=1), 20)  # Scale to at least 20
+        scale = (self.canvas_height - 20) / max_val
+
+        for i, code in enumerate(colors):
+            val = self.scores.get(code, 0.0)
+            x = start_x + (i * (self.bar_width + self.gap))
+            bar_h = val * scale
+
+            color = self.color_map[code][0]
+            if code == "B" and color == Theme.BG_TERTIARY:
+                # Ensure Black isn't invisible on dark backgrounds
+                color = "#555555"
+
+            # Draw Bar
+            self.canvas.create_rectangle(
+                x,
+                self.canvas_height - bar_h - 15,
+                x + self.bar_width,
+                self.canvas_height - 15,
+                fill=color,
+                outline="",
+            )
+
+            # Label below
+            self.canvas.create_text(
+                x + self.bar_width / 2,
+                self.canvas_height - 5,
+                text=code,
+                fill=Theme.TEXT_MUTED,
+                font=("Segoe UI", 8, "bold"),
+            )
+
+            # Value above (only if significant)
+            if val > 1:
+                self.canvas.create_text(
+                    x + self.bar_width / 2,
+                    self.canvas_height - bar_h - 22,
+                    text=f"{int(val)}",
+                    fill=Theme.TEXT_MAIN,
+                    font=("Segoe UI", 7),
+                )
+
+
+class ManaCurvePlot(tb.Frame):
+    """
+    Updated Curve Plot - Shorter and cleaner.
+    """
+
+    def __init__(self, parent, ideal_distribution: List[int], **kwargs):
+        super().__init__(parent, **kwargs)
+        self.ideal = ideal_distribution
+        self.current = [0] * 7
+
+        # Reduced height for compactness
+        self.canvas_height = 80
+        self.canvas = tb.Canvas(
+            self, height=self.canvas_height, bg=Theme.BG_SECONDARY, highlightthickness=0
+        )
+        self.canvas.pack(fill=BOTH, expand=True, pady=5)
+
+        self.bar_width = 18  # Slimmer bars
+        self.gap = 4
+
+    def update_curve(self, current_distribution: List[int]):
+        self.current = current_distribution
+        self.redraw()
+
+    def redraw(self):
+        self.canvas.delete("all")
+        w = self.winfo_width()
+        if w < 50:
+            w = 200
+
+        total_bars = len(self.current)
+        start_x = (w - (total_bars * (self.bar_width + self.gap))) / 2
+
+        max_val = max(max(self.current), max(self.ideal), 5)
+        scale = (self.canvas_height - 15) / max_val
+
+        for i, count in enumerate(self.current):
+            x = start_x + (i * (self.bar_width + self.gap))
+
+            # Ideal (Ghost)
+            target = self.ideal[i] if i < len(self.ideal) else 0
+            if target > 0:
+                t_h = target * scale
+                self.canvas.create_rectangle(
+                    x,
+                    self.canvas_height - t_h - 10,
+                    x + self.bar_width,
+                    self.canvas_height - 10,
+                    outline=Theme.TEXT_MUTED,
+                    width=1,
+                    dash=(2, 2),
+                )
+
+            # Actual
+            bar_h = count * scale
+
+            # Logic: Red if > Ideal+2, Yellow if < Ideal, Green otherwise
+            color = Theme.ACCENT
+            if count > target + 1:
+                color = Theme.ERROR
+            elif count < target and target > 0:
+                color = Theme.WARNING
+            elif count >= target:
+                color = Theme.SUCCESS
+
+            self.canvas.create_rectangle(
+                x,
+                self.canvas_height - bar_h - 10,
+                x + self.bar_width,
+                self.canvas_height - 10,
+                fill=color,
+                outline="",
+            )
+
+            # Axis Label
+            lbl = str(i) if i < 6 else "6+"
+            self.canvas.create_text(
+                x + self.bar_width / 2,
+                self.canvas_height - 3,
+                text=lbl,
+                fill=Theme.TEXT_MUTED,
+                font=("Segoe UI", 7),
+            )
+
+
+class TypePieChart(tb.Frame):
+    """
+    Donut chart showing Creatures vs Non-Creatures vs Lands.
+    """
+
+    def __init__(self, parent, **kwargs):
+        super().__init__(parent, **kwargs)
+        self.canvas_size = 80
+        self.canvas = tb.Canvas(
+            self,
+            height=self.canvas_size,
+            width=self.canvas_size,
+            bg=Theme.BG_SECONDARY,
+            highlightthickness=0,
+        )
+        self.canvas.pack(pady=5)
+        self.counts = {"Creatures": 0, "Non-Creatures": 0, "Lands": 0}
+
+    def update_counts(self, creatures, non_creatures, lands):
+        self.counts["Creatures"] = creatures
+        self.counts["Non-Creatures"] = non_creatures
+        self.counts["Lands"] = lands
+        self.redraw()
+
+    def redraw(self):
+        self.canvas.delete("all")
+        total = sum(self.counts.values())
+        if total == 0:
+            return
+
+        angles = []
+        current_angle = 90
+
+        # Colors: Creatures=Green, Non=Blue, Land=Grey
+        data = [
+            (self.counts["Creatures"], Theme.SUCCESS),
+            (self.counts["Non-Creatures"], Theme.ACCENT),
+            (self.counts["Lands"], Theme.BG_TERTIARY),
+        ]
+
+        cx, cy = self.canvas_size / 2, self.canvas_size / 2
+        radius = (self.canvas_size / 2) - 5
+
+        for count, color in data:
+            if count == 0:
+                continue
+            extent = (count / total) * 360
+            self.canvas.create_arc(
+                cx - radius,
+                cy - radius,
+                cx + radius,
+                cy + radius,
+                start=current_angle,
+                extent=-extent,
+                fill=color,
+                outline="",
+                style="pieslice",
+            )
+            current_angle -= extent
+
+        # Donut Hole
+        self.canvas.create_oval(
+            cx - radius / 2,
+            cy - radius / 2,
+            cx + radius / 2,
+            cy + radius / 2,
+            fill=Theme.BG_SECONDARY,
+            outline="",
+        )
+
+        # Center Text (Total Cards)
+        self.canvas.create_text(
+            cx, cy, text=str(total), fill=Theme.TEXT_MAIN, font=("Segoe UI", 10, "bold")
+        )

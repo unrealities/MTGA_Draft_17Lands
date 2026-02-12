@@ -40,7 +40,6 @@ class TestThemeEngine:
         ]
         for theme in expected_themes:
             assert theme in Theme.PALETTES
-            assert "file" in Theme.PALETTES[theme]
             assert "bg" in Theme.PALETTES[theme]
 
     def test_theme_application_updates_class_variables(self, mock_root, mock_style):
@@ -98,12 +97,12 @@ class TestThemeEngine:
 
     def test_tcl_source_call_logic(self, mock_root, mock_style):
         with patch("os.path.exists", return_value=True):
-            Theme.apply(mock_root, "Swamp")
+            Theme.apply(mock_root, "Custom", custom_path="custom.tcl")
         source_calls = [
             call for call in mock_root.tk.call.call_args_list if call[0][0] == "source"
         ]
         assert len(source_calls) > 0
-        assert "swamp.tcl" in source_calls[0][0][1]
+        assert "custom.tcl" in source_calls[0][0][1]
 
     def test_root_background_is_updated(self, mock_root, mock_style):
         """Ensures the root window background is updated to match the theme."""

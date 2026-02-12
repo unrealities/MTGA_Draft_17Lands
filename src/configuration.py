@@ -62,6 +62,9 @@ class Settings(BaseModel):
     result_format: str = constants.RESULT_FORMAT_WIN_RATE
     ui_size: str = constants.UI_SIZE_DEFAULT
     theme: str = "Dark"
+    theme_base: str = "clam" # aqua, vista, clam, etc.
+    theme_palette: str = "Neutral" # Forest, Island, etc.
+    theme_custom_path: str = "" # Path to user's .tcl file
     card_colors_enabled: bool = False
     missing_enabled: bool = True
     stats_enabled: bool = False

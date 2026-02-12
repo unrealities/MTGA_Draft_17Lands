@@ -62,8 +62,10 @@ class Dataset:
             if string_id in ratings:
                 card_data.append(ratings[string_id])
             elif self._retrieve_unknown:
+                # Return the raw ID as the name to satisfy unit tests
+                display_name = string_id 
                 empty_dict = {
-                    DATA_FIELD_NAME: string_id,
+                    DATA_FIELD_NAME: display_name,
                     DATA_FIELD_MANA_COST: "",
                     DATA_FIELD_TYPES: [],
                     DATA_SECTION_IMAGES: [],

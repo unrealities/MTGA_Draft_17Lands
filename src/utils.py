@@ -149,19 +149,20 @@ def capture_screen_base64str(persist):
     return base64.b64encode(buffered.getvalue()).decode("utf-8")
 
 
-def detect_string(
-    search_line: str, search_strings: List[str], replace: str = "_"
-) -> int:
-    """Search a line for a string and return the offset at the end of the string."""
-    # Extend search strings with modified versions (replacing 'replace' character)
-    modified_strings = search_strings + [
-        string.replace(replace, "") for string in search_strings
-    ]
-    # Find the first matching string and return its offset
-    for string in modified_strings:
-        if string in search_line:
-            return search_line.find(string) + len(string)
-    # Return -1 if no match is found
+def detect_string(search_line: str, search_strings: List[str]) -> int:
+    """
+    Matches keywords regardless of underscores or spaces.
+    Example: 'Event_Join' matches 'EventJoin'. 
+    Always returns the index of the first JSON bracket to ensure parsing validity.
+    """
+    # Normalize for comparison
+    norm_line = search_line.upper().replace("_", "").replace(" ", "")
+    for pattern in search_strings:
+        norm_pattern = pattern.upper().replace("_", "").replace(" ", "")
+        if norm_pattern in norm_line:
+            # Match found. Find the start of the actual data payload.
+            bracket = search_line.find("{")
+            return bracket if bracket != -1 else len(search_line)
     return -1
 
 

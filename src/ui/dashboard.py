@@ -1,97 +1,130 @@
 """
 src/ui/dashboard.py
 The Live Draft Dashboard Component.
-Manages the 3-column grid containing:
-- Pack Data & Missing Cards
-- Signal Scores
-- Pool CMC Curve
+Compact layout with side-by-side Visuals.
 """
 
 import tkinter
-from tkinter import ttk
-from typing import List, Dict, Any
+import ttkbootstrap as tb
+from ttkbootstrap.constants import *
+from typing import List, Dict, Any, Optional
 
 from src import constants
-from src.card_logic import field_process_sort, row_color_tag, CardResult
+from src.card_logic import (
+    field_process_sort,
+    row_color_tag,
+    CardResult,
+    get_deck_metrics,
+)
 from src.ui.styles import Theme
-from src.ui.components import ModernTreeview
+from src.ui.components import ModernTreeview, SignalMeter, ManaCurvePlot, TypePieChart
 
 
-class DashboardFrame(ttk.Frame):
+class DashboardFrame(tb.Frame):
     def __init__(self, parent, configuration, on_card_select):
         super().__init__(parent)
         self.configuration = configuration
-        self.on_card_select = on_card_select  # Callback for ToolTips
+        self.on_card_select = on_card_select
 
-        # Internal widget references
-        self.table_pack = None
-        self.table_missing = None
-        self.table_signals = None
-        self.table_stats = None
-        self.active_fields = []
+        self._tree_pack: Optional[ModernTreeview] = None
+        self._tree_missing: Optional[ModernTreeview] = None
+
+        self.signal_meter: Optional[SignalMeter] = None
+        self.curve_plot: Optional[ManaCurvePlot] = None
+        self.type_chart: Optional[TypePieChart] = None
+
+        self._fields_pack: List[str] = [constants.DATA_FIELD_NAME]
+        self._fields_missing: List[str] = [constants.DATA_FIELD_NAME]
 
         self._build_layout()
 
+    def get_treeview(self, source_type: str = "pack") -> Optional[ModernTreeview]:
+        return self._tree_pack if source_type == "pack" else self._tree_missing
+
     def _build_layout(self):
-        """Constructs the stable Grid-based layout for the top dashboard."""
-        self.columnconfigure(0, weight=4)  # Pack & Missing
-        self.columnconfigure(1, weight=1)  # Signals
-        self.columnconfigure(2, weight=1)  # Stats
+        # 3 Column Layout
+        self.columnconfigure(0, weight=5)  # Tables (Wide)
+        self.columnconfigure(1, weight=1)  # Signals (Narrow)
+        self.columnconfigure(2, weight=2)  # Analytics (Medium)
         self.rowconfigure(0, weight=1)
 
-        # 1. Left Col: Pack & Missing (Vertical Stack)
-        f_left = ttk.Frame(self)
-        f_left.grid(row=0, column=0, sticky="nsew", padx=4)
+        # --- COL 0: Tables ---
+        f_left = tb.Frame(self)
+        f_left.grid(row=0, column=0, sticky="nsew", padx=(0, 5))
 
-        self.table_pack = self._create_data_table(f_left, "LIVE PACK DATA", "pack")
-        self.table_pack.pack(fill="both", expand=True, pady=(0, 10))
-
-        self.table_missing = self._create_data_table(
-            f_left, "CARDS NOT SEEN", "missing"
+        # Pack Table
+        self.table_pack = tb.Frame(f_left)
+        self.table_pack.pack(fill="both", expand=True, pady=(0, 5))
+        tb.Label(
+            self.table_pack, text="PACK", bootstyle="secondary", font=(None, 8)
+        ).pack(anchor="w")
+        self._tree_pack, self._fields_pack = self._create_data_tree(
+            self.table_pack, "pack"
         )
+        self._tree_pack.pack(fill="both", expand=True)
+
+        # Missing Table
+        self.table_missing = tb.Frame(f_left)
         self.table_missing.pack(fill="both", expand=True)
-
-        # 2. Mid Col: Signals
-        f_mid = ttk.Frame(self)
-        f_mid.grid(row=0, column=1, sticky="nsew", padx=4)
-        ttk.Label(f_mid, text="OPEN SIGNALS", style="Muted.TLabel").pack(
-            anchor="w", pady=(0, 5)
+        tb.Label(
+            self.table_missing, text="SEEN", bootstyle="secondary", font=(None, 8)
+        ).pack(anchor="w")
+        self._tree_missing, self._fields_missing = self._create_data_tree(
+            self.table_missing, "missing"
         )
+        self._tree_missing.pack(fill="both", expand=True)
 
-        self.table_signals = ModernTreeview(
-            f_mid,
-            columns=["Color", "Score"],
-            headers_config={"Color": {"width": 100}, "Score": {"width": 50}},
+        # --- COL 1: Signals ---
+        f_mid = tb.Frame(self)
+        f_mid.grid(row=0, column=1, sticky="ns", padx=5)
+
+        tb.Label(f_mid, text="SIGNALS", bootstyle="secondary", font=(None, 8)).pack(
+            anchor="n"
         )
-        self.table_signals.pack(fill="both", expand=True)
+        self.signal_meter = SignalMeter(f_mid)
+        self.signal_meter.pack(fill=BOTH, expand=True, pady=5)
 
-        # 3. Right Col: Stats
-        f_right = ttk.Frame(self)
-        f_right.grid(row=0, column=2, sticky="nsew", padx=4)
-        ttk.Label(f_right, text="POOL CURVE", style="Muted.TLabel").pack(
-            anchor="w", pady=(0, 5)
+        # --- COL 2: Analytics (Curve + Pie) ---
+        f_right = tb.Frame(self)
+        f_right.grid(row=0, column=2, sticky="nsew", padx=(5, 0))
+
+        # Upper: Curve
+        tb.Label(f_right, text="CURVE", bootstyle="secondary", font=(None, 8)).pack(
+            anchor="w"
         )
+        default_ideal = self.configuration.card_logic.deck_mid.distribution
+        self.curve_plot = ManaCurvePlot(f_right, ideal_distribution=default_ideal)
+        self.curve_plot.pack(fill=X, expand=True, pady=(0, 10))
 
-        self.table_stats = ModernTreeview(
-            f_right,
-            columns=["CMC", "Qty"],
-            headers_config={"CMC": {"width": 80}, "Qty": {"width": 40}},
+        # Lower: Type Balance
+        tb.Label(f_right, text="BALANCE", bootstyle="secondary", font=(None, 8)).pack(
+            anchor="w"
         )
-        self.table_stats.pack(fill="both", expand=True)
+        self.type_chart = TypePieChart(f_right)
+        self.type_chart.pack(fill=X, expand=True)
 
-    def _create_data_table(self, parent, title, source_type):
-        """Creates a Treeview with columns mapped to user preferences."""
-        container = ttk.Frame(parent)
-        ttk.Label(container, text=title, style="Muted.TLabel").pack(
-            anchor="w", pady=(0, 5)
+        # Legend for Pie Chart
+        legend = tb.Frame(f_right)
+        legend.pack(fill=X, pady=5)
+        tb.Label(legend, text="● Crea", foreground=Theme.SUCCESS, font=(None, 7)).pack(
+            side=LEFT, padx=2
         )
+        tb.Label(legend, text="● Spell", foreground=Theme.ACCENT, font=(None, 7)).pack(
+            side=LEFT, padx=2
+        )
+        tb.Label(
+            legend, text="● Land", foreground=Theme.BG_TERTIARY, font=(None, 7)
+        ).pack(side=LEFT, padx=2)
 
+    def _create_data_tree(
+        self, parent, source_type
+    ) -> tuple[ModernTreeview, List[str]]:
+        # [Same code as before]
         s = self.configuration.settings
         cols = ["Card"]
-        hd = {"Card": {"width": 200, "anchor": tkinter.W}}
-        active_fields = [constants.DATA_FIELD_NAME]
+        hd = {"Card": {"width": 180, "anchor": tkinter.W}}
+        fields = [constants.DATA_FIELD_NAME]
 
-        # Dynamic Columns 2-7
         config_cols = [
             s.column_2,
             s.column_3,
@@ -108,58 +141,65 @@ class DashboardFrame(ttk.Frame):
             if val != constants.DATA_FIELD_DISABLED:
                 lbl = k2l.get(val, val.upper())
                 cols.append(lbl)
-                hd[lbl] = {"width": 60, "anchor": tkinter.CENTER}
-                active_fields.append(val)
+                hd[lbl] = {"width": 50, "anchor": tkinter.CENTER}
+                fields.append(val)
 
-        # Save for data population
-        if source_type == "pack":
-            self.active_fields = active_fields
-
-        t = ModernTreeview(container, columns=cols, headers_config=hd)
-        t.pack(fill="both", expand=True)
+        t = ModernTreeview(parent, columns=cols, headers_config=hd)
         t.bind("<<TreeviewSelect>>", lambda e: self.on_card_select(e, t, source_type))
-        return container
+        return t, fields
 
     def update_pack_data(
         self, cards, colors, metrics, tier_data, current_pick, source_type="pack"
     ):
-        """Populates one of the data tables (Pack or Missing)."""
-        container = self.table_pack if source_type == "pack" else self.table_missing
-        table = list(container.children.values())[1]  # Get Treeview from Frame
+        # [Same code as before]
+        tree = self.get_treeview(source_type)
+        fields = self._fields_pack if source_type == "pack" else self._fields_missing
+        if not tree:
+            return
 
-        for item in table.get_children():
-            table.delete(item)
+        for item in tree.get_children():
+            tree.delete(item)
         if not cards:
             return
 
         processor = CardResult(metrics, tier_data, self.configuration, current_pick)
-        results = processor.return_results(cards, colors, self.active_fields)
+        results = processor.return_results(cards, colors, fields)
 
-        # Sort by first stat column
-        sort_idx = 1 if len(self.active_fields) > 1 else 0
+        sort_idx = 1 if len(fields) > 1 else 0
         results.sort(
             key=lambda x: field_process_sort(x["results"][sort_idx]), reverse=True
         )
 
         for idx, item in enumerate(results):
+            tag = "bw_odd" if idx % 2 == 0 else "bw_even"
             if self.configuration.settings.card_colors_enabled:
                 tag = row_color_tag(item.get(constants.DATA_FIELD_MANA_COST, ""))
-            else:
-                tag = "bw_odd" if idx % 2 == 0 else "bw_even"
-            table.insert("", "end", values=item["results"], tags=(tag,))
+            display_values = [str(val) for val in item["results"]]
+            tree.insert("", "end", values=display_values, tags=(tag,))
 
     def update_signals(self, scores: Dict[str, float]):
-        """Populates the Signal table."""
-        for item in self.table_signals.get_children():
-            self.table_signals.delete(item)
-        sorted_s = sorted(scores.items(), key=lambda x: x[1], reverse=True)
-        for c, v in sorted_s:
-            name = constants.COLOR_NAMES_DICT.get(c, c)
-            self.table_signals.insert("", "end", values=(name, f"{v:.1f}"))
+        if self.signal_meter:
+            self.signal_meter.update_values(scores)
 
     def update_stats(self, distribution: List[int]):
-        """Populates the Pool Curve table."""
-        for item in self.table_stats.get_children():
-            self.table_stats.delete(item)
-        for i, val in enumerate(distribution):
-            self.table_stats.insert("", "end", values=(f"{i} CMC", val))
+        if self.curve_plot:
+            self.curve_plot.update_curve(distribution)
+            self.curve_plot.redraw()
+
+    def update_deck_stats(self, taken_cards):
+        """Called by App to update pie chart."""
+        if self.type_chart:
+            # We need to calculate creatures vs non-creatures here or pass it in
+            # Assuming you pass the raw card list:
+            creatures = 0
+            non_creatures = 0
+            lands = 0
+            for c in taken_cards:
+                types = c.get(constants.DATA_FIELD_TYPES, [])
+                if constants.CARD_TYPE_LAND in types:
+                    lands += 1
+                elif constants.CARD_TYPE_CREATURE in types:
+                    creatures += 1
+                else:
+                    non_creatures += 1
+            self.type_chart.update_counts(creatures, non_creatures, lands)

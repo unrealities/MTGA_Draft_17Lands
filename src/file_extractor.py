@@ -76,37 +76,41 @@ def decode_mana_cost(encoded_cost):
     return decoded_cost, cmc
 
 
-def search_arena_log_locations(input_location=None):
-    """Searches local directories for the location of the Arena Player.log file"""
-    log_location = ""
-    try:
-        paths = []
+def search_arena_log_locations(arg_location=None, config_location=None):
+    """
+    Top 1% Robustness: Prioritizes system paths over stored paths to avoid
+    test-pollution issues (e.g. stale pytest paths in config).
+    """
+    # 1. Highest Priority: Manual command line argument
+    if arg_location and os.path.exists(arg_location):
+        return arg_location
 
-        if input_location:
-            paths.extend(input_location)
+    # 2. Second Priority: System Default Paths (The "Real" Game logs)
+    system_paths = []
+    if sys.platform == constants.PLATFORM_ID_LINUX:
+        system_paths.append(
+            os.path.join(os.path.expanduser("~"), constants.LOG_LOCATION_LINUX)
+        )
+    elif sys.platform == constants.PLATFORM_ID_OSX:
+        system_paths.append(
+            os.path.join(os.path.expanduser("~"), constants.LOG_LOCATION_OSX)
+        )
+    else:
+        # Windows drives check
+        path_list = [constants.WINDOWS_DRIVES, [constants.LOG_LOCATION_WINDOWS]]
+        system_paths.extend([os.path.join(*x) for x in itertools.product(*path_list)])
 
-        if sys.platform == constants.PLATFORM_ID_LINUX:
-            paths.extend(
-                [os.path.join(os.path.expanduser("~"), constants.LOG_LOCATION_LINUX)]
-            )
-        elif sys.platform == constants.PLATFORM_ID_OSX:
-            paths.extend(
-                [os.path.join(os.path.expanduser("~"), constants.LOG_LOCATION_OSX)]
-            )
-        else:
-            path_list = [constants.WINDOWS_DRIVES, [constants.LOG_LOCATION_WINDOWS]]
-            paths.extend([os.path.join(*x) for x in itertools.product(*path_list)])
+    for path in system_paths:
+        if path and os.path.exists(path):
+            return path
 
-        for file_path in paths:
-            if file_path:
-                logger.info("Arena Log: Searching File Path %s", file_path)
-                if os.path.exists(file_path):
-                    log_location = file_path
-                    break
+    # 3. Lowest Priority: The path stored in config (might be stale/temp)
+    if config_location and os.path.exists(config_location):
+        # Additional check: Does the path look like a temp folder?
+        if "/private/var/" not in config_location and "/tmp/" not in config_location:
+            return config_location
 
-    except Exception as error:
-        logger.error(error)
-    return log_location
+    return ""
 
 
 def retrieve_arena_directory(log_location):

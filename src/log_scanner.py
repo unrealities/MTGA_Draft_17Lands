@@ -72,11 +72,11 @@ class ArenaScanner:
         self.current_pick = 0
         self.current_pack = 0
         self.number_of_players = 8
-        self.picked_cards = [[] for i in range(self.number_of_players)]
+        self.picked_cards = [[] for _ in range(self.number_of_players)]
+        self.pack_cards = [[] for _ in range(self.number_of_players)]
+        self.initial_pack = [[] for _ in range(self.number_of_players)]
         self.taken_cards = []
         self.sideboard = []
-        self.pack_cards = [[]] * self.number_of_players
-        self.initial_pack = [[]] * self.number_of_players
         self.previous_picked_pack = 0
         self.current_picked_pick = 0
         self.file_size = 0
@@ -86,8 +86,14 @@ class ArenaScanner:
         self.draft_history = []
 
     def set_arena_file(self, filename):
-        """Public function that's used for storing the location of the Player.log file"""
-        self.arena_file = filename
+        """Updates the log path and resets pointers for a clean scan."""
+        if self.arena_file != filename:
+            logger.info(f"Scanner path updated to: {filename}")
+            self.arena_file = filename
+            self.search_offset = 0
+            self.draft_start_offset = 0
+            self.file_size = 0
+            self.clear_draft(True)  # Force full state clear
 
     def log_enable(self, enable):
         """Enable/disable the application draft log feature that records draft data in a log file within the Logs folder"""
@@ -131,11 +137,11 @@ class ArenaScanner:
         self.draft_sets = None
         self.current_pick = 0
         self.number_of_players = 8
-        self.picked_cards = [[] for i in range(self.number_of_players)]
+        self.picked_cards = [[] for _ in range(self.number_of_players)]
+        self.pack_cards = [[] for _ in range(self.number_of_players)]
+        self.initial_pack = [[] for _ in range(self.number_of_players)]
         self.taken_cards = []
         self.sideboard = []
-        self.pack_cards = [[]] * self.number_of_players
-        self.initial_pack = [[]] * self.number_of_players
         self.current_pack = 0
         self.previous_picked_pack = 0
         self.current_picked_pick = 0
@@ -390,48 +396,39 @@ class ArenaScanner:
             logger.error(error)
 
     def __draft_pack_search_premier_p1p1(self):
-        """Parse premier draft string that contains the P1P1 pack data"""
+        """Parse P1P1. Advancing pack_offset is now guaranteed."""
         offset = self.pack_offset
-        draft_data = object()
         pack_cards = []
-        pack = 0
-        pick = 0
-        # Identify and print out the log lines that contain the draft packs
         try:
             with open(self.arena_file, "r", encoding="utf-8", errors="replace") as log:
                 log.seek(offset)
-
                 while True:
                     line = log.readline()
                     if not line:
                         break
-                    offset = log.tell()
+                    current_pos = log.tell()
 
                     if detect_string(line, [constants.DRAFT_P1P1_STRING_PREMIER]) != -1:
-                        # Remove any prefix (e.g. log timestamp)
+                        self.pack_offset = current_pos
+
                         start_offset = line.find('{"id":')
                         self.draft_log.info(line)
                         entry_string = line[start_offset:]
                         draft_data = process_json(entry_string)
 
-                        pack_cards = []
                         try:
                             cards = json_find(
                                 constants.DRAFT_P1P1_STRING_PREMIER, draft_data
                             )
-
-                            for card in cards:
-                                pack_cards.append(str(card))
+                            pack_cards = [str(c) for c in cards]
 
                             pack = json_find("PackNumber", draft_data)
                             pick = json_find("PickNumber", draft_data)
 
-                            # Exit if you're not receiving P1P1
                             if pack != 1 or pick != 1:
-                                break
+                                continue
 
                             pack_index = (pick - 1) % self.number_of_players
-
                             if self.current_pack != pack:
                                 self.initial_pack = [[]] * self.number_of_players
 
@@ -439,22 +436,12 @@ class ArenaScanner:
                                 self.initial_pack[pack_index] = pack_cards
 
                             self.pack_cards[pack_index] = pack_cards
-
-                            if (self.current_pack == 0) and (self.current_pick == 0):
-                                self.current_pack = pack
-                                self.current_pick = pick
-
+                            self.current_pack, self.current_pick = pack, pick
                             self._record_pack(pack, pick, pack_cards)
-
-                            if self.step_through:
-                                break
                         except Exception as error:
-                            self.draft_log.info(
-                                "__draft_pack_search_premier_p1p1 Sub Error: %s", error
-                            )
+                            logger.error(f"P1P1 search sub-error: {error}")
         except Exception as error:
-            self.draft_log.info("__draft_pack_search_premier_p1p1 Error: %s", error)
-
+            logger.error(f"P1P1 search error: {error}")
         return pack_cards
 
     def __draft_picked_search_premier_v1(self):
