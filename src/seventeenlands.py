@@ -1,160 +1,131 @@
-from typing import List, Dict, Any
+"""
+src/seventeenlands.py
+Professional, Rate-Limited 17Lands Client.
+Supports Archetype-Specific performance data with a 24-hour raw cache.
+"""
+
 import requests
-import re
-from src.logger import create_logger
-from src.constants import (
-    WIN_RATE_OPTIONS,
-    DATA_FIELD_17LANDS_DICT,
-    DATA_SECTION_IMAGES,
-    DATA_FIELD_NAME,
-    LIMITED_USER_GROUP_ALL,
-    FILTER_OPTION_ALL_DECKS,
-    DATA_FIELD_IWD,
-    DATA_FIELD_ATA,
-    DATA_FIELD_ALSA,
-    DATA_SECTION_RATINGS,
-    DECK_COLORS,
-    COLOR_WIN_RATE_GAME_COUNT_THRESHOLD_DEFAULT,
-)
+import time
+import os
+import json
+import logging
+from typing import List, Dict, Any, Optional
+from src.utils import is_cache_stale
 
-URL_17LANDS = "https://www.17lands.com"
-IMAGE_17LANDS_SITE_PREFIX = "/static/images/"
-COLOR_FILTER = [c for c in DECK_COLORS if c not in [FILTER_OPTION_ALL_DECKS, "Auto"]]
-REQUEST_TIMEOUT = 30
-
-logger = create_logger()
+logger = logging.getLogger(__name__)
 
 
 class Seventeenlands:
-    def build_card_ratings_url(
-        self, set_code, draft, start_date, end_date, user_group, color
-    ):
-        from src.utils import normalize_color_string
+    URL_BASE = "https://www.17lands.com"
+    # Identify the app to 17Lands as per professional standards
+    HEADERS = {
+        "User-Agent": "MTGADraftTool/3.38 (Educational Tool; https://github.com/unrealities/MTGA_Draft_17Lands)"
+    }
+    CACHE_DIR = os.path.join(os.getcwd(), "Temp", "RawCache")
 
-        user_group_param = (
-            ""
-            if user_group == LIMITED_USER_GROUP_ALL
-            else f"&user_group={user_group.lower()}"
-        )
-        std_color = normalize_color_string(color)
+    # Standard color pairs for Archetype Fit logic
+    ARCHETYPES = ["All", "WU", "UB", "BR", "RG", "WG", "WB", "UR", "BG", "WR", "UG"]
+
+    def __init__(self):
+        self.session = requests.Session()
+        self.session.headers.update(self.HEADERS)
+        if not os.path.exists(self.CACHE_DIR):
+            os.makedirs(self.CACHE_DIR)
+
+    def download_set_data(
+        self, set_code: str, draft_format: str, progress_callback=None
+    ) -> Dict[str, Any]:
+        """
+        Public entry point to build a full multi-archetype dataset.
+        """
+        master_card_map = {}
+
+        for i, color in enumerate(self.ARCHETYPES):
+            if progress_callback:
+                progress_callback(
+                    f"Fetching {color} Archetype...", (i / len(self.ARCHETYPES)) * 100
+                )
+
+            raw_data = self._fetch_archetype_with_cache(set_code, draft_format, color)
+            self._process_archetype_data(color, raw_data, master_card_map)
+
+            # Respectful Throttling: Sleep 1.5s between network calls if not from cache
+            # This is the 'Elite' way to avoid hitting rate limits.
+            # We only sleep if the previous call was a real network request (simplified here).
+            time.sleep(1.5)
+
+        return master_card_map
+
+    def _fetch_archetype_with_cache(
+        self, set_code: str, draft_format: str, color: str
+    ) -> List[Dict]:
+        """Retrieves data from 17Lands, prioritizing the local raw cache."""
+        cache_name = f"{set_code}_{draft_format}_{color}.json".lower()
+        cache_path = os.path.join(self.CACHE_DIR, cache_name)
+
+        if not is_cache_stale(cache_path, hours=24):
+            logger.info(f"Using cached 17Lands data for {set_code}/{color}")
+            with open(cache_path, "r") as f:
+                return json.load(f)
+
+        # Cache is stale or missing - go to network
         url = (
-            f"https://www.17lands.com/card_ratings/data?expansion={set_code}"
-            f"&format={draft}&start_date={start_date}&end_date={end_date}{user_group_param}"
+            f"{self.URL_BASE}/card_ratings/data?expansion={set_code.upper()}"
+            f"&format={draft_format}"
         )
-        if std_color != FILTER_OPTION_ALL_DECKS:
-            url += f"&colors={std_color}"
-        return url
+        if color != "All":
+            url += f"&colors={color}"
 
-    def download_card_ratings(
-        self, set_code, colors, draft, start_date, end_date, user_group, card_data
+        try:
+            response = self.session.get(url, timeout=20)
+            response.raise_for_status()
+            data = response.json()
+
+            # Update cache immediately
+            with open(cache_path, "w") as f:
+                json.dump(data, f)
+
+            return data
+        except Exception as e:
+            logger.error(f"17Lands API Failure ({color}): {e}")
+            return []
+
+    def _process_archetype_data(
+        self, color_key: str, raw_list: List[Dict], card_map: Dict
     ):
-        from src.utils import normalize_color_string
+        """Merges individual archetype stats into the master card objects."""
+        # 17Lands 'All' maps to our 'All Decks' filter
+        internal_color_key = "All Decks" if color_key == "All" else color_key
 
-        url = self.build_card_ratings_url(
-            set_code, draft, start_date, end_date, user_group, colors
-        )
-        response = requests.get(url, timeout=REQUEST_TIMEOUT)
-        response.raise_for_status()
-        self.process_card_ratings(
-            normalize_color_string(colors), response.json(), card_data
-        )
-
-    def download_color_ratings(
-        self,
-        set_code,
-        draft,
-        start_date,
-        end_date,
-        user_group,
-        color_filter=None,
-        threshold=COLOR_WIN_RATE_GAME_COUNT_THRESHOLD_DEFAULT,
-    ):
-        url = self._build_color_ratings_url(
-            set_code, draft, start_date, end_date, user_group
-        )
-        response = requests.get(url, timeout=REQUEST_TIMEOUT)
-        response.raise_for_status()
-        return self._process_color_ratings(
-            response.json(), color_filter or COLOR_FILTER, threshold
-        )
-
-    def process_card_ratings(self, color, cards, card_data):
-        for card in cards:
-            try:
-                name = card.get(DATA_FIELD_NAME, "")
-                if name not in card_data:
-                    card_data[name] = {
-                        DATA_SECTION_RATINGS: [],
-                        DATA_SECTION_IMAGES: [],
-                    }
-                for data_field in DATA_FIELD_17LANDS_DICT[DATA_SECTION_IMAGES]:
-                    if data_field in card and card[data_field]:
-                        img = (
-                            f"{URL_17LANDS}{card[data_field]}"
-                            if card[data_field].startswith(IMAGE_17LANDS_SITE_PREFIX)
-                            else card[data_field]
-                        )
-                        if img not in card_data[name][DATA_SECTION_IMAGES]:
-                            card_data[name][DATA_SECTION_IMAGES].append(img)
-                color_data = {color: {}}
-                for key, value in DATA_FIELD_17LANDS_DICT.items():
-                    if key == DATA_SECTION_IMAGES:
-                        continue
-                    if value in card:
-                        if key in WIN_RATE_OPTIONS or key == DATA_FIELD_IWD:
-                            color_data[color][key] = (
-                                round(float(card[value]) * 100.0, 2)
-                                if card[value]
-                                else 0.0
-                            )
-                        elif key in (DATA_FIELD_ATA, DATA_FIELD_ALSA):
-                            color_data[color][key] = round(float(card[value] or 0.0), 2)
-                        else:
-                            color_data[color][key] = int(card[value] or 0)
-                card_data[name][DATA_SECTION_RATINGS].append(color_data)
-            except Exception as error:
-                logger.error(error)
-        return card_data
-
-    def _build_color_ratings_url(
-        self, set_code, draft, start_date, end_date, user_group
-    ):
-        user_group_param = (
-            ""
-            if user_group == LIMITED_USER_GROUP_ALL
-            else f"&user_group={user_group.lower()}"
-        )
-        return f"https://www.17lands.com/color_ratings/data?expansion={set_code}&event_type={draft}&start_date={start_date}&end_date={end_date}{user_group_param}&combine_splash=true"
-
-    def _process_color_ratings(
-        self, colors_json: List[Dict], color_filter: list, threshold: int
-    ):
-        from src.utils import normalize_color_string
-
-        color_ratings = {}
-        game_count = 0
-        for entry in colors_json:
-            try:
-                if entry.get("is_summary"):
-                    if entry.get("color_name") == "All Decks":
-                        game_count = entry.get("games", 0)
-                    continue
-
-                raw_code = entry.get("short_name", "")
-                if not raw_code:
-                    match = re.search(r"\((.*?)\)", entry.get("color_name", ""))
-                    raw_code = match.group(1) if match else ""
-
-                if not raw_code:
-                    continue
-                std_key = normalize_color_string(raw_code)
-
-                if entry.get("games", 0) >= threshold:
-                    winrate = round(
-                        (float(entry.get("wins", 0)) / entry.get("games", 1)) * 100, 1
-                    )
-                    color_ratings[std_key] = winrate
-            except Exception:
+        for card in raw_list:
+            name = card.get("name")
+            if not name:
                 continue
 
-        return (color_ratings, game_count)
+            if name not in card_map:
+                card_map[name] = {
+                    "name": name,
+                    "image": self._extract_images(card),
+                    "deck_colors": {},
+                }
+
+            # Store the performance data for this specific archetype
+            card_map[name]["deck_colors"][internal_color_key] = {
+                "gihwr": round(float(card.get("ever_drawn_win_rate") or 0) * 100, 2),
+                "alsa": round(float(card.get("avg_seen") or 0), 2),
+                "ata": round(float(card.get("avg_pick") or 0), 2),
+                "iwd": round(
+                    float(card.get("drawn_improvement_win_rate") or 0) * 100, 2
+                ),
+                "samples": int(card.get("ever_drawn_game_count") or 0),
+            }
+
+    def _extract_images(self, card_data: Dict) -> List[str]:
+        imgs = []
+        for f in ["url", "url_back"]:
+            val = card_data.get(f)
+            if val:
+                imgs.append(
+                    f"{self.URL_BASE}{val}" if val.startswith("/static") else val
+                )
+        return imgs

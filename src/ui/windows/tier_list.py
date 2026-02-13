@@ -1,7 +1,7 @@
 """
 src/ui/windows/tier_list.py
-Integrated Tier List Management Panel.
-Handles API-based imports from 17Lands and manages local tier list history.
+Professional Tier List Management Panel.
+Supports API-based imports and static history management.
 """
 
 import tkinter
@@ -12,12 +12,13 @@ from typing import Callable
 
 from src.tier_list import TierList, TIER_FOLDER, TIER_FILE_PREFIX, TIER_URL_17LANDS
 from src.ui.styles import Theme
-from src.ui.components import ModernTreeview
+from src.ui.components import DynamicTreeviewManager
 
 
 class TierListWindow(ttk.Frame):
-    def __init__(self, parent, on_update_callback: Callable):
+    def __init__(self, parent, configuration, on_update_callback: Callable):
         super().__init__(parent)
+        self.configuration = configuration
         self.on_update_callback = on_update_callback
         self.vars = {}
 
@@ -32,21 +33,22 @@ class TierListWindow(ttk.Frame):
         container = ttk.Frame(self, padding=10)
         container.pack(fill="both", expand=True)
 
-        # --- 1. History Table ---
+        # --- 1. History Table (Static) ---
         ttk.Label(container, text="IMPORTED TIER LISTS", style="Muted.TLabel").pack(
             anchor="w", pady=(0, 5)
         )
 
         cols = ["Set", "Label", "Date"]
-        headers = {
-            "Set": {"width": 80, "anchor": tkinter.W},
-            "Label": {"width": 200, "anchor": tkinter.W},
-            "Date": {"width": 150, "anchor": tkinter.CENTER},
-        }
-        self.table = ModernTreeview(
-            container, columns=cols, headers_config=headers, height=10
+        self.table_manager = DynamicTreeviewManager(
+            container, 
+            view_id="tier_list_history",
+            configuration=self.configuration,
+            on_update_callback=self.refresh,
+            static_columns=["Set", "Label", "Date"],
+            height=10
         )
-        self.table.pack(fill="both", expand=True, pady=(0, 15))
+        self.table_manager.pack(fill="both", expand=True, pady=(0, 15))
+        self.table = self.table_manager.tree
 
         # --- 2. Import Form ---
         form_frame = ttk.Frame(container, style="Card.TFrame", padding=15)
@@ -55,7 +57,8 @@ class TierListWindow(ttk.Frame):
         ttk.Label(
             form_frame,
             text="IMPORT NEW TIER LIST",
-            style="SubHeader.TLabel",
+            font=(Theme.FONT_FAMILY, 9, "bold"),
+            foreground=Theme.ACCENT,
             background=Theme.BG_SECONDARY,
         ).pack(anchor="w", pady=(0, 10))
 
@@ -69,13 +72,12 @@ class TierListWindow(ttk.Frame):
         self.vars["url"] = tkinter.StringVar()
         self.entry_url = ttk.Entry(form_frame, textvariable=self.vars["url"])
         self.entry_url.pack(fill="x", pady=(2, 10))
-        # Default placeholder text for UX
         self.entry_url.insert(0, "https://www.17lands.com/tier_list/...")
 
         # Label Field
         ttk.Label(
             form_frame,
-            text="CUSTOM LABEL (e.g. 'LSV Set Review'):",
+            text="CUSTOM LABEL (e.g. 'Pro Review'):",
             style="Muted.TLabel",
             background=Theme.BG_SECONDARY,
         ).pack(anchor="w")
@@ -122,9 +124,7 @@ class TierListWindow(ttk.Frame):
             )
             return
 
-        if not label or label.startswith(
-            "https:"
-        ):  # Simple check for pasted URL in label box
+        if not label or label.startswith("https:"):
             messagebox.showwarning(
                 "Missing Label", "Please provide a custom label for this tier list."
             )

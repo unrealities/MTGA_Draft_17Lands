@@ -1,15 +1,16 @@
 """
 src/ui/components.py
 Atomic UI Widgets for the MTGA Draft Tool.
-Includes modern visual components (Meters, Plots) alongside legacy widgets.
 """
 
 import tkinter
-from tkinter import ttk
+from tkinter import ttk, messagebox
 import ttkbootstrap as tb
 from ttkbootstrap.constants import *
 import requests
 import io
+import math
+import re
 from typing import List, Dict, Any, Tuple, Optional
 from PIL import Image, ImageTk
 
@@ -239,50 +240,46 @@ class CardToolTip(tkinter.Toplevel):
 
 
 class ModernTreeview(ttk.Treeview):
-    """Treeview optimized for MTG analytics."""
+    """A high-density Treeview with built-in sorting logic."""
 
-    def __init__(
-        self, parent, columns: List[str], headers_config: Dict[str, Dict], **kwargs
-    ):
+    def __init__(self, parent, columns, **kwargs):
         super().__init__(
             parent, columns=columns, show="headings", style="Treeview", **kwargs
         )
         self.column_sort_state = {col: False for col in columns}
+        self.active_fields = []  # Injected by Manager
+        self._setup_headers(columns)
+
+    def _setup_headers(self, columns):
+        from src.constants import COLUMN_FIELD_LABELS
 
         for col in columns:
-            cfg = headers_config.get(col, {})
-            anchor = cfg.get("anchor", tkinter.CENTER)
-            width = cfg.get("width", 65)
-            is_id = col in ("Card", "Name", "Set", "Full Pool")
-            self.column(
-                col,
-                anchor=anchor,
-                width=width,
-                minwidth=150 if is_id else width,
-                stretch=is_id,
-            )
-            self.heading(
-                col, text=col.upper(), command=lambda c=col: self._handle_sort(c)
-            )
-        self._configure_tags()
+            if col == "add_btn":
+                self.heading(col, text="+")
+                self.column(col, width=30, stretch=False, anchor=tkinter.CENTER)
+                continue
 
-    def _configure_tags(self):
-        for tag, vals in constants.ROW_TAGS_COLORS_DICT.items():
-            self.tag_configure(tag, background=vals[1], foreground=vals[2])
-        self.tag_configure("bw_odd", background=Theme.BG_PRIMARY)
-        self.tag_configure("bw_even", background=Theme.BG_SECONDARY)
+            label = COLUMN_FIELD_LABELS.get(col, str(col).upper()).split(":")[0]
+            width = 200 if col == "name" else 65
+            self.heading(col, text=label, command=lambda c=col: self._handle_sort(c))
+            self.column(
+                col, width=width, anchor=tkinter.W if col == "name" else tkinter.CENTER
+            )
 
     def _handle_sort(self, col):
+        from src.card_logic import field_process_sort
+
         self.column_sort_state[col] = not self.column_sort_state[col]
         rev = self.column_sort_state[col]
-        items = []
-        for k in self.get_children(""):
-            items.append((self.item(k)["values"], k))
+        items = [(self.item(k)["values"], k) for k in self.get_children("")]
 
-        idx = self["columns"].index(col)
+        try:
+            col_idx = list(self["columns"]).index(col)
+        except ValueError:
+            return
 
         def _key(t):
-            p = field_process_sort(t[0][idx])
+            p = field_process_sort(t[0][col_idx])
             try:
                 return (1, float(p), str(t[0][0]))
             except:
@@ -294,6 +291,156 @@ class ModernTreeview(ttk.Treeview):
             tags = [t for t in self.item(k, "tags") if t not in ("bw_odd", "bw_even")]
             tags.append("bw_odd" if i % 2 == 0 else "bw_even")
             self.item(k, tags=tuple(tags))
+
+
+class DynamicTreeviewManager(ttk.Frame):
+    """
+    Wrapper that manages a ModernTreeview.
+    Handles column persistence and dynamic reconfiguration.
+    """
+
+    def __init__(
+        self,
+        parent,
+        view_id,
+        configuration,
+        on_update_callback,
+        static_columns=None,
+        **kwargs,
+    ):
+        super().__init__(parent)
+        self.view_id = view_id
+        self.config = configuration
+        self.on_update = on_update_callback
+        self.static_columns = static_columns
+        self.tree = None
+        self.kwargs = kwargs
+
+        self.rebuild(trigger_callback=False)
+
+    def rebuild(self, trigger_callback=True):
+        if self.tree:
+            self.tree.destroy()
+
+        if self.static_columns:
+            self.active_fields = list(self.static_columns)
+        else:
+            self.active_fields = self.config.settings.column_configs.get(
+                self.view_id, ["name", "value", "gihwr"]
+            )
+
+        display_cols = (
+            self.active_fields
+            if self.static_columns
+            else self.active_fields + ["add_btn"]
+        )
+
+        self.tree = ModernTreeview(self, columns=display_cols, **self.kwargs)
+        self.tree.active_fields = (
+            self.active_fields
+        )  # Inject into widget for dashboard access
+        self.tree.pack(fill="both", expand=True)
+
+        if not self.static_columns:
+            # Bind both standard right-click and Mac Ctrl-click
+            self.tree.bind("<Button-3>", self._show_context_menu)
+            self.tree.bind("<Control-Button-1>", self._show_context_menu)
+            self.tree.bind("<Button-1>", self._handle_click)
+
+        if trigger_callback:
+            self.on_update()
+
+    def _show_context_menu(self, event):
+        """Header context menu for removing or adding columns."""
+        region = self.tree.identify_region(event.x, event.y)
+        if region != "heading":
+            return
+
+        col_id = self.tree.identify_column(event.x)
+        try:
+            idx = int(col_id.replace("#", "")) - 1
+        except:
+            return
+
+        if idx >= len(self.active_fields):
+            return
+
+        field = self.active_fields[idx]
+        menu = tkinter.Menu(self, tearoff=0)
+
+        # 1. Removal Logic
+        if field != "name":
+            menu.add_command(
+                label=f"Remove '{field.upper()}'",
+                command=lambda i=idx: self._remove_column(i),
+            )
+            menu.add_separator()
+
+        # 2. Add Column Submenu
+        add_m = tkinter.Menu(menu, tearoff=0)
+        menu.add_cascade(label="Add Column", menu=add_m)
+        from src.constants import COLUMN_FIELD_LABELS
+
+        for f, label in COLUMN_FIELD_LABELS.items():
+            if f not in self.active_fields:
+                add_m.add_command(
+                    label=label, command=lambda new_f=f: self._add_column(new_f)
+                )
+
+        # 3. Utility Options
+        menu.add_separator()
+        menu.add_command(label="Reset to Defaults", command=self._reset_defaults)
+
+        menu.post(event.x_root, event.y_root)
+
+    def _handle_click(self, event):
+        """Handles the '+' button left-click."""
+        region = self.tree.identify_region(event.x, event.y)
+        if region != "heading":
+            return
+        col_id = self.tree.identify_column(event.x)
+        try:
+            idx = int(col_id.replace("#", "")) - 1
+        except:
+            return
+        if idx == len(self.active_fields):
+            self._show_add_menu(event)
+
+    def _show_add_menu(self, event):
+        menu = tkinter.Menu(self, tearoff=0)
+        from src.constants import COLUMN_FIELD_LABELS
+
+        for f, label in COLUMN_FIELD_LABELS.items():
+            if f not in self.active_fields:
+                menu.add_command(
+                    label=label, command=lambda new_f=f: self._add_column(new_f)
+                )
+        menu.post(event.x_root, event.y_root)
+
+    def _add_column(self, field):
+        if len(self.active_fields) >= 10:
+            return
+        self.active_fields.append(field)
+        self._persist()
+
+    def _remove_column(self, idx):
+        if len(self.active_fields) <= 1:
+            return  # Must keep one column
+        self.active_fields.pop(idx)
+        self._persist()
+
+    def _reset_defaults(self):
+        """Restores the standard pro-level column set."""
+        self.active_fields = ["name", "value", "gihwr"]
+        self._persist()
+
+    def _persist(self):
+        """Saves configuration and triggers a visual rebuild."""
+        from src.configuration import write_configuration
+
+        self.config.settings.column_configs[self.view_id] = self.active_fields
+        write_configuration(self.config)
+        self.rebuild(trigger_callback=True)
 
 
 class SignalMeter(tb.Frame):
@@ -546,4 +693,194 @@ class TypePieChart(tb.Frame):
         )
         self.canvas.create_text(
             cx, cy, text=str(total), fill=Theme.TEXT_MAIN, font=("Segoe UI", 8, "bold")
+        )
+
+
+class ScrolledFrame(tb.Frame):
+    """
+    A horizontally scrollable container.
+    """
+
+    def __init__(self, parent, **kwargs):
+        super().__init__(parent, **kwargs)
+
+        # 1. Scrollbar at bottom
+        self.scrollbar = tb.Scrollbar(
+            self, orient="horizontal", bootstyle="secondary-round"
+        )
+        self.scrollbar.pack(side="bottom", fill="x")
+
+        # 2. Canvas
+        self.canvas = tb.Canvas(self, bg=Theme.BG_PRIMARY, highlightthickness=0)
+        self.canvas.pack(side="top", fill="both", expand=True)
+
+        # 3. Link Scrollbar
+        self.canvas.configure(xscrollcommand=self.scrollbar.set)
+        self.scrollbar.configure(command=self.canvas.xview)
+
+        # 4. The Inner Frame (Holds the content)
+        self.scrollable_frame = tb.Frame(self.canvas)
+
+        # 5. Create Window in Canvas
+        self.window_id = self.canvas.create_window(
+            (0, 0), window=self.scrollable_frame, anchor="nw"
+        )
+
+        # 6. Bind Events
+        self.scrollable_frame.bind("<Configure>", self._on_frame_configure)
+        self.canvas.bind("<Configure>", self._on_canvas_configure)
+
+    def _on_frame_configure(self, event):
+        self.canvas.configure(scrollregion=self.canvas.bbox("all"))
+
+    def _on_canvas_configure(self, event):
+        self.canvas.itemconfig(self.window_id, height=event.height)
+
+
+class CardPile(tb.Frame):
+    """
+    Vertical column for cards.
+    """
+
+    def __init__(self, parent, title, app_instance, **kwargs):
+        super().__init__(parent, **kwargs)
+        self.app = app_instance
+
+        # HEADER FIX:
+        # No nested frame. Just a solid label block.
+        # bootstyle="inverse-secondary" creates a solid block background.
+        tb.Label(
+            self,
+            text=title,
+            font=("Segoe UI", 9, "bold"),
+            bootstyle="inverse-secondary",
+            anchor="center",
+            padding=5,
+        ).pack(fill=X, pady=(0, 2))
+
+        self.container = tb.Frame(self)
+        self.container.pack(fill=BOTH, expand=True)
+
+    def add_card(self, card_data):
+        name = card_data[constants.DATA_FIELD_NAME]
+        mana_cost = card_data.get(constants.DATA_FIELD_MANA_COST, "")
+        count = card_data.get(constants.DATA_FIELD_COUNT, 1)
+
+        found_colors = set(re.findall(r"[WUBRG]", mana_cost or ""))
+
+        pip_order = ["W", "U", "B", "R", "G"]
+        sorted_colors = sorted(
+            list(found_colors),
+            key=lambda x: pip_order.index(x) if x in pip_order else 99,
+        )
+
+        is_gold = len(sorted_colors) > 1
+        is_colorless = len(sorted_colors) == 0
+
+        hex_map = {
+            "W": "#f8f6f1",
+            "U": "#3498db",
+            "B": "#2c3e50",
+            "R": "#e74c3c",
+            "G": "#00bc8c",
+        }
+        style_map = {
+            "W": "warning",
+            "U": "info",
+            "B": "dark",
+            "R": "danger",
+            "G": "success",
+        }
+
+        chip_frame = tb.Frame(self.container)
+        chip_frame.pack(fill=X, pady=1, padx=2)
+
+        display_text = f"{count}x {name}" if count > 1 else name
+
+        if is_gold:
+            gold_bg = "#d4af37"
+
+            lbl = tb.Label(
+                chip_frame,
+                text=display_text,
+                font=("Segoe UI", 9),
+                foreground="#000000",
+                background=gold_bg,
+                anchor="w",
+                padding=(5, 2),
+            )
+            lbl.pack(side=LEFT, fill=BOTH, expand=True)
+
+            cv = tb.Canvas(
+                chip_frame, width=12, height=20, bg=gold_bg, highlightthickness=0
+            )
+            cv.pack(side=RIGHT, fill=Y)
+
+            num_colors = len(sorted_colors)
+            if num_colors > 0:
+                stripe_h = 20 / num_colors
+                for i, code in enumerate(sorted_colors):
+                    fill_col = hex_map.get(code, "#000")
+                    cv.create_rectangle(
+                        0,
+                        i * stripe_h,
+                        12,
+                        (i + 1) * stripe_h,
+                        fill=fill_col,
+                        outline="",
+                    )
+
+            self._bind_tooltip(lbl, card_data)
+            self._bind_tooltip(cv, card_data)
+
+        elif is_colorless:
+            lbl = tb.Label(
+                chip_frame,
+                text=display_text,
+                bootstyle="inverse-secondary",
+                font=("Segoe UI", 9),
+                anchor="w",
+                padding=(5, 2),
+            )
+            lbl.pack(fill=X)
+            self._bind_tooltip(lbl, card_data)
+
+        else:
+            c = sorted_colors[0]
+            s = style_map.get(c, "secondary")
+
+            if c == "W":
+                lbl = tb.Label(
+                    chip_frame,
+                    text=display_text,
+                    foreground="#000000",
+                    background="#f0f0f0",
+                    font=("Segoe UI", 9),
+                    anchor="w",
+                    padding=(5, 2),
+                )
+            else:
+                lbl = tb.Label(
+                    chip_frame,
+                    text=display_text,
+                    bootstyle=f"inverse-{s}",
+                    font=("Segoe UI", 9),
+                    anchor="w",
+                    padding=(5, 2),
+                )
+            lbl.pack(fill=X)
+            self._bind_tooltip(lbl, card_data)
+
+    def _bind_tooltip(self, widget, card_data):
+        widget.bind("<Enter>", lambda e: self._show_tooltip(widget, card_data))
+
+    def _show_tooltip(self, widget, card_data):
+        stats = card_data.get(constants.DATA_FIELD_DECK_COLORS, {})
+        CardToolTip(
+            widget,
+            card_data[constants.DATA_FIELD_NAME],
+            stats,
+            card_data.get(constants.DATA_SECTION_IMAGES, []),
+            self.app.configuration.features.images_enabled,
+            1.0,
         )

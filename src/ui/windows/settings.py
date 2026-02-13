@@ -1,6 +1,7 @@
 """
 src/ui/windows/settings.py
-Configuration UI for the MTGA Draft Tool.
+Professional Configuration UI for the MTGA Draft Tool.
+Streamlined for Tactical Intelligence and Layered Styling.
 """
 
 import tkinter
@@ -24,117 +25,94 @@ class SettingsWindow(tkinter.Toplevel):
         self.title("Preferences")
         self.resizable(False, False)
         self.configure(bg=Theme.BG_PRIMARY)
-        self.transient(parent)
+        self.transient(parent)  # Keeps window on top of main app
 
         self.vars: Dict[str, tkinter.Variable] = {}
         self.trace_ids: List[Tuple[tkinter.Variable, str]] = []
-        self.column_options = constants.COLUMNS_OPTIONS_EXTRA_DICT.copy()
 
         self._build_ui()
         self._load_settings()
 
-        # Window positioning
+        # Center and Focus
         self.update_idletasks()
         x, y = identify_safe_coordinates(
             parent, self.winfo_width(), self.winfo_height(), 50, 50
         )
         self.geometry(f"+{x}+{y}")
+        self.grab_set()  # Modal interaction
 
         self.protocol("WM_DELETE_WINDOW", self._on_close)
 
     def _build_ui(self):
-        container = ttk.Frame(self, padding=15)
+        container = ttk.Frame(self, padding=20)
         container.pack(fill="both", expand=True)
 
-        # --- SECTION: DATA COLUMNS ---
-        ttk.Label(container, text="DATA COLUMNS", style="Header.TLabel").grid(
-            row=0, column=0, columnspan=2, sticky="w", pady=(0, 5)
-        )
+        # --- SECTION: DATA FORMAT ---
+        ttk.Label(
+            container, text="DATA EVALUATION", font=(Theme.FONT_FAMILY, 9, "bold")
+        ).grid(row=0, column=0, columnspan=2, sticky="w", pady=(0, 10))
 
-        # Columns 2 through 7 (Column 1 is always 'Card Name')
-        dropdown_keys = list(self.column_options.keys())
-        for i in range(6):
-            col_idx = i + 2
-            ttk.Label(container, text=f"Column {col_idx}:").grid(
-                row=i + 1, column=0, sticky="e", padx=5
-            )
-
-            var = tkinter.StringVar()
-            self.vars[f"column_{col_idx}"] = var
-
-            om = ttk.OptionMenu(
-                container, var, "Disabled", *dropdown_keys, style="TMenubutton"
-            )
-            om.grid(row=i + 1, column=1, sticky="ew", pady=1)
-
-        # --- SECTION: APPEARANCE & FORMAT ---
-        r = 8
-        ttk.Label(container, text="APPEARANCE", style="Header.TLabel").grid(
-            row=r, column=0, columnspan=2, sticky="w", pady=(10, 5)
-        )
-
-        ttk.Label(container, text="Value Format:").grid(
-            row=r + 1, column=0, sticky="e", padx=5
+        ttk.Label(container, text="Win Rate Format:", foreground=Theme.TEXT_MUTED).grid(
+            row=1, column=0, sticky="e", padx=5
         )
         self.vars["result_format"] = tkinter.StringVar()
-        ttk.OptionMenu(
+        fmt_om = ttk.OptionMenu(
             container,
             self.vars["result_format"],
-            "Percentage",
+            "",
             *constants.RESULT_FORMAT_LIST,
             style="TMenubutton",
-        ).grid(row=r + 1, column=1, sticky="ew")
-
-        # --- SECTION: FEATURE TOGGLES ---
-        r = 11
-        ttk.Label(container, text="FEATURES", style="Header.TLabel").grid(
-            row=r, column=0, columnspan=2, sticky="w", pady=(10, 5)
         )
+        fmt_om.grid(row=1, column=1, sticky="ew", pady=2)
+
+        # --- SECTION: ADVISOR & HUD ---
+        r = 10
+        ttk.Label(
+            container, text="INTELLIGENCE & HUD", font=(Theme.FONT_FAMILY, 9, "bold")
+        ).grid(row=r, column=0, columnspan=2, sticky="w", pady=(20, 10))
 
         features = [
-            ("Display Draft Stats", "stats_enabled"),
-            ("Display Signals", "signals_enabled"),
-            ("Display Missing Cards", "missing_enabled"),
-            ("Highlight Row Colors", "card_colors_enabled"),
-            ("Use Color Identity (Abilities)", "color_identity_enabled"),
+            (
+                "Enable Tactical Advisor (The Brain)",
+                "stats_enabled",
+            ),  # 'stats_enabled' powers the Advisor View
+            ("Display Lane Signals", "signals_enabled"),
+            ("Display Missing (Wheel) Cards", "missing_enabled"),
+            ("Highlight Row by Mana Cost", "card_colors_enabled"),
+            ("Show Color Identity (Abilities)", "color_identity_enabled"),
             ("Enable P1P1 OCR", "p1p1_ocr_enabled"),
-            ("Auto-Switch Filter", "auto_highest_enabled"),
-            ("Update Notifications", "update_notifications_enabled"),
+            (
+                "Auto-Switch Dataset to Event",
+                "auto_highest_enabled",
+            ),  # 'auto_highest' powers auto-sync
+            ("Check for Dataset Updates", "update_notifications_enabled"),
         ]
 
         for i, (label, key) in enumerate(features):
             var = tkinter.IntVar()
             self.vars[key] = var
             ttk.Checkbutton(container, text=label, variable=var).grid(
-                row=r + 1 + i, column=0, columnspan=2, sticky="w", padx=20
+                row=r + 1 + i, column=0, columnspan=2, sticky="w", padx=10, pady=2
             )
 
         # --- FOOTER ---
         footer = ttk.Frame(container)
-        footer.grid(row=30, column=0, columnspan=2, pady=(15, 0), sticky="ew")
+        footer.grid(row=50, column=0, columnspan=2, pady=(25, 0), sticky="ew")
+
         ttk.Button(footer, text="Restore Defaults", command=self._reset_defaults).pack(
-            side="right"
+            side="left"
         )
+        ttk.Button(footer, text="Done", command=self._on_close).pack(side="right")
 
     def _load_settings(self):
         """Populates UI from the configuration object."""
         s = self.configuration.settings
         self._toggle_traces(False)
 
-        # Reverse lookup for column labels - 1% Dev Robustness
-        def get_label(internal_val):
-            for k, v in self.column_options.items():
-                if v == internal_val:
-                    return k
-            # Fallback to the standard Disabled label defined in constants
-            return constants.FIELD_LABEL_DISABLED
-
-        for i in range(2, 8):
-            key = f"column_{i}"
-            self.vars[key].set(get_label(getattr(s, key)))
-
+        # Standard settings
         self.vars["result_format"].set(s.result_format)
 
+        # Checkbox logic
         checkbox_keys = [
             "stats_enabled",
             "signals_enabled",
@@ -147,13 +125,13 @@ class SettingsWindow(tkinter.Toplevel):
         ]
 
         for key in checkbox_keys:
-            # Ensure we handle potential missing keys from older config versions
-            current_val = getattr(s, key, True)
-            self.vars[key].set(int(current_val))
+            val = getattr(s, key, True)
+            self.vars[key].set(int(val))
 
         self._toggle_traces(True)
 
     def _toggle_traces(self, enable: bool):
+        """Standard trace management to prevent save-loops during loading."""
         if enable:
             for k, v in self.vars.items():
                 tid = v.trace_add(
@@ -169,33 +147,32 @@ class SettingsWindow(tkinter.Toplevel):
             self.trace_ids.clear()
 
     def _on_setting_changed(self, key: str):
-        """Persists changes and notifies the main application."""
+        """Persists single change and notifies the main application."""
         val = self.vars[key].get()
 
-        if key.startswith("column_"):
-            internal_val = self.column_options.get(val, constants.DATA_FIELD_DISABLED)
-            setattr(self.configuration.settings, key, internal_val)
-        elif isinstance(val, int):
-            # Checkbox values
+        # Handle type conversion
+        if isinstance(val, int) and key != "result_format":
             setattr(self.configuration.settings, key, bool(val))
         else:
             setattr(self.configuration.settings, key, val)
 
         write_configuration(self.configuration)
 
+        # Immediate visual update if something like 'Row Colors' was toggled
         if self.on_update_callback:
             self.on_update_callback()
 
     def _reset_defaults(self):
-        if messagebox.askyesno(
-            "Confirm Reset", "Are you sure you want to restore all settings to default?"
-        ):
+        """Restores pro-level baseline configuration."""
+        if messagebox.askyesno("Confirm Reset", "Restore all settings to default?"):
             reset_configuration()
             from src.configuration import read_configuration
 
             new_conf, _ = read_configuration()
             self.configuration.settings = new_conf.settings
             self._load_settings()
+            if self.on_update_callback:
+                self.on_update_callback()
 
     def _on_close(self):
         self._toggle_traces(False)

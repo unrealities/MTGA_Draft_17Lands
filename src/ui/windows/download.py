@@ -16,7 +16,7 @@ from src.configuration import Configuration, write_configuration
 from src.file_extractor import FileExtractor
 from src.utils import retrieve_local_set_list, clean_string
 from src.ui.styles import Theme
-from src.ui.components import ModernTreeview
+from src.ui.components import DynamicTreeviewManager
 
 
 @dataclass
@@ -55,19 +55,16 @@ class DownloadWindow(ttk.Frame):
         )
 
         cols = ["Set", "Event", "Group", "Start", "End", "Collected", "Games"]
-        headers = {
-            "Set": {"width": 160, "anchor": tkinter.W},
-            "Event": {"width": 100, "anchor": tkinter.W},
-            "Group": {"width": 50, "anchor": tkinter.CENTER},
-            "Start": {"width": 80, "anchor": tkinter.CENTER},
-            "End": {"width": 80, "anchor": tkinter.CENTER},
-            "Collected": {"width": 120, "anchor": tkinter.CENTER},
-            "Games": {"width": 60, "anchor": tkinter.CENTER},
-        }
-        self.table = ModernTreeview(
-            container, columns=cols, headers_config=headers, height=6
+        self.table_manager = DynamicTreeviewManager(
+            container, 
+            view_id="dataset_manager", 
+            configuration=self.configuration,
+            on_update_callback=lambda: None, # Static table doesn't need callback refresh
+            static_columns=["Set", "Event", "Group", "Start", "End", "Collected", "Games"],
+            height=6
         )
-        self.table.pack(fill="both", expand=True, pady=(0, 10))
+        self.table_manager.pack(fill="both", expand=True, pady=(0, 10))
+        self.table = self.table_manager.tree
 
         # --- 2. Download Form ---
         form = ttk.Frame(container, style="Card.TFrame", padding=12)

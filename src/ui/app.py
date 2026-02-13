@@ -17,6 +17,7 @@ from src.ui.dashboard import DashboardFrame
 from src.ui.orchestrator import DraftOrchestrator
 from src.notifications import Notifications
 from src.ui.windows.overlay import CompactOverlay
+from src.ui.advisor_view import AdvisorPanel
 
 # Windows
 from src.ui.windows.taken_cards import TakenCardsPanel
@@ -109,6 +110,9 @@ class DraftApp:
         bar = ttk.Frame(self.main_container, style="Card.TFrame", padding=10)
         bar.pack(fill="x", pady=(0, 10))
 
+        self.advisor_panel = AdvisorPanel(self.main_container)
+        self.advisor_panel.pack(fill="x", pady=(0, 10))
+
         info = ttk.Frame(bar, style="Card.TFrame")
         info.pack(side="left")
         self.status_dot = ttk.Label(info, text="●", foreground=Theme.TEXT_MUTED)
@@ -145,7 +149,10 @@ class DraftApp:
         self.splitter.pack(fill="both", expand=True)
 
         self.dashboard = DashboardFrame(
-            self.splitter, self.configuration, self._on_card_select
+            self.splitter,
+            self.configuration,
+            self._on_card_select,
+            self._refresh_ui_data,
         )
         self.splitter.add(self.dashboard, weight=4)
 
@@ -161,13 +168,8 @@ class DraftApp:
         self.panel_compare = ComparePanel(
             self.notebook, self.orchestrator.scanner, self.configuration
         )
-        self.panel_data = DownloadWindow(
-            self.notebook,
-            self.orchestrator.scanner.set_list,
-            self.configuration,
-            self._on_dataset_update,
-        )
-        self.panel_tiers = TierListWindow(self.notebook, self._refresh_ui_data)
+        self.panel_data = DownloadWindow(self.notebook, self.orchestrator.scanner.set_list, self.configuration, self._on_dataset_update)
+        self.panel_tiers = TierListWindow(self.notebook, self.configuration, self._refresh_ui_data)
 
         self.notebook.add(self.panel_taken, text=" Card Pool ")
         self.notebook.add(self.panel_suggest, text=" Deck Builder ")
@@ -258,45 +260,86 @@ class DraftApp:
             self._update_theme(new_custom=f)
 
     def _refresh_ui_data(self):
+        """
+        Atomic UI update cycle.
+        Synchronizes The Brain, The Dashboard (Signals/Curve), and Sub-panels.
+        """
         if not self._initialized or self._rebuilding_ui:
             return
+
+        # 1. State Retrieval
         es, et = self.orchestrator.scanner.retrieve_current_limited_event()
         pk, pi = self.orchestrator.scanner.retrieve_current_pack_and_pick()
-        self.vars["event_info"].set(f"{es} {et}" if es else "Waiting for Logs...")
-        self.vars["status_text"].set(f"Pack {pk} Pick {pi}")
 
         metrics = self.orchestrator.scanner.retrieve_set_metrics()
         tier_data = self.orchestrator.scanner.retrieve_tier_data()
-        taken = self.orchestrator.scanner.retrieve_taken_cards()
+        taken_cards = self.orchestrator.scanner.retrieve_taken_cards()
+        pack_cards = self.orchestrator.scanner.retrieve_current_pack_cards()
+        missing_cards = self.orchestrator.scanner.retrieve_current_missing_cards()
+
+        # 2. Intelligence Layer (The Brain)
+        from src.advisor.engine import DraftAdvisor
+
+        advisor = DraftAdvisor(metrics, taken_cards)
+        recommendations = advisor.evaluate_pack(pack_cards, pi)
+
+        # 3. View Updates
+        # Header
+        self.vars["event_info"].set(f"{es} {et}" if es else "Scan logs...")
+        self.vars["status_text"].set(f"Pack {pk} Pick {pi}")
+
+        # Advisor Summary
+        if hasattr(self, "advisor_panel"):
+            self.advisor_panel.update_recommendations(recommendations)
+
+        # Dashboard Logic
         colors = filter_options(
-            taken, self.configuration.settings.deck_filter, metrics, self.configuration
+            taken_cards,
+            self.configuration.settings.deck_filter,
+            metrics,
+            self.configuration,
         )
 
-        if self.overlay_window:
-            self.overlay_window.update_data(
-                self.current_pack_data, colors, metrics, tier_data, pi
-            )
-            return
-
-        self.current_pack_data = self.orchestrator.scanner.retrieve_current_pack_cards()
-        self.current_missing_data = (
-            self.orchestrator.scanner.retrieve_current_missing_cards()
+        # RESTORED: Pack and Missing data with full tactical context
+        self.dashboard.update_pack_data(
+            pack_cards,
+            colors,
+            metrics,
+            tier_data,
+            pi,
+            source_type="pack",
+            recommendations=recommendations,
         )
         self.dashboard.update_pack_data(
-            self.current_pack_data, colors, metrics, tier_data, pi, "pack"
-        )
-        self.dashboard.update_pack_data(
-            self.current_missing_data, colors, metrics, tier_data, pi, "missing"
+            missing_cards, colors, metrics, tier_data, pi, source_type="missing"
         )
 
-        # Stats Updates
-        self.dashboard.update_stats(get_deck_metrics(taken).distribution_all)
-        self.dashboard.update_deck_stats(taken)
+        # RESTORED: Signals and Curve
+        self.dashboard.update_signals(self._calculate_signals(metrics))
+        self.dashboard.update_stats(get_deck_metrics(taken_cards).distribution_all)
 
-        self._update_signals_logic(metrics)
-        self._update_signals_logic(metrics)
+        # Tab Refresh
         for p in [self.panel_taken, self.panel_suggest, self.panel_compare]:
             p.refresh()
+
+        self.dashboard.update_deck_balance(taken_cards)
+
+    def _calculate_signals(self, metrics):
+        """Helper to compute current lane signals."""
+        from src.signals import SignalCalculator
+
+        calc = SignalCalculator(metrics)
+        history = self.orchestrator.scanner.retrieve_draft_history()
+        scores = {c: 0.0 for c in constants.CARD_COLORS}
+        for entry in history:
+            if entry["Pack"] == 2:
+                continue  # Focus on lane rewards
+            pack_cards = self.orchestrator.scanner.set_data.get_data_by_id(
+                entry["Cards"]
+            )
+            for c, v in calc.calculate_pack_signals(pack_cards, entry["Pick"]).items():
+                scores[c] += v
+        return scores
 
     def _update_signals_logic(self, metrics):
         from src.signals import SignalCalculator

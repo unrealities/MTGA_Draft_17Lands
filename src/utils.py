@@ -151,18 +151,14 @@ def capture_screen_base64str(persist):
 
 def detect_string(search_line: str, search_strings: List[str]) -> int:
     """
-    Matches keywords regardless of underscores or spaces.
-    Example: 'Event_Join' matches 'EventJoin'. 
-    Always returns the index of the first JSON bracket to ensure parsing validity.
+    Robustly identifies the start of a JSON block in an Arena log line.
+    Indifferent to underscores, spaces, or casing.
     """
-    # Normalize for comparison
     norm_line = search_line.upper().replace("_", "").replace(" ", "")
     for pattern in search_strings:
         norm_pattern = pattern.upper().replace("_", "").replace(" ", "")
         if norm_pattern in norm_line:
-            # Match found. Find the start of the actual data payload.
-            bracket = search_line.find("{")
-            return bracket if bracket != -1 else len(search_line)
+            return search_line.find("{")
     return -1
 
 
@@ -269,3 +265,11 @@ def normalize_color_string(color_string: str) -> str:
     sorted_symbols = sorted(list(set(symbols)), key=lambda x: CARD_COLORS.index(x))
 
     return "".join(sorted_symbols)
+
+
+def is_cache_stale(filepath: str, hours: int = 24) -> bool:
+    """Checks if a file is older than the specified hours."""
+    if not os.path.exists(filepath):
+        return True
+    file_age_seconds = time.time() - os.path.getmtime(filepath)
+    return file_age_seconds > (hours * 3600)

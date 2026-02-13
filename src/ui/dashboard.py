@@ -1,168 +1,211 @@
 """
 src/ui/dashboard.py
-The Live Draft Dashboard Component.
+The Professional Live Draft Dashboard.
+Supports dynamic columns for both Pack and Missing card tables.
 """
 
 import tkinter
-import ttkbootstrap as tb
-from ttkbootstrap.constants import *
+from tkinter import ttk
 from typing import List, Dict, Any, Optional
 
 from src import constants
-from src.card_logic import (
-    field_process_sort,
-    row_color_tag,
-    CardResult,
-    get_deck_metrics,
-)
+from src.card_logic import field_process_sort, row_color_tag
 from src.ui.styles import Theme
-from src.ui.components import ModernTreeview, SignalMeter, ManaCurvePlot, TypePieChart
+from src.ui.components import (
+    ModernTreeview,
+    DynamicTreeviewManager,
+    SignalMeter,
+    ManaCurvePlot,
+    TypePieChart,
+)
+from src.advisor.schema import Recommendation
 
 
-class DashboardFrame(tb.Frame):
-    def __init__(self, parent, configuration, on_card_select):
+class DashboardFrame(ttk.Frame):
+    def __init__(self, parent, configuration, on_card_select, on_reconfigure_ui):
         super().__init__(parent)
         self.configuration = configuration
         self.on_card_select = on_card_select
+        self.on_reconfigure_ui = on_reconfigure_ui
 
-        self._tree_pack: Optional[ModernTreeview] = None
-        self._tree_missing: Optional[ModernTreeview] = None
+        # Managers and Components
+        self.pack_manager: Optional[DynamicTreeviewManager] = None
+        self.missing_manager: Optional[DynamicTreeviewManager] = None
 
         self.signal_meter: Optional[SignalMeter] = None
         self.curve_plot: Optional[ManaCurvePlot] = None
         self.type_chart: Optional[TypePieChart] = None
 
-        self._fields_pack: List[str] = [constants.DATA_FIELD_NAME]
-        self._fields_missing: List[str] = [constants.DATA_FIELD_NAME]
-
         self._build_layout()
 
     def get_treeview(self, source_type: str = "pack") -> Optional[ModernTreeview]:
-        return self._tree_pack if source_type == "pack" else self._tree_missing
+        if source_type == "pack":
+            return self.pack_manager.tree if self.pack_manager else None
+        return self.missing_manager.tree if self.missing_manager else None
 
     def _build_layout(self):
-        # 2 Column Layout: Tables (Left) | Analytics Sidebar (Right)
         self.columnconfigure(0, weight=4)
         self.columnconfigure(1, weight=1)
         self.rowconfigure(0, weight=1)
 
         # --- LEFT: Tables ---
-        f_main = tb.Frame(self)
-        f_main.grid(row=0, column=0, sticky="nsew", padx=(0, 12))
+        f_left = ttk.Frame(self)
+        f_left.grid(row=0, column=0, sticky="nsew", padx=(0, 10))
 
-        # Pack Table (Larger)
-        self.table_pack = tb.Frame(f_main)
-        self.table_pack.pack(fill="both", expand=True, pady=(0, 5))
-        tb.Label(
-            self.table_pack, text="PACK", bootstyle="secondary", font=(None, 12, "bold")
-        ).pack(anchor="w")
-        self._tree_pack, self._fields_pack = self._create_data_tree(
-            self.table_pack, "pack"
+        # 1. Pack Table
+        self.table_pack_container = ttk.Frame(f_left)
+        self.table_pack_container.pack(fill="both", expand=True, pady=(0, 10))
+        ttk.Label(
+            self.table_pack_container,
+            text="LIVE PACK: TACTICAL EVALUATION",
+            style="Muted.TLabel",
+        ).pack(anchor="w", pady=(0, 5))
+
+        self.pack_manager = DynamicTreeviewManager(
+            self.table_pack_container,
+            view_id="pack_table",
+            configuration=self.configuration,
+            on_update_callback=self.on_reconfigure_ui,
         )
-        self._tree_pack.pack(fill="both", expand=True)
-
-        # Missing Table
-        self.table_missing = tb.Frame(f_main)
-        self.table_missing.pack(fill="both", expand=True)
-        tb.Label(
-            self.table_missing,
-            text="SEEN",
-            bootstyle="secondary",
-            font=(None, 12, "bold"),
-        ).pack(anchor="w")
-        self._tree_missing, self._fields_missing = self._create_data_tree(
-            self.table_missing, "missing"
+        self.pack_manager.pack(fill="both", expand=True)
+        self.pack_manager.tree.bind(
+            "<<TreeviewSelect>>",
+            lambda e: self.on_card_select(e, self.pack_manager.tree, "pack"),
         )
-        self._tree_missing.pack(fill="both", expand=True)
 
-        # --- RIGHT: Sidebar HUD ---
-        # Fixed width container
-        f_side = tb.Frame(self, width=200)
-        f_side.grid(row=0, column=1, sticky="ns")
-        f_side.pack_propagate(False)  # Force fixed width
+        # 2. Missing Table
+        self.table_missing_container = ttk.Frame(f_left)
+        self.table_missing_container.pack(fill="both", expand=True)
+        ttk.Label(
+            self.table_missing_container,
+            text="SEEN CARDS (WHEEL TRACKER)",
+            style="Muted.TLabel",
+        ).pack(anchor="w", pady=(0, 5))
 
-        # 1. Signals
-        tb.Label(f_side, text="SIGNALS", bootstyle="secondary", font=(None, 12)).pack(
+        self.missing_manager = DynamicTreeviewManager(
+            self.table_missing_container,
+            view_id="missing_table",
+            configuration=self.configuration,
+            on_update_callback=self.on_reconfigure_ui,
+        )
+        self.missing_manager.pack(fill="both", expand=True)
+        self.missing_manager.tree.bind(
+            "<<TreeviewSelect>>",
+            lambda e: self.on_card_select(e, self.missing_manager.tree, "missing"),
+        )
+
+        # --- RIGHT: Sidebar ---
+        f_side = ttk.Frame(self, width=220)
+        f_side.grid(row=0, column=1, sticky="nsew", padx=5)
+        f_side.pack_propagate(False)
+
+        ttk.Label(f_side, text="OPEN LANES", style="Muted.TLabel").pack(
             anchor="w", pady=(0, 2)
         )
         self.signal_meter = SignalMeter(f_side)
-        self.signal_meter.pack(fill=X, pady=(0, 15))
+        self.signal_meter.pack(fill="x", pady=(0, 15))
 
-        # 2. Curve
-        tb.Label(f_side, text="MANA CURVE", bootstyle="secondary", font=(None, 12)).pack(
+        ttk.Label(f_side, text="MANA CURVE", style="Muted.TLabel").pack(
             anchor="w", pady=(0, 2)
         )
         default_ideal = self.configuration.card_logic.deck_mid.distribution
         self.curve_plot = ManaCurvePlot(f_side, ideal_distribution=default_ideal)
-        self.curve_plot.pack(fill=X, pady=(0, 15))
+        self.curve_plot.pack(fill="x", pady=(0, 15))
 
-        # 3. Balance
-        tb.Label(
-            f_side, text="DECK BALANCE", bootstyle="secondary", font=(None, 12)
-        ).pack(anchor="w", pady=(0, 2))
+        ttk.Label(f_side, text="POOL BALANCE", style="Muted.TLabel").pack(
+            anchor="w", pady=(0, 2)
+        )
         self.type_chart = TypePieChart(f_side)
-        self.type_chart.pack(fill=X)
+        self.type_chart.pack(fill="x")
 
-    def _create_data_tree(
-        self, parent, source_type
-    ) -> tuple[ModernTreeview, List[str]]:
-        # [Existing logic]
-        s = self.configuration.settings
-        cols = ["Card"]
-        hd = {"Card": {"width": 180, "anchor": tkinter.W}}
-        fields = [constants.DATA_FIELD_NAME]
+        self._configure_special_tags()
 
-        config_cols = [
-            s.column_2,
-            s.column_3,
-            s.column_4,
-            s.column_5,
-            s.column_6,
-            s.column_7,
-        ]
-        k2l = {
-            v: k.split(":")[0] for k, v in constants.COLUMNS_OPTIONS_EXTRA_DICT.items()
-        }
-
-        for val in config_cols:
-            if val != constants.DATA_FIELD_DISABLED:
-                lbl = k2l.get(val, val.upper())
-                cols.append(lbl)
-                hd[lbl] = {"width": 50, "anchor": tkinter.CENTER}
-                fields.append(val)
-
-        t = ModernTreeview(parent, columns=cols, headers_config=hd)
-        t.bind("<<TreeviewSelect>>", lambda e: self.on_card_select(e, t, source_type))
-        return t, fields
+    def _configure_special_tags(self):
+        """Adds elite highlighting to the trees."""
+        for manager in [self.pack_manager, self.missing_manager]:
+            if manager and manager.tree:
+                manager.tree.tag_configure(
+                    "elite_bomb", background="#4a3f1d", foreground="#ffd700"
+                )
+                manager.tree.tag_configure(
+                    "high_fit", background="#1d3a4a", foreground="#00d4ff"
+                )
 
     def update_pack_data(
-        self, cards, colors, metrics, tier_data, current_pick, source_type="pack"
+        self,
+        cards,
+        colors,
+        metrics,
+        tier_data,
+        current_pick,
+        source_type="pack",
+        recommendations=None,
     ):
-        # [Existing logic]
         tree = self.get_treeview(source_type)
-        fields = self._fields_pack if source_type == "pack" else self._fields_missing
-        if not tree:
+        # Ensure we have a valid widget and it has its configuration injected
+        if not tree or not hasattr(tree, "active_fields"):
             return
+
+        # Sync the tags every time we rebuild the underlying tree
+        self._configure_special_tags()
 
         for item in tree.get_children():
             tree.delete(item)
         if not cards:
             return
 
-        processor = CardResult(metrics, tier_data, self.configuration, current_pick)
-        results = processor.return_results(cards, colors, fields)
+        rec_map = {r.card_name: r for r in (recommendations or [])}
+        active_filter = colors[0] if colors else "All Decks"
+        processed_rows = []
 
-        sort_idx = 1 if len(fields) > 1 else 0
-        results.sort(
-            key=lambda x: field_process_sort(x["results"][sort_idx]), reverse=True
-        )
+        for card in cards:
+            name = card.get(constants.DATA_FIELD_NAME, "Unknown")
+            stats = card.get("deck_colors", {}).get(active_filter, {})
+            rec = rec_map.get(name)
 
-        for idx, item in enumerate(results):
-            tag = "bw_odd" if idx % 2 == 0 else "bw_even"
+            row_tag = "bw_odd" if len(processed_rows) % 2 == 0 else "bw_even"
             if self.configuration.settings.card_colors_enabled:
-                tag = row_color_tag(item.get(constants.DATA_FIELD_MANA_COST, ""))
-            display_values = [str(val) for val in item["results"]]
-            tree.insert("", "end", values=display_values, tags=(tag,))
+                row_tag = row_color_tag(card.get(constants.DATA_FIELD_MANA_COST, ""))
+
+            display_name = name
+            if rec:
+                if rec.is_elite:
+                    display_name = f"⭐ {name}"
+                    row_tag = "elite_bomb"
+                elif rec.archetype_fit == "High":
+                    display_name = f"[+] {name}"
+                    row_tag = "high_fit"
+
+            row_values = []
+            for field in tree.active_fields:
+                if field == "name":
+                    row_values.append(str(display_name))
+                elif field == "value":
+                    val = rec.contextual_score if rec else stats.get("gihwr", 0.0)
+                    row_values.append(f"{val:.0f}")
+                elif field == "colors":
+                    row_values.append(card.get("colors", ""))
+                else:
+                    val = stats.get(field, 0.0)
+                    row_values.append(
+                        f"{val:.1f}"
+                        if field in ["gihwr", "ohwr", "gpwr", "iwd"]
+                        else str(val)
+                    )
+
+            processed_rows.append(
+                {
+                    "vals": row_values,
+                    "tag": row_tag,
+                    "sort_key": (
+                        rec.contextual_score if rec else stats.get("gihwr", 0.0)
+                    ),
+                }
+            )
+
+        processed_rows.sort(key=lambda x: x["sort_key"], reverse=True)
+        for row in processed_rows:
+            tree.insert("", "end", values=row["vals"], tags=(row["tag"],))
 
     def update_signals(self, scores: Dict[str, float]):
         if self.signal_meter:
@@ -173,17 +216,16 @@ class DashboardFrame(tb.Frame):
             self.curve_plot.update_curve(distribution)
             self.curve_plot.redraw()
 
-    def update_deck_stats(self, taken_cards):
-        if self.type_chart:
-            creatures = 0
-            non_creatures = 0
-            lands = 0
-            for c in taken_cards:
-                types = c.get(constants.DATA_FIELD_TYPES, [])
-                if constants.CARD_TYPE_LAND in types:
-                    lands += 1
-                elif constants.CARD_TYPE_CREATURE in types:
-                    creatures += 1
-                else:
-                    non_creatures += 1
-            self.type_chart.update_counts(creatures, non_creatures, lands)
+    def update_deck_balance(self, taken_cards):
+        if not self.type_chart:
+            return
+        c, n, l = 0, 0, 0
+        for card in taken_cards:
+            types = card.get(constants.DATA_FIELD_TYPES, [])
+            if constants.CARD_TYPE_LAND in types:
+                l += 1
+            elif constants.CARD_TYPE_CREATURE in types:
+                c += 1
+            else:
+                n += 1
+        self.type_chart.update_counts(c, n, l)

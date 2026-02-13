@@ -8,6 +8,7 @@ import datetime
 import itertools
 import re
 import sqlite3
+from typing import Dict
 from src import constants
 from src.logger import create_logger
 from src.utils import Result, check_file_integrity, clean_string
@@ -315,18 +316,40 @@ class FileExtractor(UIProgress):
         return library_paths
 
     def download_card_data(self, database_size):
-        """Wrapper function for starting the set file download/creation process"""
-        result = False
-        result_string = ""
-        temp_size = 0
-        try:
-            result, result_string, temp_size = self._download_expansion(database_size)
+        """
+        Modified download logic to support multi-archetype data for 'The Brain'.
+        """
+        self._update_status("Starting Deep Data Retrieval...")
+        
+        sl = Seventeenlands()
+        # Define a wrapper to update the UI progress bar
+        def update_ui(msg, val):
+            self._update_status(msg)
+            self._update_progress(val, increment=False)
 
-        except Exception as error:
-            logger.error(error)
-            result_string = error
+        # 1. Fetch Multi-Archetype Data (The core upgrade)
+        set_code = self.selected_sets.seventeenlands[0]
+        # This now returns a dictionary keyed by card name, 
+        # with nested archetypes (WU, UB, etc.)
+        deep_ratings = sl.download_set_data(set_code, self.draft, progress_callback=update_ui)
 
-        return result, result_string, temp_size
+        # 2. Assemble the final dataset
+        # We merge these deep ratings with our local Arena ID database
+        self._assemble_deep_set(deep_ratings)
+        
+        # 3. Export
+        return self.export_card_data()
+
+    def _assemble_deep_set(self, deep_ratings: Dict):
+        """Combines 17Lands intelligence with local Arena IDs."""
+        self.combined_data["card_ratings"] = {}
+        for arena_id, local_card in self.card_dict.items():
+            name = local_card["name"].replace("///", "//")
+            if name in deep_ratings:
+                # Inject the deep performance data into the card object
+                local_card["deck_colors"] = deep_ratings[name]["deck_colors"]
+                local_card["image"] = deep_ratings[name]["image"]
+                self.combined_data["card_ratings"][arena_id] = local_card
 
     def _download_expansion(self, database_size):
         """Function that performs the following steps:

@@ -396,9 +396,7 @@ class ArenaScanner:
             logger.error(error)
 
     def __draft_pack_search_premier_p1p1(self):
-        """Parse P1P1. Advancing pack_offset is now guaranteed."""
         offset = self.pack_offset
-        pack_cards = []
         try:
             with open(self.arena_file, "r", encoding="utf-8", errors="replace") as log:
                 log.seek(offset)
@@ -408,97 +406,74 @@ class ArenaScanner:
                         break
                     current_pos = log.tell()
 
-                    if detect_string(line, [constants.DRAFT_P1P1_STRING_PREMIER]) != -1:
+                    # Use dynamic offset instead of hardcoded .find()
+                    start_json = detect_string(
+                        line, [constants.DRAFT_P1P1_STRING_PREMIER]
+                    )
+                    if start_json != -1:
                         self.pack_offset = current_pos
-
-                        start_offset = line.find('{"id":')
                         self.draft_log.info(line)
-                        entry_string = line[start_offset:]
-                        draft_data = process_json(entry_string)
+                        draft_data = process_json(line[start_json:])
 
-                        try:
-                            cards = json_find(
-                                constants.DRAFT_P1P1_STRING_PREMIER, draft_data
-                            )
-                            pack_cards = [str(c) for c in cards]
+                        cards = json_find(
+                            constants.DRAFT_P1P1_STRING_PREMIER, draft_data
+                        )
+                        if not cards:
+                            continue
 
-                            pack = json_find("PackNumber", draft_data)
-                            pick = json_find("PickNumber", draft_data)
+                        pack_cards = [str(c) for c in cards]
+                        pack = json_find("PackNumber", draft_data)
+                        pick = json_find("PickNumber", draft_data)
 
-                            if pack != 1 or pick != 1:
-                                continue
+                        if pack == 1 and pick == 1:
+                            self.pack_cards[0] = pack_cards
+                            self.initial_pack[0] = pack_cards
+                            self.current_pack, self.current_pick = 1, 1
+                            self._record_pack(1, 1, pack_cards)
+        except Exception as e:
+            logger.error(f"P1P1 Search Error: {e}")
 
-                            pack_index = (pick - 1) % self.number_of_players
-                            if self.current_pack != pack:
-                                self.initial_pack = [[]] * self.number_of_players
-
-                            if len(self.initial_pack[pack_index]) == 0:
-                                self.initial_pack[pack_index] = pack_cards
-
-                            self.pack_cards[pack_index] = pack_cards
-                            self.current_pack, self.current_pick = pack, pick
-                            self._record_pack(pack, pick, pack_cards)
-                        except Exception as error:
-                            logger.error(f"P1P1 search sub-error: {error}")
-        except Exception as error:
-            logger.error(f"P1P1 search error: {error}")
-        return pack_cards
-
-    def __draft_picked_search_premier_v1(self):
-        """Parse the premier draft string that contains the player pick information"""
-        offset = self.pick_offset
-        draft_data = object()
-        pack = 0
-        pick = 0
-        # Identify and print out the log lines that contain the draft packs
+    def __draft_pack_search_premier_v1(self):
+        offset = self.pack_offset
         try:
             with open(self.arena_file, "r", encoding="utf-8", errors="replace") as log:
                 log.seek(offset)
-
                 while True:
                     line = log.readline()
                     if not line:
                         break
-                    offset = log.tell()
-                    if detect_string(line, [constants.DRAFT_PICK_STRING_PREMIER]) != -1:
-                        self.pick_offset = offset
-                        start_offset = line.find('{"id"')
+                    current_pos = log.tell()
+
+                    start_json = detect_string(
+                        line, [constants.DRAFT_PACK_STRING_PREMIER]
+                    )
+                    if start_json != -1:
+                        self.pack_offset = current_pos
                         self.draft_log.info(line)
+                        draft_data = process_json(line[start_json:])
 
-                        try:
-                            # Identify the pack
-                            entry_string = line[start_offset:]
-                            draft_data = process_json(entry_string)
+                        raw_cards = json_find("PackCards", draft_data)
+                        if not raw_cards:
+                            continue
 
-                            pack = int(json_find("Pack", draft_data))
-                            pick = int(json_find("Pick", draft_data))
-                            if "GrpIds" in entry_string:
-                                cards = json_find("GrpIds", draft_data)
-                            else:
-                                cards = [str(json_find("GrpId", draft_data))]
+                        pack_cards = str(raw_cards).split(",")
+                        pack = json_find("SelfPack", draft_data)
+                        pick = json_find("SelfPick", draft_data)
 
-                            pack_index = (pick - 1) % self.number_of_players
+                        idx = (pick - 1) % self.number_of_players
+                        if self.current_pack != pack:
+                            self.initial_pack = [
+                                [] for _ in range(self.number_of_players)
+                            ]
 
-                            if self.previous_picked_pack != pack:
-                                self.picked_cards = [
-                                    [] for i in range(self.number_of_players)
-                                ]
+                        if not self.initial_pack[idx]:
+                            self.initial_pack[idx] = pack_cards
 
-                            self.picked_cards[pack_index].extend(cards)
-                            self.taken_cards.extend(cards)
-
-                            self.previous_picked_pack = pack
-                            self.current_picked_pick = pick
-
-                            if self.step_through:
-                                break
-
-                        except Exception as error:
-                            self.draft_log.info(
-                                "__draft_picked_search_premier_v1 Error: %s", error
-                            )
-        except Exception as error:
-            self.draft_log.info("__draft_picked_search_premier_v1 Error: %s", error)
+                        self.pack_cards[idx] = pack_cards
+                        self.current_pack, self.current_pick = pack, pick
+                        self._record_pack(pack, pick, pack_cards)
+        except Exception as e:
+            logger.error(f"Pack Search Error: {e}")
 
     def __draft_pack_search_premier_v1(self):
         """Parse the premier draft string that contains the non-P1P1 pack data"""

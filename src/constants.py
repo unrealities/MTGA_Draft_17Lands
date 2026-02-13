@@ -155,12 +155,19 @@ NON_COLORS_OPTIONS = WIN_RATE_OPTIONS + [
 ]
 COLUMN_OPTIONS = NON_COLORS_OPTIONS
 
-COLUMN_2_DEFAULT = FIELD_LABEL_GIHWR
-COLUMN_3_DEFAULT = FIELD_LABEL_DISABLED
-COLUMN_4_DEFAULT = FIELD_LABEL_DISABLED
-COLUMN_5_DEFAULT = FIELD_LABEL_DISABLED
-COLUMN_6_DEFAULT = FIELD_LABEL_DISABLED
-COLUMN_7_DEFAULT = FIELD_LABEL_DISABLED
+COLUMN_FIELD_LABELS = {
+    "gihwr": "GIH WR: Games in Hand Win Rate",
+    "ohwr": "OH WR: Opening Hand Win Rate",
+    "gpwr": "GP WR: Games Played Win Rate",
+    "alsa": "ALSA: Average Last Seen At",
+    "ata": "ATA: Average Taken At",
+    "iwd": "IWD: Improvement When Drawn",
+    "wheel": "WHEEL: Probability of Wheeling",
+    "colors": "COLORS: Card Colors",
+    "count": "COUNT: Total Card Count",
+    "value": "VALUE: Advisor Tactical Score"
+}
+LABEL_TO_COLUMN_FIELD = {v: k for k, v in COLUMN_FIELD_LABELS.items()}
 
 DECK_FILTER_DEFAULT = FILTER_OPTION_AUTO
 

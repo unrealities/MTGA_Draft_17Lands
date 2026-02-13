@@ -4,7 +4,7 @@ import json
 import os
 import sys
 from pydantic import BaseModel, field_validator, Field
-from typing import Tuple
+from typing import List, Dict, Tuple
 from src import constants
 from src.logger import create_logger
 
@@ -51,12 +51,13 @@ class Settings(BaseModel):
     """This class holds UI settings"""
 
     table_width: int = 270
-    column_2: str = constants.COLUMNS_OPTIONS_EXTRA_DICT[constants.COLUMN_2_DEFAULT]
-    column_3: str = constants.COLUMNS_OPTIONS_EXTRA_DICT[constants.COLUMN_3_DEFAULT]
-    column_4: str = constants.COLUMNS_OPTIONS_EXTRA_DICT[constants.COLUMN_4_DEFAULT]
-    column_5: str = constants.COLUMNS_OPTIONS_EXTRA_DICT[constants.COLUMN_5_DEFAULT]
-    column_6: str = constants.COLUMNS_OPTIONS_EXTRA_DICT[constants.COLUMN_6_DEFAULT]
-    column_7: str = constants.COLUMNS_OPTIONS_EXTRA_DICT[constants.COLUMN_7_DEFAULT]
+    column_configs: Dict[str, List[str]] = Field(default_factory=lambda: {
+        "pack_table": ["name", "value", "gihwr"],
+        "missing_table": ["name", "alsa"],
+        "taken_table": ["name", "count", "gihwr"],
+        "compare_table": ["name", "gihwr", "iwd"],
+        "overlay_table": ["name", "value"]
+    })
     deck_filter: str = constants.DECK_FILTER_DEFAULT
     filter_format: str = constants.DECK_FILTER_FORMAT_COLORS
     result_format: str = constants.RESULT_FORMAT_WIN_RATE
