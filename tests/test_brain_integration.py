@@ -25,19 +25,36 @@ def create_mock_dataset(path):
                 "name": "Overwhelming Ancient",
                 "cmc": 6,
                 "types": ["Creature"],
+                "colors": ["G"],
+                "mana_cost": "{4}{G}{G}",
                 "deck_colors": {"All Decks": {"gihwr": 62.0, "alsa": 1.5}},
             },
             "102": {
                 "name": "Reliable Bear",
                 "cmc": 2,
                 "types": ["Creature"],
+                "colors": ["G"],
+                "mana_cost": "{1}{G}",
                 "deck_colors": {"All Decks": {"gihwr": 54.0, "alsa": 4.5}},
             },
             "103": {
                 "name": "Final Strike",
                 "cmc": 2,
                 "types": ["Instant"],
+                "colors": ["B"],
+                "mana_cost": "{1}{B}",
                 "deck_colors": {"All Decks": {"gihwr": 55.0, "alsa": 3.0}},
+            },
+            # A Splashable Bomb (Red, Single Pip)
+            "104": {
+                "name": "Fireball",
+                "cmc": 3,
+                "types": ["Sorcery"],
+                "colors": ["R"],
+                "mana_cost": "{2}{R}",
+                "deck_colors": {
+                    "All Decks": {"gihwr": 65.0, "alsa": 1.0}
+                },  # High WR -> Bomb
             },
         },
     }
@@ -75,7 +92,6 @@ class TestBrainIntegration:
         config = Configuration()
         config.settings.arena_log_location = str(log_file)
 
-        # FIX: Ensure retrieve_unknown is True and Scanner is linked to mock sets
         scanner = ArenaScanner(str(log_file), mock_sets, retrieve_unknown=True)
         scanner.retrieve_set_data(str(dataset_path))
 
@@ -87,7 +103,7 @@ class TestBrainIntegration:
     def test_advisor_prioritizes_structural_needs(self, env):
         app, log, root = env["app"], env["log"], env["root"]
 
-        # 1. Simulate Event Join (Crucial for setting scanner.draft_type)
+        # 1. Simulate Event Join
         with open(log, "a") as f:
             f.write(
                 '[UnityCrossThreadLogger]==> EventJoin {"id":"1","request":"{\\"EventName\\":\\"PremierDraft_TEST_20240101\\"}"}\n'
@@ -96,55 +112,49 @@ class TestBrainIntegration:
         app._update_loop()
         root.update()
 
-        # 2. Inject a 'clunky' card pool (Three 6-drops)
+        # 2. Inject a 'clunky' card pool (Three 6-drops in Green)
+        # This establishes "Green" as our main color
         app.orchestrator.scanner.taken_cards = ["101", "101", "101"]
 
-        # 3. Simulate Pack Entry (Pick 16 to trigger 'Critical' logic)
+        # 3. Simulate Pack Entry (Pick 20 - Late Pack 2)
+        # We are SOLIDLY Green.
+        # 102 (Green Bear) should be prioritized due to curve/color.
+        # 103 (Black Instant) is off-color, single pip.
+        # 104 (Red Bomb) is off-color, single pip (Splashable).
         p1p16 = (
-            '[UnityCrossThreadLogger]Draft.Notify {"draftId":"1","SelfPick":16,"SelfPack":2,'
-            '"PackCards":"101,102,103"}\n'
+            '[UnityCrossThreadLogger]Draft.Notify {"draftId":"1","SelfPick":20,"SelfPack":2,'
+            '"PackCards":"101,102,103,104"}\n'
         )
         with open(log, "a") as f:
             f.write(p1p16)
 
-        # 4. Trigger Brain Logic
         app._update_loop()
-
-        # 5. UI Pump (Wait for Advisor labels to render)
-        # We loop update to ensure the labels are generated
-        for _ in range(10):
-            root.update_idletasks()
+        for _ in range(5):
             root.update()
-            time.sleep(0.05)
+            time.sleep(0.01)
 
-        advisor_labels = []
-
-        def find_labels(widget):
-            if isinstance(widget, (ttk.Label, tkinter.Label)):
-                advisor_labels.append(str(widget.cget("text")))
-            for child in widget.winfo_children():
-                find_labels(child)
-
-        find_labels(app.advisor_panel)
-
-        # VERIFICATION:
-        # A. Check for Interaction reasoning (Final Strike)
-        assert any(
-            "Critical Removal Need" in l or "Interaction Priority" in l
-            for l in advisor_labels
-        )
-
-        # B. Check for Curve reasoning (Reliable Bear)
-        assert any("2-Drops" in l for l in advisor_labels)
-
-        # C. Verify the Dashboard 'Value' column is augmented
+        # Get Recommendations via Dashboard
         tree = app.dashboard.get_treeview("pack")
         rows = tree.get_children()
-        # Card 102 (Bear) should be near top due to structural bonus
-        bear_row = [
-            tree.item(r)["values"]
-            for r in rows
-            if "BEAR" in str(tree.item(r)["values"][0]).upper()
-        ][0]
-        # Contextual Score (index 1) should be > Raw WR (54.0)
-        assert float(bear_row[1]) > 54.0
+
+        # Map Name -> Score
+        scores = {}
+        for r in rows:
+            vals = tree.item(r)["values"]
+            name = str(vals[0]).replace("⭐ ", "")  # Remove decorators
+            score = float(vals[1])
+            scores[name] = score
+
+        # VERIFICATIONS
+
+        # 1. Curve Need: Reliable Bear (102) should be boosted because we have 0 2-drops and are in Green.
+        assert scores["Reliable Bear"] > 54.0  # Base WR 54.0
+
+        # 2. Lane Commitment: Final Strike (103) is Black. We are Green.
+        # It's late (Pick 20). Penalty should be heavy.
+        # Base WR 55.0.
+        assert scores["Final Strike"] < 50.0
+
+        # 3. Splash Logic: Fireball (104). Base WR 65.0. Z-Score > 1.5. Single Pip {2}{R}.
+        # This should be identified as a "Splashable Bomb" and penalized LESS than Final Strike.
+        assert scores["Fireball"] > scores["Final Strike"]
