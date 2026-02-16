@@ -15,6 +15,8 @@ from src.ui.app import DraftApp
 from src.log_scanner import ArenaScanner
 from src.configuration import Configuration
 from src.limited_sets import SetDictionary, SetInfo
+from src import constants
+from src.utils import Result
 
 
 # --- MOCK DATA GENERATOR ---
@@ -91,13 +93,26 @@ class TestBrainIntegration:
         config = Configuration()
         config.settings.arena_log_location = str(log_file)
 
-        scanner = ArenaScanner(str(log_file), mock_sets, retrieve_unknown=True)
-        scanner.retrieve_set_data(str(dataset_path))
+        # PATCH: check_file_integrity to allow small datasets (the mock has <100 cards)
+        # We need to return the dict from create_mock_dataset as the second return value
+        with open(dataset_path, "r") as f:
+            mock_data_dict = json.load(f)
 
-        # PATCH: Prevent the app's internal timer from conflicting with test logic
-        with patch("src.ui.app.DraftApp._schedule_update"):
-            app = DraftApp(root, scanner, config)
-            yield {"app": app, "log": log_file, "root": root}
+        with patch(
+            "src.dataset.check_file_integrity",
+            return_value=(Result.VALID, mock_data_dict),
+        ):
+            scanner = ArenaScanner(str(log_file), mock_sets, retrieve_unknown=True)
+            scanner.retrieve_set_data(str(dataset_path))
+
+            # Explicitly set the draft type so the scanner processes the pack data
+            scanner.draft_type = constants.LIMITED_TYPE_DRAFT_PREMIER_V2
+            scanner.number_of_players = 8
+
+            # PATCH: Prevent the app's internal timer from conflicting with test logic
+            with patch("src.ui.app.DraftApp._schedule_update"):
+                app = DraftApp(root, scanner, config)
+                yield {"app": app, "log": log_file, "root": root}
 
         root.destroy()
 

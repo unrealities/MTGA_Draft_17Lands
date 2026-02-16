@@ -946,17 +946,26 @@ class ArenaScanner:
                             elif "Course" in line:
                                 start_offset = line.find('{"Course"')
                                 if start_offset != -1:
-                                    course_data = process_json(line[start_offset:])
-                                    if (
-                                        course_data["Course"]["InternalEventName"]
-                                        == self.event_string
-                                    ):
-                                        card_pool = [
-                                            str(x)
-                                            for x in course_data["Course"]["CardPool"]
-                                        ]
-                                        if self.__sealed_update(card_pool):
-                                            update = True
+                                    # Use json.loads directly if possible to handle strict JSON
+                                    try:
+                                        course_data = json.loads(line[start_offset:])
+                                    except:
+                                        course_data = process_json(line[start_offset:])
+
+                                    # Ensure course_data is a dictionary
+                                    if isinstance(course_data, dict):
+                                        if (
+                                            course_data["Course"]["InternalEventName"]
+                                            == self.event_string
+                                        ):
+                                            card_pool = [
+                                                str(x)
+                                                for x in course_data["Course"][
+                                                    "CardPool"
+                                                ]
+                                            ]
+                                            if self.__sealed_update(card_pool):
+                                                update = True
                         except Exception as error:
                             logger.error(f"Sealed Search Error: {error}")
 

@@ -526,9 +526,8 @@ OTJ_QUICK_DRAFT_ENTRIES = [
             ],
             card_pool=["90428"],
         ),
-        r'{"CurrentModule":"BotDraft","Payload":"{\"Result\":\"Success\",\"EventName\":\"QuickDraft_OTJ_20240426\",\"DraftStatus\":\"PickNext\",\"PackNumber\":0,\"PickNumber\":1,\"DraftPack\":[\"90586\",\"90628\",\"90499\",\"90600\",\"90468\",\"90418\",\"90449\",\"90442\",\"90363\",\"90360\",\"90405\",\"90598\",\"90548\"],\"PackStyles\":[],\"PickedCards\":[\"90428\"],\"PickedStyles\":[]}","DTO_InventoryInfo":{...}}',
+        r'{"CurrentModule":"BotDraft","Payload":"{\"Result\":\"Success\",\"EventName\":\"QuickDraft_OTJ_20240426\",\"DraftStatus\":\"PickNext\",\"PackNumber\":0,\"PickNumber\":1,\"DraftPack\":[\"90586\",\"90628\",\"90499\",\"90600\",\"90468\",\"90418\",\"90449\",\"90442\",\"90363\",\"90360\",\"90405\",\"90598\",\"90548\"],\"PackStyles\":[],\"PickedCards\":[\"90428\"],\"PickedStyles\":[]}","DTO_InventoryInfo":{}}',
     ),
-    # FIXED: Added the full list of cards that are in the "PickedCards" array of the log line
     (
         "P1P9 - Pack",
         EventResults(
@@ -537,7 +536,16 @@ OTJ_QUICK_DRAFT_ENTRIES = [
             current_event="QuickDraft",
             current_pack=1,
             current_pick=9,
-            picks=["90428"],
+            picks=[
+                "90428",
+                "90360",
+                "90529",
+                "90528",
+                "90362",
+                "90520",
+                "90362",
+                "90501",
+            ],
             pack=["90627", "90376", "90595", "90489", "90401", "90480"],
             card_pool=[
                 "90428",
@@ -560,9 +568,8 @@ OTJ_QUICK_DRAFT_ENTRIES = [
                 "90428",
             ],
         ),
-        r'{"CurrentModule":"BotDraft","Payload":"{\"Result\":\"Success\",\"EventName\":\"QuickDraft_OTJ_20240426\",\"DraftStatus\":\"PickNext\",\"PackNumber\":0,\"PickNumber\":8,\"DraftPack\":[\"90627\",\"90376\",\"90595\",\"90489\",\"90401\",\"90480\"],\"PackStyles\":[],\"PickedCards\":[\"90428\",\"90360\",\"90529\",\"90528\",\"90362\",\"90520\",\"90362\",\"90501\"],\"PickedStyles\":[]}","DTO_InventoryInfo":{...}}',
+        r'{"CurrentModule":"BotDraft","Payload":"{\"Result\":\"Success\",\"EventName\":\"QuickDraft_OTJ_20240426\",\"DraftStatus\":\"PickNext\",\"PackNumber\":0,\"PickNumber\":8,\"DraftPack\":[\"90627\",\"90376\",\"90595\",\"90489\",\"90401\",\"90480\"],\"PackStyles\":[],\"PickedCards\":[\"90428\",\"90360\",\"90529\",\"90528\",\"90362\",\"90520\",\"90362\",\"90501\"],\"PickedStyles\":[]}","DTO_InventoryInfo":{}}',
     ),
-    # FIXED: Added the full list of cards that are in the "PickedCards" array of the log line
     (
         "P3P14 - Pack",
         EventResults(
@@ -616,7 +623,7 @@ OTJ_QUICK_DRAFT_ENTRIES = [
                 "90507",
             ],
         ),
-        r'{"CurrentModule":"BotDraft","Payload":"{\"Result\":\"Success\",\"EventName\":\"QuickDraft_OTJ_20240426\",\"DraftStatus\":\"PickNext\",\"PackNumber\":2,\"PickNumber\":13,\"DraftPack\":[\"90440\"],\"PackStyles\":[],\"PickedCards\":[\"90376\",\"90428\",\"90600\",\"90360\",\"90595\",\"90529\",\"90595\",\"90528\",\"90481\",\"90362\",\"90419\",\"90520\",\"90362\",\"90501\",\"90379\",\"90500\",\"90380\",\"90520\",\"90632\",\"90379\",\"90506\",\"90593\",\"90514\",\"90353\",\"90726\",\"90423\",\"90384\",\"90530\",\"90378\",\"90567\",\"90376\",\"90504\",\"90502\",\"90432\",\"90507\",\"90382\",\"90414\",\"90506\",\"90382\",\"90507\",\"90507\"],\"PickedStyles\":[]}","DTO_InventoryInfo":{...}}',
+        r'{"CurrentModule":"BotDraft","Payload":"{\"Result\":\"Success\",\"EventName\":\"QuickDraft_OTJ_20240426\",\"DraftStatus\":\"PickNext\",\"PackNumber\":2,\"PickNumber\":13,\"DraftPack\":[\"90440\"],\"PackStyles\":[],\"PickedCards\":[\"90376\",\"90428\",\"90600\",\"90360\",\"90595\",\"90529\",\"90595\",\"90528\",\"90481\",\"90362\",\"90419\",\"90520\",\"90362\",\"90501\",\"90379\",\"90500\",\"90380\",\"90520\",\"90632\",\"90379\",\"90506\",\"90593\",\"90514\",\"90353\",\"90726\",\"90423\",\"90384\",\"90530\",\"90378\",\"90567\",\"90376\",\"90504\",\"90502\",\"90432\",\"90507\",\"90382\",\"90414\",\"90506\",\"90382\",\"90507\",\"90507\"],\"PickedStyles\":[]}","DTO_InventoryInfo":{}}',
     ),
 ]
 
@@ -707,9 +714,8 @@ DMU_QUICK_DRAFT_ENTRIES_2024_5_7 = [
             ],
             card_pool=["82091"],
         ),
-        r'{"CurrentModule":"BotDraft","Payload":"{\"Result\":\"Success\",\"EventName\":\"QuickDraft_DMU_20240507\",\"DraftStatus\":\"PickNext\",\"PackNumber\":0,\"PickNumber\":1,\"DraftPack\":[\"82200\",\"82129\",\"82179\",\"82062\",\"82299\",\"82209\",\"82228\",\"82074\",\"82153\",\"82281\",\"82096\",\"82140\",\"82245\"],\"PackStyles\":[],\"PickedCards\":[\"82091\"],\"PickedStyles\":[]}","DTO_InventoryInfo":{...}}',
+        r'{"CurrentModule":"BotDraft","Payload":"{\"Result\":\"Success\",\"EventName\":\"QuickDraft_DMU_20240507\",\"DraftStatus\":\"PickNext\",\"PackNumber\":0,\"PickNumber\":1,\"DraftPack\":[\"82200\",\"82129\",\"82179\",\"82062\",\"82299\",\"82209\",\"82228\",\"82074\",\"82153\",\"82281\",\"82096\",\"82140\",\"82245\"],\"PackStyles\":[],\"PickedCards\":[\"82091\"],\"PickedStyles\":[]}","DTO_InventoryInfo":{}}',
     ),
-    # FIXED: Added the full list of cards that are in the "PickedCards" array of the log line
     (
         "P1P9 - Pack",
         EventResults(
@@ -718,7 +724,16 @@ DMU_QUICK_DRAFT_ENTRIES_2024_5_7 = [
             current_event="QuickDraft",
             current_pack=1,
             current_pick=9,
-            picks=["82091"],
+            picks=[
+                "82091",
+                "82140",
+                "82065",
+                "82124",
+                "82303",
+                "82123",
+                "82249",
+                "82309",
+            ],
             pack=["82083", "82196", "82129", "82170", "82059", "82160"],
             card_pool=[
                 "82091",
@@ -741,7 +756,7 @@ DMU_QUICK_DRAFT_ENTRIES_2024_5_7 = [
                 "82256",
             ],
         ),
-        r'{"CurrentModule":"BotDraft","Payload":"{\"Result\":\"Success\",\"EventName\":\"QuickDraft_DMU_20240507\",\"DraftStatus\":\"PickNext\",\"PackNumber\":0,\"PickNumber\":8,\"DraftPack\":[\"82083\",\"82196\",\"82129\",\"82170\",\"82059\",\"82160\"],\"PackStyles\":[],\"PickedCards\":[\"82091\",\"82140\",\"82065\",\"82124\",\"82303\",\"82123\",\"82249\",\"82309\"],\"PickedStyles\":[]}","DTO_InventoryInfo":{...}}',
+        r'{"CurrentModule":"BotDraft","Payload":"{\"Result\":\"Success\",\"EventName\":\"QuickDraft_DMU_20240507\",\"DraftStatus\":\"PickNext\",\"PackNumber\":0,\"PickNumber\":8,\"DraftPack\":[\"82083\",\"82196\",\"82129\",\"82170\",\"82059\",\"82160\"],\"PackStyles\":[],\"PickedCards\":[\"82091\",\"82140\",\"82065\",\"82124\",\"82303\",\"82123\",\"82249\",\"82309\"],\"PickedStyles\":[]}","DTO_InventoryInfo":{}}',
     ),
 ]
 
@@ -1029,7 +1044,7 @@ DSK_SEALED_ENTRIES_2024_9_24 = [
                 "92119",
             ],
         ),
-        r'{"Course":{"CourseId":"d276ee0e-a180-41f9-b41a-8249c1db4bdf","InternalEventName":"Sealed_DSK_20240924","CurrentModule":"DeckSelect","ModulePayload":"","CourseDeckSummary":{"Attributes":[],"FormatLegalities":{},"PreferredCosmetics":{},"DeckValidationSummaries":[],"UnownedCards":{}},"CardPool":[92248,92368,92257,92188,92143,92242,92055,92154,92149,92238,92162,92261,92350,92338,92307,92379,92154,92073,92167,92203,92143,92291,92219,92235,92127,92311,92208,92230,92201,92364,92073,92268,92111,92181,92236,92146,92267,92116,92185,92304,92066,92313,92076,92365,92156,92146,92343,92237,92369,92274,92055,92067,92308,92234,92265,92360,92212,92380,92172,92279,92148,92073,92154,92179,92224,92141,92316,92305,92342,92092,92266,92377,92279,92240,92148,92114,92172,92070,92290,92229,92090,92182,92113,92119],"CardStyles":[]},"InventoryInfo":{...}}',
+        r'{"Course":{"CourseId":"d276ee0e-a180-41f9-b41a-8249c1db4bdf","InternalEventName":"Sealed_DSK_20240924","CurrentModule":"DeckSelect","ModulePayload":"","CourseDeckSummary":{"Attributes":[],"FormatLegalities":{},"PreferredCosmetics":{},"DeckValidationSummaries":[],"UnownedCards":{}},"CardPool":[92248,92368,92257,92188,92143,92242,92055,92154,92149,92238,92162,92261,92350,92338,92307,92379,92154,92073,92167,92203,92143,92291,92219,92235,92127,92311,92208,92230,92201,92364,92073,92268,92111,92181,92236,92146,92267,92116,92185,92304,92066,92313,92076,92365,92156,92146,92343,92237,92369,92274,92055,92067,92308,92234,92265,92360,92212,92380,92172,92279,92148,92073,92154,92179,92224,92141,92316,92305,92342,92092,92266,92377,92279,92240,92148,92114,92172,92070,92290,92229,92090,92182,92113,92119],"CardStyles":[]},"InventoryInfo":{}}',
     ),
 ]
 
@@ -1074,7 +1089,12 @@ DSK_SEALED_NAVIGATION_ENTRY = [
     ),
     (
         "Navigation Event (Duplicate)",
-        EventResults(),
+        EventResults(
+            new_event=False,
+            data_update=False,
+            current_set="DSK",
+            current_event="Sealed",
+        ),
         r'[UnityCrossThreadLogger]==> Event_Join {"id":"duplicate-id-1234","request":"{\"EventName\":\"Sealed_DSK_20240924\",\"EntryCurrencyType\":\"Gem\",\"EntryCurrencyPaid\":2000,\"CustomTokenId\":null}"}',
     ),
 ]
