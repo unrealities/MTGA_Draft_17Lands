@@ -10,7 +10,7 @@ import os
 import json
 import logging
 from typing import List, Dict, Any, Optional
-from src.utils import is_cache_stale
+from src.utils import is_cache_stale, normalize_color_string
 
 logger = logging.getLogger(__name__)
 
@@ -129,3 +129,155 @@ class Seventeenlands:
                     f"{self.URL_BASE}{val}" if val.startswith("/static") else val
                 )
         return imgs
+
+    # --- RESTORED LEGACY METHODS FOR COMPATIBILITY ---
+
+    def download_color_ratings(
+        self,
+        set_code,
+        draft,
+        start_date,
+        end_date,
+        user_group,
+        threshold=5000,
+        color_filter=None,
+    ):
+        """
+        Retrieves win rate data for color archetypes (e.g. 'WU', 'All Decks').
+        Used by FileExtractor to determine available deck filters.
+        """
+        params = {
+            "expansion": set_code,
+            "event_type": draft,
+            "start_date": start_date,
+            "end_date": end_date,
+            "combine_splash": False,
+            "user_group": user_group,
+        }
+
+        url = f"{self.URL_BASE}/color_ratings/data"
+        try:
+            response = self.session.get(url, params=params)
+            response.raise_for_status()
+            data = response.json()
+
+            return self._process_color_ratings(data, color_filter, threshold)
+
+        except Exception as e:
+            logger.error(f"Failed to download color ratings: {e}")
+            return {}, 0
+
+    def _process_color_ratings(self, data, color_filter, threshold=5000):
+        results = {}
+        game_count = 0
+
+        for entry in data:
+            if entry.get("is_summary"):
+                game_count = entry.get("games", 0)
+
+            # Logic to extract color label (e.g. "UB" or "All Decks")
+            color_key = entry.get("short_name")
+            if not color_key:
+                # Fallback for "All Decks" or malformed entries
+                color_name = entry.get("color_name", "")
+                if "All Decks" in color_name:
+                    color_key = "All Decks"
+                else:
+                    # Attempt to extract from "Dimir (UB)"
+                    import re
+
+                    match = re.search(r"\((.*?)\)", color_name)
+                    if match:
+                        color_key = match.group(1)
+
+            if color_key:
+                normalized_key = normalize_color_string(color_key)
+                if not color_filter or normalized_key in color_filter:
+                    games = entry.get("games", 0)
+                    if games >= threshold:
+                        wins = entry.get("wins", 0)
+                        winrate = (wins / games) * 100 if games > 0 else 0.0
+                        results[normalized_key] = round(winrate, 1)
+
+        return results, game_count
+
+    def download_card_ratings(
+        self, set_code, color, draft, start_date, end_date, user_group, card_data
+    ):
+        """
+        Legacy method to populate a card dictionary with 17Lands data.
+        Used by FileExtractor._download_expansion.
+        """
+        params = {
+            "expansion": set_code,
+            "format": draft,
+            "start_date": start_date,
+            "end_date": end_date,
+            "user_group": user_group,
+            "colors": color if color != "All Decks" else None,
+        }
+
+        url = f"{self.URL_BASE}/card_ratings/data"
+        try:
+            response = self.session.get(url, params=params)
+            response.raise_for_status()
+            data = response.json()
+            self.process_card_ratings(color, data, card_data)
+        except Exception as e:
+            logger.error(f"Failed to download card ratings for {color}: {e}")
+
+    def process_card_ratings(self, color, data, card_data):
+        """Helper to map API response to internal structure."""
+        from src import constants
+
+        for card in data:
+            name = card.get("name")
+            if not name:
+                continue
+
+            if name not in card_data:
+                card_data[name] = {
+                    constants.DATA_SECTION_IMAGES: [],
+                    constants.DATA_SECTION_RATINGS: [],
+                }
+
+            # Process Images
+            if "url" in card and card["url"]:
+                img_url = card["url"]
+                if img_url.startswith("/static"):
+                    img_url = f"{self.URL_BASE}{img_url}"
+                if img_url not in card_data[name][constants.DATA_SECTION_IMAGES]:
+                    card_data[name][constants.DATA_SECTION_IMAGES].append(img_url)
+
+            # Process Ratings
+            entry = {
+                constants.DATA_FIELD_GIHWR: float(
+                    card.get("ever_drawn_win_rate") or 0.0
+                )
+                * 100,
+                constants.DATA_FIELD_ALSA: float(card.get("avg_seen") or 0.0),
+                constants.DATA_FIELD_IWD: float(
+                    card.get("drawn_improvement_win_rate") or 0.0
+                )
+                * 100,
+                constants.DATA_FIELD_NGD: int(card.get("drawn_game_count") or 0),
+                constants.DATA_FIELD_OHWR: float(
+                    card.get("opening_hand_win_rate") or 0.0
+                )
+                * 100,
+                constants.DATA_FIELD_GPWR: float(card.get("win_rate") or 0.0) * 100,
+            }
+
+            # Append dictionary for this color to the ratings list
+            card_data[name][constants.DATA_SECTION_RATINGS].append({color: entry})
+
+    def build_card_ratings_url(
+        self, set_code, draft, start_date, end_date, user_group, color
+    ):
+        """Helper for building the URL string (used by tests)."""
+        base = f"{self.URL_BASE}/card_ratings/data?expansion={set_code}&format={draft}&start_date={start_date}&end_date={end_date}"
+        if user_group and user_group != "All":
+            base += f"&user_group={user_group}"
+        if color and color != "All Decks":
+            base += f"&colors={color}"
+        return base

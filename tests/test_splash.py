@@ -4,12 +4,15 @@ import tkinter
 import time
 from unittest.mock import MagicMock, patch
 from src.ui.windows.splash import SplashWindow
+from src.ui.styles import Theme
 
 
 class TestSplashWindow:
     @pytest.fixture
     def root(self):
         root = tkinter.Tk()
+        # Initialize the theme engine so Style.get_instance() is valid
+        Theme.apply(root, "Dark")
         yield root
         root.destroy()
 
@@ -38,7 +41,8 @@ class TestSplashWindow:
 
             assert len(completion_result) == 1
             assert completion_result[0]["data"] == 123
-            assert splash.status_var.get() == "WORKING"
+            # Case insensitive check as the splash forces upper
+            assert splash.status_var.get().upper() == "WORKING"
 
     def test_splash_handles_task_exception(self, root):
         """Verify background exceptions are caught and displayed."""

@@ -1,8 +1,7 @@
 """
 src/advisor/engine.py
 Decision Engine.
-Implements 0-100 Normalized Scoring, Lane Commitment, Structural Hunger,
-and Smart Splash Detection based on pip density.
+Implements Context-Aware Scoring, Karsten Mana Analysis, and Wheel Prediction.
 """
 
 import statistics
@@ -11,26 +10,35 @@ import re
 from typing import List, Dict, Any, Tuple
 from src.advisor.schema import Recommendation
 from src import constants
+from src.card_logic import count_fixing
 
 logger = logging.getLogger(__name__)
 
 
 class DraftAdvisor:
-    # Professional Targets
-    TARGET_CREATURES = 16
-    TARGET_REMOVAL = 5
-    TARGET_LANDS = 17
+    # --- Configuration Constants ---
+    TOTAL_PICKS = 45
+    PACK_SIZE = 14  # Arena draft pack size
 
-    # Thresholds
-    BOMB_Z_THRESHOLD = 1.5
-    MIN_GAMES_PLAYED = 500
+    # Karsten Math Targets (Sources needed for 90% consistency)
+    SOURCES_NEEDED = {
+        1: 9,  # 1 Pip needs 9 sources
+        2: 14,  # 2 Pips needs 14 sources
+        3: 18,  # 3 Pips needs 18 sources
+    }
 
     def __init__(self, set_metrics, taken_cards: List[Dict]):
         self.metrics = set_metrics
         self.pool = taken_cards
         self.pool_metrics = self._analyze_pool()
         self.active_colors = self._identify_main_colors()
-        self.fixing_sources = self._count_fixing()
+        self.fixing_map = count_fixing(self.pool)
+
+        # Determine our "Lane" (Top 2 Colors)
+        self.main_colors = self._identify_main_colors()
+
+        # Count our fixing (Dual lands, treasures)
+        self.fixing_count = self._count_fixing_sources()
 
     def evaluate_pack(
         self, pack_cards: List[Dict], current_pick: int
@@ -38,231 +46,260 @@ class DraftAdvisor:
         if not pack_cards:
             return []
 
-        # 1. Pack Statistics for Z-Score
-        # Filter out basic lands and very low sample cards from the math to prevent skew
-        valid_wrs = []
-        for c in pack_cards:
-            stats = c.get("deck_colors", {}).get("All Decks", {})
-            gihwr = float(stats.get("gihwr", 0.0))
-            if gihwr > 0:
-                valid_wrs.append(gihwr)
-
+        # 1. Calculate Pack Statistics for Z-Score (Relative Power)
+        pack_wrs = [
+            float(c.get("deck_colors", {}).get("All Decks", {}).get("gihwr", 0.0))
+            for c in pack_cards
+        ]
+        # Remove zeros for cleaner stats
+        valid_wrs = [x for x in pack_wrs if x > 0]
         pack_mean = statistics.mean(valid_wrs) if valid_wrs else 54.0
         pack_std = statistics.pstdev(valid_wrs) if len(valid_wrs) > 1 else 2.0
 
         recommendations = []
+
+        # Calculate Draft Progress (0.0 to 1.0)
+        draft_progress = min(1.0, len(self.pool) / self.TOTAL_PICKS)
+
         for card in pack_cards:
             name = card.get("name", "Unknown")
-            stats = card.get("deck_colors", {})
 
-            # --- FACTOR 1: Base Quality (Normalized 0-100) ---
-            # We map 45% WR to 0 and 65% WR to 100. Clamped.
-            base_wr = stats.get("All Decks", {}).get("gihwr", 0.0)
-            if base_wr == 0.0:
-                # No data available
-                recommendations.append(
-                    Recommendation(
-                        card_name=name,
-                        base_win_rate=0.0,
-                        contextual_score=0.0,
-                        z_score=0.0,
-                        reasoning=["Insufficient Data"],
-                    )
-                )
-                continue
+            # --- STEP 1: Archetype Weighted Scoring ---
+            base_score = self._calculate_weighted_score(card, draft_progress)
 
-            quality_score = max(0, min(100, (base_wr - 45) * 5))
-
-            # --- FACTOR 2: Power Delta (The Z-Score) ---
-            z_score = (base_wr - pack_mean) / pack_std if pack_std > 0 else 0
-            power_bonus = max(0, z_score * 15) if z_score > 0.5 else 0
-
-            # --- FACTOR 3: Lane Commitment (The Sinker) ---
-            color_multiplier, color_reason = self._calculate_color_multiplier(
-                card, current_pick, z_score
+            # --- STEP 2: Power Bonus (Z-Score) ---
+            raw_gihwr = float(
+                card.get("deck_colors", {}).get("All Decks", {}).get("gihwr", 0.0)
             )
+            z_score = (raw_gihwr - pack_mean) / pack_std if pack_std > 0 else 0
+            power_bonus = max(0, z_score * 10) if z_score > 0.5 else 0
 
-            # --- FACTOR 4: Structural Hunger (The Fixer) ---
-            hunger_multiplier, hunger_reasons = self._calculate_structural_multipliers(
-                card, current_pick
-            )
+            # --- STEP 3: Mana Analysis (Karsten Probability) ---
+            cast_prob, cast_reason = self._calculate_castability(card, current_pick)
 
-            # FINAL CALCULATION (0-100 Scale)
-            final_score = (
-                (quality_score + power_bonus) * color_multiplier * hunger_multiplier
-            )
+            # --- STEP 4: Structural Hunger ---
+            curve_mult, curve_reason = self._calculate_curve_fit(card)
+
+            # --- STEP 5: Wheel Greed (Probability) ---
+            wheel_mult, wheel_alert = self._check_wheel_probability(card, current_pick)
+
+            # === MASTER FORMULA ===
+            # (Base + Power) * Castability * Curve * WheelGreed
+
+            raw_score = base_score + power_bonus
+
+            final_score = raw_score * cast_prob * curve_mult * wheel_mult
 
             # Clamp to 0-100
             final_score = max(0, min(100, final_score))
 
-            all_reasons = []
-            if color_reason:
-                all_reasons.append(color_reason)
-            all_reasons.extend(hunger_reasons)
+            # Compile Reasoning
+            reasons = []
+            if cast_reason:
+                reasons.append(cast_reason)
+            if curve_reason:
+                reasons.append(curve_reason)
+            if wheel_alert:
+                reasons.append("High Wheel Chance")
+            if z_score >= 2.0:
+                reasons.append("BOMB")
+
+            # Determine Functional CMC for UI
+            func_cmc = self._get_functional_cmc(card)
 
             recommendations.append(
                 Recommendation(
                     card_name=name,
-                    base_win_rate=base_wr,
+                    base_win_rate=raw_gihwr,
                     contextual_score=round(final_score, 1),
                     z_score=round(z_score, 2),
-                    reasoning=all_reasons,
+                    cast_probability=cast_prob,
+                    wheel_chance=(wheel_mult < 1.0),
+                    functional_cmc=func_cmc,
+                    reasoning=reasons,
                     is_elite=(z_score >= 1.5),
-                    archetype_fit="Neutral",
+                    archetype_fit=(
+                        "/".join(self.main_colors) if self.main_colors else "Open"
+                    ),
                 )
             )
 
+        # Sort by the final contextual score
         return sorted(recommendations, key=lambda x: x.contextual_score, reverse=True)
 
-    def _calculate_color_multiplier(
-        self, card: Dict, pick: int, z_score: float
-    ) -> Tuple[float, str]:
+    def _calculate_weighted_score(self, card: Dict, progress: float) -> float:
         """
-        Determines the penalty for off-color cards based on:
-        1. Draft Phase (Speculation vs Locked)
-        2. Pip Density (Splashability)
-        3. Power Level (Is it worth the splash?)
+        Blends Global WR with Archetype WR based on draft progress.
+        Early draft = Global matters. Late draft = Archetype matters.
         """
+        stats = card.get("deck_colors", {})
+
+        # Global Stats
+        global_wr = float(stats.get("All Decks", {}).get("gihwr", 0.0))
+
+        # Archetype Stats (e.g., "UB")
+        # We define our archetype string (e.g., "UB") based on main colors
+        archetype_key = (
+            "".join(sorted(self.main_colors)) if self.main_colors else "All Decks"
+        )
+
+        # Fallback to Global if no data for archetype
+        arch_wr = float(stats.get(archetype_key, {}).get("gihwr", global_wr))
+        if arch_wr == 0.0:
+            arch_wr = global_wr
+
+        # The Blend
+        # Example: Pick 22 (50% progress). Score is 50% global, 50% archetype.
+        expected_wr = (global_wr * (1.0 - progress)) + (arch_wr * progress)
+
+        # Normalize to 0-100 (45% -> 0, 65% -> 100)
+        return max(0, min(100, (expected_wr - 45) * 5))
+
+    def _calculate_castability(self, card: Dict, pick: int) -> Tuple[float, str]:
+        """
+        Calculates the score multiplier based on how hard the card is to cast.
+
+        Logic:
+        1. On-Color: 1.0x (No penalty).
+        2. Speculation Phase (Pick <= 5): 0.95x (Low penalty).
+        3. Splash Logic:
+           - Single Pip: Check fixing map for specific color support.
+           - Double Pip: Hard Lock (0.0x) unless excessive fixing exists.
+        """
+        mana_cost = card.get("mana_cost", "")
+        if not mana_cost:
+            return 1.0, ""  # Lands/Colorless
+
         card_colors = set(card.get("colors", []))
 
-        # Colorless / Artifacts -> Always open
-        if not card_colors:
+        # 1. On-Color Check
+        # If the card matches our main colors, we assume 1.0 (we will build a mana base for it)
+        is_main_color = any(c in self.main_colors for c in card_colors)
+
+        # If card is multi-color (e.g. WB) and we are WB, it's 1.0.
+        # If card is WB and we are W (Open), it's 1.0.
+        # If card is WB and we are WR, it's technically a splash for B, but often treated as on-color pivot.
+        if is_main_color:
             return 1.0, ""
 
-        # Identify overlap with our main colors
-        is_on_color = any(c in self.active_colors for c in card_colors)
-
-        # Exact match bonus (e.g. Card is UR, we are UR)
-        if is_on_color:
-            # If multi-color, check if we can cast both
-            if len(card_colors) > 1 and not card_colors.issubset(
-                set(self.active_colors)
-            ):
-                # We are Red, Card is Red/Blue. It's speculative but playable.
-                if pick > 20:
-                    return 0.5, "Hard Cast Risk"
-                return 0.9, "Pivot Potential"
-            return 1.1, ""  # Small bonus for being perfectly on-lane
-
-        # --- OFF COLOR LOGIC ---
-
-        # Phase 1: Speculation (Pick 1-5)
-        # We are barely committed. Take the best cards.
+        # 2. Speculation Phase Exception (Picks 1-5)
+        # We don't punish off-color early because we might pivot.
         if pick <= 5:
-            return 0.9, ""
+            return 0.95, ""
 
-        # Phase 2: Establishment (Pick 6 - Pick 20)
-        # We are forming a lane. Off-color needs to be good.
-        if pick <= 20:
-            if z_score > 1.0:
-                return 0.8, "Speculative Pivot"
-            return 0.4, "Off-Color"
+        # 3. Splash Logic (The Pro Logic)
 
-        # Phase 3: Commitment (Pick 21+)
-        # We are locked. Only bombs or simple splashes.
+        # Count Pips (e.g. "{1}{R}{R}" has 2 Red Pips)
+        pips = sum(1 for char in mana_cost if char in "WUBRG")
 
-        # SPLASH CHECK
-        mana_cost = card.get("mana_cost", "")
-        # Count colored pips (e.g., "{1}{R}{R}" -> 2)
-        pip_count = sum(1 for c in mana_cost if c in "WUBRG")
+        # Identify the specific colors we need to splash
+        # e.g., We are Green. Card is Red/Green. We need Red fixing.
+        splash_colors = [c for c in card_colors if c not in self.active_colors]
 
-        is_bomb = z_score >= self.BOMB_Z_THRESHOLD
+        # Calculate total fixing sources available for the required splash color(s)
+        # If multiple colors needed (e.g. card is UR and we are G), we need fixing for both.
+        # For scoring, we take the minimum fixing available across required colors (limiting factor).
+        fixing_available = 0
+        if splash_colors:
+            # We add 1 to the count because we assume we can always add 1 Basic Land of that color
+            # to the deck. So 2 Treasures + 1 Basic = 3 Sources.
+            sources = [self.fixing_map.get(c, 0) + 1 for c in splash_colors]
+            fixing_available = min(sources)
 
-        # Condition A: Bomb Rare, Single Pip (Easy Splash)
-        if is_bomb and pip_count <= 1:
-            # If we have fixing, it's very playable. If not, it's risky but possible.
-            return 0.7, "Splashable Bomb"
+        # Logic for Single Pip Splash (e.g. {2}{R})
+        if pips == 1:
+            # Pro Rule: You want at least 3 sources for a consistently castable splash card.
+            if fixing_available >= 3:
+                return 0.8, "Splashable (Fixing Available)"
+            # If we have some fixing (e.g. 1 treasure + 1 basic), it's risky but doable.
+            elif fixing_available >= 2:
+                return 0.6, "Risky Splash"
+            else:
+                return 0.4, "No Fixing Sources"
 
-        # Condition B: Bomb Rare, Double Pip (Hard Splash)
-        if is_bomb and pip_count > 1:
-            if self.fixing_sources >= 3:
-                return 0.4, "Risky Splash (Double Pip)"
-            return 0.1, "Uncastable Bomb"
+        # Logic for Double Pip (e.g. {2}{R}{R})
+        # Generally uncastable as a splash.
+        if pips >= 2:
+            # Exception: Treasure heavy pool (Fixing > 4) implies we are playing 5-color soup
+            if fixing_available >= 5:
+                return 0.4, "Deep Splash (Heavy Fixing)"
+            return 0.05, "Uncastable (Double Pip)"
 
-        # Condition C: Average off-color card
-        return 0.05, "Off-Color"
+        # Fallback
+        return 0.5, "Off-Color"
 
-    def _calculate_structural_multipliers(
-        self, card: Dict, pick: int
-    ) -> Tuple[float, List[str]]:
-        multiplier = 1.0
-        reasons = []
-        types = card.get("types", [])
-        cmc = int(card.get("cmc", 0))
+    def _calculate_curve_fit(self, card: Dict) -> Tuple[float, str]:
+        """Adjusts score based on functional CMC and current curve gaps."""
+        cmc = self._get_functional_cmc(card)
 
-        total_picks = 45  # 3 packs * 15 cards
-        progress = pick / total_picks
+        # Hunger: 2-Drops
+        # If we have few 2-drops, boost them.
+        two_drop_count = self.pool_metrics["curve"].get(2, 0)
+        if cmc == 2 and two_drop_count < 4:
+            return 1.15, "Fill Curve (2-Drop)"
 
-        # 1. Creature Hunger
-        if "Creature" in types:
-            # We want ~15-17 creatures.
-            # If we are 60% through draft but only have 20% of creatures, panic.
-            expected_creatures = progress * self.TARGET_CREATURES
-            if self.pool_metrics["creature_count"] < expected_creatures - 2:
-                multiplier += 0.25
-                reasons.append("Need Creatures")
+        # Satiety: Top End (5+)
+        # If we have too many big spells, penalize hard.
+        top_end = sum(v for k, v in self.pool_metrics["curve"].items() if k >= 5)
+        if cmc >= 5 and top_end >= 5:
+            return 0.6, "Curve Too High"
 
-            # Curve Logic: 2-Drops
-            if cmc == 2 and self.pool_metrics["curve"].get(2, 0) < 3 and pick > 20:
-                multiplier += 0.2
-                reasons.append("Fill Curve (2-Drop)")
+        return 1.0, ""
 
-        # 2. Interaction Hunger
-        if any(t in types for t in ["Instant", "Sorcery", "Enchantment"]):
-            # Simple heuristic for removal detection (not perfect, but effective)
-            # We assume most high-rated spells are interaction
-            if (
-                self.pool_metrics["interaction_count"] < self.TARGET_REMOVAL
-                and pick > 15
-            ):
-                multiplier += 0.2
-                reasons.append("Need Interaction")
+    def _check_wheel_probability(
+        self, card: Dict, current_pick: int
+    ) -> Tuple[float, str]:
+        """
+        Determines if a card is likely to circle the table.
+        If Pick 3 and ALSA is 12, we shouldn't take it now.
+        """
+        # Get Average Last Seen At (ALSA)
+        alsa = float(card.get("deck_colors", {}).get("All Decks", {}).get("alsa", 0.0))
 
-        # 3. Curve Satiety (Top End)
-        if cmc >= 5:
-            top_end_count = sum(
-                v for k, v in self.pool_metrics["curve"].items() if k >= 5
-            )
-            if top_end_count >= 4:
-                multiplier -= 0.3
-                reasons.append("Curve Too High")
+        if alsa == 0.0:
+            return 1.0, ""
 
-        # 4. Land/Fixing Hunger
-        if "Land" in types:
-            # If card is a dual land
-            if any(
-                c in "WUBRG" for c in card.get("colors", [])
-            ) or "Common" in card.get("rarity", ""):
-                if pick > 20 and self.fixing_sources < 3:
-                    multiplier += 0.15
-                    reasons.append("Fixing Needed")
+        # Logic: If current pick is 2, and ALSA is 11, it will likely be there at pick 10 (Wheel).
+        # We define "Wheel Likely" if ALSA is > CurrentPick + 7 (Pack size ~14)
+        if alsa > (current_pick + 7.0):
+            # Penalty: Don't take it now, take the scarce card.
+            return 0.8, "Likely to Wheel"
 
-        return multiplier, reasons
+        return 1.0, ""
+
+    def _get_functional_cmc(self, card: Dict) -> int:
+        """
+        Parses special mechanics to find the 'True' CMC.
+        e.g., Basic Landcycling {1} makes a 6-drop functionally a 1-drop/Land.
+        """
+        raw_cmc = int(card.get("cmc", 0))
+        text = card.get("text", "").lower() if "text" in card else ""
+
+        # Simple heuristics for functional cost
+        if "landcycling" in text:
+            # It acts as a land tutor, effectively low CMC for curve considerations
+            return 1
+
+        # Adventures (This requires more complex parsing usually, but for now we trust base CMC
+        # unless we have split card data structure available).
+
+        return raw_cmc
 
     def _identify_main_colors(self) -> List[str]:
-        """Identifies the 2 colors with the most weight in the pool."""
         weights = self.pool_metrics["color_weights"]
+        # Sort colors by count desc
         sorted_colors = sorted(weights.items(), key=lambda x: x[1], reverse=True)
+        # Return top 2 if they have significant cards
+        return [c[0] for c in sorted_colors[:2] if c[1] >= 2]
 
-        # If we are early (Pick < 5) or have no cards, we might not have 'main' colors yet
-        # Require at least 2 cards in a color to consider it 'Active' to reduce noise
-        valid_colors = [c[0] for c in sorted_colors if c[1] >= 2]
-
-        return valid_colors[:2]
-
-    def _count_fixing(self) -> int:
-        """Counts lands/artifacts that produce mana."""
+    def _count_fixing_sources(self) -> int:
         count = 0
         for c in self.pool:
-            t = c.get("types", [])
-            # Heuristic: Lands and Artifacts usually provide fixing in draft
-            if "Land" in t or "Artifact" in t:
-                # Check if it produces mana (very rough heuristic based on text usually found in name/type)
-                # In robust implementation, we would need rules text parsing or specific IDs
-                if "Land" in t and "Basic" not in t:
-                    count += 1
-                elif "Artifact" in t and c.get("cmc", 0) <= 3:  # Mana rocks
-                    count += 1
+            if "Land" in c.get("types", []) and "Basic" not in c.get("types", []):
+                count += 1
+            if "Artifact" in c.get("types", []) and int(c.get("cmc", 0)) <= 3:
+                # Mana rocks
+                count += 1
         return count
 
     def _analyze_pool(self) -> Dict[str, Any]:
@@ -272,14 +309,12 @@ class DraftAdvisor:
         weights = {c: 0 for c in constants.CARD_COLORS}
 
         for c in self.pool:
-            cmc = int(c.get("cmc", 0))
+            cmc = self._get_functional_cmc(c)
             curve[cmc] = curve.get(cmc, 0) + 1
 
             t = c.get("types", [])
             if "Creature" in t:
                 creature_count += 1
-
-            # Simple heuristic for interaction based on type
             if "Instant" in t or "Sorcery" in t:
                 interaction_count += 1
 

@@ -165,7 +165,7 @@ COLUMN_FIELD_LABELS = {
     "wheel": "WHEEL: Probability of Wheeling",
     "colors": "COLORS: Card Colors",
     "count": "COUNT: Total Card Count",
-    "value": "VALUE: Advisor Tactical Score"
+    "value": "VALUE: Advisor Tactical Score",
 }
 LABEL_TO_COLUMN_FIELD = {v: k for k, v in COLUMN_FIELD_LABELS.items()}
 
@@ -217,7 +217,13 @@ LOCAL_DATA_FOLDER_PATH_OSX = os.path.join(
     "Library", "Application Support", "com.wizards.mtga"
 )
 LOCAL_DATA_FOLDER_PATH_OSX_STEAM = os.path.join(
-    "Library", "Application Support", "Steam", "steamapps", "common", "MTGA", "MTGA_Data"
+    "Library",
+    "Application Support",
+    "Steam",
+    "steamapps",
+    "common",
+    "MTGA",
+    "MTGA_Data",
 )
 LOCAL_DATA_FOLDER_PATH_LINUX = next(
     filter(
@@ -507,7 +513,7 @@ CARD_RARITY_MYTHIC = "mythic"
 # Dictionaries
 # Used to identify the limited type based on log string
 LIMITED_TYPES_DICT = {
-    LIMITED_TYPE_STRING_DRAFT_PREMIER: LIMITED_TYPE_DRAFT_PREMIER_V1,
+    LIMITED_TYPE_STRING_DRAFT_PREMIER: LIMITED_TYPE_DRAFT_PREMIER_V2,  # UPDATED to V2
     LIMITED_TYPE_STRING_DRAFT_QUICK: LIMITED_TYPE_DRAFT_QUICK,
     LIMITED_TYPE_STRING_DRAFT_TRAD: LIMITED_TYPE_DRAFT_TRADITIONAL,
     LIMITED_TYPE_STRING_DRAFT_BOT: LIMITED_TYPE_DRAFT_QUICK,
@@ -785,3 +791,46 @@ PICK_TWO_EVENT_STRING = "PickTwo"
 CARD_RATINGS_BACKOFF_DELAY_SECONDS = 30
 CARD_RATINGS_INTER_DELAY_SECONDS = 1
 CARD_RATINGS_ATTEMPT_MAX = 5
+
+# --- MANA FIXING HEURISTICS ---
+FIXING_KEYWORDS = [
+    "Add one mana of any color",
+    "Search your library for a basic land",
+    "Search your library for a land",
+    "Create a Treasure",
+    "Create X Treasure",
+    "Add {",  # Direct mana production
+]
+
+# Cards with these words in the name are almost always fixers in Limited
+FIXING_NAMES = [
+    "Evolving Wilds",
+    "Terramorphic Expanse",
+    "Unknown Shores",
+    "Grotto",
+    "Prism",
+    "Compass",
+    "Scarecrow",  # Heap Doll type effects
+    "Guide",  # District Guide
+    "Map",
+    "Omenpath",  # Omenpath Journey
+    "Escape Tunnel",
+    "Promising Vein",
+    "Fabled Passage",
+    "Shire Terrace",
+    "Obscura Storefront",
+    "Maestros Theater",
+    "Riveteers Overlook",
+    "Cabaretti Courtyard",
+    "Brokers Hideout",
+    "Captivating Cave",
+    "Cave of Temptation",
+    "Command Tower",
+    "Exotic Orchard",
+    "Gateway Plaza",
+    "Painted Bluffs",
+    "Rupture Spire",
+    "Shimmering Grotto",
+    "Transguild Promenade",
+    "Uncharted Haven",
+]

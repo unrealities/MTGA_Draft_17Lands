@@ -1,6 +1,7 @@
 """
 src/ui/windows/taken_cards.py
 Professional Card Pool Viewer.
+Supports both List View (Table) and Visual View (Mana Curve Stacks).
 """
 
 import tkinter
@@ -10,7 +11,12 @@ from typing import List, Dict, Any
 from src import constants
 from src.card_logic import stack_cards, copy_deck
 from src.ui.styles import Theme
-from src.ui.components import DynamicTreeviewManager, CardToolTip
+from src.ui.components import (
+    DynamicTreeviewManager,
+    CardToolTip,
+    ScrolledFrame,
+    CardPile,
+)
 
 
 class TakenCardsPanel(ttk.Frame):
@@ -20,6 +26,7 @@ class TakenCardsPanel(ttk.Frame):
         self.configuration = configuration
 
         self.current_display_list = []
+        self.view_mode = "list"  # "list" or "visual"
         self.active_filters = {
             "creature": True,
             "land": True,
@@ -28,7 +35,7 @@ class TakenCardsPanel(ttk.Frame):
         }
 
         self._build_ui()
-        # Trigger first load manually after self.table_manager is assigned
+        # Trigger first load manually
         self.refresh()
 
     @property
@@ -36,7 +43,42 @@ class TakenCardsPanel(ttk.Frame):
         return self.table_manager.tree if hasattr(self, "table_manager") else None
 
     def refresh(self):
-        self._update_table()
+        # 1. Get Data
+        raw_pool = self.draft.retrieve_taken_cards()
+        if not raw_pool:
+            self.current_display_list = []
+        else:
+            # 2. Filter
+            active_types = []
+            if self.vars["creature"].get():
+                active_types.append(constants.CARD_TYPE_CREATURE)
+            if self.vars["land"].get():
+                active_types.append(constants.CARD_TYPE_LAND)
+            if self.vars["spell"].get():
+                active_types.extend(
+                    [constants.CARD_TYPE_INSTANT, constants.CARD_TYPE_SORCERY]
+                )
+            if self.vars["other"].get():
+                active_types.extend(
+                    [
+                        constants.CARD_TYPE_ARTIFACT,
+                        constants.CARD_TYPE_ENCHANTMENT,
+                        constants.CARD_TYPE_PLANESWALKER,
+                    ]
+                )
+
+            filtered = [
+                c
+                for c in raw_pool
+                if any(t in c.get(constants.DATA_FIELD_TYPES, []) for t in active_types)
+            ]
+            self.current_display_list = stack_cards(filtered)
+
+        # 3. Render based on mode
+        if self.view_mode == "list":
+            self._update_table_view()
+        else:
+            self._render_visual_view()
 
     def _build_ui(self):
         # --- Control Bar ---
@@ -64,65 +106,64 @@ class TakenCardsPanel(ttk.Frame):
             var = tkinter.IntVar(value=1)
             self.vars[key] = var
             ttk.Checkbutton(
-                type_grp, text=lbl, variable=var, command=self._update_table
+                type_grp, text=lbl, variable=var, command=self.refresh
             ).pack(side="left", padx=3)
 
-        ttk.Button(
-            self.filter_frame, text="Export Pool", command=self._copy_to_clipboard
-        ).pack(side="right", padx=5)
+        # View Toggle & Export
+        btn_frame = ttk.Frame(self.filter_frame, style="Card.TFrame")
+        btn_frame.pack(side="right")
 
-        # --- Dynamic Table ---
-        self.table_container = ttk.Frame(self)
-        self.table_container.pack(fill="both", expand=True)
+        self.btn_view = ttk.Button(
+            btn_frame,
+            text="Switch to Visual View",
+            command=self._toggle_view,
+            bootstyle="info-outline",
+        )
+        self.btn_view.pack(side="left", padx=5)
 
+        ttk.Button(btn_frame, text="Export Pool", command=self._copy_to_clipboard).pack(
+            side="left", padx=5
+        )
+
+        # --- Content Container ---
+        self.content_area = ttk.Frame(self)
+        self.content_area.pack(fill="both", expand=True)
+
+        # 1. Table View (Default)
         self.table_manager = DynamicTreeviewManager(
-            self.table_container,
+            self.content_area,
             view_id="taken_table",
             configuration=self.configuration,
-            on_update_callback=self._update_table,
+            on_update_callback=lambda: None,  # We handle updates manually via refresh()
         )
         self.table_manager.pack(fill="both", expand=True)
-        # Initial binding - Manager handles re-binding on rebuild
         self.table.bind("<<TreeviewSelect>>", self._on_selection)
 
-    def _update_table(self):
-        # SAFETY GUARD: Ensure table exists and manager is ready
+        # 2. Visual View (Hidden initially)
+        self.visual_scroller = ScrolledFrame(self.content_area)
+        # We don't pack it yet
+
+    def _toggle_view(self):
+        if self.view_mode == "list":
+            self.view_mode = "visual"
+            self.btn_view.config(text="Switch to List View")
+            self.table_manager.pack_forget()
+            self.visual_scroller.pack(fill="both", expand=True)
+            self._render_visual_view()
+        else:
+            self.view_mode = "list"
+            self.btn_view.config(text="Switch to Visual View")
+            self.visual_scroller.pack_forget()
+            self.table_manager.pack(fill="both", expand=True)
+            self._update_table_view()
+
+    def _update_table_view(self):
         t = self.table
         if t is None:
             return
 
         for item in t.get_children():
             t.delete(item)
-
-        raw_pool = self.draft.retrieve_taken_cards()
-        if not raw_pool:
-            return
-
-        # Filtering
-        active_types = []
-        if self.vars["creature"].get():
-            active_types.append(constants.CARD_TYPE_CREATURE)
-        if self.vars["land"].get():
-            active_types.append(constants.CARD_TYPE_LAND)
-        if self.vars["spell"].get():
-            active_types.extend(
-                [constants.CARD_TYPE_INSTANT, constants.CARD_TYPE_SORCERY]
-            )
-        if self.vars["other"].get():
-            active_types.extend(
-                [
-                    constants.CARD_TYPE_ARTIFACT,
-                    constants.CARD_TYPE_ENCHANTMENT,
-                    constants.CARD_TYPE_PLANESWALKER,
-                ]
-            )
-
-        filtered = [
-            c
-            for c in raw_pool
-            if any(t in c.get(constants.DATA_FIELD_TYPES, []) for t in active_types)
-        ]
-        self.current_display_list = stack_cards(filtered)
 
         for idx, card in enumerate(self.current_display_list):
             row_values = []
@@ -143,6 +184,62 @@ class TakenCardsPanel(ttk.Frame):
 
             tag = "bw_odd" if idx % 2 == 0 else "bw_even"
             t.insert("", "end", values=row_values, tags=(tag,))
+
+    def _render_visual_view(self):
+        # Clear existing piles
+        for widget in self.visual_scroller.scrollable_frame.winfo_children():
+            widget.destroy()
+
+        # Buckets: Lands, 1, 2, 3, 4, 5, 6+
+        buckets = {
+            "Lands": [],
+            "1": [],
+            "2": [],
+            "3": [],
+            "4": [],
+            "5": [],
+            "6+": [],
+        }
+
+        for card in self.current_display_list:
+            if constants.CARD_TYPE_LAND in card.get(constants.DATA_FIELD_TYPES, []):
+                buckets["Lands"].append(card)
+                continue
+
+            cmc = int(card.get(constants.DATA_FIELD_CMC, 0))
+            if cmc <= 1:
+                buckets["1"].append(card)
+            elif cmc == 2:
+                buckets["2"].append(card)
+            elif cmc == 3:
+                buckets["3"].append(card)
+            elif cmc == 4:
+                buckets["4"].append(card)
+            elif cmc == 5:
+                buckets["5"].append(card)
+            else:
+                buckets["6+"].append(card)
+
+        # Render Piles
+        keys = ["Lands", "1", "2", "3", "4", "5", "6+"]
+        for key in keys:
+            card_list = buckets[key]
+            if not card_list and key != "Lands":
+                continue  # Skip empty CMC columns to save space
+
+            # Create Column
+            pile_frame = ttk.Frame(self.visual_scroller.scrollable_frame)
+            pile_frame.pack(side="left", fill="y", padx=5, pady=5, anchor="n")
+
+            # Use the CardPile component
+            pile = CardPile(pile_frame, title=f"CMC {key}", app_instance=self)
+            pile.pack(fill="both", expand=True)
+
+            # Sort by Color then Name
+            card_list.sort(key=lambda x: (x.get("colors", []), x.get("name", "")))
+
+            for card in card_list:
+                pile.add_card(card)
 
     def _copy_to_clipboard(self):
         self.clipboard_clear()

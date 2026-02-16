@@ -1,6 +1,7 @@
 """
 tests/test_settings.py
 Validation for the Preferences (Settings) UI.
+Updated to match the Pro UI schema (dynamic columns, no fixed column_X dropdowns).
 """
 
 import pytest
@@ -9,12 +10,14 @@ from unittest.mock import MagicMock, patch
 from src.ui.windows.settings import SettingsWindow
 from src.configuration import Configuration, Settings
 from src import constants
+from src.ui.styles import Theme  # Ensure Theme is initialized
 
 
 class TestSettingsWindow:
     @pytest.fixture
     def root(self):
         root = tkinter.Tk()
+        Theme.apply(root, "Dark")  # Apply theme to prevent style errors
         yield root
         root.destroy()
 
@@ -22,9 +25,8 @@ class TestSettingsWindow:
     def config(self):
         return Configuration(
             settings=Settings(
-                column_2=constants.DATA_FIELD_GIHWR,
                 stats_enabled=True,
-                result_format="Percentage",
+                result_format=constants.RESULT_FORMAT_WIN_RATE,
             )
         )
 
@@ -32,10 +34,11 @@ class TestSettingsWindow:
         """Verify the UI elements reflect the provided configuration."""
         window = SettingsWindow(root, config, MagicMock())
 
-        # Check Column 2 dropdown matches the full label constant
-        assert window.vars["column_2"].get() == constants.FIELD_LABEL_GIHWR
+        # Check that result_format matches config
+        assert window.vars["result_format"].get() == constants.RESULT_FORMAT_WIN_RATE
+
+        # Check integer conversion for booleans (True -> 1)
         assert window.vars["stats_enabled"].get() == 1
-        assert window.vars["result_format"].get() == "Percentage"
 
     @patch("src.ui.windows.settings.write_configuration")
     def test_dropdown_change_persists(self, mock_write, root, config):
@@ -43,18 +46,26 @@ class TestSettingsWindow:
         callback = MagicMock()
         window = SettingsWindow(root, config, callback)
 
-        # Simulate selecting "ALSA"
-        alsa_label = constants.FIELD_LABEL_ALSA
-        window.vars["column_2"].set(alsa_label)
+        # Simulate changing Result Format
+        new_format = constants.RESULT_FORMAT_GRADE
+        window.vars["result_format"].set(new_format)
 
-        assert config.settings.column_2 == constants.DATA_FIELD_ALSA
+        assert config.settings.result_format == new_format
         assert mock_write.called
+        # result_format doesn't necessarily trigger callback immediately unless bound,
+        # but in SettingsWindow._on_setting_changed it does call callback if present.
+        # However, result_format might handle things differently or just trigger write.
+        # Let's check if on_update_callback is called.
+        # In SettingsWindow._on_setting_changed:
+        #   if self.on_update_callback: self.on_update_callback()
         assert callback.called
 
     @patch("src.ui.windows.settings.write_configuration")
     def test_checkbox_toggle_persists(self, mock_write, root, config):
         """Verify toggling a feature updates the config boolean."""
         window = SettingsWindow(root, config, MagicMock())
+
+        # Simulate unchecking 'Enable Tactical Advisor'
         window.vars["stats_enabled"].set(0)
 
         assert config.settings.stats_enabled is False
@@ -65,18 +76,25 @@ class TestSettingsWindow:
         """Verify the reset button triggers logic and reloads the UI correctly."""
         window = SettingsWindow(root, config, MagicMock())
 
+        # Config to simulate "Factory Defaults"
+        default_config = Configuration()
+        # Ensure default has a known state for a field we can check, e.g. stats_enabled=False default?
+        # Actually default Configuration() has stats_enabled=False in the provided Pydantic model?
+        # Let's check Configuration model in src/configuration.py:
+        # stats_enabled: bool = False
+
         with patch("tkinter.messagebox.askyesno", return_value=True):
             with patch("src.configuration.read_configuration") as mock_read:
-                # Mock a "Default" configuration response with a disabled column
-                default_config = Configuration(
-                    settings=Settings(column_2=constants.DATA_FIELD_DISABLED)
-                )
                 mock_read.return_value = (default_config, True)
+
+                # Set current state to something non-default first
+                window.vars["stats_enabled"].set(1)  # True
 
                 window._reset_defaults()
 
                 assert mock_reset.called
-                assert window.vars["column_2"].get() == constants.FIELD_LABEL_DISABLED
+                # Should be back to 0 (False) per default config
+                assert window.vars["stats_enabled"].get() == 0
 
     def test_safe_closure_cleanup(self, root, config):
         """Verify traces are removed on close."""

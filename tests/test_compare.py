@@ -86,13 +86,16 @@ class TestComparePanel:
 
     def test_column_sync_with_dashboard(self, root, mock_draft):
         """Verify that changing global column settings (e.g. show ATA) updates Compare."""
-        # Config has column_2 set to ATA
-        config = Configuration(settings=Settings(column_2="ata"))
+        # Updated to use new column_configs dictionary
+        config = Configuration()
+        config.settings.column_configs["compare_table"] = ["name", "ata", "gihwr"]
+
         panel = ComparePanel(root, mock_draft, config)
 
         cols = list(panel.table["columns"])
         # Expected: CARD, ATA, GIH WR
-        assert "ATA" in cols
+        # Column IDs are lowercase
+        assert "ata" in cols
 
     def test_clear_table_logic(self, root, mock_draft):
         """Verify the 'Clear' button wipes all states."""

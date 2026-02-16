@@ -746,9 +746,6 @@ class CardPile(tb.Frame):
         super().__init__(parent, **kwargs)
         self.app = app_instance
 
-        # HEADER FIX:
-        # No nested frame. Just a solid label block.
-        # bootstyle="inverse-secondary" creates a solid block background.
         tb.Label(
             self,
             text=title,

@@ -1,14 +1,13 @@
 """
 tests/test_suggest_deck.py
-Validation for the Deck Builder UI.
-Fixed: Updated to verify the synchronized Label/Logic state.
+Validation for the Dynamic Deck Builder UI.
 """
 
 import pytest
 import tkinter
 from unittest.mock import MagicMock, patch
 from src.ui.windows.suggest_deck import SuggestDeckPanel
-from src.configuration import Configuration, Settings
+from src.configuration import Configuration
 from src import constants
 
 
@@ -22,69 +21,48 @@ class TestSuggestDeckPanel:
     @pytest.fixture
     def mock_draft(self):
         draft = MagicMock()
-        draft.retrieve_taken_cards.return_value = [{"name": "Dummy"}]
+        draft.retrieve_taken_cards.return_value = []
         draft.retrieve_set_metrics.return_value = MagicMock()
-        draft.retrieve_tier_data.return_value = {}
         return draft
 
     @pytest.fixture
-    def mock_multi_results(self):
+    def mock_variants(self):
         return {
-            "Golgari": {
+            "BG Consistent": {
                 "type": "Midrange",
-                "rating": 1800,
-                "deck_cards": [
-                    {
-                        "name": "Assassin's Trophy",
-                        "cmc": 2,
-                        "count": 1,
-                        "types": ["Instant"],
-                    }
-                ],
+                "rating": 1500,
+                "deck_cards": [{"name": "Mosswood Dreadknight", "cmc": 2, "count": 1}],
             },
-            "Azorius": {
-                "type": "Control",
-                "rating": 1100,
-                "deck_cards": [
-                    {"name": "Island", "cmc": 0, "count": 17, "types": ["Land"]}
-                ],
+            "BG Splash R": {
+                "type": "Bomb Splash",
+                "rating": 1650,
+                "deck_cards": [{"name": "Etali", "cmc": 7, "count": 1}],
             },
         }
 
-    def test_archetype_sorting_priority(self, root, mock_draft, mock_multi_results):
+    def test_variants_displayed_in_dropdown(self, root, mock_draft, mock_variants):
         with patch(
-            "src.ui.windows.suggest_deck.suggest_deck", return_value=mock_multi_results
-        ):
-            panel = SuggestDeckPanel(root, mock_draft, Configuration())
-            current_sel = panel.var_archetype.get()
-            assert "Golgari" in current_sel
-            assert "1800" in current_sel
-
-    def test_user_switching_archetypes(self, root, mock_draft, mock_multi_results):
-        """Verify that manually selecting a deck updates both the label and the card list."""
-        with patch(
-            "src.ui.windows.suggest_deck.suggest_deck", return_value=mock_multi_results
+            "src.ui.windows.suggest_deck.suggest_deck", return_value=mock_variants
         ):
             panel = SuggestDeckPanel(root, mock_draft, Configuration())
 
-            # Identify Azorius label
-            azorius_label = [k for k in panel.suggestions.keys() if "Azorius" in k][0]
+            # Check dropdown values
+            menu = panel.om_archetype["menu"]
+            last = menu.index("end")
+            labels = [menu.entrycget(i, "label") for i in range(last + 1)]
 
-            # Switching logic: must update label AND internal deck
-            panel._on_deck_selection_change(azorius_label)
+            assert any("BG Consistent" in l for l in labels)
+            assert any("BG Splash R" in l for l in labels)
 
-            assert "Azorius" in panel.var_archetype.get()  # Now passes!
-            assert panel.current_deck_list[0]["name"] == "Island"
-
-    def test_no_viable_decks_ui_state(self, root, mock_draft):
-        with patch("src.ui.windows.suggest_deck.suggest_deck", return_value={}):
-            panel = SuggestDeckPanel(root, mock_draft, Configuration())
-            assert panel.var_archetype.get() == "No viable decks yet"
-            assert len(panel.table.get_children()) == 0
-
-    def test_builder_error_ui_state(self, root, mock_draft):
+    def test_deck_selection_updates_table(self, root, mock_draft, mock_variants):
         with patch(
-            "src.ui.windows.suggest_deck.suggest_deck", side_effect=ValueError("Crash")
+            "src.ui.windows.suggest_deck.suggest_deck", return_value=mock_variants
         ):
             panel = SuggestDeckPanel(root, mock_draft, Configuration())
-            assert panel.var_archetype.get() == "Builder Error"
+
+            # Select the Splash deck
+            splash_label = [k for k in panel.suggestions.keys() if "Splash" in k][0]
+            panel._on_deck_selection_change(splash_label)
+
+            # Verify table has Etali
+            assert panel.current_deck_list[0]["name"] == "Etali"

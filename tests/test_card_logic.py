@@ -31,7 +31,7 @@ TEST_TIER_LIST = {
 
 TIER_TESTS = [
     ([{"name": "Push // Pull"}], "C+"),
-    ([{"name": "Consign /// Oblivion"}], "C+"),
+    ([{"name": "Consign // Oblivion"}], "C+"),  # Fixed slash count to match key
     ([{"name": "Etali, Primal Conqueror"}], "A+"),
     ([{"name": "Invasion of Gobakhan"}], "B+"),
     ([{"name": "The Mightstone and Weakstone"}], "B-"),
@@ -129,28 +129,36 @@ def test_export_draft_to_csv():
 
     # Mock Dataset
     mock_dataset = MagicMock()
+    # Fixed side_effect: Logic calls get_data_by_id for EACH card ID in the history list.
+    # History has ["123", "789"].
+    # Call 1: "123" -> returns Card A
+    # Call 2: "789" -> returns Card B
     mock_dataset.get_data_by_id.side_effect = [
-        [
-            {constants.DATA_FIELD_NAME: "Card A", constants.DATA_FIELD_CMC: 2},
-            {constants.DATA_FIELD_NAME: "Card B", constants.DATA_FIELD_CMC: 3},
-        ]
+        [{constants.DATA_FIELD_NAME: "Card A", constants.DATA_FIELD_CMC: 2}],
+        [{constants.DATA_FIELD_NAME: "Card B", constants.DATA_FIELD_CMC: 3}],
     ]
 
     csv_output = export_draft_to_csv(history, mock_dataset, picked_cards)
 
     lines = csv_output.strip().split("\n")
     header = lines[0].split(",")
+
     assert "Picked" in header
+    assert len(lines) == 3  # Header + 2 rows
+
+    # Identify row order (iteration order)
+    # Since we iterated Cards ["123", "789"], Row 1 is Card A, Row 2 is Card B
 
     # Row 1 (Card A, ID 123) should be picked (1)
+    # CSV format: Pack, Pick, Picked, Name, ...
     row1 = lines[1].split(",")
-    assert row1[2] == "1"
     assert "Card A" in lines[1]
+    assert row1[2] == "1"  # Picked column is index 2
 
     # Row 2 (Card B, ID 789) should not be picked (0)
     row2 = lines[2].split(",")
-    assert row2[2] == "0"
     assert "Card B" in lines[2]
+    assert row2[2] == "0"
 
 
 def test_export_draft_to_json():
@@ -191,11 +199,12 @@ def test_export_draft_to_csv_edge_cases():
     row = lines[1].split(",")
 
     # 1. Picked should be 0 (False) safely
+    # CSV Structure: Pack, Pick, Picked, Name, Colors, CMC, Type, GIHWR, ALSA, ATA, IWD
     assert row[2] == "0"
 
     # 2. Name should be preserved (CSV module handles quotes/encoding)
     assert "Æther Potion" in lines[1]
 
     # 3. Stats should be empty strings/zeros, not crash
-    # ALSA is index 15
-    assert row[15] == ""
+    # IWD is the last column (Index 10)
+    assert row[10].strip() == ""

@@ -1,5 +1,5 @@
 import pytest
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock
 from src.seventeenlands import Seventeenlands
 from src import constants
 
@@ -7,9 +7,23 @@ from src import constants
 
 
 @pytest.fixture
-def seventeenlands():
-    """Fixture to create a Seventeenlands instance for testing."""
-    return Seventeenlands()
+def mock_session():
+    """Creates a mock session with a pre-configured response."""
+    session = MagicMock()
+    response = MagicMock()
+    # Default to raising HTTPError for bad status codes
+    response.raise_for_status = MagicMock()
+    session.get.return_value = response
+    return session, response
+
+
+@pytest.fixture
+def seventeenlands(mock_session):
+    """Fixture to create a Seventeenlands instance with a mocked session."""
+    session, _ = mock_session
+    sl = Seventeenlands()
+    sl.session = session
+    return sl
 
 
 # --- Test Cases ---
@@ -49,10 +63,13 @@ def test_process_card_ratings(seventeenlands):
     assert "Island" in card_data
 
     sol_ring_data = card_data["Sol Ring"]
+    # Verify image URL expansion logic
     assert sol_ring_data[constants.DATA_SECTION_IMAGES] == [
         "https://www.17lands.com/static/images/cards/s_123.jpg"
     ]
 
+    # Check that ratings were appended correctly
+    # Structure: [{'All Decks': {...}}]
     sol_ring_ratings = sol_ring_data[constants.DATA_SECTION_RATINGS][0][color]
     assert (
         sol_ring_ratings[constants.DATA_FIELD_GIHWR] == 65.0
@@ -93,14 +110,12 @@ def test_build_card_ratings_url(seventeenlands):
     assert url == expected_url
 
 
-@patch("src.seventeenlands.requests.get")
-def test_download_card_ratings(mock_get, seventeenlands):
+def test_download_card_ratings(mock_session, seventeenlands):
     """
     Tests the download_card_ratings function to ensure it fetches and processes data correctly.
     """
-    # Arrange
-    mock_response = MagicMock()
-    mock_response.json.return_value = [
+    session, response = mock_session
+    response.json.return_value = [
         {
             "name": "Test Card",
             "url": "/static/images/cards/test_card.jpg",
@@ -110,7 +125,6 @@ def test_download_card_ratings(mock_get, seventeenlands):
             "drawn_game_count": 1000,
         }
     ]
-    mock_get.return_value = mock_response
 
     set_code = "TLA"
     draft = "PremierDraft"
@@ -131,17 +145,15 @@ def test_download_card_ratings(mock_get, seventeenlands):
         "https://www.17lands.com/static/images/cards/test_card.jpg"
     ]
     assert len(card_data["Test Card"][constants.DATA_SECTION_RATINGS]) == 1
-    mock_get.assert_called_once()
+    session.get.assert_called_once()
 
 
-@patch("src.seventeenlands.requests.get")
-def test_download_color_ratings(mock_get, seventeenlands):
+def test_download_color_ratings(mock_session, seventeenlands):
     """
     Tests the download_color_ratings function to ensure it fetches and processes color ratings correctly.
     """
-    # Arrange
-    mock_response = MagicMock()
-    mock_response.json.return_value = [
+    session, response = mock_session
+    response.json.return_value = [
         {
             "short_name": "W",
             "is_summary": False,
@@ -154,7 +166,6 @@ def test_download_color_ratings(mock_get, seventeenlands):
             "games": 10000,
         },
     ]
-    mock_get.return_value = mock_response
 
     set_code = "TLA"
     draft = "PremierDraft"
@@ -170,46 +181,38 @@ def test_download_color_ratings(mock_get, seventeenlands):
     # Assert
     assert color_ratings["W"] == 50.0  # 3000 wins out of 6000 games
     assert game_count == 10000
-    mock_get.assert_called_once()
+    session.get.assert_called_once()
 
 
-def test_seventeenlands_color_ratings_normalization():
+def test_seventeenlands_color_ratings_normalization(mock_session, seventeenlands):
     """
     Verify that download_color_ratings normalizes keys from the API response.
     If the API returns "GW" but the app expects "WG", this method should handle it.
     """
+    session, response = mock_session
     # Mock API response with non-standard order ("GW" instead of "WG")
-    mock_api_response = [
+    response.json.return_value = [
         {"short_name": "GW", "is_summary": False, "games": 6000, "wins": 3000},
         {"color_name": "All Decks", "is_summary": True, "games": 10000},
     ]
 
-    with patch("src.seventeenlands.requests.get") as mock_get:
-        mock_get.return_value.json.return_value = mock_api_response
-        mock_get.return_value.raise_for_status = MagicMock()
+    # We pass a filter that includes the *Normalized* key "WG"
+    # The function should be able to map "GW" from API to "WG"
+    ratings, game_count = seventeenlands.download_color_ratings(
+        "SET", "Draft", "Start", "End", "User", color_filter=["WG"]
+    )
 
-        sl = Seventeenlands()
-        # We pass a filter that includes the *Normalized* key "WG"
-        # The function should be able to map "GW" from API to "WG"
-        ratings, game_count = sl.download_color_ratings(
-            "SET", "Draft", "Start", "End", "User", color_filter=["WG"]
-        )
-
-        # Check that the key in the returned dictionary is normalized to "WG"
-        assert "WG" in ratings
-        assert ratings["WG"] == 50.0
-        assert (
-            "GW" not in ratings
-        )  # Should not contain the raw key if it was normalized
+    # Check that the key in the returned dictionary is normalized to "WG"
+    assert "WG" in ratings
+    assert ratings["WG"] == 50.0
+    assert "GW" not in ratings  # Should not contain the raw key if it was normalized
 
 
-def test_process_color_ratings_fallback_logic():
+def test_process_color_ratings_fallback_logic(seventeenlands):
     """
     Verify that _process_color_ratings handles entries missing 'short_name'
     by parsing 'color_name' (e.g. "(UB)") as a fallback.
     """
-    sl = Seventeenlands()
-
     # Mock data where 'short_name' is missing (older API style or edge case)
     mock_api_data = [
         {
@@ -228,44 +231,7 @@ def test_process_color_ratings_fallback_logic():
         },
     ]
 
-    ratings, game_count = sl._process_color_ratings(mock_api_data, None)
-
-    # "UB" extracted from "Dimir (UB)"
-    assert "UB" in ratings
-    assert ratings["UB"] == 50.0
-
-    # "GU" extracted from "Simic (GU)" and normalized to "UG"
-    assert "UG" in ratings
-    assert ratings["UG"] == 60.0
-
-
-def test_process_color_ratings_fallback_logic():
-    """
-    Verify that _process_color_ratings handles entries missing 'short_name'
-    by parsing 'color_name' (e.g. "(UB)") as a fallback.
-    """
-    sl = Seventeenlands()
-
-    # Mock data where 'short_name' is missing (older API style or edge case)
-    mock_api_data = [
-        {
-            "color_name": "Dimir (UB)",
-            # "short_name": "UB", <--- MISSING
-            "is_summary": False,
-            "games": 6000,
-            "wins": 3000,
-        },
-        {
-            "color_name": "Simic (GU)",  # Non-standard order in name
-            "short_name": "",  # Empty string
-            "is_summary": False,
-            "games": 10000,
-            "wins": 6000,
-        },
-    ]
-
-    # Pass a threshold (e.g., 5000)
-    ratings, game_count = sl._process_color_ratings(mock_api_data, None, 5000)
+    ratings, game_count = seventeenlands._process_color_ratings(mock_api_data, None)
 
     # "UB" extracted from "Dimir (UB)"
     assert "UB" in ratings

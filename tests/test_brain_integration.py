@@ -1,7 +1,7 @@
 """
 tests/test_brain_integration.py
-Integration test for the Draft Advisor (The Brain).
-Verifies contextual scoring and reasoning logic.
+Integration test for the Pro Tour Edition Advisor.
+Verifies Karsten Math, Wheel Greed, and Weighted Scoring.
 """
 
 import pytest
@@ -10,6 +10,7 @@ from tkinter import ttk
 import os
 import json
 import time
+from unittest.mock import patch  # Added patch import
 from src.ui.app import DraftApp
 from src.log_scanner import ArenaScanner
 from src.configuration import Configuration
@@ -22,39 +23,37 @@ def create_mock_dataset(path):
         "meta": {"version": 3.0, "game_count": 10000},
         "card_ratings": {
             "101": {
-                "name": "Overwhelming Ancient",
+                "name": "Green Hulk",
                 "cmc": 6,
                 "types": ["Creature"],
                 "colors": ["G"],
                 "mana_cost": "{4}{G}{G}",
-                "deck_colors": {"All Decks": {"gihwr": 62.0, "alsa": 1.5}},
+                "deck_colors": {"All Decks": {"gihwr": 62.0, "alsa": 2.0}},
             },
             "102": {
-                "name": "Reliable Bear",
-                "cmc": 2,
+                "name": "Red Bomb Double Pip",
+                "cmc": 4,
                 "types": ["Creature"],
-                "colors": ["G"],
-                "mana_cost": "{1}{G}",
-                "deck_colors": {"All Decks": {"gihwr": 54.0, "alsa": 4.5}},
+                "colors": ["R"],
+                "mana_cost": "{2}{R}{R}",  # Unsplashable
+                "deck_colors": {"All Decks": {"gihwr": 68.0, "alsa": 1.5}},
             },
             "103": {
-                "name": "Final Strike",
+                "name": "Black Removal Single Pip",
                 "cmc": 2,
                 "types": ["Instant"],
                 "colors": ["B"],
-                "mana_cost": "{1}{B}",
-                "deck_colors": {"All Decks": {"gihwr": 55.0, "alsa": 3.0}},
+                "mana_cost": "{1}{B}",  # Splashable
+                "deck_colors": {"All Decks": {"gihwr": 58.0, "alsa": 3.0}},
             },
-            # A Splashable Bomb (Red, Single Pip)
             "104": {
-                "name": "Fireball",
-                "cmc": 3,
-                "types": ["Sorcery"],
-                "colors": ["R"],
-                "mana_cost": "{2}{R}",
-                "deck_colors": {
-                    "All Decks": {"gihwr": 65.0, "alsa": 1.0}
-                },  # High WR -> Bomb
+                "name": "Wheeling Dork",
+                "cmc": 1,
+                "types": ["Creature"],
+                "colors": ["G"],
+                "mana_cost": "{G}",
+                # ALSA 13.0 means it goes very late
+                "deck_colors": {"All Decks": {"gihwr": 55.0, "alsa": 13.0}},
             },
         },
     }
@@ -95,66 +94,90 @@ class TestBrainIntegration:
         scanner = ArenaScanner(str(log_file), mock_sets, retrieve_unknown=True)
         scanner.retrieve_set_data(str(dataset_path))
 
-        app = DraftApp(root, scanner, config)
+        # PATCH: Prevent the app's internal timer from conflicting with test logic
+        with patch("src.ui.app.DraftApp._schedule_update"):
+            app = DraftApp(root, scanner, config)
+            yield {"app": app, "log": log_file, "root": root}
 
-        yield {"app": app, "log": log_file, "root": root}
         root.destroy()
 
-    def test_advisor_prioritizes_structural_needs(self, env):
+    def test_pro_logic_scenarios(self, env):
         app, log, root = env["app"], env["log"], env["root"]
 
-        # 1. Simulate Event Join
-        with open(log, "a") as f:
-            f.write(
-                '[UnityCrossThreadLogger]==> EventJoin {"id":"1","request":"{\\"EventName\\":\\"PremierDraft_TEST_20240101\\"}"}\n'
-            )
+        # 1. Establish Green Lane
+        app.orchestrator.scanner.taken_cards = ["101", "101", "101"]  # 3 Green Hulks
 
-        app._update_loop()
-        root.update()
-
-        # 2. Inject a 'clunky' card pool (Three 6-drops in Green)
-        # This establishes "Green" as our main color
-        app.orchestrator.scanner.taken_cards = ["101", "101", "101"]
-
-        # 3. Simulate Pack Entry (Pick 20 - Late Pack 2)
-        # We are SOLIDLY Green.
-        # 102 (Green Bear) should be prioritized due to curve/color.
-        # 103 (Black Instant) is off-color, single pip.
-        # 104 (Red Bomb) is off-color, single pip (Splashable).
-        p1p16 = (
+        # 2. Simulate Late Pack 2 (Pick 20)
+        # We are Green.
+        p2p5 = (
             '[UnityCrossThreadLogger]Draft.Notify {"draftId":"1","SelfPick":20,"SelfPack":2,'
             '"PackCards":"101,102,103,104"}\n'
         )
         with open(log, "a") as f:
-            f.write(p1p16)
+            f.write(p2p5)
+
+        # Force update manually
+        app._update_loop()
+
+        # Pump events
+        for _ in range(5):
+            root.update()
+
+        tree = app.dashboard.get_treeview("pack")
+        rows = tree.get_children()
+
+        scores = {}
+        for r in rows:
+            vals = tree.item(r)["values"]
+            name = str(vals[0]).replace("⭐ ", "")
+            # Ensure index 1 exists (score)
+            if len(vals) > 1:
+                score = float(vals[1])
+                scores[name] = score
+
+        # --- VERIFICATION 1: Double Pip Penalty ---
+        # "Red Bomb Double Pip" has 68% GIHWR (Highest in pack).
+        # But we are Green, and it costs {2}{R}{R}.
+        # Score should be 0 or very low.
+        assert "Red Bomb Double Pip" in scores
+        assert scores["Red Bomb Double Pip"] < 10.0
+
+        # --- VERIFICATION 2: Single Pip Splash ---
+        # "Black Removal Single Pip" is {1}{B}. 58% WR.
+        # Should be scored higher than the Double Pip bomb because it's splashable.
+        assert "Black Removal Single Pip" in scores
+        assert scores["Black Removal Single Pip"] > scores["Red Bomb Double Pip"]
+
+    def test_wheel_greed_logic(self, env):
+        app, log, root = env["app"], env["log"], env["root"]
+
+        # Pick 2.
+        p1p2 = (
+            '[UnityCrossThreadLogger]Draft.Notify {"draftId":"1","SelfPick":2,"SelfPack":1,'
+            '"PackCards":"101,104"}\n'
+        )
+        with open(log, "a") as f:
+            f.write(p1p2)
 
         app._update_loop()
         for _ in range(5):
             root.update()
-            time.sleep(0.01)
 
-        # Get Recommendations via Dashboard
         tree = app.dashboard.get_treeview("pack")
         rows = tree.get_children()
 
-        # Map Name -> Score
         scores = {}
         for r in rows:
             vals = tree.item(r)["values"]
-            name = str(vals[0]).replace("⭐ ", "")  # Remove decorators
-            score = float(vals[1])
-            scores[name] = score
+            name = str(vals[0]).replace("⭐ ", "")
+            if len(vals) > 1:
+                score = float(vals[1])
+                scores[name] = score
 
-        # VERIFICATIONS
-
-        # 1. Curve Need: Reliable Bear (102) should be boosted because we have 0 2-drops and are in Green.
-        assert scores["Reliable Bear"] > 54.0  # Base WR 54.0
-
-        # 2. Lane Commitment: Final Strike (103) is Black. We are Green.
-        # It's late (Pick 20). Penalty should be heavy.
-        # Base WR 55.0.
-        assert scores["Final Strike"] < 50.0
-
-        # 3. Splash Logic: Fireball (104). Base WR 65.0. Z-Score > 1.5. Single Pip {2}{R}.
-        # This should be identified as a "Splashable Bomb" and penalized LESS than Final Strike.
-        assert scores["Fireball"] > scores["Final Strike"]
+        # "Wheeling Dork" (104) has ALSA 13.0.
+        # At Pick 2, it is extremely likely to wheel.
+        # Engine should suppress its score relative to its raw power.
+        # Raw WR 55.0.
+        # Wheel Penalty 0.8x -> Effective ~44.
+        assert "Wheeling Dork" in scores
+        assert scores["Wheeling Dork"] < 50.0

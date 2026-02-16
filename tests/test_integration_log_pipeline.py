@@ -7,10 +7,12 @@ import tkinter
 import os
 import shutil
 import time
+from unittest.mock import patch
 from src.ui.app import DraftApp
 from src.log_scanner import ArenaScanner
 from src.configuration import Configuration
 from src.limited_sets import SetDictionary, SetInfo
+from src.ui.styles import Theme
 
 OTJ_SNAPSHOT = os.path.join(
     os.getcwd(), "tests", "data", "OTJ_PremierDraft_Data_2024_5_3.json"
@@ -66,7 +68,10 @@ class TestLogPipelineIntegration:
         config.card_data.latest_dataset = "OTJ_PremierDraft_All_Data.json"
 
         root = tkinter.Tk()
+        # Initialize theme to stabilize style database
+        Theme.apply(root, "Dark")
         root.withdraw()
+
         scanner = ArenaScanner(
             str(log_file),
             mock_sets,
@@ -75,12 +80,22 @@ class TestLogPipelineIntegration:
         )
         scanner.file_size = 0
 
-        app = DraftApp(root, scanner, config)
-        if app._update_task_id:
-            root.after_cancel(app._update_task_id)
+        # We must prevent the scheduled update loop from running wild during tests
+        with patch("src.ui.app.DraftApp._schedule_update"):
+            app = DraftApp(root, scanner, config)
+            # Cancel any potentially lingering tasks (though patch should catch them)
+            if app._update_task_id:
+                try:
+                    root.after_cancel(app._update_task_id)
+                except:
+                    pass
 
-        yield {"app": app, "log": log_file, "root": root}
-        root.destroy()
+            yield {"app": app, "log": log_file, "root": root}
+
+        try:
+            root.destroy()
+        except tkinter.TclError:
+            pass
 
     def test_full_draft_cycle_and_auto_filter_logic(self, env):
         app, log, root = env["app"], env["log"], env["root"]
@@ -89,7 +104,9 @@ class TestLogPipelineIntegration:
                 f'[UnityCrossThreadLogger]==> Event_Join {{"id":"1","request":"{{\\"EventName\\":\\"PremierDraft_OTJ_20240416\\"}}"}}\n'
             )
 
+        # Manually trigger the update loop logic since we patched the scheduler
         app._update_loop()
+
         ready = False
         for _ in range(50):
             root.update()
@@ -123,8 +140,6 @@ class TestLogPipelineIntegration:
         assert len(rows) >= 14
 
         # Verify that the table is populated with known cards from the pack.
-        # We check for "Back for More" (90734) OR "Vadmir" (90459) because sorting
-        # depends on the specific stats in the JSON snapshot, which might rank Vadmir higher.
         first_row_val = str(tree.item(rows[0])["values"][0])
         assert any(
             x in first_row_val for x in ["Back for More", "90734", "Vadmir", "90459"]

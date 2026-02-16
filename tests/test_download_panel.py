@@ -8,12 +8,16 @@ import tkinter
 from unittest.mock import MagicMock, patch
 from src.ui.windows.download import DownloadWindow, DatasetArgs
 from src.limited_sets import SetInfo
+from src.ui.styles import Theme
 
 
 class TestDownloadPanel:
     @pytest.fixture
     def root(self):
+        """Fixture for the root window with Theme applied."""
         root = tkinter.Tk()
+        # Initialize the theme to prevent TclErrors when widgets try to access style data
+        Theme.apply(root, "Dark")
         yield root
         root.destroy()
 
@@ -42,6 +46,17 @@ class TestDownloadPanel:
     def config(self):
         config = MagicMock()
         config.settings.database_location = "/mock"
+        config.settings.column_configs = {
+            "dataset_manager": [
+                "Set",
+                "Event",
+                "Group",
+                "Start",
+                "End",
+                "Collected",
+                "Games",
+            ]
+        }
         return config
 
     def test_set_metadata_sync(self, root, mock_sets_data, config):

@@ -78,8 +78,7 @@ class TestUIComponents:
     def test_treeview_sorting_mtg_ranks_descending(self, root):
         """Verify the 1st click on 'Grade' shows best cards (A+) first."""
         cols = ["Card", "Grade"]
-        hd = {"Card": {"width": 100}, "Grade": {"width": 50}}
-        tree = ModernTreeview(root, columns=cols, headers_config=hd)
+        tree = ModernTreeview(root, columns=cols)
 
         tree.insert("", "end", values=("Mediocre", "C+"))
         tree.insert("", "end", values=("Bomb", "A+"))
@@ -96,8 +95,7 @@ class TestUIComponents:
     def test_treeview_sorting_na_handling(self, root):
         """Verify that 'NA' or empty strings always sink to the bottom in descending sort."""
         cols = ["Val"]
-        hd = {"Val": {"width": 50}}
-        tree = ModernTreeview(root, columns=cols, headers_config=hd)
+        tree = ModernTreeview(root, columns=cols)
         tree.insert("", "end", values=("50.0",))
         tree.insert("", "end", values=("NA",))
         tree.insert("", "end", values=("99.0",))
@@ -111,8 +109,7 @@ class TestUIComponents:
     def test_treeview_sorting_toggle_logic(self, root):
         """Verify clicking twice reverses the sort order."""
         cols = ["Val"]
-        hd = {"Val": {"width": 50}}
-        tree = ModernTreeview(root, columns=cols, headers_config=hd)
+        tree = ModernTreeview(root, columns=cols)
         tree.insert("", "end", values=("10.0",))
         tree.insert("", "end", values=("50.0",))
 
@@ -127,8 +124,7 @@ class TestUIComponents:
     def test_treeview_zebra_striping_persistence(self, root):
         """Verify stripes follow visible index after sort."""
         cols = ["Val"]
-        hd = {"Val": {"width": 50}}
-        tree = ModernTreeview(root, columns=cols, headers_config=hd)
+        tree = ModernTreeview(root, columns=cols)
         tree.insert("", "end", values=("Z",))  # Row 0
         tree.insert("", "end", values=("A",))  # Row 1
 

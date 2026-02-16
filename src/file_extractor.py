@@ -318,27 +318,48 @@ class FileExtractor(UIProgress):
     def download_card_data(self, database_size):
         """
         Modified download logic to support multi-archetype data for 'The Brain'.
+        Fixed to return proper tuple (success, msg, size) and load local data first.
         """
+        self._update_status("Searching Local Files")
+        # 1. Load the local card database (Name, ID, Colors)
+        result, result_string, temp_size = self._retrieve_local_arena_data(
+            database_size
+        )
+
+        if not result:
+            return False, result_string, 0
+
         self._update_status("Starting Deep Data Retrieval...")
-        
+
         sl = Seventeenlands()
+
         # Define a wrapper to update the UI progress bar
         def update_ui(msg, val):
             self._update_status(msg)
             self._update_progress(val, increment=False)
 
-        # 1. Fetch Multi-Archetype Data (The core upgrade)
+        # 2. Fetch Multi-Archetype Data (The core upgrade)
         set_code = self.selected_sets.seventeenlands[0]
-        # This now returns a dictionary keyed by card name, 
-        # with nested archetypes (WU, UB, etc.)
-        deep_ratings = sl.download_set_data(set_code, self.draft, progress_callback=update_ui)
+        try:
+            # This now returns a dictionary keyed by card name,
+            # with nested archetypes (WU, UB, etc.)
+            deep_ratings = sl.download_set_data(
+                set_code, self.draft, progress_callback=update_ui
+            )
+        except Exception as e:
+            return False, f"Network Error: {str(e)}", 0
 
-        # 2. Assemble the final dataset
+        # 3. Assemble the final dataset
         # We merge these deep ratings with our local Arena ID database
         self._assemble_deep_set(deep_ratings)
-        
-        # 3. Export
-        return self.export_card_data()
+
+        # 4. Export
+        filename = self.export_card_data()
+
+        if filename:
+            return True, "Download Successful", temp_size
+        else:
+            return False, "Dataset Validation Failed", 0
 
     def _assemble_deep_set(self, deep_ratings: Dict):
         """Combines 17Lands intelligence with local Arena IDs."""
@@ -1013,7 +1034,6 @@ class FileExtractor(UIProgress):
             self.set_game_count(game_count)
         except Exception as error:
             result = False
-            logger.error(url)
             logger.error(error)
         return result, game_count
 
@@ -1072,7 +1092,8 @@ class FileExtractor(UIProgress):
             write_data = check_file_integrity(location)
 
             if write_data[0] != Result.VALID:
-                os.remove(output_file)
+                if os.path.exists(location):
+                    os.remove(location)
                 output_file = ""
 
         except Exception as error:

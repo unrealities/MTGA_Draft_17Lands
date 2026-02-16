@@ -25,7 +25,6 @@ class TestColorPercentagesUI:
             "UB (54.2%)": "UB",
             "Auto": "Auto",
         }
-        # FIX: Ensure this mock is present to avoid StopIteration in _update_data_sources
         scanner.retrieve_data_sources.return_value = {"Mock Set": "/mock/path.json"}
         scanner.retrieve_current_limited_event.return_value = ("SET", "Draft")
         scanner.retrieve_current_pack_and_pick.return_value = (1, 1)

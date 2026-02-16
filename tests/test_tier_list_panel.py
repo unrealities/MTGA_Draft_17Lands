@@ -8,6 +8,7 @@ import tkinter
 from unittest.mock import MagicMock, patch
 from src.ui.windows.tier_list import TierListWindow
 from src.tier_list import TierList, Meta
+from src.configuration import Configuration
 
 
 class TestTierListWindow:
@@ -29,7 +30,8 @@ class TestTierListWindow:
         with patch(
             "src.tier_list.TierList.retrieve_files", return_value=mock_tier_files
         ):
-            panel = TierListWindow(root, MagicMock())
+            # Pass Configuration() as second arg, mock callback as third
+            panel = TierListWindow(root, Configuration(), MagicMock())
             items = panel.table.get_children()
             assert len(items) == 2
             first_row = panel.table.item(items[0])["values"]
@@ -37,7 +39,7 @@ class TestTierListWindow:
 
     def test_invalid_url_blocking(self, root):
         """Verify non-17Lands URLs are rejected."""
-        panel = TierListWindow(root, MagicMock())
+        panel = TierListWindow(root, Configuration(), MagicMock())
         panel.vars["url"].set("https://not-17lands.com/tier_list/abc")
 
         with patch("tkinter.messagebox.showwarning") as mock_warn:
@@ -48,7 +50,7 @@ class TestTierListWindow:
     def test_successful_import_lifecycle(self, mock_from_api, root):
         """Verify full import updates the UI and notifies the dashboard."""
         callback = MagicMock()
-        panel = TierListWindow(root, callback)
+        panel = TierListWindow(root, Configuration(), callback)
 
         # Setup mock TierList instance
         mock_tl = MagicMock(spec=TierList)
@@ -76,7 +78,7 @@ class TestTierListWindow:
 
     def test_import_error_handling(self, root):
         """Verify UI stability during network/API failures."""
-        panel = TierListWindow(root, MagicMock())
+        panel = TierListWindow(root, Configuration(), MagicMock())
         panel.vars["url"].set("https://www.17lands.com/tier_list/fail")
         panel.vars["label"].set("Faulty")
 

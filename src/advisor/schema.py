@@ -11,7 +11,10 @@ class Recommendation(BaseModel):
     card_name: str
     base_win_rate: float
     contextual_score: float
-    z_score: float  # Power level relative to the pack
-    reasoning: List[str]  # e.g. ["Splashable Bomb", "Need Creatures"]
-    is_elite: bool = False  # Is this a statistical outlier?
-    archetype_fit: str = "Neutral"  # 'High', 'Neutral', or 'Low' based on color pair
+    z_score: float
+    cast_probability: float  # 0.0 to 1.0 (Karsten math)
+    wheel_chance: bool  # True if statistics suggest it will wheel
+    functional_cmc: float  # e.g., Landcycler might be 0.5
+    reasoning: List[str]  # e.g. ["Uncastable (Double Pip)", "Wheels 80%"]
+    is_elite: bool = False
+    archetype_fit: str = "Neutral"

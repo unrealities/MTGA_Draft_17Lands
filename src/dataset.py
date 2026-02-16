@@ -124,7 +124,6 @@ class Dataset:
         archetype_list = []
 
         all_decks = deck_stats.get("All Decks", {})
-        # Fix: Only include if there is actually win rate data
         if all_decks and all_decks.get(field, 0.0) > 0:
             archetype_list.append(
                 [

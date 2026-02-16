@@ -57,13 +57,13 @@ class TestTakenCardsPanel:
     def test_card_stacking(self, root, mock_draft):
         """Verify duplicate cards are stacked with the correct count."""
         panel = TakenCardsPanel(root, mock_draft, Configuration())
-        # Results: 0=Name, 1=Count
+        # The stack_cards function adds a "count" key to the dictionary
         plains = next(
             c
             for c in panel.current_display_list
             if c[constants.DATA_FIELD_NAME] == "Plains"
         )
-        assert plains["results"][1] == 2
+        assert plains["count"] == 2
 
     def test_filter_lands_removal(self, root, mock_draft):
         """Verify that disabling Lands removes them from the visible list."""
@@ -71,7 +71,8 @@ class TestTakenCardsPanel:
 
         # Simulate unchecking 'Lands'
         panel.vars["land"].set(0)
-        panel._on_filter_toggle("land", panel.vars["land"])
+        # Call the update method directly (mimicking the Checkbutton command)
+        panel.refresh()
 
         names = [c[constants.DATA_FIELD_NAME] for c in panel.current_display_list]
         assert "Plains" not in names
@@ -82,7 +83,7 @@ class TestTakenCardsPanel:
         panel = TakenCardsPanel(root, mock_draft, Configuration())
 
         panel.vars["spell"].set(0)
-        panel._on_filter_toggle("spell", panel.vars["spell"])
+        panel.refresh()
 
         names = [c[constants.DATA_FIELD_NAME] for c in panel.current_display_list]
         assert "Shock" not in names  # Instant removed
@@ -93,7 +94,7 @@ class TestTakenCardsPanel:
         panel = TakenCardsPanel(root, mock_draft, Configuration())
 
         panel.vars["other"].set(0)
-        panel._on_filter_toggle("other", panel.vars["other"])
+        panel.refresh()
 
         names = [c[constants.DATA_FIELD_NAME] for c in panel.current_display_list]
         assert "Sol Ring" not in names  # Artifact removed
@@ -101,13 +102,14 @@ class TestTakenCardsPanel:
 
     def test_column_synchronization(self, root, mock_draft):
         """Verify the panel respects global dashboard column settings."""
-        config = Configuration(settings=Settings(column_2="alsa"))
+        config = Configuration()
+        config.settings.column_configs["taken_table"] = ["name", "alsa"]
         panel = TakenCardsPanel(root, mock_draft, config)
 
         # Treeview columns are returned as a tuple of internal IDs
         cols = panel.table["columns"]
-        # In our rebuild logic, Column 2 'alsa' maps to the label 'ALSA'
-        assert "ALSA" in cols
+        # In the modern app structure, column IDs match the field names (lowercase)
+        assert "alsa" in cols
 
     def test_empty_pool_handling(self, root, mock_draft):
         """Edge Case: Verify panel handles zero cards without crashing."""
