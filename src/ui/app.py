@@ -80,6 +80,14 @@ class DraftApp:
 
         self._refresh_ui_data()
 
+        # Logic: Default to Datasets tab if no valid data source is loaded
+        # This guides users to download data immediately upon first launch
+        if self.vars["data_source"].get() == "None":
+            self.notebook.select(self.panel_data)
+
+        # Trigger update checks immediately
+        self.root.after(1000, self.notifications.check_for_updates)
+
         # 6. Reveal
         if splash:
             splash.close()

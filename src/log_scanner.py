@@ -178,11 +178,17 @@ class ArenaScanner:
 
                     # Standard Event Join
                     if start_offset != -1:
-                        self.draft_start_offset = offset
                         entry_string = line[start_offset:]
                         event_data = process_json(entry_string)
-                        update, event_type, draft_id = self.__check_event(event_data)
-                        event_line = line
+
+                        # Correct Logic: Latch update to True, don't overwrite if False
+                        is_new, et, did = self.__check_event(event_data)
+                        if is_new:
+                            update = True
+                            event_type = et
+                            draft_id = did
+                            event_line = line
+                            self.draft_start_offset = offset
 
                     # Deck Recovery (EventSetDeckV2)
                     elif "InternalEventName" in line and "CardPool" in line:
@@ -195,13 +201,15 @@ class ArenaScanner:
                                 )
                                 if internal_name:
                                     dummy_payload = {"EventName": internal_name}
-                                    update, event_type, draft_id = self.__check_event(
-                                        dummy_payload
-                                    )
 
-                                    if update:
-                                        self.draft_start_offset = offset
+                                    is_new, et, did = self.__check_event(dummy_payload)
+                                    if is_new:
+                                        update = True
+                                        event_type = et
+                                        draft_id = did
                                         event_line = line
+                                        self.draft_start_offset = offset
+
                                         card_pool = json_find("CardPool", event_data)
                                         if card_pool:
                                             self.taken_cards = [
@@ -1101,45 +1109,30 @@ class ArenaScanner:
 
     def retrieve_color_win_rate(self, label_type):
         deck_colors = {}
-
-        # Get raw color ratings from dataset
-        ratings = self.set_data.get_color_ratings()
-
-        # 1. Always include Auto and All Decks
-        if "All Decks" in ratings and ratings["All Decks"] > 0:
-            deck_colors[constants.FILTER_OPTION_ALL_DECKS] = (
-                f"All Decks ({ratings['All Decks']}%)"
-            )
-        else:
-            deck_colors[constants.FILTER_OPTION_ALL_DECKS] = "All Decks"
-
-        deck_colors[constants.FILTER_OPTION_AUTO] = "Auto"
-
-        # 2. Iterate specific colors, but only add if valid data exists
-        for filter_key in constants.DECK_COLORS:  # ["W", "U", ... "WUBRG"]
-            if filter_key == constants.FILTER_OPTION_ALL_DECKS:
-                continue
-
+        for filter_key in constants.DECK_FILTERS:
             std_key = normalize_color_string(filter_key)
-
-            # Skip if no data for this specific color pair
-            if std_key not in ratings or ratings[std_key] <= 0:
-                continue
-
-            # Format Label
-            winrate = ratings[std_key]
-
-            if (
-                label_type == constants.DECK_FILTER_FORMAT_NAMES
-                and std_key in constants.COLOR_NAMES_DICT
+            display_label = std_key
+            if (label_type == constants.DECK_FILTER_FORMAT_NAMES) and (
+                std_key in constants.COLOR_NAMES_DICT
             ):
-                display_label = f"{constants.COLOR_NAMES_DICT[std_key]} ({winrate}%)"
-            else:
-                display_label = f"{std_key} ({winrate}%)"
-
+                display_label = constants.COLOR_NAMES_DICT[std_key]
+            elif label_type == constants.DECK_FILTER_FORMAT_COLORS:
+                display_label = std_key
             deck_colors[filter_key] = display_label
 
-        # Return reversed map for UI (Label -> Key)
+        try:
+            ratings = self.set_data.get_color_ratings()
+            if ratings:
+                for filter_key in list(deck_colors.keys()):
+                    std_menu_key = normalize_color_string(filter_key)
+                    if std_menu_key in ratings:
+                        winrate = ratings[std_menu_key]
+                        deck_colors[filter_key] = (
+                            f"{deck_colors[filter_key]} ({winrate}%)"
+                        )
+        except Exception as error:
+            logger.error(error)
+
         return {v: k for k, v in deck_colors.items()}
 
     def retrieve_current_picked_cards(self):

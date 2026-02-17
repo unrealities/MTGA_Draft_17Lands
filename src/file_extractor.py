@@ -338,23 +338,34 @@ class FileExtractor(UIProgress):
             self._update_status(msg)
             self._update_progress(val, increment=False)
 
-        # 2. Fetch Multi-Archetype Data (The core upgrade)
+        # 2. Dynamic Archetype Fetching
+        # We use the color_ratings keys (which are already filtered by threshold)
+        # to determine which card data files to download.
+        target_colors = list(self.combined_data.get("color_ratings", {}).keys())
+
+        # Ensure 'All Decks' is always fetched even if it wasn't in color_ratings for some reason
+        if "All Decks" not in target_colors:
+            target_colors.insert(0, "All Decks")
+
+        logger.info(
+            f"Fetching card data for {len(target_colors)} archetypes: {target_colors}"
+        )
+
         set_code = self.selected_sets.seventeenlands[0]
         try:
-            # This now returns a dictionary keyed by card name,
-            # with nested archetypes (WU, UB, etc.)
             deep_ratings = sl.download_set_data(
-                set_code, self.draft, progress_callback=update_ui
+                set_code,
+                self.draft,
+                colors=target_colors,  # Pass the dynamic list
+                progress_callback=update_ui,
             )
         except Exception as e:
             return False, f"Network Error: {str(e)}", 0
 
         # 3. Assemble the final dataset
-        # We merge these deep ratings with our local Arena ID database
         self._assemble_deep_set(deep_ratings)
 
-        # FIX: Backfill game_count if color_ratings failed but card data succeeded
-        # This prevents "0 Games" in the dataset manager for valid datasets
+        # Backfill game_count if needed
         if self.combined_data["meta"].get("game_count", 0) == 0:
             max_samples = 0
             for card in self.combined_data["card_ratings"].values():
@@ -377,6 +388,8 @@ class FileExtractor(UIProgress):
         filename = self.export_card_data()
 
         if filename:
+            if not self.combined_data.get("color_ratings"):
+                return True, "Cards Downloaded (No Color Stats)", temp_size
             return True, "Download Successful", temp_size
         else:
             return False, "Dataset Validation Failed", 0

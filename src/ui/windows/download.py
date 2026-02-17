@@ -76,7 +76,7 @@ class DownloadWindow(ttk.Frame):
         self.vars["set"] = tkinter.StringVar(
             value=set_options[0] if set_options else ""
         )
-        ttk.Label(form, text="SET:", background=Theme.BG_SECONDARY).grid(
+        ttk.Label(form, text="SET:").grid(
             row=0, column=0, sticky="e", padx=5
         )
         self.om_set = ttk.OptionMenu(
@@ -89,7 +89,7 @@ class DownloadWindow(ttk.Frame):
         self.om_set.grid(row=0, column=1, sticky="ew", pady=2)
 
         self.vars["event"] = tkinter.StringVar(value="PremierDraft")
-        ttk.Label(form, text="EVENT:", background=Theme.BG_SECONDARY).grid(
+        ttk.Label(form, text="EVENT:").grid(
             row=0, column=2, sticky="e", padx=5
         )
         self.om_event = ttk.OptionMenu(
@@ -98,7 +98,7 @@ class DownloadWindow(ttk.Frame):
         self.om_event.grid(row=0, column=3, sticky="ew", pady=2)
 
         self.vars["group"] = tkinter.StringVar(value="All")
-        ttk.Label(form, text="USERS:", background=Theme.BG_SECONDARY).grid(
+        ttk.Label(form, text="USERS:").grid(
             row=1, column=0, sticky="e", padx=5
         )
         ttk.OptionMenu(
@@ -106,7 +106,7 @@ class DownloadWindow(ttk.Frame):
         ).grid(row=1, column=1, sticky="ew", pady=2)
 
         self.vars["threshold"] = tkinter.StringVar(value="500")
-        ttk.Label(form, text="MIN GAMES:", background=Theme.BG_SECONDARY).grid(
+        ttk.Label(form, text="MIN GAMES:").grid(
             row=1, column=2, sticky="e", padx=5
         )
         ttk.Entry(form, textvariable=self.vars["threshold"]).grid(
@@ -114,7 +114,7 @@ class DownloadWindow(ttk.Frame):
         )
 
         self.vars["start"] = tkinter.StringVar(value="2019-01-01")
-        ttk.Label(form, text="START DATE:", background=Theme.BG_SECONDARY).grid(
+        ttk.Label(form, text="START DATE:").grid(
             row=2, column=0, sticky="e", padx=5
         )
         ttk.Entry(form, textvariable=self.vars["start"]).grid(
@@ -122,7 +122,7 @@ class DownloadWindow(ttk.Frame):
         )
 
         self.vars["end"] = tkinter.StringVar(value=str(date.today()))
-        ttk.Label(form, text="END DATE:", background=Theme.BG_SECONDARY).grid(
+        ttk.Label(form, text="END DATE:").grid(
             row=2, column=2, sticky="e", padx=5
         )
         ttk.Entry(form, textvariable=self.vars["end"]).grid(

@@ -58,11 +58,13 @@ class Notifications:
     def update_dataset(self):
         try:
             current_time = datetime.now().timestamp()
-            if (current_time - self.configuration.card_data.last_auto_check) < 86400:
+            # FIX: Ensure we check at least once, even if timestamp logic might delay it
+            if (
+                self.configuration.card_data.last_auto_check
+                and (current_time - self.configuration.card_data.last_auto_check)
+                < 86400
+            ):
                 return
-
-            self.configuration.card_data.last_auto_check = current_time
-            write_configuration(self.configuration)
 
             dataset_info = read_dataset_info(
                 self.configuration.card_data.latest_dataset
@@ -70,6 +72,9 @@ class Notifications:
             if not dataset_info:
                 return
 
+            logger.info(f"Checking updates for {dataset_info[0]}...")
+
+            # Fetch summary only (fast check)
             color_ratings, game_count = Seventeenlands().download_color_ratings(
                 dataset_info[0],
                 dataset_info[1],
@@ -78,10 +83,20 @@ class Notifications:
                 dataset_info[2],
             )
 
-            if game_count > dataset_info[5]:
+            # Local game count (index 5) vs Remote game count
+            local_count = dataset_info[5]
+
+            # Update timestamp to prevent spam
+            self.configuration.card_data.last_auto_check = current_time
+            write_configuration(self.configuration)
+
+            if game_count > local_count:
+                logger.info(
+                    f"New data found: Local {local_count} vs Remote {game_count}"
+                )
                 if tkinter.messagebox.askyesno(
                     "Dataset Update",
-                    f"New data available for {dataset_info[0]}. Update now?",
+                    f"New data available for {dataset_info[0]} ({game_count} games).\nUpdate now?",
                 ):
                     args = DatasetArgs(
                         dataset_info[0],

@@ -59,7 +59,6 @@ class TierListWindow(ttk.Frame):
             text="IMPORT NEW TIER LIST",
             font=(Theme.FONT_FAMILY, 9, "bold"),
             foreground=Theme.ACCENT,
-            background=Theme.BG_SECONDARY,
         ).pack(anchor="w", pady=(0, 10))
 
         # URL Field
@@ -67,7 +66,6 @@ class TierListWindow(ttk.Frame):
             form_frame,
             text="17LANDS URL:",
             style="Muted.TLabel",
-            background=Theme.BG_SECONDARY,
         ).pack(anchor="w")
         self.vars["url"] = tkinter.StringVar()
         self.entry_url = ttk.Entry(form_frame, textvariable=self.vars["url"])
@@ -79,11 +77,11 @@ class TierListWindow(ttk.Frame):
             form_frame,
             text="CUSTOM LABEL (e.g. 'Pro Review'):",
             style="Muted.TLabel",
-            background=Theme.BG_SECONDARY,
         ).pack(anchor="w")
         self.vars["label"] = tkinter.StringVar()
         self.entry_label = ttk.Entry(form_frame, textvariable=self.vars["label"])
         self.entry_label.pack(fill="x", pady=(2, 15))
+        self.entry_label.insert(0, "CUSTOM_LABEL")
 
         # Action Button
         self.btn_import = ttk.Button(
@@ -96,7 +94,6 @@ class TierListWindow(ttk.Frame):
             form_frame,
             textvariable=self.vars["status"],
             style="Muted.TLabel",
-            background=Theme.BG_SECONDARY,
         ).pack(pady=(5, 0))
 
     def _update_history_table(self):

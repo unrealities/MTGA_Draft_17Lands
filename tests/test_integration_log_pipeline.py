@@ -49,7 +49,7 @@ class TestLogPipelineIntegration:
                     "All",
                     "2024-04-16",
                     "2024-05-03",
-                    ,
+                    500,
                     str(target_path),
                     "2024-05-03 12:00:00",
                 )

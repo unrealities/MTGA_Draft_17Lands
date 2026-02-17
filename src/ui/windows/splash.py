@@ -73,7 +73,6 @@ class SplashWindow:
             text="MTGA DRAFT TOOL",
             font=(Theme.FONT_FAMILY, 14, "bold"),
             foreground=Theme.ACCENT,
-            background=Theme.BG_SECONDARY,
         ).pack(pady=(0, 5))
 
         ttk.Label(
@@ -81,7 +80,6 @@ class SplashWindow:
             textvariable=self.status_var,
             font=(Theme.FONT_FAMILY, 9),
             foreground=Theme.TEXT_MAIN,
-            background=Theme.BG_SECONDARY,
         ).pack(pady=(0, 15))
 
         self.progress = ttk.Progressbar(container, mode="indeterminate", length=250)

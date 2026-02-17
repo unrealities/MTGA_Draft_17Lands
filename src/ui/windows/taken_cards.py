@@ -97,7 +97,6 @@ class TakenCardsPanel(ttk.Frame):
             text="FILTER:",
             font=(Theme.FONT_FAMILY, 8, "bold"),
             foreground=Theme.ACCENT,
-            background=Theme.BG_SECONDARY,
         ).pack(side="left", padx=5)
 
         self.vars = {}

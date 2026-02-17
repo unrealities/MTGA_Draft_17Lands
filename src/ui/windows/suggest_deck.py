@@ -45,7 +45,6 @@ class SuggestDeckPanel(ttk.Frame):
             text="ARCHETYPE:",
             font=(Theme.FONT_FAMILY, 8, "bold"),
             foreground=Theme.ACCENT,
-            background=Theme.BG_SECONDARY,
         ).pack(side="left", padx=5)
 
         self.var_archetype = tkinter.StringVar()

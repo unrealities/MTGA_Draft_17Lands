@@ -38,7 +38,6 @@ class ComparePanel(ttk.Frame):
             bar,
             text="SEARCH:",
             font=(Theme.FONT_FAMILY, 8, "bold"),
-            background=Theme.BG_SECONDARY,
         ).pack(side="left", padx=5)
         self.entry_card = AutocompleteEntry(bar, completion_list=[], width=40)
         self.entry_card.pack(side="left", fill="x", expand=True, padx=5)

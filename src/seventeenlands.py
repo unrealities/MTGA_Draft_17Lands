@@ -33,17 +33,25 @@ class Seventeenlands:
             os.makedirs(self.CACHE_DIR)
 
     def download_set_data(
-        self, set_code: str, draft_format: str, progress_callback=None
+        self,
+        set_code: str,
+        draft_format: str,
+        colors: List[str] = None,
+        progress_callback=None,
     ) -> Dict[str, Any]:
         """
         Public entry point to build a full multi-archetype dataset.
+        Allows passing a dynamic list of colors to fetch.
         """
         master_card_map = {}
 
-        for i, color in enumerate(self.ARCHETYPES):
+        # Use dynamic colors if provided, otherwise default to standard pairs
+        target_colors = colors if colors else self.ARCHETYPES
+
+        for i, color in enumerate(target_colors):
             if progress_callback:
                 progress_callback(
-                    f"Fetching {color} Archetype...", (i / len(self.ARCHETYPES)) * 100
+                    f"Fetching {color} Archetype...", (i / len(target_colors)) * 100
                 )
 
             # Let exceptions bubble up here to be handled by the UI/Extractor
@@ -72,7 +80,9 @@ class Seventeenlands:
             f"{self.URL_BASE}/card_ratings/data?expansion={set_code.upper()}"
             f"&format={draft_format}"
         )
-        if color != "All":
+
+        # 'All' in our logic maps to no color param in API
+        if color != "All" and color != "All Decks":
             url += f"&colors={color}"
 
         # No try/except here - we want failures to bubble up for retry logic
@@ -91,7 +101,9 @@ class Seventeenlands:
     ):
         """Merges individual archetype stats into the master card objects."""
         # 17Lands 'All' maps to our 'All Decks' filter
-        internal_color_key = "All Decks" if color_key == "All" else color_key
+        internal_color_key = (
+            "All Decks" if color_key == "All" or color_key == "All Decks" else color_key
+        )
 
         for card in raw_list:
             name = card.get("name")
@@ -135,7 +147,7 @@ class Seventeenlands:
         start_date,
         end_date,
         user_group,
-        threshold=500,
+        threshold=5000,
         color_filter=None,
     ):
         """
@@ -148,8 +160,12 @@ class Seventeenlands:
             "start_date": start_date,
             "end_date": end_date,
             "combine_splash": True,
-            "user_group": user_group,
         }
+
+        # Only add user_group if it's NOT "All".
+        # 17Lands API defaults to "All" if omitted, but sometimes fails if "All" is sent explicitly string.
+        if user_group and user_group.lower() != "all":
+            params["user_group"] = user_group
 
         url = f"{self.URL_BASE}/color_ratings/data"
         logger.info(f"Requesting Color Ratings: {url} | Params: {params}")
@@ -158,13 +174,26 @@ class Seventeenlands:
         # The caller (FileExtractor) needs to see the crash to trigger its retry loop.
         response = self.session.get(url, params=params, timeout=30)
         response.raise_for_status()
-        data = response.json()
+
+        try:
+            data = response.json()
+        except json.JSONDecodeError:
+            logger.error(f"Color Ratings Response was not JSON: {response.text[:200]}")
+            raise Exception("Invalid JSON response from 17Lands")
 
         logger.info(f"Color Ratings Response: Received {len(data)} entries")
 
-        return self._process_color_ratings(data, color_filter, threshold)
+        results, game_count = self._process_color_ratings(data, color_filter, threshold)
 
-    def _process_color_ratings(self, data, color_filter, threshold=500):
+        # DEBUG: If results are empty, log the raw data to see what happened
+        if not results and data:
+            logger.warning(
+                f"Color Ratings processing yielded 0 results. Raw Data Sample: {str(data)[:500]}"
+            )
+
+        return results, game_count
+
+    def _process_color_ratings(self, data, color_filter, threshold=5000):
         results = {}
         game_count = 0
 
@@ -224,9 +253,12 @@ class Seventeenlands:
             "format": draft,
             "start_date": start_date,
             "end_date": end_date,
-            "user_group": user_group,
             "colors": color if color != "All Decks" else None,
         }
+
+        # Consistent user_group handling
+        if user_group and user_group.lower() != "all":
+            params["user_group"] = user_group
 
         url = f"{self.URL_BASE}/card_ratings/data"
         # Letting exceptions bubble up for consistency with new retry logic
