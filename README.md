@@ -145,7 +145,7 @@ Magic: The Gathering Arena draft tool that utilizes 17Lands data.
 - **Download Set Data:** Open the Download Dataset window by selecting `Data->Download Dataset`. Enter the set information and click the ADD SET button to begin downloading the set data.
   - The download can take several minutes.
   - 17Lands will timeout the request if too many requests are made within a short period.
-  - **Min Games:** You can adjust the minimum number of games required for color ratings (default: 5000). Lowering this is useful for low-population formats like Cube or Flashback drafts where data is scarce.
+  - **Min Games:** You can adjust the minimum number of games required for color ratings (default: 500). Lowering this is useful for low-population formats like Cube or Flashback drafts where data is scarce.
 - **List Taken Cards:** Get to the Taken Cards window by selecting `Cards->Taken Cards`.
   - This table lists the cards that were taken by the user throughout the draft.
 - **List Suggested Decks:** Get to the Suggested Decks window by selecting `Cards->Suggest Decksa`.

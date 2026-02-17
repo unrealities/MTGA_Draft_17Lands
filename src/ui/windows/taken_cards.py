@@ -27,12 +27,9 @@ class TakenCardsPanel(ttk.Frame):
 
         self.current_display_list = []
         self.view_mode = "list"  # "list" or "visual"
-        self.active_filters = {
-            "creature": True,
-            "land": True,
-            "spell": True,
-            "other": True,
-        }
+
+        # UI State for Checkbuttons
+        self.vars = {}
 
         self._build_ui()
         # Trigger first load manually
@@ -67,11 +64,18 @@ class TakenCardsPanel(ttk.Frame):
                     ]
                 )
 
-            filtered = [
-                c
-                for c in raw_pool
-                if any(t in c.get(constants.DATA_FIELD_TYPES, []) for t in active_types)
-            ]
+            filtered = []
+            for c in raw_pool:
+                types = c.get(constants.DATA_FIELD_TYPES, [])
+
+                if not types and self.vars["other"].get():
+                    filtered.append(c)
+                    continue
+
+                # Standard filtering
+                if any(t in types for t in active_types):
+                    filtered.append(c)
+
             self.current_display_list = stack_cards(filtered)
 
         # 3. Render based on mode
@@ -199,6 +203,7 @@ class TakenCardsPanel(ttk.Frame):
             "4": [],
             "5": [],
             "6+": [],
+            "Unknown": [],  # Bucket for recovered cards with no CMC data
         }
 
         for card in self.current_display_list:
@@ -206,7 +211,16 @@ class TakenCardsPanel(ttk.Frame):
                 buckets["Lands"].append(card)
                 continue
 
-            cmc = int(card.get(constants.DATA_FIELD_CMC, 0))
+            # Handle unknown CMC safely
+            try:
+                cmc = int(card.get(constants.DATA_FIELD_CMC, 0))
+                if cmc == 0 and not card.get(constants.DATA_FIELD_TYPES):
+                    buckets["Unknown"].append(card)
+                    continue
+            except:
+                buckets["Unknown"].append(card)
+                continue
+
             if cmc <= 1:
                 buckets["1"].append(card)
             elif cmc == 2:
@@ -221,11 +235,13 @@ class TakenCardsPanel(ttk.Frame):
                 buckets["6+"].append(card)
 
         # Render Piles
-        keys = ["Lands", "1", "2", "3", "4", "5", "6+"]
+        keys = ["Lands", "1", "2", "3", "4", "5", "6+", "Unknown"]
         for key in keys:
-            card_list = buckets[key]
-            if not card_list and key != "Lands":
+            card_list = buckets.get(key, [])
+            if not card_list and key not in ["Lands", "Unknown"]:
                 continue  # Skip empty CMC columns to save space
+            if not card_list:
+                continue
 
             # Create Column
             pile_frame = ttk.Frame(self.visual_scroller.scrollable_frame)

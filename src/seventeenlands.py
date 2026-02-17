@@ -46,12 +46,11 @@ class Seventeenlands:
                     f"Fetching {color} Archetype...", (i / len(self.ARCHETYPES)) * 100
                 )
 
+            # Let exceptions bubble up here to be handled by the UI/Extractor
             raw_data = self._fetch_archetype_with_cache(set_code, draft_format, color)
             self._process_archetype_data(color, raw_data, master_card_map)
 
             # Respectful Throttling: Sleep 1.5s between network calls if not from cache
-            # This is the 'Elite' way to avoid hitting rate limits.
-            # We only sleep if the previous call was a real network request (simplified here).
             time.sleep(1.5)
 
         return master_card_map
@@ -76,19 +75,16 @@ class Seventeenlands:
         if color != "All":
             url += f"&colors={color}"
 
-        try:
-            response = self.session.get(url, timeout=20)
-            response.raise_for_status()
-            data = response.json()
+        # No try/except here - we want failures to bubble up for retry logic
+        response = self.session.get(url, timeout=30)
+        response.raise_for_status()
+        data = response.json()
 
-            # Update cache immediately
-            with open(cache_path, "w") as f:
-                json.dump(data, f)
+        # Update cache immediately
+        with open(cache_path, "w") as f:
+            json.dump(data, f)
 
-            return data
-        except Exception as e:
-            logger.error(f"17Lands API Failure ({color}): {e}")
-            return []
+        return data
 
     def _process_archetype_data(
         self, color_key: str, raw_list: List[Dict], card_map: Dict
@@ -139,7 +135,7 @@ class Seventeenlands:
         start_date,
         end_date,
         user_group,
-        threshold=5000,
+        threshold=500,
         color_filter=None,
     ):
         """
@@ -151,23 +147,24 @@ class Seventeenlands:
             "event_type": draft,
             "start_date": start_date,
             "end_date": end_date,
-            "combine_splash": False,
+            "combine_splash": True,
             "user_group": user_group,
         }
 
         url = f"{self.URL_BASE}/color_ratings/data"
-        try:
-            response = self.session.get(url, params=params)
-            response.raise_for_status()
-            data = response.json()
+        logger.info(f"Requesting Color Ratings: {url} | Params: {params}")
 
-            return self._process_color_ratings(data, color_filter, threshold)
+        # We explicitly DO NOT catch exceptions here.
+        # The caller (FileExtractor) needs to see the crash to trigger its retry loop.
+        response = self.session.get(url, params=params, timeout=30)
+        response.raise_for_status()
+        data = response.json()
 
-        except Exception as e:
-            logger.error(f"Failed to download color ratings: {e}")
-            return {}, 0
+        logger.info(f"Color Ratings Response: Received {len(data)} entries")
 
-    def _process_color_ratings(self, data, color_filter, threshold=5000):
+        return self._process_color_ratings(data, color_filter, threshold)
+
+    def _process_color_ratings(self, data, color_filter, threshold=500):
         results = {}
         game_count = 0
 
@@ -192,13 +189,27 @@ class Seventeenlands:
 
             if color_key:
                 normalized_key = normalize_color_string(color_key)
+                # If no filter is provided (normal case for full dataset download),
+                # or if the key matches the filter
                 if not color_filter or normalized_key in color_filter:
                     games = entry.get("games", 0)
                     if games >= threshold:
                         wins = entry.get("wins", 0)
                         winrate = (wins / games) * 100 if games > 0 else 0.0
                         results[normalized_key] = round(winrate, 1)
+                    else:
+                        # DEBUG: Log skipped entries to diagnose missing stats
+                        # Only log if it's "All Decks" or a standard pair to avoid log spam from splashing
+                        if normalized_key == "All Decks" or (
+                            color_filter and normalized_key in color_filter
+                        ):
+                            logger.info(
+                                f"Color Rating Skipped (Threshold {threshold}): {normalized_key} has {games} games"
+                            )
 
+        logger.info(
+            f"Processed Color Ratings: {len(results)} valid archetypes found. Total Game Count: {game_count}"
+        )
         return results, game_count
 
     def download_card_ratings(
@@ -218,13 +229,11 @@ class Seventeenlands:
         }
 
         url = f"{self.URL_BASE}/card_ratings/data"
-        try:
-            response = self.session.get(url, params=params)
-            response.raise_for_status()
-            data = response.json()
-            self.process_card_ratings(color, data, card_data)
-        except Exception as e:
-            logger.error(f"Failed to download card ratings for {color}: {e}")
+        # Letting exceptions bubble up for consistency with new retry logic
+        response = self.session.get(url, params=params, timeout=30)
+        response.raise_for_status()
+        data = response.json()
+        self.process_card_ratings(color, data, card_data)
 
     def process_card_ratings(self, color, data, card_data):
         """Helper to map API response to internal structure."""

@@ -105,7 +105,7 @@ class DownloadWindow(ttk.Frame):
             form, self.vars["group"], "All", *constants.LIMITED_GROUPS_LIST
         ).grid(row=1, column=1, sticky="ew", pady=2)
 
-        self.vars["threshold"] = tkinter.StringVar(value="5000")
+        self.vars["threshold"] = tkinter.StringVar(value="500")
         ttk.Label(form, text="MIN GAMES:", background=Theme.BG_SECONDARY).grid(
             row=1, column=2, sticky="e", padx=5
         )
@@ -205,7 +205,7 @@ class DownloadWindow(ttk.Frame):
         try:
             # Input Validation
             try:
-                thr = int(self.vars["threshold"].get().strip() or "5000")
+                thr = int(self.vars["threshold"].get().strip() or "500")
             except ValueError:
                 raise Exception("The 'Min Games' field must contain a numeric value.")
 

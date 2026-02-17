@@ -168,8 +168,15 @@ class DraftApp:
         self.panel_compare = ComparePanel(
             self.notebook, self.orchestrator.scanner, self.configuration
         )
-        self.panel_data = DownloadWindow(self.notebook, self.orchestrator.scanner.set_list, self.configuration, self._on_dataset_update)
-        self.panel_tiers = TierListWindow(self.notebook, self.configuration, self._refresh_ui_data)
+        self.panel_data = DownloadWindow(
+            self.notebook,
+            self.orchestrator.scanner.set_list,
+            self.configuration,
+            self._on_dataset_update,
+        )
+        self.panel_tiers = TierListWindow(
+            self.notebook, self.configuration, self._refresh_ui_data
+        )
 
         self.notebook.add(self.panel_taken, text=" Card Pool ")
         self.notebook.add(self.panel_suggest, text=" Deck Builder ")
@@ -193,11 +200,6 @@ class DraftApp:
         file_m.add_command(label="Export Draft (JSON)", command=self._export_json)
         file_m.add_separator()
         file_m.add_command(label="Exit", command=self.root.destroy)
-
-        # Settings Menu (Alternative - Un-comment if you prefer a top-level menu)
-        # settings_m = tkinter.Menu(m, tearoff=0)
-        # m.add_cascade(label="Settings", menu=settings_m)
-        # settings_m.add_command(label="Preferences...", command=self._open_settings)
 
         # Theme Menu
         theme_m = tkinter.Menu(m, tearoff=0)
@@ -481,11 +483,10 @@ class DraftApp:
             self._manual_refresh()
 
     def _read_player_log(self):
-        from src.file_extractor import search_arena_log_locations
-
-        loc = search_arena_log_locations([])
-        if loc:
-            self.orchestrator.scanner.set_arena_file(loc)
+        """Opens a file dialog to manually select the Player.log file."""
+        f = filedialog.askopenfilename(filetypes=(("Log", "*.log"), ("All", "*.*")))
+        if f:
+            self.orchestrator.scanner.set_arena_file(f)
             self._manual_refresh()
 
     def _export_csv(self):

@@ -83,16 +83,21 @@ class Theme:
 
         if target_theme == "native":
             # --- NATIVE MODE ---
-            # Switch to OS native engine
+            # Switch to OS native engine using direct TK call to bypass ttkbootstrap wrapper
+            # ttkbootstrap's style.theme_use() crashes if passed a non-bootstrap theme name
             native_engine = (
                 "aqua"
                 if sys.platform == "darwin"
                 else "vista" if sys.platform == "win32" else "clam"
             )
             try:
-                style.theme_use(native_engine)
-            except:
-                style.theme_use("clam")  # Safe fallback
+                # Direct Tcl call: package require Tk -> ttk::style theme use "aqua"
+                root.tk.call("ttk::style", "theme", "use", native_engine)
+            except tkinter.TclError:
+                try:
+                    root.tk.call("ttk::style", "theme", "use", "clam")
+                except:
+                    pass
 
             # Scrape System Colors so the app doesn't break
             # We look up what the OS thinks a Frame background is

@@ -32,7 +32,7 @@ CARD_COLOR_LABEL_RED = "Red"
 CARD_COLOR_LABEL_GREEN = "Green"
 CARD_COLOR_LABEL_NC = "NC"
 
-COLOR_WIN_RATE_GAME_COUNT_THRESHOLD_DEFAULT = 5000
+COLOR_WIN_RATE_GAME_COUNT_THRESHOLD_DEFAULT = 500
 
 LIMITED_TYPE_UNKNOWN = 0
 LIMITED_TYPE_DRAFT_PREMIER_V1 = 1
@@ -793,44 +793,53 @@ CARD_RATINGS_INTER_DELAY_SECONDS = 1
 CARD_RATINGS_ATTEMPT_MAX = 5
 
 # --- MANA FIXING HEURISTICS ---
+# Substrings to search for in card oracle text (Case Insensitive)
 FIXING_KEYWORDS = [
-    "Add one mana of any color",
-    "Search your library for a basic land",
-    "Search your library for a land",
-    "Create a Treasure",
-    "Create X Treasure",
-    "Add {",  # Direct mana production
+    # Direct Production (Any Color)
+    "add one mana of any color",
+    "add one mana of any type",
+    "add x mana of any one color",
+    "add one mana of the chosen color",
+    
+    # "Choose a color" usually implies fixing (e.g. Thriving lands, Unknown Shores)
+    "choose a color", 
+    
+    # Fetching / Tutoring
+    "search your library for a land card",
+    "search your library for a basic land",
+    "search your library for a land",
+    "search your library for a plains",
+    "search your library for an island",
+    "search your library for a swamp",
+    "search your library for a mountain",
+    "search your library for a forest",
+    "search your library for up to two basic land cards",
+    "search your library for up to X basic land cards",
+    "basic landcycling",
+    "plainscycling",
+    "islandcycling",
+    "swampcycling",
+    "mountaincycling",
+    "forestcycling",
+    
+    # Token Generation (Treasure/Gold)
+    "create a treasure",
+    "create x treasure",
+    "create a gold token",
+    
+    # Enchantments
+    "whenever enchanted land is tapped for mana, its controller adds an additional one mana of any color",
 ]
 
-# Cards with these words in the name are almost always fixers in Limited
+# Cards with these strings in their NAME are likely fixers.
 FIXING_NAMES = [
-    "Evolving Wilds",
-    "Terramorphic Expanse",
-    "Unknown Shores",
-    "Grotto",
-    "Prism",
-    "Compass",
-    "Scarecrow",  # Heap Doll type effects
-    "Guide",  # District Guide
-    "Map",
-    "Omenpath",  # Omenpath Journey
-    "Escape Tunnel",
-    "Promising Vein",
-    "Fabled Passage",
-    "Shire Terrace",
-    "Obscura Storefront",
-    "Maestros Theater",
-    "Riveteers Overlook",
-    "Cabaretti Courtyard",
-    "Brokers Hideout",
-    "Captivating Cave",
-    "Cave of Temptation",
-    "Command Tower",
-    "Exotic Orchard",
-    "Gateway Plaza",
-    "Painted Bluffs",
-    "Rupture Spire",
-    "Shimmering Grotto",
-    "Transguild Promenade",
-    "Uncharted Haven",
+    "riveteers overlook",
+    "brokers hideout",
+    "cabaretti courtyard",
+    "maestros theater",
+    "obscura storefront",
+    "great hall",
+    "cactus preserve",
+    "guild globe",
+    "omenpath journey",
 ]

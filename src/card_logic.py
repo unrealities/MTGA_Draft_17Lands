@@ -751,14 +751,14 @@ class ManaSourceAnalyzer:
                 self._add_identity_sources(card)
 
     def _process_dual_land(self, card):
-        """If a land has multiple colors in identity, it fixes those colors."""
+        """
+        If a land has multiple colors in identity, it fixes those colors.
+        Colorless lands must be checked via text/name analysis elsewhere.
+        """
         colors = card.get(constants.DATA_FIELD_COLORS, [])
         if len(colors) > 1:
             for c in colors:
                 self.sources[c] += 1
-        # Evolving Wilds usually has NO color identity but works as a fetch
-        elif len(colors) == 0:
-            self.any_color_sources += 1
 
     def _is_colored_rock(self, card):
         """Returns True if card costs generic mana but produces colored mana."""
@@ -777,26 +777,34 @@ class ManaSourceAnalyzer:
             self.sources[c] += 1
 
     def _check_text_fixing(self, name, text):
-        """Scans name and text for known fixing phrases."""
+        """Scans name and text for known fixing phrases (Case Insensitive)."""
         is_fixer = False
+        
+        # Enforce Case Insensitivity
+        name_lower = name.lower()
+        text_lower = text.lower()
 
         # Check Name List
-        if any(fn in name for fn in constants.FIXING_NAMES):
+        if any(fn in name_lower for fn in constants.FIXING_NAMES):
             self.any_color_sources += 1
             is_fixer = True
 
         # Check Text Keywords
-        elif any(kw in text for kw in constants.FIXING_KEYWORDS):
-            # If "Add one mana of any color"
-            if "any color" in text:
-                self.any_color_sources += 1
-            # If "Add {G}" specifically
-            else:
-                # Naive text parsing for "Add {X}"
-                for color in constants.CARD_COLORS:
-                    if "{" + color + "}" in text:
-                        self.sources[color] += 1
+        elif any(kw in text_lower for kw in constants.FIXING_KEYWORDS):
+            # Keyword matched (e.g. "search your library", "create a treasure")
+            # We assume this provides generic fixing capability
+            self.any_color_sources += 1
             is_fixer = True
+            
+        # Check Direct Mana Symbols (e.g. "Add {G}")
+        # We explicitly iterate valid colors to avoid catching "{C}" or "{1}"
+        else:
+            for color in constants.CARD_COLORS:
+                # Look for symbol with braces: "{g}" or "{r}"
+                symbol = "{" + color.lower() + "}"
+                if symbol in text_lower:
+                    self.sources[color] += 1
+                    is_fixer = True
 
         return is_fixer
 

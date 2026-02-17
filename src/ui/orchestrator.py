@@ -54,12 +54,26 @@ class DraftOrchestrator:
             return False
 
         sources = self.scanner.retrieve_data_sources()
+
+        # Priority Search: Try to find [SET] + (All) specifically first
+        priority_match = None
+        fallback_match = None
+
         for label, path in sources.items():
             # Matches based on the [SET] prefix in the source label
             if f"[{s_code}]" in label:
-                logger.info(f"Syncing dataset to: {label}")
-                self.scanner.retrieve_set_data(path)
-                self.config.card_data.latest_dataset = os.path.basename(path)
-                write_configuration(self.config)
-                return True
+                if "(All)" in label:
+                    priority_match = path
+                else:
+                    fallback_match = path
+
+        final_path = priority_match or fallback_match
+
+        if final_path:
+            logger.info(f"Syncing dataset to: {final_path}")
+            self.scanner.retrieve_set_data(final_path)
+            self.config.card_data.latest_dataset = os.path.basename(final_path)
+            write_configuration(self.config)
+            return True
+
         return False

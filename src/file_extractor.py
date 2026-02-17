@@ -353,6 +353,26 @@ class FileExtractor(UIProgress):
         # We merge these deep ratings with our local Arena ID database
         self._assemble_deep_set(deep_ratings)
 
+        # FIX: Backfill game_count if color_ratings failed but card data succeeded
+        # This prevents "0 Games" in the dataset manager for valid datasets
+        if self.combined_data["meta"].get("game_count", 0) == 0:
+            max_samples = 0
+            for card in self.combined_data["card_ratings"].values():
+                try:
+                    samples = (
+                        card.get("deck_colors", {})
+                        .get("All Decks", {})
+                        .get("samples", 0)
+                    )
+                    if samples > max_samples:
+                        max_samples = samples
+                except:
+                    pass
+
+            if max_samples > 0:
+                self.combined_data["meta"]["game_count"] = max_samples
+                logger.info(f"Backfilled game_count to {max_samples} from card data")
+
         # 4. Export
         filename = self.export_card_data()
 
@@ -1020,21 +1040,44 @@ class FileExtractor(UIProgress):
         result = True
         game_count = 0
         seventeenlands = Seventeenlands()
-        try:
-            self.combined_data["color_ratings"], game_count = (
-                seventeenlands.download_color_ratings(
-                    self.selected_sets.seventeenlands[0],
-                    self.draft,
-                    self.start_date,
-                    self.end_date,
-                    self.user_group,
-                    threshold=self.threshold,
+        retry = constants.CARD_RATINGS_ATTEMPT_MAX
+
+        while retry:
+            try:
+                self.combined_data["color_ratings"], game_count = (
+                    seventeenlands.download_color_ratings(
+                        self.selected_sets.seventeenlands[0],
+                        self.draft,
+                        self.start_date,
+                        self.end_date,
+                        self.user_group,
+                        threshold=self.threshold,
+                    )
                 )
+                self.set_game_count(game_count)
+                result = True
+                break
+
+            except Exception as error:
+                logger.error(f"Color Ratings Error: {error}")
+                result = False
+                retry -= 1
+
+                if retry:
+                    attempt_count = constants.CARD_RATINGS_ATTEMPT_MAX - retry
+                    self._update_status(
+                        f"Retrying Color Ratings ({attempt_count}/{constants.CARD_RATINGS_ATTEMPT_MAX})..."
+                    )
+                    time.sleep(2)
+
+        # Log success/failure status
+        if result:
+            logger.info(
+                f"Color Ratings Downloaded Successfully. Game Count: {game_count}, Ratings Found: {len(self.combined_data.get('color_ratings', {}))}"
             )
-            self.set_game_count(game_count)
-        except Exception as error:
-            result = False
-            logger.error(error)
+        else:
+            logger.error("Failed to download Color Ratings after multiple attempts.")
+
         return result, game_count
 
     def _process_card_data(self, card):
