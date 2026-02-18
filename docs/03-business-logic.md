@@ -1,6 +1,6 @@
 # Business Logic & Scoring Specification: "Compositional Brain" (v4)
 
-**Version:** 4.0 | **Architecture:** Formulaic Balance & Context Engine
+**Version:** 4.1 | **Architecture:** Formulaic Balance & Context Engine
 
 ## 1. Introduction
 
@@ -38,7 +38,18 @@ Strict logic to prevent "Shiny Object Syndrome" with multicolor cards.
   * **Reason:** "Alien Gold".
   * *Exception:* If the pool has 4+ Fixing sources, it is treated as a 5-color soup candidate.
 
-## 5. Relative Wheel Probability
+## 5. Pack 2 Discipline (New in v4.1)
+
+To prevent speculative picking from derailing a solid deck, the logic enforces strict penalties for off-color cards once the draft enters Pack 2.
+
+* **Trigger:** Pack >= 2 AND Card is Off-Color.
+* **Logic:**
+  * If **Fixing Sources <= 1** (Meaning no duals/treasures, just a basic):
+    * **Penalty:** Multiplier **0.2** (Severe).
+    * **Exception:** If Z-Score > 2.5 (True Bomb), Multiplier is **0.6**.
+  * This ensures that a "Good" off-color card (e.g., 61% WR) does not score higher than a "Great" on-color card (e.g., 64% WR) simply due to raw stats.
+
+## 6. Relative Wheel Probability
 
 We do not look at ALSA in a vacuum. We look at the pack texture.
 
@@ -50,7 +61,7 @@ We do not look at ALSA in a vacuum. We look at the pack texture.
   * If `Rank >= 8` AND `ALSA > Pick + 7.5`: **High Wheel Chance**.
 * **Strategy:** This allows taking the *second* best card if the *best* card is weak enough to wheel, netting two cards.
 
-## 6. Wheel Signal Analysis (P1P9)
+## 7. Wheel Signal Analysis (P1P9)
 
 The signal engine now remembers Pack 1 Pick 1.
 

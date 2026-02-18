@@ -4,9 +4,10 @@ MTGA Draft Tool - Entry Point.
 Handles Robust Path Discovery and Splash Lifecycle.
 """
 
-import ttkbootstrap as ttk  
+import ttkbootstrap as ttk
 import argparse
 import os
+import sys
 import logging
 from src import constants
 from src.configuration import read_configuration, write_configuration
@@ -101,7 +102,12 @@ def main():
         root, task=lambda cb: load_data(args, config, cb), on_complete=on_ready
     )
 
-    root.mainloop()
+    try:
+        root.mainloop()
+    except KeyboardInterrupt:
+        logger.info("Application stopped by user (KeyboardInterrupt).")
+        root.destroy()
+        sys.exit(0)
 
 
 if __name__ == "__main__":

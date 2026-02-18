@@ -81,7 +81,6 @@ class TierListWindow(ttk.Frame):
         self.vars["label"] = tkinter.StringVar()
         self.entry_label = ttk.Entry(form_frame, textvariable=self.vars["label"])
         self.entry_label.pack(fill="x", pady=(2, 15))
-        self.entry_label.insert(0, "CUSTOM_LABEL")
 
         # Action Button
         self.btn_import = ttk.Button(

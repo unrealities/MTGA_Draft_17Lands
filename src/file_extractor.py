@@ -356,7 +356,8 @@ class FileExtractor(UIProgress):
             deep_ratings = sl.download_set_data(
                 set_code,
                 self.draft,
-                colors=target_colors,  # Pass the dynamic list
+                colors=target_colors,
+                user_group=self.user_group,
                 progress_callback=update_ui,
             )
         except Exception as e:

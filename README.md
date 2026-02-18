@@ -118,11 +118,14 @@ Magic: The Gathering Arena draft tool that utilizes 17Lands data.
   - The `All Decks` option lists the combined rating across all of the deck color combinations
     - The `Auto` option will keep the filter at `All Decks` for the first 15 picks and then switch over to the filter that best matches your taken cards. See the Auto Highest Rating note in the Card Logic section.
   - You can hide this feature by deselecting `Enable Deck Filter Options` in the [Settings window](#settings)
-- **Refresh Button:** Trigger a log read.
-  - Can find cards for P1P1 using [The P1P1 Solution](#the-p1p1-solution)
-  - The application will automatically read new log entries, so this button is only required if you use an outdated operating system (Windows 7 or 8).
-  - You can hide this feature by deselecting `Enable Refresh Button` in the [Settings window](#settings)
-- **Pack / Pick Table:** This table displays the cards included in the current pack.
+- **Logs Button:** Triggers a manual read of the `Player.log` file.
+  - Useful if the application doesn't automatically detect a new pick immediately (e.g., due to file system lag).
+  - Fast operation (text parsing only).
+- **P1P1 Button:** Triggers the Screen Capture + OCR process to find cards in the first pack (where logs are often delayed).
+  - Use this if you are in Pack 1, Pick 1 and the list is empty.
+  - See [The P1P1 Solution](#the-p1p1-solution) for details.
+  - Slower operation (requires screenshot and network call).
+  - You can hide these buttons by deselecting `Enable Refresh Button` in the [Settings window](#settings)- **Pack / Pick Table:** This table displays the cards included in the current pack.
   - This table will show a number under the name column if a dataset is missing `Data Source: None` or an unrecognized card is listed.
 - **Missing Cards Table:** This table displays the cards missing from an already seen pack.
   - The user's chosen card will have an asterisk next to the name.

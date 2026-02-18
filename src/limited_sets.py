@@ -14,6 +14,7 @@ from typing import Dict, List, Tuple
 from pydantic import BaseModel, Field
 from src import constants
 from src.logger import create_logger
+from src.constants import APPLICATION_VERSION
 
 logger = create_logger()
 
@@ -30,6 +31,15 @@ TEMP_LIMITED_SETS = os.path.join(TEMP_FOLDER, "temp_set_list.json")
 REPLACE_PHRASE_LATEST = "{LATEST}"
 REPLACE_PHRASE_DATE_SHIFT = "{DATESHIFT}"
 START_DATE_DEFAULT = "2019-01-01"
+
+# Headers to prevent HTTP 400/403 errors from Scryfall/17Lands
+# Scryfall requires a User-Agent and accepts application/json
+USER_AGENT = f"MTGADraftTool/{APPLICATION_VERSION}"
+ACCEPT = "application/json;q=0.9,*/*;q=0.8"
+API_HEADERS = {
+    "User-Agent": USER_AGENT,
+    "Accept": ACCEPT,
+}
 
 
 class SetInfo(BaseModel):
@@ -126,19 +136,23 @@ class LimitedSets:
     def retrieve_scryfall_sets(self, retries: int = 3, wait: int = 5) -> SetDictionary:
         self.sets_scryfall = SetDictionary()
         url = "https://api.scryfall.com/sets"
+
         while retries:
             try:
-                url_data = urllib.request.urlopen(url, context=self.context).read()
+                req = urllib.request.Request(url, headers=API_HEADERS)
+                url_data = urllib.request.urlopen(req, context=self.context).read()
                 set_json_data = json.loads(url_data)
                 self.__process_scryfall_sets(set_json_data["data"])
+
                 while set_json_data["has_more"]:
                     url = set_json_data["next_page"]
-                    url_data = urllib.request.urlopen(url, context=self.context).read()
+                    req = urllib.request.Request(url, headers=API_HEADERS)
+                    url_data = urllib.request.urlopen(req, context=self.context).read()
                     set_json_data = json.loads(url_data)
                     self.__process_scryfall_sets(set_json_data["data"])
                 break
             except Exception as error:
-                logger.error(error)
+                logger.error(f"limited_sets.retrieve_scryfall_sets - {error}")
                 retries -= 1
                 if retries:
                     time.sleep(wait)
@@ -146,15 +160,17 @@ class LimitedSets:
 
     def retrieve_17lands_sets(self, retries: int = 3, wait: int = 5) -> SetDictionary:
         self.sets_17lands = SetDictionary()
+        url = "https://www.17lands.com/data/filters"
+
         while retries:
             try:
-                url = "https://www.17lands.com/data/filters"
-                url_data = urllib.request.urlopen(url, context=self.context).read()
+                req = urllib.request.Request(url, headers=API_HEADERS)
+                url_data = urllib.request.urlopen(req, context=self.context).read()
                 set_json_data = json.loads(url_data)
                 self.__process_17lands_sets(set_json_data)
                 break
             except Exception as error:
-                logger.error(error)
+                logger.error(f"limited_sets.retrieve_17lands_sets - {error}")
                 retries -= 1
                 if retries:
                     time.sleep(wait)
@@ -196,9 +212,11 @@ class LimitedSets:
 
     def __append_limited_sets(self, read_sets: SetDictionary) -> SetDictionary:
         temp_dict = SetDictionary(version=LIMITED_SETS_VERSION)
+        alchemy_sets = {}
+
         if self.sets_scryfall.data and self.sets_17lands.data:
             set_codes_to_remove = []
-            alchemy_sets = {}
+
             for set_name, set_fields in self.sets_scryfall.data.items():
                 set_code = set_fields.seventeenlands[0]
                 if set_code in self.sets_17lands.data:
@@ -213,6 +231,7 @@ class LimitedSets:
                         alchemy_sets[set_code] = set_fields
                     else:
                         temp_dict.data[set_code] = set_fields
+
         temp_dict.data.update(read_sets.data)
         temp_dict.data.update(alchemy_sets)
         temp_dict.latest_set = str(read_sets.latest_set)  # Cast to str for tests

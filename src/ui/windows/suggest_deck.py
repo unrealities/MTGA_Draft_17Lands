@@ -22,6 +22,7 @@ class SuggestDeckPanel(ttk.Frame):
 
         self.suggestions: Dict[str, Any] = {}
         self.current_deck_list: List[Dict] = []
+        self.current_archetype_key: str = ""
 
         self._build_ui()
         self.refresh()
@@ -61,8 +62,7 @@ class SuggestDeckPanel(ttk.Frame):
             self.header, text="Copy Deck", width=12, command=self._copy_to_clipboard
         ).pack(side="right", padx=5)
 
-        # The Deck Builder uses STATIC columns because its data is specific to the suggestion engine
-        cols = ["Card", "#", "Cost", "Type"]
+        cols = ["Card", "#", "Cost", "Type", "Colors", "GIH WR"]
         self.table_manager = DynamicTreeviewManager(
             self,
             view_id="deck_builder",
@@ -105,7 +105,7 @@ class SuggestDeckPanel(ttk.Frame):
 
             for k in sorted_keys:
                 data = raw_results[k]
-                label = f"{k} {data.get('type', 'Unknown')} (Rating: {data.get('rating', 0)})"
+                label = f"{k} {data.get('type', 'Unknown')} (Rating: {data.get('rating', 0):.0f})"
                 self.suggestions[label] = data
                 dropdown_labels.append(label)
 
@@ -150,6 +150,18 @@ class SuggestDeckPanel(ttk.Frame):
         if not data:
             return
 
+        # Extract the archetype key (e.g., "UB" from "UB Consistent...")
+        # The key is usually the first part of the label or stored in data['colors'] list
+        # We construct a string key from the color list
+        deck_colors = data.get("colors", [])
+        self.current_archetype_key = (
+            "".join(sorted(deck_colors)) if deck_colors else "All Decks"
+        )
+
+        # If the constructed key is empty, fallback to All Decks
+        if not self.current_archetype_key:
+            self.current_archetype_key = "All Decks"
+
         self.current_deck_list = data.get("deck_cards", [])
         # Sort deck by CMC -> Name
         self.current_deck_list.sort(
@@ -166,6 +178,17 @@ class SuggestDeckPanel(ttk.Frame):
             count = card.get(constants.DATA_FIELD_COUNT, 1)
             cmc = card.get(constants.DATA_FIELD_CMC, 0)
             types = " ".join(card.get(constants.DATA_FIELD_TYPES, []))
+            card_colors = "".join(card.get(constants.DATA_FIELD_COLORS, []))
+            stats = card.get("deck_colors", {})
+
+            # Check if we have data for the specific pair (e.g. "UB")
+            # If not, check if we have data for "All Decks"
+            arch_stats = stats.get(self.current_archetype_key, {})
+            if not arch_stats.get("gihwr"):
+                arch_stats = stats.get("All Decks", {})
+
+            gihwr_val = arch_stats.get("gihwr", 0.0)
+            gihwr_str = f"{gihwr_val:.1f}%" if gihwr_val > 0 else "-"
 
             tag = "bw_odd" if idx % 2 == 0 else "bw_even"
             if self.configuration.settings.card_colors_enabled:
@@ -173,7 +196,11 @@ class SuggestDeckPanel(ttk.Frame):
 
             if self.table:
                 self.table.insert(
-                    "", "end", iid=idx, values=(name, count, cmc, types), tags=(tag,)
+                    "",
+                    "end",
+                    iid=idx,
+                    values=(name, count, cmc, types, card_colors, gihwr_str),
+                    tags=(tag,),
                 )
 
     def _copy_to_clipboard(self):

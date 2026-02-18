@@ -58,7 +58,7 @@ class CompactOverlay(tb.Toplevel):
             header,
             text="SCAN P1P1",
             bootstyle="success-outline",
-            command=lambda: self.orchestrator.scanner.draft_data_search(True, False),
+            command=self._manual_scan,
         )
         self.btn_scan.pack(side=LEFT, padx=5)
 
@@ -120,6 +120,17 @@ class CompactOverlay(tb.Toplevel):
         self.tree.tag_configure(
             "colorless_card", background="#F5F5F5", foreground="black"
         )
+
+    def _manual_scan(self):
+        """
+        Manually triggers a P1P1 scan via the Orchestrator.
+        If data is found, explicitly triggers the full UI refresh callback to
+        ensure this overlay window gets updated with the new data.
+        """
+        data_found = self.orchestrator.scanner.draft_data_search(True, False)
+
+        if data_found:
+            self.orchestrator.refresh_callback()
 
     def update_data(self, pack_cards, colors, metrics, tier_data, current_pick):
         # Update Header

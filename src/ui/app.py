@@ -11,6 +11,7 @@ from typing import Dict, List, Any, Optional
 from src import constants
 from src.configuration import write_configuration
 from src.card_logic import filter_options, get_deck_metrics
+from src.utils import retrieve_local_set_list
 from src.ui.styles import Theme
 from src.ui.components import CardToolTip
 from src.ui.dashboard import DashboardFrame
@@ -45,6 +46,10 @@ class DraftApp:
         self.current_pack_data = []
         self.current_missing_data = []
 
+        # New State for Set Selection
+        self.current_set_data_map: Dict[str, Dict[str, str]] = {}
+        self.detected_set_code = ""
+
         # 2. Logic Initialization
         self.orchestrator = DraftOrchestrator(
             scanner, configuration, self._refresh_ui_data
@@ -67,7 +72,6 @@ class DraftApp:
         # 5. Boot Synchronization
         self._initialized = True
         self._update_data_sources()
-        self.orchestrator.sync_dataset_to_event()
         self._update_deck_filter_options()
 
         # Apply Configuration Styling
@@ -82,7 +86,7 @@ class DraftApp:
 
         # Logic: Default to Datasets tab if no valid data source is loaded
         # This guides users to download data immediately upon first launch
-        if self.vars["data_source"].get() == "None":
+        if not self.configuration.card_data.latest_dataset:
             self.notebook.select(self.panel_data)
 
         # Trigger update checks immediately
@@ -99,14 +103,19 @@ class DraftApp:
         self.vars["deck_filter"] = tkinter.StringVar(
             value=self.configuration.settings.deck_filter
         )
-        self.vars["data_source"] = tkinter.StringVar(value="None")
+        self.vars["set_label"] = tkinter.StringVar(value="NO SET")
+        self.vars["selected_event"] = tkinter.StringVar(value="")
+        self.vars["selected_group"] = tkinter.StringVar(value="")
         self.vars["status_text"] = tkinter.StringVar(value="Ready")
         self.vars["event_info"] = tkinter.StringVar(value="Scan logs...")
         self.vars["deck_filter"].trace_add(
             "write", lambda *a: self._on_filter_ui_change()
         )
-        self.vars["data_source"].trace_add(
-            "write", lambda *a: self._on_source_change_event()
+        self.vars["selected_event"].trace_add(
+            "write", lambda *a: self._on_event_change()
+        )
+        self.vars["selected_group"].trace_add(
+            "write", lambda *a: self._on_group_change()
         )
 
     def _build_layout(self):
@@ -115,43 +124,78 @@ class DraftApp:
         self.main_container = ttk.Frame(self.root, padding=8)
         self.main_container.pack(fill="both", expand=True)
 
-        bar = ttk.Frame(self.main_container, style="Card.TFrame", padding=10)
-        bar.pack(fill="x", pady=(0, 10))
+        # --- HEADER CONTAINER (Two Rows) ---
+        header_frame = ttk.Frame(self.main_container, style="Card.TFrame", padding=5)
+        header_frame.pack(fill="x", pady=(0, 10))
 
-        self.advisor_panel = AdvisorPanel(self.main_container)
-        self.advisor_panel.pack(fill="x", pady=(0, 10))
+        # ROW 1: Status & Overlay
+        row1 = ttk.Frame(header_frame, style="Card.TFrame")
+        row1.pack(fill="x", pady=(0, 5))
 
-        info = ttk.Frame(bar, style="Card.TFrame")
-        info.pack(side="left")
-        self.status_dot = ttk.Label(info, text="●", foreground=Theme.TEXT_MUTED)
+        self.status_dot = ttk.Label(row1, text="●", foreground=Theme.TEXT_MUTED)
         self.status_dot.pack(side="left", padx=5)
+
         ttk.Label(
-            info,
+            row1,
             textvariable=self.vars["event_info"],
             font=(Theme.FONT_FAMILY, 9, "bold"),
         ).pack(side="left")
-        ttk.Label(info, text=" | ", foreground=Theme.TEXT_MUTED).pack(side="left")
-        ttk.Label(info, textvariable=self.vars["status_text"]).pack(side="left")
 
-        ctrl = ttk.Frame(bar, style="Card.TFrame")
-        ctrl.pack(side="right")
+        ttk.Label(row1, text=" | ", foreground=Theme.TEXT_MUTED).pack(side="left")
+        ttk.Label(row1, textvariable=self.vars["status_text"]).pack(side="left")
+
         ttk.Button(
-            ctrl,
+            row1,
             text="Overlay Mode",
             bootstyle="info-outline",
             command=self._enable_overlay,
+            width=12,
         ).pack(side="right", padx=5)
-        self.om_source = ttk.OptionMenu(
-            ctrl, self.vars["data_source"], "", style="TMenubutton"
-        )
-        self.om_source.pack(side="right", padx=5)
-        self.om_filter = ttk.OptionMenu(
-            ctrl, self.vars["deck_filter"], "", style="TMenubutton"
-        )
-        self.om_filter.pack(side="right", padx=5)
+
+        # ROW 2: Controls
+        row2 = ttk.Frame(header_frame, style="Card.TFrame")
+        row2.pack(fill="x")
+
+        # Controls (Left)
+        # Split Refresh into "Logs" (Fast, IO only) and "P1P1" (Slow, OCR)
         ttk.Button(
-            ctrl, text="Refresh Logs", command=lambda: self._manual_refresh(True)
-        ).pack(side="left", padx=5)
+            row2, text="Logs", command=lambda: self._manual_refresh(False), width=6
+        ).pack(side="left", padx=2)
+        ttk.Button(
+            row2, text="P1P1", command=lambda: self._manual_refresh(True), width=6
+        ).pack(side="left", padx=2)
+
+        # Filter (Right)
+        self.om_filter = ttk.OptionMenu(
+            row2, self.vars["deck_filter"], "", style="TMenubutton"
+        )
+        self.om_filter.pack(side="right", padx=2)
+
+        # Group (Right)
+        self.om_group = ttk.OptionMenu(
+            row2, self.vars["selected_group"], "", style="TMenubutton"
+        )
+        self.om_group.pack(side="right", padx=2)
+
+        # Event (Right)
+        self.om_event = ttk.OptionMenu(
+            row2, self.vars["selected_event"], "", style="TMenubutton"
+        )
+        self.om_event.pack(side="right", padx=2)
+
+        # Set Label (Right)
+        self.lbl_set_code = ttk.Label(
+            row2,
+            textvariable=self.vars["set_label"],
+            font=(Theme.FONT_FAMILY, 9, "bold"),
+            foreground=Theme.ACCENT,
+            padding=(5, 2),
+        )
+        self.lbl_set_code.pack(side="right", padx=5)
+
+        # --- BODY ---
+        self.advisor_panel = AdvisorPanel(self.main_container)
+        self.advisor_panel.pack(fill="x", pady=(0, 10))
 
         self.splitter = ttk.PanedWindow(self.main_container, orient=tkinter.VERTICAL)
         self.splitter.pack(fill="both", expand=True)
@@ -186,10 +230,10 @@ class DraftApp:
             self.notebook, self.configuration, self._refresh_ui_data
         )
 
+        self.notebook.add(self.panel_data, text=" Datasets ")
         self.notebook.add(self.panel_taken, text=" Card Pool ")
         self.notebook.add(self.panel_suggest, text=" Deck Builder ")
         self.notebook.add(self.panel_compare, text=" Comparisons ")
-        self.notebook.add(self.panel_data, text=" Datasets ")
         self.notebook.add(self.panel_tiers, text=" Tier Lists ")
 
     def _setup_menu(self):
@@ -310,7 +354,7 @@ class DraftApp:
             self.configuration,
         )
 
-        # RESTORED: Pack and Missing data with full tactical context
+        # Update Main Dashboard
         self.dashboard.update_pack_data(
             pack_cards,
             colors,
@@ -324,7 +368,10 @@ class DraftApp:
             missing_cards, colors, metrics, tier_data, pi, source_type="missing"
         )
 
-        # RESTORED: Signals and Curve
+        # Update Overlay if active
+        if self.overlay_window:
+            self.overlay_window.update_data(pack_cards, colors, metrics, tier_data, pi)
+
         self.dashboard.update_signals(self._calculate_signals(metrics))
         self.dashboard.update_stats(get_deck_metrics(taken_cards).distribution_all)
 
@@ -388,20 +435,6 @@ class DraftApp:
     def _schedule_update(self):
         self._update_task_id = self.root.after(1000, self._update_loop)
 
-    def _on_source_change_event(self):
-        if not self._initialized or self._rebuilding_ui:
-            return
-        label = self.vars["data_source"].get()
-        sources = self.orchestrator.scanner.retrieve_data_sources()
-        if label in sources:
-            self.orchestrator.scanner.retrieve_set_data(sources[label])
-            self.configuration.card_data.latest_dataset = os.path.basename(
-                sources[label]
-            )
-            write_configuration(self.configuration)
-            self._update_deck_filter_options()
-            self._refresh_ui_data()
-
     def _on_filter_ui_change(self):
         if not self._initialized:
             return
@@ -411,24 +444,124 @@ class DraftApp:
         self._refresh_ui_data()
 
     def _update_data_sources(self):
-        sources = self.orchestrator.scanner.retrieve_data_sources()
-        menu = self.om_source["menu"]
+        """
+        INTELLIGENT DATA SOURCE MANAGER
+        Detects current set from logs, filters available datasets, and auto-selects defaults.
+        """
+        # 1. Detect active draft
+        current_set, current_event_type = (
+            self.orchestrator.scanner.retrieve_current_limited_event()
+        )
+
+        # Determine strictness: If we have a draft, we MUST show that set.
+        # If logs are empty, show "NO SET" or handle error.
+
+        if not current_set:
+            self.vars["set_label"].set("NO SET")
+            self.lbl_set_code.config(foreground=Theme.ERROR)
+            self._set_dropdown_options(self.om_event, self.vars["selected_event"], [])
+            self._set_dropdown_options(self.om_group, self.vars["selected_group"], [])
+            return
+
+        self.detected_set_code = current_set
+        self.vars["set_label"].set(f"SET: {current_set}")
+        self.lbl_set_code.config(foreground=Theme.ACCENT)
+
+        # 2. Parse all local datasets
+        # Format: (Set, Event, Group, ..., Path, ...)
+        all_files, _ = retrieve_local_set_list()
+
+        # Build Map: event_type -> user_group -> path
+        # Filter ONLY for the detected set
+        self.current_set_data_map = {}
+
+        for f in all_files:
+            file_set, f_event, f_group, _, _, _, f_path, _ = f
+
+            # Normalize Set Codes (handle [Y24OTJ] vs OTJ if needed, simplified here)
+            if file_set != current_set:
+                continue
+
+            if f_event not in self.current_set_data_map:
+                self.current_set_data_map[f_event] = {}
+
+            self.current_set_data_map[f_event][f_group] = f_path
+
+        # 3. Populate Event Dropdown
+        available_events = list(self.current_set_data_map.keys())
+        if not available_events:
+            self.vars["set_label"].set(f"SET: {current_set} (No Data)")
+            self.lbl_set_code.config(foreground=Theme.WARNING)
+            self._set_dropdown_options(self.om_event, self.vars["selected_event"], [])
+            return
+
+        self._set_dropdown_options(
+            self.om_event, self.vars["selected_event"], available_events
+        )
+
+        # 4. Auto-Select Event Type
+        # Priority: Exact Match > PremierDraft > First Available
+        target_event = available_events[0]
+        if current_event_type and current_event_type in available_events:
+            target_event = current_event_type
+        elif "PremierDraft" in available_events:
+            target_event = "PremierDraft"
+
+        if self.vars["selected_event"].get() != target_event:
+            self.vars["selected_event"].set(target_event)
+
+    def _set_dropdown_options(self, menu_widget, variable, options):
+        """
+        Manually populates a specific OptionMenu and explicitly binds the click command
+        to the provided variable. This bypasses potential issues with ttk.OptionMenu's
+        internal variable binding not being exposed via cget.
+        """
+        menu = menu_widget["menu"]
         menu.delete(0, "end")
+        for opt in options:
+            menu.add_command(label=opt, command=tkinter._setit(variable, opt))
 
-        current_db_name = self.configuration.card_data.latest_dataset
-        active_label = None
+    def _on_event_change(self):
+        """Called when Event Dropdown changes."""
+        if not self._initialized:
+            return
 
-        for label, path in sources.items():
-            menu.add_command(
-                label=label, command=lambda v=label: self.vars["data_source"].set(v)
-            )
-            if current_db_name and os.path.basename(path) == os.path.basename(
-                current_db_name
-            ):
-                active_label = label
+        evt = self.vars["selected_event"].get()
+        if not evt or evt not in self.current_set_data_map:
+            return
 
-        if active_label and self.vars["data_source"].get() != active_label:
-            self.vars["data_source"].set(active_label)
+        available_groups = list(self.current_set_data_map[evt].keys())
+        self._set_dropdown_options(
+            self.om_group, self.vars["selected_group"], available_groups
+        )
+
+        # Auto-Select Group (Default to All)
+        target_group = "All"
+        if "All" not in available_groups and available_groups:
+            target_group = available_groups[0]
+
+        self.vars["selected_group"].set(target_group)
+        # This triggers _on_group_change which loads the file
+
+    def _on_group_change(self):
+        """Called when User Group changes. Performs the actual file load."""
+        if not self._initialized:
+            return
+
+        evt = self.vars["selected_event"].get()
+        grp = self.vars["selected_group"].get()
+
+        if evt in self.current_set_data_map and grp in self.current_set_data_map[evt]:
+            path = self.current_set_data_map[evt][grp]
+
+            # Avoid reloading if it's the same file
+            current_loaded = self.configuration.card_data.latest_dataset
+            if os.path.basename(path) != current_loaded:
+                self.orchestrator.scanner.retrieve_set_data(path)
+                self.configuration.card_data.latest_dataset = os.path.basename(path)
+                write_configuration(self.configuration)
+                self._update_deck_filter_options()
+                self._refresh_ui_data()
 
     def _update_deck_filter_options(self):
         rate_map = self.orchestrator.scanner.retrieve_color_win_rate(

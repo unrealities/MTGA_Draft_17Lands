@@ -40,12 +40,6 @@ graph TD
 
 ## 4. Operational Lifecycle
 
-### Phase A: Bootstrap
-
-1. **Discovery:** Locate `Player.log`. (Heuristics: Check AppData, Wine Prefixes, Steam Library).
-2. **Indexing:** Load `Sets/set_list.json`. Determine valid sets (e.g., "OTJ", "MH3").
-3. **Mapping:** Load local Arena Database (`Raw_CardDatabase`) to map `GrpId` (Int) -> `CardName` (String).
-
 ### Phase B: The Draft Loop (Active)
 
 The application polls for file changes every **1000ms**.
@@ -62,7 +56,12 @@ The application polls for file changes every **1000ms**.
         3. Pass data to **Advisor Engine**.
         4. Render Overlay Table sorted by "Score".
 
-3. **State: Pick Confirmation**
+3. **State: P1P1 (Pack 1 Pick 1)**
+    * **The Gap:** MTGA often delays writing the log for the very first pack.
+    * **User Action:** User clicks the **"P1P1"** button in the UI.
+    * **System Action:** Takes a screenshot -> Sends to OCR Service -> Returns Card Names -> Updates UI.
+
+4. **State: Pick Confirmation**
     * Listens for: `Event_PlayerDraftMakePick`.
     * Action: Move selected `GrpId` from "Pack" array to "TakenCards" array. Update "Signals" logic.
 
