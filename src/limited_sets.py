@@ -120,7 +120,10 @@ class LimitedSets:
     def retrieve_scryfall_sets(self, retries: int = 3, wait: int = 5) -> SetDictionary:
         '''Retrieve a list of Magic sets using the Scryfall API'''
         self.sets_scryfall = SetDictionary()
-        headers = {'Accept': 'application/json', 'User-Agent': 'MTGA-Draft-17Lands/1.0'}
+        headers = {
+            'User-Agent': f'MTGA_Draft_17Lands/{constants.APPLICATION_VERSION}',
+            'Accept': 'application/json'
+        }
 
         while retries:
             try:
@@ -143,7 +146,7 @@ class LimitedSets:
                 break
 
             except Exception as error:
-                logger.error(error)
+                logger.error(f"Error retrieving Scryfall sets: {error}")
 
             retries -= 1
 
@@ -197,7 +200,9 @@ class LimitedSets:
                     sets_to_remove.append(set_code)
 
             for set_code in sets_to_remove:
-                del self.sets_17lands.data[set_code]
+                # Add check to ensure key exists before deletion to prevent KeyError
+                if set_code in self.sets_17lands.data:
+                    del self.sets_17lands.data[set_code]
 
             success = True
         except (FileNotFoundError, json.JSONDecodeError) as error:

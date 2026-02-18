@@ -1,3 +1,6 @@
+===================== RELEASE NOTES 3.38 =====================
+* ebertin42: Fixed Scryfall API 400 Bad Request error by adding User-Agent headers to set retrieval requests
+
 ===================== RELEASE NOTES 3.37 =====================
 * jsherin & unrealities: [Bug]: Color pair win percentages missing #108
 * unrealities: Dynamic User Game Count: dynamic threshold for card color ratings. The default is 5000
