@@ -120,20 +120,23 @@ class LimitedSets:
     def retrieve_scryfall_sets(self, retries: int = 3, wait: int = 5) -> SetDictionary:
         '''Retrieve a list of Magic sets using the Scryfall API'''
         self.sets_scryfall = SetDictionary()
+        headers = {'Accept': 'application/json', 'User-Agent': 'MTGA-Draft-17Lands/1.0'}
 
         while retries:
             try:
                 url = "https://api.scryfall.com/sets"
+                req = urllib.request.Request(url, headers=headers)
                 url_data = urllib.request.urlopen(
-                    url, context=self.context).read()
+                    req, context=self.context).read()
                 set_json_data = json.loads(url_data)
 
                 self.__process_scryfall_sets(set_json_data["data"])
 
                 while set_json_data["has_more"]:
                     url = set_json_data["next_page"]
+                    req = urllib.request.Request(url, headers=headers)
                     url_data = urllib.request.urlopen(
-                        url, context=self.context).read()
+                        req, context=self.context).read()
                     set_json_data = json.loads(url_data)
                     self.__process_scryfall_sets(set_json_data["data"])
 
