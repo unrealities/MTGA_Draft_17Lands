@@ -17,6 +17,7 @@ from src.ui.components import (
     SignalMeter,
     ManaCurvePlot,
     TypePieChart,
+    CollapsibleFrame,
 )
 from src.advisor.schema import Recommendation
 
@@ -53,16 +54,13 @@ class DashboardFrame(ttk.Frame):
         f_left.grid(row=0, column=0, sticky="nsew", padx=(0, 10))
 
         # 1. Pack Table
-        self.table_pack_container = ttk.Frame(f_left)
+        self.table_pack_container = CollapsibleFrame(
+            f_left, title="LIVE PACK: TACTICAL EVALUATION"
+        )
         self.table_pack_container.pack(fill="both", expand=True, pady=(0, 10))
-        ttk.Label(
-            self.table_pack_container,
-            text="LIVE PACK: TACTICAL EVALUATION",
-            style="Muted.TLabel",
-        ).pack(anchor="w", pady=(0, 5))
 
         self.pack_manager = DynamicTreeviewManager(
-            self.table_pack_container,
+            self.table_pack_container.content_frame,
             view_id="pack_table",
             configuration=self.configuration,
             on_update_callback=self.on_reconfigure_ui,
@@ -74,16 +72,13 @@ class DashboardFrame(ttk.Frame):
         )
 
         # 2. Missing Table
-        self.table_missing_container = ttk.Frame(f_left)
+        self.table_missing_container = CollapsibleFrame(
+            f_left, title="SEEN CARDS (WHEEL TRACKER)", expanded=False
+        )
         self.table_missing_container.pack(fill="both", expand=True)
-        ttk.Label(
-            self.table_missing_container,
-            text="SEEN CARDS (WHEEL TRACKER)",
-            style="Muted.TLabel",
-        ).pack(anchor="w", pady=(0, 5))
 
         self.missing_manager = DynamicTreeviewManager(
-            self.table_missing_container,
+            self.table_missing_container.content_frame,
             view_id="missing_table",
             configuration=self.configuration,
             on_update_callback=self.on_reconfigure_ui,
@@ -99,23 +94,22 @@ class DashboardFrame(ttk.Frame):
         f_side.grid(row=0, column=1, sticky="nsew", padx=5)
         f_side.pack_propagate(False)
 
-        ttk.Label(f_side, text="OPEN LANES", style="Muted.TLabel").pack(
-            anchor="w", pady=(0, 2)
-        )
-        self.signal_meter = SignalMeter(f_side)
-        self.signal_meter.pack(fill="x", pady=(0, 15))
+        self.signal_container = CollapsibleFrame(f_side, title="OPEN LANES")
+        self.signal_container.pack(fill="x", pady=(0, 10))
+        self.signal_meter = SignalMeter(self.signal_container.content_frame)
+        self.signal_meter.pack(fill="x")
 
-        ttk.Label(f_side, text="MANA CURVE", style="Muted.TLabel").pack(
-            anchor="w", pady=(0, 2)
-        )
+        self.curve_container = CollapsibleFrame(f_side, title="MANA CURVE")
+        self.curve_container.pack(fill="x", pady=(0, 10))
         default_ideal = self.configuration.card_logic.deck_mid.distribution
-        self.curve_plot = ManaCurvePlot(f_side, ideal_distribution=default_ideal)
-        self.curve_plot.pack(fill="x", pady=(0, 15))
-
-        ttk.Label(f_side, text="POOL BALANCE", style="Muted.TLabel").pack(
-            anchor="w", pady=(0, 2)
+        self.curve_plot = ManaCurvePlot(
+            self.curve_container.content_frame, ideal_distribution=default_ideal
         )
-        self.type_chart = TypePieChart(f_side)
+        self.curve_plot.pack(fill="x")
+
+        self.pool_container = CollapsibleFrame(f_side, title="POOL BALANCE")
+        self.pool_container.pack(fill="x", pady=(0, 10))
+        self.type_chart = TypePieChart(self.pool_container.content_frame)
         self.type_chart.pack(fill="x")
 
         self._configure_special_tags()

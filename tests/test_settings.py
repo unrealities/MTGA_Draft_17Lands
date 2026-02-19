@@ -34,11 +34,14 @@ class TestSettingsWindow:
         """Verify the UI elements reflect the provided configuration."""
         window = SettingsWindow(root, config, MagicMock())
 
-        # Check that result_format matches config
+        # Check that string values match config
         assert window.vars["result_format"].get() == constants.RESULT_FORMAT_WIN_RATE
+        assert window.vars["filter_format"].get() == constants.DECK_FILTER_FORMAT_COLORS
+        assert window.vars["ui_size"].get() == constants.UI_SIZE_DEFAULT
 
         # Check integer conversion for booleans (True -> 1)
-        assert window.vars["stats_enabled"].get() == 1
+        assert window.vars["signals_enabled"].get() == 1
+        assert window.vars["draft_log_enabled"].get() == 1  # Default is True
 
     @patch("src.ui.windows.settings.write_configuration")
     def test_dropdown_change_persists(self, mock_write, root, config):
@@ -88,13 +91,13 @@ class TestSettingsWindow:
                 mock_read.return_value = (default_config, True)
 
                 # Set current state to something non-default first
-                window.vars["stats_enabled"].set(1)  # True
+                window.vars["signals_enabled"].set(0)  # False (default is True)
 
                 window._reset_defaults()
 
                 assert mock_reset.called
-                # Should be back to 0 (False) per default config
-                assert window.vars["stats_enabled"].get() == 0
+                # Should be back to 1 (True) per default config
+                assert window.vars["signals_enabled"].get() == 1
 
     def test_safe_closure_cleanup(self, root, config):
         """Verify traces are removed on close."""

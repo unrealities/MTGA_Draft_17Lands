@@ -66,7 +66,7 @@ class Theme:
         return custom_themes
 
     @classmethod
-    def apply(cls, root, palette="Neutral", engine=None, custom_path=""):
+    def apply(cls, root, palette="Neutral", engine=None, custom_path="", scale=1.0):
         style = ttk.Style()
 
         # 1. Custom TCL (Legacy)
@@ -147,11 +147,14 @@ class Theme:
             cls.WARNING = colors.warning
 
         # 4. Global Configuration
-        style.configure("Treeview", rowheight=22)
+        main_font_size = max(8, int(cls.FONT_SIZE_MAIN * scale))
+        row_height = max(22, int(22 * scale))
+
+        style.configure("Treeview", rowheight=row_height)
         style.configure("TNotebook", borderwidth=0)
-        style.configure(".", font=(cls.FONT_FAMILY, cls.FONT_SIZE_MAIN))
+        style.configure(".", font=(cls.FONT_FAMILY, main_font_size))
         style.configure(
-            "Treeview.Heading", font=(cls.FONT_FAMILY, cls.FONT_SIZE_MAIN, "bold")
+            "Treeview.Heading", font=(cls.FONT_FAMILY, main_font_size, "bold")
         )
 
         # 5. Patch Standard Widgets

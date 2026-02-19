@@ -48,6 +48,55 @@ def identify_safe_coordinates(
     return location_x, location_y
 
 
+class CollapsibleFrame(ttk.Frame):
+    """
+    A custom frame that allows its contents to be collapsed and expanded vertically.
+    """
+
+    def __init__(self, parent, title="", expanded=True, **kwargs):
+        super().__init__(parent, **kwargs)
+        self.expanded = expanded
+
+        # Header container
+        self.header_frame = ttk.Frame(self)
+        self.header_frame.pack(fill="x", expand=False)
+
+        # Toggle Icon
+        self.toggle_label = ttk.Label(
+            self.header_frame,
+            text="▼" if expanded else "▶",
+            width=2,
+            font=(Theme.FONT_FAMILY, 9),
+            foreground=Theme.TEXT_MUTED,
+            cursor="hand2",
+        )
+        self.toggle_label.pack(side="left", padx=(0, 2))
+
+        # Title Label
+        self.title_label = ttk.Label(
+            self.header_frame, text=title.upper(), style="Muted.TLabel", cursor="hand2"
+        )
+        self.title_label.pack(side="left")
+
+        self.content_frame = ttk.Frame(self)
+        if self.expanded:
+            self.content_frame.pack(fill="both", expand=True, pady=(5, 0))
+
+        # Bind clicks to the toggle method
+        self.header_frame.bind("<Button-1>", self.toggle)
+        self.toggle_label.bind("<Button-1>", self.toggle)
+        self.title_label.bind("<Button-1>", self.toggle)
+
+    def toggle(self, event=None):
+        self.expanded = not self.expanded
+        if self.expanded:
+            self.toggle_label.config(text="▼")
+            self.content_frame.pack(fill="both", expand=True, pady=(5, 0))
+        else:
+            self.toggle_label.config(text="▶")
+            self.content_frame.pack_forget()
+
+
 class AutocompleteEntry(tkinter.Entry):
     """Entry widget with IDE-style inline suggestions."""
 
@@ -879,5 +928,5 @@ class CardPile(tb.Frame):
             stats,
             card_data.get(constants.DATA_SECTION_IMAGES, []),
             self.app.configuration.features.images_enabled,
-            1.0,
+            constants.UI_SIZE_DICT.get(self.app.configuration.settings.ui_size, 1.0),
         )

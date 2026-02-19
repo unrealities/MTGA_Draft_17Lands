@@ -65,6 +65,37 @@ class SettingsWindow(tkinter.Toplevel):
         )
         fmt_om.grid(row=1, column=1, sticky="ew", pady=2)
 
+        ttk.Label(
+            container, text="Deck Filter Format:", foreground=Theme.TEXT_MUTED
+        ).grid(row=2, column=0, sticky="e", padx=5)
+        self.vars["filter_format"] = tkinter.StringVar()
+        filter_om = ttk.OptionMenu(
+            container,
+            self.vars["filter_format"],
+            "",
+            *constants.DECK_FILTER_FORMAT_LIST,
+            style="TMenubutton",
+        )
+        filter_om.grid(row=2, column=1, sticky="ew", pady=2)
+
+        ttk.Label(container, text="UI Scale:", foreground=Theme.TEXT_MUTED).grid(
+            row=3, column=0, sticky="e", padx=5
+        )
+        self.vars["ui_size"] = tkinter.StringVar()
+
+        # Sort options nicely (80%, 90%, 100%, etc.)
+        size_options = sorted(
+            constants.UI_SIZE_DICT.keys(), key=lambda x: int(x.replace("%", ""))
+        )
+        size_om = ttk.OptionMenu(
+            container,
+            self.vars["ui_size"],
+            "",
+            *size_options,
+            style="TMenubutton",
+        )
+        size_om.grid(row=3, column=1, sticky="ew", pady=2)
+
         # --- SECTION: ADVISOR & HUD ---
         r = 10
         ttk.Label(
@@ -72,10 +103,6 @@ class SettingsWindow(tkinter.Toplevel):
         ).grid(row=r, column=0, columnspan=2, sticky="w", pady=(20, 10))
 
         features = [
-            (
-                "Enable Tactical Advisor (The Brain)",
-                "stats_enabled",
-            ),  # 'stats_enabled' powers the Advisor View
             ("Display Lane Signals", "signals_enabled"),
             ("Display Missing (Wheel) Cards", "missing_enabled"),
             ("Highlight Row by Mana Cost", "card_colors_enabled"),
@@ -84,8 +111,9 @@ class SettingsWindow(tkinter.Toplevel):
             (
                 "Auto-Switch Dataset to Event",
                 "auto_highest_enabled",
-            ),  # 'auto_highest' powers auto-sync
+            ),
             ("Check for Dataset Updates", "update_notifications_enabled"),
+            ("Enable Draft Log Creation", "draft_log_enabled"),
         ]
 
         for i, (label, key) in enumerate(features):
@@ -111,10 +139,11 @@ class SettingsWindow(tkinter.Toplevel):
 
         # Standard settings
         self.vars["result_format"].set(s.result_format)
+        self.vars["filter_format"].set(s.filter_format)
+        self.vars["ui_size"].set(s.ui_size)
 
         # Checkbox logic
         checkbox_keys = [
-            "stats_enabled",
             "signals_enabled",
             "missing_enabled",
             "card_colors_enabled",
@@ -122,6 +151,7 @@ class SettingsWindow(tkinter.Toplevel):
             "p1p1_ocr_enabled",
             "auto_highest_enabled",
             "update_notifications_enabled",
+            "draft_log_enabled",
         ]
 
         for key in checkbox_keys:

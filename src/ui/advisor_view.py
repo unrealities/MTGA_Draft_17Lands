@@ -8,6 +8,7 @@ from tkinter import ttk
 from typing import List
 from src.advisor.schema import Recommendation
 from src.ui.styles import Theme
+from src.ui.components import CollapsibleFrame
 
 
 class AdvisorPanel(ttk.Frame):
@@ -16,13 +17,10 @@ class AdvisorPanel(ttk.Frame):
         self._build_ui()
 
     def _build_ui(self):
-        ttk.Label(
-            self,
-            text="ADVISOR RECOMMENDATIONS",
-            font=(Theme.FONT_FAMILY, 8, "bold"),
-            foreground=Theme.TEXT_MUTED,
-        ).pack(anchor="w", pady=(0, 5))
-        self.container = ttk.Frame(self, style="Card.TFrame")
+        self.collapsible = CollapsibleFrame(self, title="ADVISOR RECOMMENDATIONS")
+        self.collapsible.pack(fill="x", expand=True)
+
+        self.container = ttk.Frame(self.collapsible.content_frame, style="Card.TFrame")
         self.container.pack(fill="x", expand=True)
 
     def update_recommendations(self, recs: List[Recommendation]):

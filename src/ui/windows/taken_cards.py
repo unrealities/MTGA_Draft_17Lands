@@ -273,5 +273,5 @@ class TakenCardsPanel(ttk.Frame):
                 card.get("deck_colors", {}),
                 card.get("image", []),
                 self.configuration.features.images_enabled,
-                1.0,
+                constants.UI_SIZE_DICT.get(self.configuration.settings.ui_size, 1.0),
             )

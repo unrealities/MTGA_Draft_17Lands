@@ -226,5 +226,5 @@ class SuggestDeckPanel(ttk.Frame):
                 card.get(constants.DATA_FIELD_DECK_COLORS, {}),
                 card.get(constants.DATA_SECTION_IMAGES, []),
                 self.configuration.features.images_enabled,
-                1.0,
+                constants.UI_SIZE_DICT.get(self.configuration.settings.ui_size, 1.0),
             )

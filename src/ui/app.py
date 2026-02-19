@@ -71,15 +71,20 @@ class DraftApp:
 
         # 5. Boot Synchronization
         self._initialized = True
+        self.orchestrator.scanner.log_enable(self.configuration.settings.draft_log_enabled)
         self._update_data_sources()
         self._update_deck_filter_options()
 
         # Apply Configuration Styling
+        current_scale = constants.UI_SIZE_DICT.get(
+            self.configuration.settings.ui_size, 1.0
+        )
         Theme.apply(
             self.root,
             palette=self.configuration.settings.theme,
             engine=getattr(self.configuration.settings, "theme_base", "clam"),
             custom_path=getattr(self.configuration.settings, "theme_custom_path", ""),
+            scale=current_scale,
         )
 
         self._refresh_ui_data()
@@ -298,11 +303,13 @@ class DraftApp:
             s.theme_custom_path = ""
 
         write_configuration(self.configuration)
+        current_scale = constants.UI_SIZE_DICT.get(s.ui_size, 1.0)
         Theme.apply(
             self.root,
             palette=s.theme,
             engine=getattr(s, "theme_base", "clam"),
             custom_path=s.theme_custom_path,
+            scale=current_scale,
         )
         self._refresh_ui_data()
 
@@ -604,18 +611,36 @@ class DraftApp:
             arch = self.orchestrator.scanner.set_data.get_card_archetypes_by_field(
                 card_name, constants.DATA_FIELD_GIHWR
             )
+            current_scale = constants.UI_SIZE_DICT.get(
+                self.configuration.settings.ui_size, 1.0
+            )
             CardToolTip(
                 table,
                 card_name,
                 found.get(constants.DATA_FIELD_DECK_COLORS, {}),
                 found.get(constants.DATA_SECTION_IMAGES, []),
                 self.configuration.features.images_enabled,
-                1.0,
+                current_scale,
                 archetypes=arch,
             )
 
     def _open_settings(self):
-        SettingsWindow(self.root, self.configuration, self._refresh_ui_data)
+        def _on_settings_changed():
+            # Dynamically refresh theme scaling if changed
+            s = self.configuration.settings
+            self.orchestrator.scanner.log_enable(s.draft_log_enabled)
+            current_scale = constants.UI_SIZE_DICT.get(s.ui_size, 1.0)
+            Theme.apply(
+                self.root,
+                palette=s.theme,
+                engine=getattr(s, "theme_base", "clam"),
+                custom_path=s.theme_custom_path,
+                scale=current_scale,
+            )
+            self._update_deck_filter_options()
+            self._refresh_ui_data()
+
+        SettingsWindow(self.root, self.configuration, _on_settings_changed)
 
     def _read_draft_log(self):
         f = filedialog.askopenfilename(filetypes=(("Log", "*.log"), ("All", "*.*")))
