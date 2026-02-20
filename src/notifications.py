@@ -48,6 +48,29 @@ class Notifications:
         self.check_dataset()
         return True
 
+    def prompt_missing_dataset(self, current_set, current_event_type):
+        """Displays a prompt allowing users to immediately route to the Dataset window for a missing set."""
+        if tkinter.messagebox.askyesno(
+            "Missing Dataset",
+            f"No dataset found for expansion {current_set} ({current_event_type}).\n\nWould you like to open the Dataset Manager to download it now?",
+        ):
+            args = DatasetArgs(
+                draft_set=current_set,
+                draft=current_event_type if current_event_type else "PremierDraft",
+                start=str(
+                    date.today() - timedelta(days=90)
+                ),  # Will mostly be overwritten by dataset manager dropdown logic
+                end=str(date.today()),
+                user_group="All",
+                game_count=0,
+                color_ratings=None,
+            )
+            # Switch to the Data tab in the UI
+            if hasattr(self.root, "event_generate"):
+                self.root.event_generate("<<ShowDataTab>>")
+
+            self.dataset_window.enter(args)
+
     def check_dataset(self):
         if (
             self.configuration.settings.update_notifications_enabled

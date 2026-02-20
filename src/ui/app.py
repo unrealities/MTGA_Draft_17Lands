@@ -49,6 +49,7 @@ class DraftApp:
         # New State for Set Selection
         self.current_set_data_map: Dict[str, Dict[str, str]] = {}
         self.detected_set_code = ""
+        self._notified_missing_sets = set()
 
         # 2. Logic Initialization
         self.orchestrator = DraftOrchestrator(
@@ -71,7 +72,9 @@ class DraftApp:
 
         # 5. Boot Synchronization
         self._initialized = True
-        self.orchestrator.scanner.log_enable(self.configuration.settings.draft_log_enabled)
+        self.orchestrator.scanner.log_enable(
+            self.configuration.settings.draft_log_enabled
+        )
         self._update_data_sources()
         self._update_deck_filter_options()
 
@@ -163,12 +166,17 @@ class DraftApp:
 
         # Controls (Left)
         # Split Refresh into "Logs" (Fast, IO only) and "P1P1" (Slow, OCR)
-        ttk.Button(
+        self.btn_logs = ttk.Button(
             row2, text="Logs", command=lambda: self._manual_refresh(False), width=6
-        ).pack(side="left", padx=2)
-        ttk.Button(
+        )
+        self.btn_logs.pack(side="left", padx=2)
+
+        self.btn_p1p1 = ttk.Button(
             row2, text="P1P1", command=lambda: self._manual_refresh(True), width=6
-        ).pack(side="left", padx=2)
+        )
+        # Dynamic visibility based on settings
+        if self.configuration.settings.p1p1_ocr_enabled:
+            self.btn_p1p1.pack(side="left", padx=2)
 
         # Filter (Right)
         self.om_filter = ttk.OptionMenu(
@@ -460,9 +468,6 @@ class DraftApp:
             self.orchestrator.scanner.retrieve_current_limited_event()
         )
 
-        # Determine strictness: If we have a draft, we MUST show that set.
-        # If logs are empty, show "NO SET" or handle error.
-
         if not current_set:
             self.vars["set_label"].set("NO SET")
             self.lbl_set_code.config(foreground=Theme.ERROR)
@@ -474,18 +479,13 @@ class DraftApp:
         self.vars["set_label"].set(f"SET: {current_set}")
         self.lbl_set_code.config(foreground=Theme.ACCENT)
 
-        # 2. Parse all local datasets
-        # Format: (Set, Event, Group, ..., Path, ...)
         all_files, _ = retrieve_local_set_list()
 
-        # Build Map: event_type -> user_group -> path
-        # Filter ONLY for the detected set
         self.current_set_data_map = {}
 
         for f in all_files:
             file_set, f_event, f_group, _, _, _, f_path, _ = f
 
-            # Normalize Set Codes (handle [Y24OTJ] vs OTJ if needed, simplified here)
             if file_set != current_set:
                 continue
 
@@ -494,20 +494,31 @@ class DraftApp:
 
             self.current_set_data_map[f_event][f_group] = f_path
 
-        # 3. Populate Event Dropdown
         available_events = list(self.current_set_data_map.keys())
+
+        # Missing Dataset Handshake
         if not available_events:
             self.vars["set_label"].set(f"SET: {current_set} (No Data)")
             self.lbl_set_code.config(foreground=Theme.WARNING)
             self._set_dropdown_options(self.om_event, self.vars["selected_event"], [])
+
+            if current_set not in self._notified_missing_sets:
+                self._notified_missing_sets.add(current_set)
+                if hasattr(self, "notifications") and self.notifications:
+                    # Respect User Setting
+                    if self.configuration.settings.missing_notifications_enabled:
+                        self.root.after(
+                            500,
+                            lambda: self.notifications.prompt_missing_dataset(
+                                current_set, current_event_type
+                            ),
+                        )
             return
 
         self._set_dropdown_options(
             self.om_event, self.vars["selected_event"], available_events
         )
 
-        # 4. Auto-Select Event Type
-        # Priority: Exact Match > PremierDraft > First Available
         target_event = available_events[0]
         if current_event_type and current_event_type in available_events:
             target_event = current_event_type
@@ -542,13 +553,11 @@ class DraftApp:
             self.om_group, self.vars["selected_group"], available_groups
         )
 
-        # Auto-Select Group (Default to All)
         target_group = "All"
         if "All" not in available_groups and available_groups:
             target_group = available_groups[0]
 
         self.vars["selected_group"].set(target_group)
-        # This triggers _on_group_change which loads the file
 
     def _on_group_change(self):
         """Called when User Group changes. Performs the actual file load."""
@@ -561,7 +570,6 @@ class DraftApp:
         if evt in self.current_set_data_map and grp in self.current_set_data_map[evt]:
             path = self.current_set_data_map[evt][grp]
 
-            # Avoid reloading if it's the same file
             current_loaded = self.configuration.card_data.latest_dataset
             if os.path.basename(path) != current_loaded:
                 self.orchestrator.scanner.retrieve_set_data(path)
@@ -590,7 +598,10 @@ class DraftApp:
         )
 
     def _manual_refresh(self, use_ocr=False):
-        if self.orchestrator.scanner.draft_data_search(use_ocr, False):
+        save_img = (
+            self.configuration.settings.save_screenshot_enabled if use_ocr else False
+        )
+        if self.orchestrator.scanner.draft_data_search(use_ocr, save_img):
             self._refresh_ui_data()
 
     def _on_card_select(self, event, table, source_type):
@@ -637,6 +648,13 @@ class DraftApp:
                 custom_path=s.theme_custom_path,
                 scale=current_scale,
             )
+
+            # Show/Hide P1P1 Button instantly based on the setting change
+            if s.p1p1_ocr_enabled:
+                self.btn_p1p1.pack(side="left", padx=2, after=self.btn_logs)
+            else:
+                self.btn_p1p1.pack_forget()
+
             self._update_deck_filter_options()
             self._refresh_ui_data()
 

@@ -103,16 +103,12 @@ class SettingsWindow(tkinter.Toplevel):
         ).grid(row=r, column=0, columnspan=2, sticky="w", pady=(20, 10))
 
         features = [
-            ("Display Lane Signals", "signals_enabled"),
-            ("Display Missing (Wheel) Cards", "missing_enabled"),
             ("Highlight Row by Mana Cost", "card_colors_enabled"),
-            ("Show Color Identity (Abilities)", "color_identity_enabled"),
+            ("Auto-Switch Deck Filter to Best Colors", "auto_highest_enabled"),
             ("Enable P1P1 OCR", "p1p1_ocr_enabled"),
-            (
-                "Auto-Switch Dataset to Event",
-                "auto_highest_enabled",
-            ),
+            ("Save P1P1 Screenshots", "save_screenshot_enabled"),
             ("Check for Dataset Updates", "update_notifications_enabled"),
+            ("Alert on Missing Datasets", "missing_notifications_enabled"),
             ("Enable Draft Log Creation", "draft_log_enabled"),
         ]
 
@@ -144,13 +140,12 @@ class SettingsWindow(tkinter.Toplevel):
 
         # Checkbox logic
         checkbox_keys = [
-            "signals_enabled",
-            "missing_enabled",
             "card_colors_enabled",
-            "color_identity_enabled",
-            "p1p1_ocr_enabled",
             "auto_highest_enabled",
+            "p1p1_ocr_enabled",
+            "save_screenshot_enabled",
             "update_notifications_enabled",
+            "missing_notifications_enabled",
             "draft_log_enabled",
         ]
 
@@ -188,7 +183,7 @@ class SettingsWindow(tkinter.Toplevel):
 
         write_configuration(self.configuration)
 
-        # Immediate visual update if something like 'Row Colors' was toggled
+        # Immediate visual update if something was toggled
         if self.on_update_callback:
             self.on_update_callback()
 

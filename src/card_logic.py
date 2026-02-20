@@ -47,6 +47,8 @@ def filter_options(deck, option_selection, metrics, configuration):
     """
     if constants.FILTER_OPTION_AUTO not in option_selection:
         return [option_selection]
+    if not configuration.settings.auto_highest_enabled:
+        return [constants.FILTER_OPTION_ALL_DECKS]
 
     # Auto Logic: Identify top 2 colors
     try:
@@ -779,7 +781,7 @@ class ManaSourceAnalyzer:
     def _check_text_fixing(self, name, text):
         """Scans name and text for known fixing phrases (Case Insensitive)."""
         is_fixer = False
-        
+
         # Enforce Case Insensitivity
         name_lower = name.lower()
         text_lower = text.lower()
@@ -795,7 +797,7 @@ class ManaSourceAnalyzer:
             # We assume this provides generic fixing capability
             self.any_color_sources += 1
             is_fixer = True
-            
+
         # Check Direct Mana Symbols (e.g. "Add {G}")
         # We explicitly iterate valid colors to avoid catching "{C}" or "{1}"
         else:

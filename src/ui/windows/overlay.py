@@ -127,10 +127,8 @@ class CompactOverlay(tb.Toplevel):
         If data is found, explicitly triggers the full UI refresh callback to
         ensure this overlay window gets updated with the new data.
         """
-        data_found = self.orchestrator.scanner.draft_data_search(True, False)
-
-        if data_found:
-            self.orchestrator.refresh_callback()
+        save_img = self.configuration.settings.save_screenshot_enabled
+        data_found = self.orchestrator.scanner.draft_data_search(True, save_img)
 
     def update_data(self, pack_cards, colors, metrics, tier_data, current_pick):
         # Update Header

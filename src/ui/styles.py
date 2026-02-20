@@ -1,8 +1,8 @@
 """
 src/ui/styles.py
 Layered Styling Engine for the MTGA Draft Tool.
-Refactored to use ttkbootstrap for modern theming while supporting
-a 'System' fallback for native OS look-and-feel.
+Refactored to cleanly handle ttkbootstrap, native OS themes, and custom TCL files
+without cross-polluting the state.
 """
 
 import tkinter
@@ -10,6 +10,7 @@ import ttkbootstrap as ttk
 from ttkbootstrap.constants import *
 import sys
 import os
+import re
 import logging
 
 logger = logging.getLogger(__name__)
@@ -35,7 +36,7 @@ class Theme:
 
     # Mapping Palette Names -> ttkbootstrap Themes OR 'native'
     THEME_MAPPING = {
-        "System": "native",  # <--- NEW: Uses OS default look
+        "System": "native",
         "Neutral": "darkly",
         "Dark": "darkly",
         "Light": "flatly",
@@ -68,96 +69,124 @@ class Theme:
     @classmethod
     def apply(cls, root, palette="Neutral", engine=None, custom_path="", scale=1.0):
         style = ttk.Style()
+        is_custom_loaded = False
 
-        # 1. Custom TCL (Legacy)
+        # 1. Custom TCL Loading
         if custom_path and os.path.exists(custom_path):
             try:
                 root.tk.call("source", custom_path)
-                cls._force_recursive_update(root)
-                return
+                is_custom_loaded = True
             except Exception as e:
-                logger.error(f"Failed to load custom theme {custom_path}: {e}")
+                error_msg = str(e)
+                # If the script failed because the theme is already in memory, catch it and activate it!
+                if "already exists" in error_msg:
+                    match = re.search(r"Theme (\w+) already exists", error_msg)
+                    theme_name = (
+                        match.group(1)
+                        if match
+                        else os.path.basename(custom_path).replace(".tcl", "")
+                    )
+                    try:
+                        style.theme_use(theme_name)
+                        is_custom_loaded = True
+                    except Exception as inner_e:
+                        logger.error(
+                            f"Failed to activate existing custom theme {theme_name}: {inner_e}"
+                        )
+                else:
+                    logger.error(f"Failed to load custom theme {custom_path}: {e}")
 
-        # 2. Determine Theme Mode
-        target_theme = cls.THEME_MAPPING.get(palette, "darkly")
-
-        if target_theme == "native":
-            # --- NATIVE MODE ---
-            # Switch to OS native engine using direct TK call to bypass ttkbootstrap wrapper
-            # ttkbootstrap's style.theme_use() crashes if passed a non-bootstrap theme name
-            native_engine = (
-                "aqua"
-                if sys.platform == "darwin"
-                else "vista" if sys.platform == "win32" else "clam"
+        # 2. Extract Colors & Set Engine
+        if is_custom_loaded:
+            # Dynamically scrape the colors that the TCL file applied to the style engine
+            sys_bg = style.lookup("TFrame", "background") or "#2b2b2b"
+            sys_fg = style.lookup("TLabel", "foreground") or "#ffffff"
+            sys_input = style.lookup("TEntry", "fieldbackground") or "#404040"
+            sys_select_bg = (
+                style.lookup("Treeview", "background", ["selected"]) or "#d4af37"
             )
-            try:
-                # Direct Tcl call: package require Tk -> ttk::style theme use "aqua"
-                root.tk.call("ttk::style", "theme", "use", native_engine)
-            except tkinter.TclError:
-                try:
-                    root.tk.call("ttk::style", "theme", "use", "clam")
-                except:
-                    pass
-
-            # Scrape System Colors so the app doesn't break
-            # We look up what the OS thinks a Frame background is
-            sys_bg = style.lookup("TFrame", "background")
-            sys_fg = style.lookup("TLabel", "foreground")
-            sys_select_bg = style.lookup("Treeview", "background", ["selected"])
-
-            # Default fallbacks if lookup fails (common on some Linux distros)
-            if not sys_bg:
-                sys_bg = "#f0f0f0"
-            if not sys_fg:
-                sys_fg = "#000000"
 
             cls.BG_PRIMARY = sys_bg
-            # Make secondary slightly darker/lighter depending on mode
-            # For simplicity in native mode, we often keep them uniform or rely on OS contrast
             cls.BG_SECONDARY = sys_bg
-            cls.BG_TERTIARY = "#ffffff"  # Input fields usually white in native
+            cls.BG_TERTIARY = sys_input
 
             cls.TEXT_MAIN = sys_fg
             cls.TEXT_MUTED = "gray"
 
-            # Native accents are hard to query, default to standard blue/green
-            cls.ACCENT = sys_select_bg if sys_select_bg else "#0078d7"
-            cls.SUCCESS = "#008000"
-            cls.ERROR = "#ff0000"
-            cls.WARNING = "#ffcc00"
+            cls.ACCENT = sys_select_bg
+            cls.SUCCESS = "#00bc8c"
+            cls.ERROR = "#e74c3c"
+            cls.WARNING = "#f39c12"
 
         else:
-            # --- BOOTSTRAP MODE ---
-            try:
-                style.theme_use(target_theme)
-            except:
-                style.theme_use("darkly")
+            target_theme = cls.THEME_MAPPING.get(palette, "darkly")
 
-            colors = style.colors
-            cls.BG_PRIMARY = colors.bg
-            cls.BG_SECONDARY = colors.secondary
-            cls.BG_TERTIARY = colors.inputbg
+            if target_theme == "native":
+                # NATIVE MODE
+                native_engine = (
+                    "aqua"
+                    if sys.platform == "darwin"
+                    else "vista" if sys.platform == "win32" else "clam"
+                )
+                try:
+                    root.tk.call("ttk::style", "theme", "use", native_engine)
+                except tkinter.TclError:
+                    try:
+                        root.tk.call("ttk::style", "theme", "use", "clam")
+                    except:
+                        pass
 
-            cls.TEXT_MAIN = colors.fg
-            cls.TEXT_MUTED = colors.secondary
+                sys_bg = style.lookup("TFrame", "background") or "#f0f0f0"
+                sys_fg = style.lookup("TLabel", "foreground") or "#000000"
+                sys_select_bg = (
+                    style.lookup("Treeview", "background", ["selected"]) or "#0078d7"
+                )
 
-            cls.ACCENT = colors.primary
-            cls.SUCCESS = colors.success
-            cls.ERROR = colors.danger
-            cls.WARNING = colors.warning
+                cls.BG_PRIMARY = sys_bg
+                cls.BG_SECONDARY = sys_bg
+                cls.BG_TERTIARY = "#ffffff"
+                cls.TEXT_MAIN = sys_fg
+                cls.TEXT_MUTED = "gray"
+                cls.ACCENT = sys_select_bg
+                cls.SUCCESS = "#008000"
+                cls.ERROR = "#ff0000"
+                cls.WARNING = "#ffcc00"
 
-        # 4. Global Configuration
-        main_font_size = max(8, int(cls.FONT_SIZE_MAIN * scale))
+            else:
+                # BOOTSTRAP MODE
+                try:
+                    style.theme_use(target_theme)
+                except:
+                    style.theme_use("darkly")
+
+                colors = style.colors
+                cls.BG_PRIMARY = colors.bg
+                cls.BG_SECONDARY = colors.secondary
+                cls.BG_TERTIARY = colors.inputbg
+
+                cls.TEXT_MAIN = colors.fg
+                cls.TEXT_MUTED = colors.secondary
+
+                cls.ACCENT = colors.primary
+                cls.SUCCESS = colors.success
+                cls.ERROR = colors.danger
+                cls.WARNING = colors.warning
+
+        # 3. Global Configuration
         row_height = max(22, int(22 * scale))
-
         style.configure("Treeview", rowheight=row_height)
         style.configure("TNotebook", borderwidth=0)
-        style.configure(".", font=(cls.FONT_FAMILY, main_font_size))
-        style.configure(
-            "Treeview.Heading", font=(cls.FONT_FAMILY, main_font_size, "bold")
-        )
 
-        # 5. Patch Standard Widgets
+        # If using a built-in theme, apply standard fonts.
+        # If using a Custom TCL theme, let the TCL file dictate the fonts!
+        if not is_custom_loaded:
+            main_font_size = max(8, int(cls.FONT_SIZE_MAIN * scale))
+            style.configure(".", font=(cls.FONT_FAMILY, main_font_size))
+            style.configure(
+                "Treeview.Heading", font=(cls.FONT_FAMILY, main_font_size, "bold")
+            )
+
+        # 4. Patch Standard Native OS Widgets to match the theme colors
         cls._force_recursive_update(root)
 
         root.event_generate("<<ThemeChanged>>")
