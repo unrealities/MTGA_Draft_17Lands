@@ -298,6 +298,7 @@ class ModernTreeview(ttk.Treeview):
         self.column_sort_state = {col: False for col in columns}
         self.active_fields = []  # Injected by Manager
         self._setup_headers(columns)
+        self._setup_row_colors()
 
     def _setup_headers(self, columns):
         from src.constants import COLUMN_FIELD_LABELS
@@ -314,6 +315,20 @@ class ModernTreeview(ttk.Treeview):
             self.column(
                 col, width=width, anchor=tkinter.W if col == "name" else tkinter.CENTER
             )
+
+    def _setup_row_colors(self):
+        """Universal definition of color tags so Highlights work on every single table."""
+        self.tag_configure("white_card", background="#FFF8E1", foreground="black")
+        self.tag_configure("blue_card", background="#E3F2FD", foreground="black")
+        self.tag_configure("black_card", background="#E0E0E0", foreground="black")
+        self.tag_configure("red_card", background="#FFEBEE", foreground="black")
+        self.tag_configure("green_card", background="#E8F5E9", foreground="black")
+        self.tag_configure("gold_card", background="#FFF3E0", foreground="black")
+        self.tag_configure("colorless_card", background="#F5F5F5", foreground="black")
+
+        # Elite tags
+        self.tag_configure("elite_bomb", background="#4a3f1d", foreground="#ffd700")
+        self.tag_configure("high_fit", background="#1d3a4a", foreground="#00d4ff")
 
     def _handle_sort(self, col):
         from src.card_logic import field_process_sort

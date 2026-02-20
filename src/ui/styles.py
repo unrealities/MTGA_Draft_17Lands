@@ -172,13 +172,31 @@ class Theme:
                 cls.ERROR = colors.danger
                 cls.WARNING = colors.warning
 
-        # 3. Global Configuration
+        # 3. Global Configuration (Applies regardless of theme engine)
         row_height = max(22, int(22 * scale))
         style.configure("Treeview", rowheight=row_height)
         style.configure("TNotebook", borderwidth=0)
 
-        # If using a built-in theme, apply standard fonts.
-        # If using a Custom TCL theme, let the TCL file dictate the fonts!
+        # Increase PanedWindow Sash (Draggable Splitter) visibility and grab area globally
+        # We use direct tk calls to bypass ttkbootstrap's Style parsing bug for internal elements
+        try:
+            root.tk.call(
+                "ttk::style",
+                "configure",
+                "Sash",
+                "-sashthickness",
+                8,
+                "-relief",
+                "flat",
+            )
+            if not is_custom_loaded:
+                root.tk.call(
+                    "ttk::style", "configure", "Sash", "-background", cls.BG_TERTIARY
+                )
+        except Exception as e:
+            logger.error(f"Failed to configure sash: {e}")
+
+        # Only override the header font if the custom theme didn't explicitly set one
         if not is_custom_loaded:
             main_font_size = max(8, int(cls.FONT_SIZE_MAIN * scale))
             style.configure(".", font=(cls.FONT_FAMILY, main_font_size))

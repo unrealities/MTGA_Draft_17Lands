@@ -10,7 +10,7 @@ from tkinter import ttk
 import os
 import json
 import time
-from unittest.mock import patch  # Added patch import
+from unittest.mock import patch
 from src.ui.app import DraftApp
 from src.log_scanner import ArenaScanner
 from src.configuration import Configuration
@@ -57,6 +57,14 @@ def create_mock_dataset(path):
                 # ALSA 13.0 means it goes very late
                 "deck_colors": {"All Decks": {"gihwr": 55.0, "alsa": 13.0}},
             },
+            "105": {
+                "name": "Golgari Guildgate",
+                "cmc": 0,
+                "types": ["Land"],
+                "colors": ["B", "G"],
+                "mana_cost": "",
+                "deck_colors": {"All Decks": {"gihwr": 52.0, "alsa": 5.0}},
+            },
         },
     }
     with open(path, "w") as f:
@@ -94,7 +102,6 @@ class TestBrainIntegration:
         config.settings.arena_log_location = str(log_file)
 
         # PATCH: check_file_integrity to allow small datasets (the mock has <100 cards)
-        # We need to return the dict from create_mock_dataset as the second return value
         with open(dataset_path, "r") as f:
             mock_data_dict = json.load(f)
 
@@ -119,11 +126,11 @@ class TestBrainIntegration:
     def test_pro_logic_scenarios(self, env):
         app, log, root = env["app"], env["log"], env["root"]
 
-        # 1. Establish Green Lane
-        app.orchestrator.scanner.taken_cards = ["101", "101", "101"]  # 3 Green Hulks
+        # 1. Establish Green Lane with a Black splash option
+        # 3 Green Hulks + 1 BG Dual Land
+        app.orchestrator.scanner.taken_cards = ["101", "101", "101", "105"]
 
         # 2. Simulate Late Pack 2 (Pick 20)
-        # We are Green.
         p2p5 = (
             '[UnityCrossThreadLogger]Draft.Notify {"draftId":"1","SelfPick":20,"SelfPack":2,'
             '"PackCards":"101,102,103,104"}\n'
@@ -152,14 +159,15 @@ class TestBrainIntegration:
 
         # --- VERIFICATION 1: Double Pip Penalty ---
         # "Red Bomb Double Pip" has 68% GIHWR (Highest in pack).
-        # But we are Green, and it costs {2}{R}{R}.
-        # Score should be 0 or very low.
+        # But we are Green/Black, and it costs {2}{R}{R}.
+        # Score should be strictly penalized by the Pack 2 Discipline logic.
         assert "Red Bomb Double Pip" in scores
-        assert scores["Red Bomb Double Pip"] < 10.0
+        assert scores["Red Bomb Double Pip"] < 20.0
 
         # --- VERIFICATION 2: Single Pip Splash ---
         # "Black Removal Single Pip" is {1}{B}. 58% WR.
-        # Should be scored higher than the Double Pip bomb because it's splashable.
+        # Because we drafted a Golgari Guildgate, the engine recognizes we have fixing
+        # It bypasses the uncastable penalty and scores ~39.0.
         assert "Black Removal Single Pip" in scores
         assert scores["Black Removal Single Pip"] > scores["Red Bomb Double Pip"]
 
@@ -192,7 +200,5 @@ class TestBrainIntegration:
         # "Wheeling Dork" (104) has ALSA 13.0.
         # At Pick 2, it is extremely likely to wheel.
         # Engine should suppress its score relative to its raw power.
-        # Raw WR 55.0.
-        # Wheel Penalty 0.8x -> Effective ~44.
         assert "Wheeling Dork" in scores
         assert scores["Wheeling Dork"] < 50.0

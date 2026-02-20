@@ -9,7 +9,7 @@ from tkinter import ttk
 from typing import List, Dict, Any
 
 from src import constants
-from src.card_logic import stack_cards, copy_deck
+from src.card_logic import stack_cards, copy_deck, row_color_tag
 from src.ui.styles import Theme
 from src.ui.components import (
     DynamicTreeviewManager,
@@ -186,6 +186,9 @@ class TakenCardsPanel(ttk.Frame):
                     )
 
             tag = "bw_odd" if idx % 2 == 0 else "bw_even"
+            if self.configuration.settings.card_colors_enabled:
+                tag = row_color_tag(card.get(constants.DATA_FIELD_MANA_COST, ""))
+
             t.insert("", "end", values=row_values, tags=(tag,))
 
     def _render_visual_view(self):

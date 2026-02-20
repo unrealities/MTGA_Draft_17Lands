@@ -126,8 +126,8 @@ class TestAppOrchestrator:
             app.root.event_generate("<<ShowDataTab>>")
             app.root.update()
 
-            # Current index should be 3 (Dataset Manager)
-            assert app.notebook.index("current") == 3
+            # Current index should be 0 (Dataset Manager is the first tab now)
+            assert app.notebook.index("current") == 0
         finally:
             for p in ui_patches:
                 p.stop()

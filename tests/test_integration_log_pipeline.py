@@ -110,7 +110,7 @@ class TestLogPipelineIntegration:
         ready = False
         for _ in range(50):
             root.update()
-            if not app._loading and "OTJ" in app.vars["data_source"].get():
+            if not app._loading and "OTJ" in app.vars["set_label"].get():
                 ready = True
                 break
             time.sleep(0.1)
@@ -154,7 +154,7 @@ class TestLogPipelineIntegration:
         app._update_loop()
         for _ in range(30):
             root.update()
-            if not app._loading and "OTJ" in app.vars["data_source"].get():
+            if not app._loading and "OTJ" in app.vars["set_label"].get():
                 break
             time.sleep(0.1)
 

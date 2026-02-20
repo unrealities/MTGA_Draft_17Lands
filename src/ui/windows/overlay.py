@@ -7,8 +7,9 @@ import tkinter
 import ttkbootstrap as tb
 from ttkbootstrap.constants import *
 from src import constants
-from src.card_logic import field_process_sort, row_color_tag, CardResult
+from src.card_logic import row_color_tag
 from src.ui.styles import Theme
+from src.ui.components import DynamicTreeviewManager, CardToolTip
 
 
 class CompactOverlay(tb.Toplevel):
@@ -17,13 +18,11 @@ class CompactOverlay(tb.Toplevel):
         self.orchestrator = orchestrator
         self.configuration = configuration
         self.on_restore = on_restore
-
-        # Window Setup
-        self.overrideredirect(True)  # Remove OS Title Bar
-        self.geometry("250x600+50+50")  # Default size, user should drag/resize
+        self.current_pack_cards = []
+        self.overrideredirect(True)
+        self.geometry("330x600+50+50")
         self.configure(bg=Theme.BG_PRIMARY)
 
-        # Allow moving the window by dragging the background
         self._bind_drag_events()
 
         self._build_ui()
@@ -53,21 +52,20 @@ class CompactOverlay(tb.Toplevel):
         header = tb.Frame(self, bootstyle="secondary")
         header.pack(fill=X, ipady=5)
 
-        # Scan / Refresh Button (Prominent for P1P1)
+        # Scan / Refresh Button (Packed dynamically in update_data)
         self.btn_scan = tb.Button(
             header,
             text="SCAN P1P1",
             bootstyle="success-outline",
             command=self._manual_scan,
         )
-        self.btn_scan.pack(side=LEFT, padx=5)
 
         # Restore Button (Return to Main App)
         tb.Button(header, text="⤢", bootstyle="link", command=self.on_restore).pack(
             side=RIGHT, padx=5
         )
 
-        # Status Label (Pack 1 Pick 1)
+        # Status Label
         self.lbl_status = tb.Label(
             header,
             text="Waiting...",
@@ -76,93 +74,153 @@ class CompactOverlay(tb.Toplevel):
         )
         self.lbl_status.pack(side=RIGHT, padx=5)
 
-        # --- CARD LIST ---
-        # A simplified treeview showing only Name, GIHWR, and ALSA
-        cols = ["Card", "GIHWR", "ALSA"]
-        self.tree = tb.Treeview(
+        # --- DYNAMIC CARD LIST ---
+        self.table_manager = DynamicTreeviewManager(
             self,
-            columns=cols,
-            show="headings",
-            bootstyle="primary",
-            selectmode="browse",
-            height=20,
+            view_id="overlay_table",
+            configuration=self.configuration,
+            on_update_callback=self._trigger_refresh,
         )
+        self.table_manager.pack(fill=BOTH, expand=True, padx=2, pady=2)
 
-        self.tree.column("Card", width=120, anchor=W)
-        self.tree.column("GIHWR", width=50, anchor=CENTER)
-        self.tree.column("ALSA", width=40, anchor=CENTER)
+        # Link the tooltip logic
+        self.tree = self.table_manager.tree
+        self.tree.bind("<<TreeviewSelect>>", self._on_card_select)
 
-        self.tree.heading("Card", text="Card")
-        self.tree.heading("GIHWR", text="GIH%")
-        self.tree.heading("ALSA", text="ALSA")
-
-        self.tree.pack(fill=BOTH, expand=True, padx=2, pady=2)
-
-        # Tags for colors
-        self.tree.tag_configure(
-            "white_card", background="#FFF8E1", foreground="black"
-        )  # Light Yellow/White
-        self.tree.tag_configure(
-            "blue_card", background="#E3F2FD", foreground="black"
-        )  # Light Blue
-        self.tree.tag_configure(
-            "black_card", background="#E0E0E0", foreground="black"
-        )  # Light Grey
-        self.tree.tag_configure(
-            "red_card", background="#FFEBEE", foreground="black"
-        )  # Light Red
-        self.tree.tag_configure(
-            "green_card", background="#E8F5E9", foreground="black"
-        )  # Light Green
-        self.tree.tag_configure(
-            "gold_card", background="#FFF3E0", foreground="black"
-        )  # Light Orange
-        self.tree.tag_configure(
-            "colorless_card", background="#F5F5F5", foreground="black"
-        )
+    def _trigger_refresh(self):
+        """Called when user right-clicks to add/remove columns. Forces re-render."""
+        if hasattr(self.orchestrator, "refresh_callback"):
+            self.orchestrator.refresh_callback()
 
     def _manual_scan(self):
-        """
-        Manually triggers a P1P1 scan via the Orchestrator.
-        If data is found, explicitly triggers the full UI refresh callback to
-        ensure this overlay window gets updated with the new data.
-        """
+        """Manually triggers a P1P1 scan via the Orchestrator."""
         save_img = self.configuration.settings.save_screenshot_enabled
         data_found = self.orchestrator.scanner.draft_data_search(True, save_img)
 
-    def update_data(self, pack_cards, colors, metrics, tier_data, current_pick):
-        # Update Header
+        if data_found and hasattr(self.orchestrator, "refresh_callback"):
+            self.orchestrator.refresh_callback()
+
+    def update_data(
+        self, pack_cards, colors, metrics, tier_data, current_pick, recommendations=None
+    ):
+        # Update State
+        self.current_pack_cards = pack_cards or []
         pk, pi = self.orchestrator.scanner.retrieve_current_pack_and_pick()
         self.lbl_status.config(text=f"P{pk} / P{pi}")
 
-        # Clear Table
+        # Dynamic P1P1 Button Logic
+        if pk <= 1 and pi <= 1:
+            self.btn_scan.pack(side=LEFT, padx=5, before=self.lbl_status)
+        else:
+            self.btn_scan.pack_forget()
+
+        # Update Table Reference (in case it was rebuilt)
+        self.tree = self.table_manager.tree
+
         for item in self.tree.get_children():
             self.tree.delete(item)
 
         if not pack_cards:
             return
 
-        # Process Data (Using existing logic)
-        processor = CardResult(metrics, tier_data, self.configuration, current_pick)
-        # We enforce specific columns for the overlay (Compactness > Customization)
-        fields = [
-            constants.DATA_FIELD_NAME,
-            constants.DATA_FIELD_GIHWR,
-            constants.DATA_FIELD_ALSA,
-        ]
-        results = processor.return_results(pack_cards, colors, fields)
+        rec_map = {r.card_name: r for r in (recommendations or [])}
+        active_filter = colors[0] if colors else "All Decks"
+        processed_rows = []
 
-        # Sort by GIHWR (Index 1)
-        results.sort(key=lambda x: field_process_sort(x["results"][1]), reverse=True)
+        for card in pack_cards:
+            name = card.get(constants.DATA_FIELD_NAME, "Unknown")
+            stats = card.get("deck_colors", {}).get(active_filter, {})
+            rec = rec_map.get(name)
 
-        for item in results:
-            # Map Row Color
-            tag = row_color_tag(item.get(constants.DATA_FIELD_MANA_COST, ""))
+            row_tag = "bw_odd" if len(processed_rows) % 2 == 0 else "bw_even"
+            if self.configuration.settings.card_colors_enabled:
+                row_tag = row_color_tag(card.get(constants.DATA_FIELD_MANA_COST, ""))
 
-            vals = item["results"]
-            # Shorten names if too long
-            name = vals[0]
-            if len(name) > 18:
-                name = name[:16] + ".."
+            display_name = name
+            if rec:
+                if rec.is_elite:
+                    display_name = f"⭐ {name}"
+                    row_tag = (
+                        "elite_bomb"
+                        if not self.configuration.settings.card_colors_enabled
+                        else row_tag
+                    )
+                elif rec.archetype_fit == "High":
+                    display_name = f"[+] {name}"
+                    row_tag = (
+                        "high_fit"
+                        if not self.configuration.settings.card_colors_enabled
+                        else row_tag
+                    )
 
-            self.tree.insert("", "end", values=(name, vals[1], vals[2]), tags=(tag,))
+            row_values = []
+            for field in self.table_manager.active_fields:
+                if field == "name":
+                    short_name = (
+                        display_name
+                        if len(display_name) <= 22
+                        else display_name[:20] + ".."
+                    )
+                    row_values.append(short_name)
+                elif field == "value":
+                    val = rec.contextual_score if rec else stats.get("gihwr", 0.0)
+                    row_values.append(f"{val:.0f}")
+                elif field == "colors":
+                    row_values.append("".join(card.get("colors", [])))
+                else:
+                    val = stats.get(field, 0.0)
+                    row_values.append(
+                        f"{val:.1f}"
+                        if field in ["gihwr", "ohwr", "gpwr", "iwd"]
+                        else str(val)
+                    )
+
+            # Sort by Tactical Value if available, else fallback to raw win rate
+            sort_val = rec.contextual_score if rec else stats.get("gihwr", 0.0)
+            processed_rows.append(
+                {"vals": row_values, "tag": row_tag, "sort_key": sort_val}
+            )
+
+        # Apply Sort and Render
+        processed_rows.sort(key=lambda x: x["sort_key"], reverse=True)
+        for row in processed_rows:
+            self.tree.insert("", "end", values=row["vals"], tags=(row["tag"],))
+
+    def _on_card_select(self, event):
+        """Displays the robust Card Tooltip when a row is clicked."""
+        selection = self.tree.selection()
+        if not selection:
+            return
+
+        item_vals = self.tree.item(selection[0])["values"]
+        card_name = (
+            str(item_vals[0])
+            .replace("⭐ ", "")
+            .replace("[+] ", "")
+            .replace("..", "")
+            .strip()
+        )
+
+        # Fuzzy match to handle the '..' truncation
+        found = next(
+            (
+                c
+                for c in self.current_pack_cards
+                if card_name in c.get(constants.DATA_FIELD_NAME, "")
+            ),
+            None,
+        )
+
+        if found:
+            arch = self.orchestrator.scanner.set_data.get_card_archetypes_by_field(
+                found[constants.DATA_FIELD_NAME], constants.DATA_FIELD_GIHWR
+            )
+            CardToolTip(
+                self.tree,
+                found[constants.DATA_FIELD_NAME],
+                found.get(constants.DATA_FIELD_DECK_COLORS, {}),
+                found.get(constants.DATA_SECTION_IMAGES, []),
+                self.configuration.features.images_enabled,
+                constants.UI_SIZE_DICT.get(self.configuration.settings.ui_size, 1.0),
+                archetypes=arch,
+            )

@@ -57,7 +57,7 @@ class Settings(BaseModel):
             "missing_table": ["name", "alsa"],
             "taken_table": ["name", "count", "gihwr"],
             "compare_table": ["name", "gihwr", "iwd"],
-            "overlay_table": ["name", "value"],
+            "overlay_table": ["name", "value", "gihwr"],  # <-- UPDATED OVERLAY DEFAULTS
         }
     )
     deck_filter: str = constants.DECK_FILTER_DEFAULT

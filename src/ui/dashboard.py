@@ -112,19 +112,6 @@ class DashboardFrame(ttk.Frame):
         self.type_chart = TypePieChart(self.pool_container.content_frame)
         self.type_chart.pack(fill="x")
 
-        self._configure_special_tags()
-
-    def _configure_special_tags(self):
-        """Adds elite highlighting to the trees."""
-        for manager in [self.pack_manager, self.missing_manager]:
-            if manager and manager.tree:
-                manager.tree.tag_configure(
-                    "elite_bomb", background="#4a3f1d", foreground="#ffd700"
-                )
-                manager.tree.tag_configure(
-                    "high_fit", background="#1d3a4a", foreground="#00d4ff"
-                )
-
     def update_pack_data(
         self,
         cards,
@@ -139,9 +126,6 @@ class DashboardFrame(ttk.Frame):
         # Ensure we have a valid widget and it has its configuration injected
         if not tree or not hasattr(tree, "active_fields"):
             return
-
-        # Sync the tags every time we rebuild the underlying tree
-        self._configure_special_tags()
 
         for item in tree.get_children():
             tree.delete(item)
@@ -159,16 +143,28 @@ class DashboardFrame(ttk.Frame):
 
             row_tag = "bw_odd" if len(processed_rows) % 2 == 0 else "bw_even"
             if self.configuration.settings.card_colors_enabled:
+                from src.card_logic import (
+                    row_color_tag,
+                )  # Inline import to avoid circular dependency
+
                 row_tag = row_color_tag(card.get(constants.DATA_FIELD_MANA_COST, ""))
 
             display_name = name
             if rec:
                 if rec.is_elite:
                     display_name = f"⭐ {name}"
-                    row_tag = "elite_bomb"
+                    row_tag = (
+                        "elite_bomb"
+                        if not self.configuration.settings.card_colors_enabled
+                        else row_tag
+                    )
                 elif rec.archetype_fit == "High":
                     display_name = f"[+] {name}"
-                    row_tag = "high_fit"
+                    row_tag = (
+                        "high_fit"
+                        if not self.configuration.settings.card_colors_enabled
+                        else row_tag
+                    )
 
             row_values = []
             for field in tree.active_fields:

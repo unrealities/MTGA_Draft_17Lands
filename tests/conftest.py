@@ -40,12 +40,21 @@ def patch_tk_lifecycle(monkeypatch, session_tk_root):
     """
     Intercepts Tk() and destroy() calls from individual tests to force
     them to use the session_tk_root singleton.
+    Also intercepts all Messagebox popups so tests run headless
     """
     # Force tkinter.Tk() to return our singleton
     monkeypatch.setattr(tkinter, "Tk", lambda *args, **kwargs: session_tk_root)
 
     # Disable destroy() on the singleton so tests can't accidentally kill it
     monkeypatch.setattr(session_tk_root, "destroy", lambda: None)
+
+    # MOCK MESSAGEBOXES GLOBALLY: Prevent UI popups during automated tests
+    import tkinter.messagebox as mb
+
+    monkeypatch.setattr(mb, "askyesno", lambda *args, **kwargs: True)
+    monkeypatch.setattr(mb, "showinfo", lambda *args, **kwargs: None)
+    monkeypatch.setattr(mb, "showwarning", lambda *args, **kwargs: None)
+    monkeypatch.setattr(mb, "showerror", lambda *args, **kwargs: None)
 
     # Clean up any leftover widgets from previous tests to ensure test isolation
     for widget in session_tk_root.winfo_children():

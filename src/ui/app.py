@@ -45,6 +45,7 @@ class DraftApp:
         self.previous_timestamp = 0
         self.current_pack_data = []
         self.current_missing_data = []
+        self.tabs_visible = True
 
         # New State for Set Selection
         self.current_set_data_map: Dict[str, Dict[str, str]] = {}
@@ -67,7 +68,9 @@ class DraftApp:
             self.root, scanner.set_list, configuration, self.panel_data
         )
         self.root.bind(
-            "<<ShowDataTab>>", lambda e: self.notebook.select(self.panel_data)
+            "<<ShowDataTab>>",
+            lambda e: self._ensure_tabs_visible()
+            or self.notebook.select(self.panel_data),
         )
 
         # 5. Boot Synchronization
@@ -93,7 +96,6 @@ class DraftApp:
         self._refresh_ui_data()
 
         # Logic: Default to Datasets tab if no valid data source is loaded
-        # This guides users to download data immediately upon first launch
         if not self.configuration.card_data.latest_dataset:
             self.notebook.select(self.panel_data)
 
@@ -160,12 +162,20 @@ class DraftApp:
             width=12,
         ).pack(side="right", padx=5)
 
+        self.btn_toggle_tabs = ttk.Button(
+            row1,
+            text="▼ Hide Tabs",
+            bootstyle="secondary-outline",
+            command=self._toggle_tabs,
+            width=10,
+        )
+        self.btn_toggle_tabs.pack(side="right", padx=5)
+
         # ROW 2: Controls
         row2 = ttk.Frame(header_frame, style="Card.TFrame")
         row2.pack(fill="x")
 
         # Controls (Left)
-        # Split Refresh into "Logs" (Fast, IO only) and "P1P1" (Slow, OCR)
         self.btn_logs = ttk.Button(
             row2, text="Logs", command=lambda: self._manual_refresh(False), width=6
         )
@@ -174,9 +184,6 @@ class DraftApp:
         self.btn_p1p1 = ttk.Button(
             row2, text="P1P1", command=lambda: self._manual_refresh(True), width=6
         )
-        # Dynamic visibility based on settings
-        if self.configuration.settings.p1p1_ocr_enabled:
-            self.btn_p1p1.pack(side="left", padx=2)
 
         # Filter (Right)
         self.om_filter = ttk.OptionMenu(
@@ -222,7 +229,7 @@ class DraftApp:
         self.splitter.add(self.dashboard, weight=4)
 
         self.notebook = ttk.Notebook(self.splitter)
-        self.splitter.add(self.notebook, weight=3)
+        self.splitter.add(self.notebook, weight=2)
 
         self.panel_taken = TakenCardsPanel(
             self.notebook, self.orchestrator.scanner, self.configuration
@@ -249,11 +256,26 @@ class DraftApp:
         self.notebook.add(self.panel_compare, text=" Comparisons ")
         self.notebook.add(self.panel_tiers, text=" Tier Lists ")
 
+    def _toggle_tabs(self):
+        """Hides or reveals the bottom notebook panel to save screen space."""
+        if self.tabs_visible:
+            self.splitter.forget(self.notebook)
+            self.btn_toggle_tabs.config(text="▲ Show Tabs")
+            self.tabs_visible = False
+        else:
+            self.splitter.add(self.notebook, weight=2)
+            self.btn_toggle_tabs.config(text="▼ Hide Tabs")
+            self.tabs_visible = True
+
+    def _ensure_tabs_visible(self):
+        """Helper to force tabs open if an external event demands it."""
+        if not self.tabs_visible:
+            self._toggle_tabs()
+
     def _setup_menu(self):
         m = tkinter.Menu(self.root)
         self.root.config(menu=m)
 
-        # File Menu
         file_m = tkinter.Menu(m, tearoff=0)
         m.add_cascade(label="File", menu=file_m)
         file_m.add_command(label="Preferences...", command=self._open_settings)
@@ -266,18 +288,14 @@ class DraftApp:
         file_m.add_separator()
         file_m.add_command(label="Exit", command=self.root.destroy)
 
-        # Theme Menu
         theme_m = tkinter.Menu(m, tearoff=0)
         m.add_cascade(label="Theme", menu=theme_m)
-
-        # 1. System / Native Option
         theme_m.add_command(
             label="System (Native)",
             command=lambda: self._update_theme(new_palette="System"),
         )
         theme_m.add_separator()
 
-        # 2. Mana Flairs (Bootstrap Themes)
         for name in Theme.THEME_MAPPING.keys():
             if name == "System":
                 continue
@@ -286,14 +304,12 @@ class DraftApp:
                 command=lambda n=name: self._update_theme(new_palette=n),
             )
 
-        # 3. Custom TCL
         custom_m = tkinter.Menu(theme_m, tearoff=0)
         theme_m.add_cascade(label="Custom Themes (.tcl)", menu=custom_m)
         custom_m.add_command(
             label="Browse for .tcl...", command=self._browse_custom_tcl
         )
 
-        # Discover existing custom themes
         for name, path in Theme.discover_custom_themes().items():
             custom_m.add_command(
                 label=name, command=lambda p=path: self._update_theme(new_custom=p)
@@ -329,14 +345,9 @@ class DraftApp:
             self._update_theme(new_custom=f)
 
     def _refresh_ui_data(self):
-        """
-        Atomic UI update cycle.
-        Synchronizes The Brain, The Dashboard (Signals/Curve), and Sub-panels.
-        """
         if not self._initialized or self._rebuilding_ui:
             return
 
-        # 1. State Retrieval
         es, et = self.orchestrator.scanner.retrieve_current_limited_event()
         pk, pi = self.orchestrator.scanner.retrieve_current_pack_and_pick()
 
@@ -346,22 +357,24 @@ class DraftApp:
         pack_cards = self.orchestrator.scanner.retrieve_current_pack_cards()
         missing_cards = self.orchestrator.scanner.retrieve_current_missing_cards()
 
-        # 2. Intelligence Layer (The Brain)
         from src.advisor.engine import DraftAdvisor
 
         advisor = DraftAdvisor(metrics, taken_cards)
         recommendations = advisor.evaluate_pack(pack_cards, pi)
 
-        # 3. View Updates
-        # Header
         self.vars["event_info"].set(f"{es} {et}" if es else "Scan logs...")
         self.vars["status_text"].set(f"Pack {pk} Pick {pi}")
 
-        # Advisor Summary
+        # Dynamic P1P1 Button Visibility
+        # Only show if setting is enabled, a draft is active, and we are on Pick 1 of Pack 1 (or waiting)
+        if self.configuration.settings.p1p1_ocr_enabled and es and pk <= 1 and pi <= 1:
+            self.btn_p1p1.pack(side="left", padx=2, after=self.btn_logs)
+        else:
+            self.btn_p1p1.pack_forget()
+
         if hasattr(self, "advisor_panel"):
             self.advisor_panel.update_recommendations(recommendations)
 
-        # Dashboard Logic
         colors = filter_options(
             taken_cards,
             self.configuration.settings.deck_filter,
@@ -369,7 +382,6 @@ class DraftApp:
             self.configuration,
         )
 
-        # Update Main Dashboard
         self.dashboard.update_pack_data(
             pack_cards,
             colors,
@@ -383,21 +395,20 @@ class DraftApp:
             missing_cards, colors, metrics, tier_data, pi, source_type="missing"
         )
 
-        # Update Overlay if active
         if self.overlay_window:
-            self.overlay_window.update_data(pack_cards, colors, metrics, tier_data, pi)
+            self.overlay_window.update_data(
+                pack_cards, colors, metrics, tier_data, pi, recommendations
+            )
 
         self.dashboard.update_signals(self._calculate_signals(metrics))
         self.dashboard.update_stats(get_deck_metrics(taken_cards).distribution_all)
 
-        # Tab Refresh
         for p in [self.panel_taken, self.panel_suggest, self.panel_compare]:
             p.refresh()
 
         self.dashboard.update_deck_balance(taken_cards)
 
     def _calculate_signals(self, metrics):
-        """Helper to compute current lane signals."""
         from src.signals import SignalCalculator
 
         calc = SignalCalculator(metrics)
@@ -405,7 +416,7 @@ class DraftApp:
         scores = {c: 0.0 for c in constants.CARD_COLORS}
         for entry in history:
             if entry["Pack"] == 2:
-                continue  # Focus on lane rewards
+                continue
             pack_cards = self.orchestrator.scanner.set_data.get_data_by_id(
                 entry["Cards"]
             )
@@ -459,11 +470,6 @@ class DraftApp:
         self._refresh_ui_data()
 
     def _update_data_sources(self):
-        """
-        INTELLIGENT DATA SOURCE MANAGER
-        Detects current set from logs, filters available datasets, and auto-selects defaults.
-        """
-        # 1. Detect active draft
         current_set, current_event_type = (
             self.orchestrator.scanner.retrieve_current_limited_event()
         )
@@ -480,12 +486,10 @@ class DraftApp:
         self.lbl_set_code.config(foreground=Theme.ACCENT)
 
         all_files, _ = retrieve_local_set_list()
-
         self.current_set_data_map = {}
 
         for f in all_files:
             file_set, f_event, f_group, _, _, _, f_path, _ = f
-
             if file_set != current_set:
                 continue
 
@@ -496,7 +500,6 @@ class DraftApp:
 
         available_events = list(self.current_set_data_map.keys())
 
-        # Missing Dataset Handshake
         if not available_events:
             self.vars["set_label"].set(f"SET: {current_set} (No Data)")
             self.lbl_set_code.config(foreground=Theme.WARNING)
@@ -505,7 +508,6 @@ class DraftApp:
             if current_set not in self._notified_missing_sets:
                 self._notified_missing_sets.add(current_set)
                 if hasattr(self, "notifications") and self.notifications:
-                    # Respect User Setting
                     if self.configuration.settings.missing_notifications_enabled:
                         self.root.after(
                             500,
@@ -529,18 +531,12 @@ class DraftApp:
             self.vars["selected_event"].set(target_event)
 
     def _set_dropdown_options(self, menu_widget, variable, options):
-        """
-        Manually populates a specific OptionMenu and explicitly binds the click command
-        to the provided variable. This bypasses potential issues with ttk.OptionMenu's
-        internal variable binding not being exposed via cget.
-        """
         menu = menu_widget["menu"]
         menu.delete(0, "end")
         for opt in options:
             menu.add_command(label=opt, command=tkinter._setit(variable, opt))
 
     def _on_event_change(self):
-        """Called when Event Dropdown changes."""
         if not self._initialized:
             return
 
@@ -560,7 +556,6 @@ class DraftApp:
         self.vars["selected_group"].set(target_group)
 
     def _on_group_change(self):
-        """Called when User Group changes. Performs the actual file load."""
         if not self._initialized:
             return
 
@@ -637,7 +632,6 @@ class DraftApp:
 
     def _open_settings(self):
         def _on_settings_changed():
-            # Dynamically refresh theme scaling if changed
             s = self.configuration.settings
             self.orchestrator.scanner.log_enable(s.draft_log_enabled)
             current_scale = constants.UI_SIZE_DICT.get(s.ui_size, 1.0)
@@ -649,7 +643,6 @@ class DraftApp:
                 scale=current_scale,
             )
 
-            # Show/Hide P1P1 Button instantly based on the setting change
             if s.p1p1_ocr_enabled:
                 self.btn_p1p1.pack(side="left", padx=2, after=self.btn_logs)
             else:
@@ -667,7 +660,6 @@ class DraftApp:
             self._manual_refresh()
 
     def _read_player_log(self):
-        """Opens a file dialog to manually select the Player.log file."""
         f = filedialog.askopenfilename(filetypes=(("Log", "*.log"), ("All", "*.*")))
         if f:
             self.orchestrator.scanner.set_arena_file(f)
@@ -712,19 +704,16 @@ class DraftApp:
         self._refresh_ui_data()
 
     def _enable_overlay(self):
-        """Hides Main Window, Shows Overlay"""
         if self.overlay_window:
             return
 
-        self.root.withdraw()  # Hide Main
-
+        self.root.withdraw()
         self.overlay_window = CompactOverlay(
             self.root, self.orchestrator, self.configuration, self._disable_overlay
         )
         self._refresh_ui_data()
 
     def _disable_overlay(self):
-        """Destroys Overlay, Shows Main Window"""
         if self.overlay_window:
             self.overlay_window.destroy()
             self.overlay_window = None
