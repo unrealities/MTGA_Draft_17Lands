@@ -23,6 +23,7 @@ class TestSuggestDeckPanel:
         draft = MagicMock()
         draft.retrieve_taken_cards.return_value = []
         draft.retrieve_set_metrics.return_value = MagicMock()
+        draft.retrieve_current_limited_event.return_value = ("SET", "PremierDraft")
         return draft
 
     @pytest.fixture

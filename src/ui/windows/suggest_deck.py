@@ -83,10 +83,20 @@ class SuggestDeckPanel(ttk.Frame):
                 else self.draft.retrieve_set_metrics()
             )
 
-            raw_results = suggest_deck(raw_pool, metrics, self.configuration)
+            # Extract the current event type to determine Bo1 vs Bo3 math
+            _, event_type = (
+                self.orchestrator.scanner.retrieve_current_limited_event()
+                if hasattr(self, "orchestrator")
+                else self.draft.retrieve_current_limited_event()
+            )
+
+            # Pass event_type to suggest_deck
+            raw_results = suggest_deck(
+                raw_pool, metrics, self.configuration, event_type
+            )
 
             if not raw_results:
-                msg = "No viable decks yet"
+                msg = "Waiting for more picks..."
                 self.suggestions = {}
                 self._update_dropdown_options([msg])
                 self.var_archetype.set(msg)
@@ -105,7 +115,9 @@ class SuggestDeckPanel(ttk.Frame):
 
             for k in sorted_keys:
                 data = raw_results[k]
-                label = f"{k} {data.get('type', 'Unknown')} (Rating: {data.get('rating', 0):.0f})"
+                notes = f" -> {data.get('breakdown')}" if data.get("breakdown") else ""
+                label = f"{k} [Est: {data.get('record', 'Unknown')}] (Power: {data.get('rating', 0):.0f}){notes}"
+
                 self.suggestions[label] = data
                 dropdown_labels.append(label)
 

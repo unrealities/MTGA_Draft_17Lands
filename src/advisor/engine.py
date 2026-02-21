@@ -173,7 +173,17 @@ class DraftAdvisor:
         card_colors = set(card.get("colors", []))
         is_on_color = any(c in self.main_colors for c in card_colors)
 
-        # --- 1. ALIEN GOLD CHECK (Hard Constraint) ---
+        # --- 1. EARLY SPECULATION (PACK 1) ---
+        # Do not eliminate cards early in the draft. Allow pivoting.
+        if pack == 1 and pick <= 6:
+            if is_on_color:
+                return 1.0, ""
+            # Penalize slightly so on-color cards win ties, but bombs survive
+            if len(card_colors) > 1:
+                return 0.8, "Speculative (Gold)"
+            return 0.9, "Speculative"
+
+        # --- 2. ALIEN GOLD CHECK (Hard Constraint) ---
         if len(card_colors) > 1 and not is_on_color and self.main_colors:
             # Exception: 5-color soup fixing available
             if (
@@ -182,7 +192,7 @@ class DraftAdvisor:
             ):
                 return 0.0, "Alien Gold (Uncastable)"
 
-        # --- 2. On-Color ---
+        # --- 3. ON-COLOR ---
         if is_on_color:
             return 1.0, ""
 
@@ -191,48 +201,30 @@ class DraftAdvisor:
         splash_colors = [c for c in card_colors if c not in self.main_colors]
         fixing_available = 0
         if splash_colors:
-            # Fixing map + 1 basic land assumption (we can always add a basic)
-            # But relying on just a basic for a splash is risky
             sources = [self.fixing_map.get(c, 0) for c in splash_colors]
-            # Assume we can always play at least 1 basic of that color
             fixing_available = min(sources) + 1
 
-        # --- 3. PACK 2+ DISCIPLINE ---
-        # If we are in Pack 2 or 3, we should heavily penalize off-color cards
-        # unless they are Bombs or we are already fixing for them.
+        # --- 4. PACK 2+ DISCIPLINE ---
         if pack >= 2:
-            # If we have NO fixing sources (besides adding a basic), punish hard
             if fixing_available <= 1:
-                # If it's a BOMB (Z > 2.0), we might pivot/splash aggressively
                 if z_score >= self.BOMB_Z_SCORE:
                     return 0.7, "Bomb (Need Fixing)"
-                # Otherwise, it's just a good card in the wrong color.
-                # 0.2 Multiplier ensures 61% WR (Score ~80) becomes Score ~16.
                 return 0.2, "Off-Color"
 
-        # --- 4. Early Speculation (Pack 1) ---
-        if pack == 1 and pick <= 5:
-            return 0.95, "Speculative"
-
-        # --- 5. Splash Analysis ---
-        # Bomb Override: High Power & decent fixing allows splashing even off-color
+        # --- 5. SPLASH ANALYSIS ---
         if z_score >= self.BOMB_Z_SCORE and pips == 1:
             if fixing_available >= 2:
                 return 0.85, "Bomb Splash"
             else:
                 return 0.5, "Bomb (Needs Fixing)"
 
-        # Standard Splash Logic
         if pips == 1:
             if fixing_available >= 3:
                 return 0.8, "Splashable"
             if fixing_available >= 2:
                 return 0.6, "Risky Splash"
-            # If no fixing, heavily penalize (0.2) instead of the old 0.3
-            # This ensures solid on-color cards always win.
             return 0.2, "No Fixing"
 
-        # Double Pip Off-Color
         return 0.1, "Uncastable (Double Pip)"
 
     def _calculate_composition_bonus(self, card: Dict, pack: int) -> Tuple[float, str]:

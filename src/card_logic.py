@@ -302,65 +302,113 @@ class CardResult:
         return val
 
 
-# --- CORE DECK BUILDER LOGIC (Pro Tour) ---
+# --- UNIVERSAL DECK BUILDER & LIQUID SCORING ENGINE ---
 
 
-def suggest_deck(taken_cards, metrics, configuration):
+def suggest_deck(taken_cards, metrics, configuration, event_type="PremierDraft"):
     """
-    Entry point. Generates 3 distinct deck variants based on the pool.
+    Entry point. Generates multiple distinct deck variants based on the pool.
+    Evaluates them using a universal, holistic scoring engine and returns the best options.
     """
     sorted_decks = {}
+    pool_size = len(taken_cards)
+    is_bo3 = "Trad" in event_type
+
+    if not taken_cards or len(taken_cards) < 12:
+        return sorted_decks
 
     try:
-        # 1. Identify Top Color Pairs
-        # We look for the strongest 2-color combinations in the pool
         color_options = identify_top_pairs(taken_cards, metrics)
+        all_variants = []
 
         for main_colors in color_options:
-            pair_key = "".join(sorted(main_colors))
+            # 1. Variant: Consistency (Strictly 2 colors)
+            con_deck = build_variant_consistency(taken_cards, main_colors)
+            if con_deck:
+                score, breakdown = calculate_holistic_score(
+                    con_deck, main_colors, pool_size
+                )
+                # THE EXECUTIONER: Do not display incomplete decks
+                if "Incomplete Deck" not in breakdown:
+                    all_variants.append(
+                        {
+                            "label_prefix": "Consistent",
+                            "type": "Midrange / Standard",
+                            "rating": score,
+                            "record": estimate_record(score, is_bo3),
+                            "deck_cards": con_deck,
+                            "sideboard_cards": [],
+                            "colors": main_colors,
+                            "breakdown": breakdown,
+                        }
+                    )
 
-            # --- VARIANT A: The Rock (Consistency) ---
-            rock_deck, rock_score = build_variant_consistency(
-                taken_cards, main_colors, metrics
-            )
-            if rock_deck:
-                label = f"{pair_key} Consistent"
-                sorted_decks[label] = {
-                    "type": "Midrange",
-                    "rating": rock_score,
-                    "deck_cards": rock_deck,
-                    "sideboard_cards": [],  # Simplified
-                    "colors": main_colors,
-                }
+            # 2. Variant: Greedy (Splash bombs/synergy)
+            greedy_deck, splash_color = build_variant_greedy(taken_cards, main_colors)
+            if greedy_deck:
+                target_colors = main_colors + [splash_color]
+                score, breakdown = calculate_holistic_score(
+                    greedy_deck, target_colors, pool_size
+                )
+                if "Incomplete Deck" not in breakdown:
+                    all_variants.append(
+                        {
+                            "label_prefix": f"Splash {splash_color}",
+                            "type": "Power / Domain",
+                            "rating": score,
+                            "record": estimate_record(score, is_bo3),
+                            "deck_cards": greedy_deck,
+                            "sideboard_cards": [],
+                            "colors": target_colors,
+                            "breakdown": breakdown,
+                        }
+                    )
 
-            # --- VARIANT B: The Greedy (Splash) ---
-            greedy_deck, greedy_score, splash_color = build_variant_greedy(
-                taken_cards, main_colors, metrics
-            )
-            # Only suggest greedy if it's actually stronger or we have a bomb
-            if greedy_deck and greedy_score > rock_score:
-                label = f"{pair_key} Splash {splash_color}"
-                sorted_decks[label] = {
-                    "type": "Bomb Splash",
-                    "rating": greedy_score,
-                    "deck_cards": greedy_deck,
-                    "sideboard_cards": [],
-                    "colors": main_colors + [splash_color],
-                }
+            # 3. Variant: Tempo (Low curve, aggro)
+            tempo_deck = build_variant_curve(taken_cards, main_colors)
+            if tempo_deck:
+                score, breakdown = calculate_holistic_score(
+                    tempo_deck, main_colors, pool_size
+                )
+                if "Incomplete Deck" not in breakdown:
+                    all_variants.append(
+                        {
+                            "label_prefix": "Tempo",
+                            "type": "Aggro",
+                            "rating": score,
+                            "record": estimate_record(score, is_bo3),
+                            "deck_cards": tempo_deck,
+                            "sideboard_cards": [],
+                            "colors": main_colors,
+                            "breakdown": breakdown,
+                        }
+                    )
+        # Sort all generated variants by their holistic score
+        all_variants.sort(key=lambda x: x["rating"], reverse=True)
 
-            # --- VARIANT C: The Curve (Aggro) ---
-            curve_deck, curve_score = build_variant_curve(
-                taken_cards, main_colors, metrics
+        # Filter out duplicates (e.g. if Tempo and Consistent generated the exact same 40 cards)
+        seen_signatures = set()
+        for variant in all_variants:
+            # Create a unique signature for the deck based on card names and counts
+            sig = tuple(
+                sorted(
+                    [
+                        f"{c.get('name')}:{c.get('count', 1)}"
+                        for c in variant["deck_cards"]
+                    ]
+                )
             )
-            if curve_deck:
-                label = f"{pair_key} Tempo"
-                sorted_decks[label] = {
-                    "type": "Aggro",
-                    "rating": curve_score,
-                    "deck_cards": curve_deck,
-                    "sideboard_cards": [],
-                    "colors": main_colors,
-                }
+            if sig in seen_signatures:
+                continue
+            seen_signatures.add(sig)
+
+            pair_key = "".join(sorted(variant["colors"][:2]))
+            label = f"{pair_key} {variant['label_prefix']}"
+            sorted_decks[label] = variant
+
+            # Limit to top 5 unique options so we don't overwhelm the UI
+            if len(sorted_decks) >= 5:
+                break
 
     except Exception as e:
         logger.error(f"Deck builder failure: {e}", exc_info=True)
@@ -370,278 +418,402 @@ def suggest_deck(taken_cards, metrics, configuration):
 
 
 def identify_top_pairs(pool, metrics):
-    """Returns top color pair based on card count and quality."""
+    """Returns top 2-color pairs based on playability and raw power."""
     scores = {c: 0 for c in constants.CARD_COLORS}
-
     for card in pool:
         colors = card.get(constants.DATA_FIELD_COLORS, [])
-        # Get GIHWR
-        stats = card.get("deck_colors", {}).get(constants.FILTER_OPTION_ALL_DECKS, {})
+        stats = card.get("deck_colors", {}).get("All Decks", {})
         wr = float(stats.get(constants.DATA_FIELD_GIHWR, 0.0))
-
-        # Simple points: WR - 50. (55% = 5 points). Only count playables.
-        if wr > 50:
-            points = wr - 50
+        if wr > 52.0:  # Playable baseline
+            points = wr - 50.0
             for c in colors:
                 scores[c] += points
 
-    # Sort colors
     sorted_c = sorted(scores.items(), key=lambda x: x[1], reverse=True)
-    # Take top 2
-    top_2 = [x[0] for x in sorted_c[:2]]
 
-    return [top_2]
+    # Return the absolute best pair
+    top_pairs = [[sorted_c[0][0], sorted_c[1][0]]]
+
+    # ONLY return the 3rd best color if it has at least 25% of the power points of your main color.
+    # This prevents the builder from generating options for a color you only picked 2 cards for.
+    if len(sorted_c) > 2 and sorted_c[2][1] > (sorted_c[0][1] * 0.25):
+        top_pairs.append([sorted_c[0][0], sorted_c[2][0]])
+        top_pairs.append([sorted_c[1][0], sorted_c[2][0]])
+
+    return top_pairs
+
+    # Return the absolute best pair
+    top_pairs = [[sorted_c[0][0], sorted_c[1][0]]]
+
+    # ALWAYS return the 3rd best color paired with the 1st and 2nd,
+    # as long as it has a positive score, to provide more options.
+    if len(sorted_c) > 2 and sorted_c[2][1] > 0:
+        top_pairs.append([sorted_c[0][0], sorted_c[2][0]])
+        top_pairs.append([sorted_c[1][0], sorted_c[2][0]])
+
+    return top_pairs
 
 
-# --- BUILDER VARIANTS ---
+# --- UNIVERSAL LIQUID SCORING ENGINE ---
 
 
-def build_variant_consistency(pool, colors, metrics):
+def calculate_holistic_score(deck, colors, pool_size):
     """
-    Builds the best deck using ONLY the main colors.
-    Target: 23 Spells, 17 Lands (Baseline).
+    Evaluates a deck on a 0-100 Power Level scale.
+    Universally applicable to any MTG set by analyzing mechanical structures.
     """
+    if not deck:
+        return 0.0, ""
+
+    spells = [c for c in deck if constants.CARD_TYPE_LAND not in c.get("types", [])]
+    spell_count = sum(
+        c.get("count", 1) for c in spells
+    )  # FIXED: Count actual cards, not rows
+
+    if spell_count == 0:
+        return 0.0, ""
+
+    # 1. BASE POWER
+    arch_key = (
+        "".join(sorted(colors)) if len(colors) <= 2 else "".join(sorted(colors[:2]))
+    )
+
+    # Weight the ratings by the number of copies
+    valid_ratings = []
+    for c in spells:
+        rating = get_card_rating(c, [arch_key])
+        if rating > 0.0:
+            valid_ratings.extend([rating] * c.get("count", 1))
+
+    if not valid_ratings:
+        avg_gihwr = 50.0
+    else:
+        avg_gihwr = sum(valid_ratings) / len(valid_ratings)
+
+    power_level = (avg_gihwr - 48.0) * 10.0
+    breakdown_notes = []
+
+    # 2. FLUID CURVE & MANA VELOCITY
+    cmcs = []
+    for c in spells:
+        cmcs.extend([int(c.get("cmc", 0))] * c.get("count", 1))  # FIXED
+
+    avg_cmc = sum(cmcs) / spell_count
+
+    # Calculate Lands and Sources
+    analyzer = ManaSourceAnalyzer(deck)
+    land_count = sum(c.get("count", 1) for c in deck if "Land" in c.get("types", []))
+    total_mana_sources = (
+        land_count + analyzer.any_color_sources + sum(analyzer.sources.values())
+    )
+
+    mana_deficit = (avg_cmc * 5.5) - total_mana_sources
+    if mana_deficit > 1.5:
+        penalty = mana_deficit * 3.0
+        power_level -= penalty
+        breakdown_notes.append(f"Clunky Mana Velocity (-{penalty:.1f})")
+    elif mana_deficit < -1.0 and avg_cmc < 2.8:
+        power_level += 5.0
+        breakdown_notes.append("Excellent Aggro Velocity (+5.0)")
+
+    # 3. UNIVERSAL SYNERGY MATRIX
+    supertypes = {
+        "Creature",
+        "Instant",
+        "Sorcery",
+        "Enchantment",
+        "Artifact",
+        "Planeswalker",
+        "Land",
+        "Legendary",
+        "Basic",
+        "Snow",
+        "World",
+        "Tribal",
+        "Kindred",
+    }
+    subtypes = {}
+    changeling_count = 0
+    for c in spells:
+        text = str(c.get("text", "")).lower()
+        count = c.get("count", 1)  # FIXED
+        if "changeling" in text:
+            changeling_count += count
+        for t in c.get("types", []):
+            if t not in supertypes:
+                subtypes[t] = subtypes.get(t, 0) + count
+
+    if subtypes:
+        top_tribe, tribe_count = max(subtypes.items(), key=lambda x: x[1])
+        total_tribe_density = tribe_count + changeling_count
+        payoff_count = sum(
+            c.get("count", 1)
+            for c in spells
+            if "chosen type" in str(c.get("text", "")).lower()
+            or top_tribe.lower() in str(c.get("text", "")).lower()
+        )
+
+        if total_tribe_density >= 6 and payoff_count >= 2:
+            bonus = (total_tribe_density * 0.5) + (payoff_count * 1.5)
+            power_level += bonus
+            breakdown_notes.append(f"{top_tribe} Synergy (+{bonus:.1f})")
+
+    if len(colors) >= 3:
+        domain_payoffs = sum(
+            c.get("count", 1)
+            for c in spells
+            if "colors among" in str(c.get("text", "")).lower()
+            or "basic land types" in str(c.get("text", "")).lower()
+        )
+        fixing_count = sum(analyzer.sources.values()) + analyzer.any_color_sources
+
+        if domain_payoffs >= 2 and fixing_count >= 4:
+            power_level += 6.0
+            breakdown_notes.append("Supported Domain/Soup (+6.0)")
+        elif fixing_count < len(colors) + 1:
+            penalty = (len(colors) + 1 - fixing_count) * 6.0
+            power_level -= penalty
+            breakdown_notes.append(f"Greedy Mana Strain (-{penalty:.1f})")
+
+    evasion_count = sum(
+        c.get("count", 1)
+        for c in spells
+        if any(
+            kw in str(c.get("text", "")).lower()
+            for kw in [
+                "flying",
+                "trample",
+                "menace",
+                "can't be blocked",
+                "deals damage to any target",
+            ]
+        )
+    )
+    if evasion_count < 3 and avg_cmc > 2.5:
+        power_level -= 5.0
+        breakdown_notes.append("Lacks Evasion/Reach (-5.0)")
+
+    # 4. DECK SIZE & PLAYABLES DEFICIT
+    expected_spells = int(23 * (min(42, pool_size) / 42.0))
+    if spell_count < expected_spells - 1:
+        shortfall = (expected_spells - 1) - spell_count
+        penalty = shortfall * 10.0
+        power_level -= penalty
+        breakdown_notes.append(f"Incomplete Deck (-{penalty:.1f})")
+
+    return max(0.0, power_level), ", ".join(breakdown_notes)
+
+
+def estimate_record(power_level, is_bo3=False):
+    """Maps the unbounded Power Level to an expected record."""
+    if is_bo3:
+        if power_level < 50:
+            return "0-2 / 1-2"
+        if power_level < 75:
+            return "2-1"
+        return "3-0 (Trophy!)"
+    else:
+        if power_level < 40:
+            return "0-3 / 1-3"
+        if power_level < 55:
+            return "2-3 / 3-3"
+        if power_level < 75:
+            return "4-3 / 5-3"
+        if power_level < 90:
+            return "6-3"
+        return "7-x (Trophy!)"
+
+
+# --- HEURISTIC BUILDERS ---
+
+
+def build_variant_consistency(pool, colors):
     candidates = [
         c
         for c in pool
-        if is_castable(c, colors, strict=True)
-        and constants.CARD_TYPE_LAND not in c.get(constants.DATA_FIELD_TYPES, [])
+        if is_castable(c, colors, strict=True) and "Land" not in c.get("types", [])
     ]
-
-    # Sort by Power (GIHWR)
     candidates.sort(key=lambda x: get_card_rating(x, colors), reverse=True)
-
-    # Select Spells
-    spells = candidates[:23]
-
-    # Select Useful Lands (Evolving Wilds, Duals, etc.)
+    spells = candidates[:23]  # Caps at 23 spells max
     non_basic_lands = select_useful_lands(pool, colors)
 
-    # Calculate Mana Base
-    land_count_needed = 17 - len(non_basic_lands)
-    basics = calculate_dynamic_mana_base(spells, colors, forced_count=land_count_needed)
+    # GUARANTEE EXACTLY 40 CARDS
+    total_lands_needed = 40 - len(spells)
+    needed_basics = max(0, total_lands_needed - len(non_basic_lands))
+    basics = calculate_dynamic_mana_base(spells, colors, forced_count=needed_basics)
 
-    deck = stack_cards(spells + non_basic_lands + basics)
-    score = calculate_deck_score(spells)
-
-    return deck, score
+    return stack_cards(spells + non_basic_lands + basics)
 
 
-def build_variant_greedy(pool, colors, metrics):
-    """
-    Tries to splash high-power cards.
-    """
-    # 1. Find Splash Candidates (Bombs, Single Pip, Off-Color)
-    splash_candidates = []
+def build_variant_greedy(pool, colors):
     fixing_sources = count_fixing(pool)
+    best_splash = None
+    best_rating = 52.0
 
     for card in pool:
-        card_colors = card.get(constants.DATA_FIELD_COLORS, [])
-        if not card_colors or any(c in colors for c in card_colors):
-            continue  # Already in color
-
-        # Must be single color splash for simplicity
-        if len(card_colors) > 1:
+        card_colors = card.get("colors", [])
+        if (
+            not card_colors
+            or any(c in colors for c in card_colors)
+            or len(card_colors) > 1
+        ):
             continue
         splash_col = card_colors[0]
-
-        # Check Pips
-        mana_cost = card.get(constants.DATA_FIELD_MANA_COST, "")
-        pips = sum(1 for c in mana_cost if c == splash_col)
-
+        pips = sum(1 for c in card.get("mana_cost", "") if c == splash_col)
         if pips > 1:
-            continue  # No double pip splashes
-
-        # Check Power (Must be better than average ~55%)
-        rating = get_card_rating(card, ["All Decks"])
-        if rating < 58.0:
             continue
 
-        # Check Fixing
-        # Need basic land + sources
-        if fixing_sources.get(splash_col, 0) >= 1:
-            splash_candidates.append((card, splash_col, rating))
+        rating = get_card_rating(card, ["All Decks"])
+        if rating > best_rating and fixing_sources.get(splash_col, 0) >= 1:
+            best_rating = rating
+            best_splash = (card, splash_col)
 
-    if not splash_candidates:
-        return None, 0, ""
+    if not best_splash:
+        return None, ""
 
-    # Sort candidates
-    splash_candidates.sort(key=lambda x: x[2], reverse=True)
-    best_splash = splash_candidates[0]
-
-    splash_card = best_splash[0]
-    splash_color = best_splash[1]
-
-    # Build Deck
     main_spells = [
         c
         for c in pool
-        if is_castable(c, colors, strict=True)
-        and constants.CARD_TYPE_LAND not in c.get(constants.DATA_FIELD_TYPES, [])
+        if is_castable(c, colors, strict=True) and "Land" not in c.get("types", [])
     ]
     main_spells.sort(key=lambda x: get_card_rating(x, colors), reverse=True)
+    deck_spells = main_spells[:22] + [best_splash[0]]
 
-    # 22 Main + 1 Splash
-    deck_spells = main_spells[:22] + [splash_card]
-
-    # Select Useful Lands (Including the splash color)
-    target_colors = colors + [splash_color]
+    target_colors = colors + [best_splash[1]]
     non_basic_lands = select_useful_lands(pool, target_colors)
 
-    # Mana Base (Include Splash Basic)
-    land_count_needed = 17 - len(non_basic_lands)
+    # GUARANTEE EXACTLY 40 CARDS
+    total_lands_needed = 40 - len(deck_spells)
+    needed_basics = max(0, total_lands_needed - len(non_basic_lands))
     basics = calculate_dynamic_mana_base(
-        deck_spells, target_colors, forced_count=land_count_needed
+        deck_spells, target_colors, forced_count=needed_basics
     )
 
-    deck = stack_cards(deck_spells + non_basic_lands + basics)
-    score = calculate_deck_score(deck_spells) + 50  # Bonus for hitting the splash
-
-    return deck, score, splash_color
+    return stack_cards(deck_spells + non_basic_lands + basics), best_splash[1]
 
 
-def build_variant_curve(pool, colors, metrics):
-    """
-    Prioritizes low CMC. Forces 16 Lands.
-    """
+def build_variant_curve(pool, colors):
     candidates = [
         c
         for c in pool
-        if is_castable(c, colors, strict=True)
-        and constants.CARD_TYPE_LAND not in c.get(constants.DATA_FIELD_TYPES, [])
+        if is_castable(c, colors, strict=True) and "Land" not in c.get("types", [])
     ]
 
-    # Custom Sort: Penalize High CMC
     def tempo_rating(card):
         base = get_card_rating(card, colors)
-        cmc = int(card.get(constants.DATA_FIELD_CMC, 0))
+        cmc = int(card.get("cmc", 0))
         if cmc <= 2:
-            return base * 1.1  # Boost cheap stuff
+            return base + 4.0
         if cmc >= 5:
-            return base * 0.7  # Penalty
+            return base - 8.0
         return base
 
     candidates.sort(key=tempo_rating, reverse=True)
-    spells = candidates[:24]  # 24 Spells, 16 Lands
-
-    # Select Useful Lands
+    spells = candidates[:24]  # Caps at 24 spells max for aggro
     non_basic_lands = select_useful_lands(pool, colors)
 
-    # Force 16 Lands total
-    land_count_needed = max(0, 16 - len(non_basic_lands))
-    basics = calculate_dynamic_mana_base(spells, colors, forced_count=land_count_needed)
+    # GUARANTEE EXACTLY 40 CARDS
+    total_lands_needed = 40 - len(spells)
+    needed_basics = max(0, total_lands_needed - len(non_basic_lands))
+    basics = calculate_dynamic_mana_base(spells, colors, forced_count=needed_basics)
 
-    deck = stack_cards(spells + non_basic_lands + basics)
-    score = calculate_deck_score(spells)
-
-    return deck, score
+    return stack_cards(spells + non_basic_lands + basics)
 
 
 # --- UTILITIES ---
 
 
 def select_useful_lands(pool, target_colors):
-    """
-    Filters the card pool for non-basic lands that are useful for the target deck colors.
-    Includes Dual Lands, Fetch Lands (Evolving Wilds), and Utility Lands.
-    """
     useful_lands = []
-
     for card in pool:
-        if constants.CARD_TYPE_LAND not in card.get(constants.DATA_FIELD_TYPES, []):
+        if "Land" not in card.get("types", []) or "Basic" in card.get("types", []):
             continue
-
-        # Ignore Basics (handled by calculator)
-        if "Basic" in card.get(constants.DATA_FIELD_TYPES, []):
-            continue
-
-        name = card.get(constants.DATA_FIELD_NAME, "")
-        text = card.get("text", "")
-        card_colors = card.get(constants.DATA_FIELD_COLORS, [])
-
-        # 1. "Any Color" Fetch/Fixers (Evolving Wilds, etc.)
-        if any(fn in name for fn in constants.FIXING_NAMES):
+        name, text, card_colors = (
+            card.get("name", "").lower(),
+            str(card.get("text", "")).lower(),
+            card.get("colors", []),
+        )
+        if (
+            any(fn in name for fn in constants.FIXING_NAMES)
+            or "search your library for a basic land" in text
+        ):
             useful_lands.append(card)
-            continue
-
-        # 2. Dual/Tri Lands matching identity
-        # If the land has colors, they must match our target colors
-        # e.g. If we are UB, we take UB lands. We usually ignore GW lands.
-        if card_colors:
-            # Check if land shares ANY color with our targets (Loose check for now)
-            # Better check: Does it produce ONLY colors we need?
-            # Or at least one?
-            if any(c in target_colors for c in card_colors):
-                useful_lands.append(card)
-                continue
-
+        elif card_colors and any(c in target_colors for c in card_colors):
+            useful_lands.append(card)
     return useful_lands
 
 
-def calculate_dynamic_mana_base(spells, colors, forced_count=None):
+def calculate_dynamic_mana_base(spells, colors, forced_count=17):
     """
-    Frank-Karsten Logic:
-    1. Calculate Avg CMC of spells.
-    2. Determine total land count.
-    3. Calculate color ratio based on Pips.
+    Advanced Mana Base algorithm. Uses proportional division but enforces
+    strict minimums to prevent color screw (e.g. 10/7 split instead of 13/4).
     """
-    # 1. Total Count
-    if forced_count is not None:
-        total_lands = forced_count
-    else:
-        total_cmc = sum(int(c.get(constants.DATA_FIELD_CMC, 0)) for c in spells)
-        avg_cmc = total_cmc / len(spells) if spells else 3.0
-        total_lands = 17 + round((avg_cmc - 3.0))
-        total_lands = max(15, min(18, total_lands))
-
-    if total_lands <= 0:
+    if forced_count <= 0:
         return []
 
-    # 2. Pip Counts
     pips = {c: 0 for c in constants.CARD_COLORS}
     for card in spells:
-        cost = card.get(constants.DATA_FIELD_MANA_COST, "")
-        if cost:
-            for char in cost:
-                if char in pips:
-                    pips[char] += 1
-        else:
-            # Fallback for cards without mana cost field (should be rare)
-            for c in card.get("colors", []):
-                if c in pips:
-                    pips[c] += 1
+        cost = card.get("mana_cost") or ""
+        for char in cost:
+            if char in pips:
+                pips[char] += 1
 
-    # 3. Allocate Basics
     active_pips = {c: p for c, p in pips.items() if c in colors and p > 0}
     total_pips = sum(active_pips.values())
-
     lands = []
 
+    # Fallback if no colored pips exist (e.g., all artifacts)
     if total_pips == 0:
-        # Fallback distribution
         for c in colors[:2]:
-            count = total_lands // max(1, len(colors))
-            lands.extend(create_basic_lands(c, count))
+            lands.extend(create_basic_lands(c, forced_count // max(1, len(colors))))
+        rem = forced_count - len(lands)
+        if rem > 0 and colors:
+            lands.extend(create_basic_lands(colors[0], rem))
         return lands
 
-    remaining_lands = total_lands
+    allocations = {c: 0 for c in active_pips}
+    remaining = forced_count
 
-    # Allocate based on ratio
-    for color in active_pips:
-        ratio = active_pips[color] / total_pips
-        count = int(round(total_lands * ratio))
-        # Ensure minimums for splash
-        if count < 3 and color in colors and len(colors) > 2:
-            count = 3
+    # Step 1: Assign Safety Floors
+    for c, p in active_pips.items():
+        if p >= 4:
+            # Secondary color requires at least 6-7 sources. We guarantee 6 basics if possible.
+            minimum = min(6, remaining)
+        else:
+            # Light splash requires at least 3 sources
+            minimum = min(3, remaining)
 
-        count = min(count, remaining_lands)
+        allocations[c] += minimum
+        remaining -= minimum
+
+    # Step 2: Distribute the remaining lands proportionally
+    if remaining > 0:
+        for c in active_pips:
+            extra = int(round(remaining * (active_pips[c] / total_pips)))
+            allocations[c] += extra
+
+        # Handle floating point rounding overflow/underflow
+        current_total = sum(allocations.values())
+        diff = forced_count - current_total
+
+        if diff > 0:
+            # Give to the color with the most pips
+            top_color = max(active_pips, key=active_pips.get)
+            allocations[top_color] += diff
+        elif diff < 0:
+            # Take away from the color with the least pips (without violating math)
+            bottom_color = min(active_pips, key=active_pips.get)
+            allocations[bottom_color] += diff
+
+    # Step 3: Generate the actual cards
+    for c, count in allocations.items():
         if count > 0:
-            lands.extend(create_basic_lands(color, count))
-            remaining_lands -= count
+            lands.extend(create_basic_lands(c, count))
 
-    # Dump remainder into primary color
-    if remaining_lands > 0 and colors:
-        lands.extend(create_basic_lands(colors[0], remaining_lands))
+    # Final failsafe in case of weird pip dictionaries
+    final_diff = forced_count - len(lands)
+    if final_diff > 0 and colors:
+        lands.extend(create_basic_lands(colors[0], final_diff))
 
     return lands
 
@@ -658,269 +830,171 @@ def create_basic_lands(color, count):
     }
     return [
         {
-            constants.DATA_FIELD_NAME: map_name.get(color, "Wastes"),
-            constants.DATA_FIELD_CMC: 0,
-            constants.DATA_FIELD_TYPES: [constants.CARD_TYPE_LAND, "Basic"],
-            constants.DATA_FIELD_COLORS: [color],
+            "name": map_name.get(color, "Wastes"),
+            "cmc": 0,
+            "types": ["Land", "Basic"],
+            "colors": [color],
             "count": 1,
         }
     ] * count
 
 
 def is_castable(card, colors, strict=True):
-    card_colors = card.get(constants.DATA_FIELD_COLORS, [])
+    card_colors = card.get("colors", [])
     if not card_colors:
-        return True  # Artifact
+        return True
     if strict:
         return all(c in colors for c in card_colors)
     return any(c in colors for c in card_colors)
 
 
 def get_card_rating(card, colors):
-    """Safe accessor for GIHWR."""
-    key = "".join(sorted(colors))
+    """
+    Synthesizes Archetype data with Global data.
+    Ensures that universally good cards (Bombs) are always valued highly,
+    even if data is sparse in a specific color pairing.
+    """
     stats = card.get("deck_colors", {})
-    val = stats.get(key, {}).get(constants.DATA_FIELD_GIHWR, 0.0)
-    if val == 0.0:
-        val = stats.get("All Decks", {}).get(constants.DATA_FIELD_GIHWR, 0.0)
-    return float(val)
+
+    # 1. Always get the Global baseline first
+    global_stats = stats.get("All Decks", {})
+    global_wr = float(global_stats.get("gihwr", 0.0))
+
+    # 2. Try to get the specific archetype data
+    arch_key = (
+        "".join(sorted(colors)) if len(colors) <= 2 else "".join(sorted(colors[:2]))
+    )
+    arch_stats = stats.get(arch_key, {})
+    arch_wr = float(arch_stats.get("gihwr", 0.0))
+
+    # 3. Blending Logic
+    if arch_wr > 30.0 and global_wr > 30.0:
+        # If we have valid data for both, blend them.
+        # 70% weight to the specific archetype, 30% weight to the global power of the card.
+        return (arch_wr * 0.7) + (global_wr * 0.3)
+    elif global_wr > 30.0:
+        # If the archetype data is missing or 0.0 (data sparsity), rely 100% on global stats.
+        return global_wr
+    else:
+        # If the card is completely unknown, assume baseline filler
+        return 50.0
 
 
 class ManaSourceAnalyzer:
-    """
-    Advanced heuristic engine to identify mana sources in a card pool.
-    Distinguishes between Lands, Dorks, Rocks, and Treasures.
-    """
-
     def __init__(self, pool):
         self.pool = pool
-        self.sources = {c: 0 for c in constants.CARD_COLORS}  # W, U, B, R, G
+        self.sources = {c: 0 for c in constants.CARD_COLORS}
         self.any_color_sources = 0
-        self.treasure_sources = 0
-        self._analyze()
-
-    def _analyze(self):
         for card in self.pool:
-            self._evaluate_card(card)
+            self._evaluate(card)
 
-    def _evaluate_card(self, card):
-        name = card.get(constants.DATA_FIELD_NAME, "")
-        types = card.get(constants.DATA_FIELD_TYPES, [])
-        text = card.get("text", "")  # Assuming text might be populated
-
-        # 1. LANDS
-        if constants.CARD_TYPE_LAND in types:
-            # Basic Lands don't count as "Fixing" (they are the baseline)
-            # We look for Non-Basics
-            if "Basic" not in types:
-                self._process_dual_land(card)
-                self._check_text_fixing(name, text)
-            return
-
-        # 2. ARTIFACTS (Rocks)
-        if constants.CARD_TYPE_ARTIFACT in types:
-            # Heuristic: If Identity has colors but Cost is colorless = Signet/Rock
-            if self._is_colored_rock(card):
-                self._add_identity_sources(card)
-            # Check for "Any Color" rocks (Prism, etc)
-            elif self._check_text_fixing(name, text):
-                pass
-            return
-
-        # 3. SPELLS / CREATURES (Dorks/Treasures/Ramp)
-        # Check for Treasure generation
-        if "Treasure" in name or "Treasure" in text:
-            self.treasure_sources += 1
-            self.any_color_sources += 1  # Treasures fix anything once
-
-        # Check for "Search Library" (Rampant Growth)
-        if "Search your library" in text and "land" in text:
-            self.any_color_sources += 1  # Effectively fixes any color
-
-        # Check for Landcyclers (e.g. Basic Landcycling, Swampcycling)
-        if "cycling" in text and (
-            "Basic" in text
-            or "land" in text
-            or any(
-                c in text for c in ["Plains", "Island", "Swamp", "Mountain", "Forest"]
-            )
+    def _evaluate(self, card):
+        count = card.get("count", 1)  # FIXED: Multiply sources by duplicates
+        types, text, name = (
+            card.get("types", []),
+            str(card.get("text", "")).lower(),
+            card.get("name", "").lower(),
+        )
+        if "Land" in types and "Basic" not in types:
+            for c in card.get("colors", []):
+                self.sources[c] += count
+            if any(fn in name for fn in constants.FIXING_NAMES) or "any color" in text:
+                self.any_color_sources += count
+        elif (
+            "Artifact" in types
+            and not any(c in card.get("mana_cost", "") for c in "WUBRG")
+            and card.get("colors")
         ):
-            self.any_color_sources += 1
-
-        # Check for Mana Dorks (Green creatures usually)
-        if "Creature" in types and "Green" in card.get(constants.DATA_FIELD_COLORS, []):
-            if "Add {" in text:
-                self._add_identity_sources(card)
-
-    def _process_dual_land(self, card):
-        """
-        If a land has multiple colors in identity, it fixes those colors.
-        Colorless lands must be checked via text/name analysis elsewhere.
-        """
-        colors = card.get(constants.DATA_FIELD_COLORS, [])
-        if len(colors) > 1:
-            for c in colors:
-                self.sources[c] += 1
-
-    def _is_colored_rock(self, card):
-        """Returns True if card costs generic mana but produces colored mana."""
-        mana_cost = card.get(constants.DATA_FIELD_MANA_COST, "")
-        colors = card.get(constants.DATA_FIELD_COLORS, [])
-
-        # No colored pips in cost
-        if not any(c in mana_cost for c in "WUBRG"):
-            # But has color identity (e.g. Commander identity logic applies to limited rocks often)
-            if len(colors) > 0:
-                return True
-        return False
-
-    def _add_identity_sources(self, card):
-        for c in card.get(constants.DATA_FIELD_COLORS, []):
-            self.sources[c] += 1
-
-    def _check_text_fixing(self, name, text):
-        """Scans name and text for known fixing phrases (Case Insensitive)."""
-        is_fixer = False
-
-        # Enforce Case Insensitivity
-        name_lower = name.lower()
-        text_lower = text.lower()
-
-        # Check Name List
-        if any(fn in name_lower for fn in constants.FIXING_NAMES):
-            self.any_color_sources += 1
-            is_fixer = True
-
-        # Check Text Keywords
-        elif any(kw in text_lower for kw in constants.FIXING_KEYWORDS):
-            # Keyword matched (e.g. "search your library", "create a treasure")
-            # We assume this provides generic fixing capability
-            self.any_color_sources += 1
-            is_fixer = True
-
-        # Check Direct Mana Symbols (e.g. "Add {G}")
-        # We explicitly iterate valid colors to avoid catching "{C}" or "{1}"
-        else:
-            for color in constants.CARD_COLORS:
-                # Look for symbol with braces: "{g}" or "{r}"
-                symbol = "{" + color.lower() + "}"
-                if symbol in text_lower:
-                    self.sources[color] += 1
-                    is_fixer = True
-
-        return is_fixer
-
-    def get_fixing_for_color(self, color):
-        """Returns total sources for a specific splash color."""
-        return self.sources.get(color, 0) + self.any_color_sources
-
-
-# --- UPDATED HELPER FUNCTIONS ---
+            for c in card.get("colors", []):
+                self.sources[c] += count
+        elif (
+            "treasure" in text
+            or "search your library for a basic land" in text
+            or "basic landcycling" in text
+        ):
+            self.any_color_sources += count
+        elif "Creature" in types and "G" in card.get("colors", []) and "add {" in text:
+            for c in card.get("colors", []):
+                self.sources[c] += count
 
 
 def count_fixing(pool):
-    """
-    Replacement for the old simple counter.
-    Returns a dictionary of extra sources provided by the pool.
-    """
     analyzer = ManaSourceAnalyzer(pool)
-
-    results = {c: analyzer.sources[c] for c in constants.CARD_COLORS}
-
-    # Add 'Any' sources to all colors
-    for c in results:
-        results[c] += analyzer.any_color_sources
-
-    return results
-
-
-def calculate_deck_score(deck):
-    return sum(get_card_rating(c, ["All Decks"]) for c in deck)
+    res = {
+        c: analyzer.sources[c] + analyzer.any_color_sources
+        for c in constants.CARD_COLORS
+    }
+    return res
 
 
 def export_draft_to_csv(history, dataset, picked_cards_map):
+    import io, csv
+
     output = io.StringIO()
     writer = csv.writer(output)
-
-    # Headers match test expectation (Picked must be index 2)
-    headers = [
-        "Pack",
-        "Pick",
-        "Picked",
-        "Name",
-        "Colors",
-        "CMC",
-        "Type",
-        "GIHWR",
-        "ALSA",
-        "ATA",
-        "IWD",
-    ]
-    writer.writerow(headers)
-
+    writer.writerow(
+        [
+            "Pack",
+            "Pick",
+            "Picked",
+            "Name",
+            "Colors",
+            "CMC",
+            "Type",
+            "GIHWR",
+            "ALSA",
+            "ATA",
+            "IWD",
+        ]
+    )
     if not history:
         return output.getvalue()
-
-    # Determine user's picked cards flat list for checking
-    # picked_cards_map is list of lists, index 0 is user's seat
     user_picks = picked_cards_map[0] if picked_cards_map else []
-
     for entry in history:
-        pack = entry["Pack"]
-        pick = entry["Pick"]
-        card_ids = entry["Cards"]
-
-        for cid in card_ids:
-            card_obj_list = dataset.get_data_by_id([cid])
-            if not card_obj_list:
+        for cid in entry["Cards"]:
+            c_list = dataset.get_data_by_id([cid])
+            if not c_list:
                 continue
-            card = card_obj_list[0]
-
-            picked_flag = "1" if str(cid) in user_picks else "0"
-
-            # Stats (default to empty string if missing)
-            stats = card.get("deck_colors", {}).get("All Decks", {})
-
-            row = [
-                pack,
-                pick,
-                picked_flag,
-                card.get("name", "Unknown"),
-                "".join(card.get("colors", [])),
-                str(card.get("cmc", "")),
-                " ".join(card.get("types", [])),
-                stats.get("gihwr", ""),
-                stats.get("alsa", ""),
-                stats.get("ata", ""),
-                stats.get("iwd", ""),
-            ]
-            writer.writerow(row)
-
+            c = c_list[0]
+            stats = c.get("deck_colors", {}).get("All Decks", {})
+            writer.writerow(
+                [
+                    entry["Pack"],
+                    entry["Pick"],
+                    "1" if str(cid) in user_picks else "0",
+                    c.get("name", ""),
+                    "".join(c.get("colors", [])),
+                    str(c.get("cmc", "")),
+                    " ".join(c.get("types", [])),
+                    stats.get("gihwr", ""),
+                    stats.get("alsa", ""),
+                    stats.get("ata", ""),
+                    stats.get("iwd", ""),
+                ]
+            )
     return output.getvalue()
 
 
 def export_draft_to_json(history, dataset, picked_cards_map):
+    import json
+
     output = []
     user_picks = picked_cards_map[0] if picked_cards_map else []
-
     for entry in history:
         pack_data = {"Pack": entry["Pack"], "Pick": entry["Pick"], "Cards": []}
-
         for cid in entry["Cards"]:
-            card_obj_list = dataset.get_data_by_id([cid])
-            if not card_obj_list:
+            c_list = dataset.get_data_by_id([cid])
+            if not c_list:
                 continue
-            card = card_obj_list[0]
-
-            card_entry = {
-                "Name": card.get("name", "Unknown"),
-                "Picked": (str(cid) in user_picks),
-                "Colors": card.get("colors", []),
-                "CMC": card.get("cmc", 0),
-                "Type": card.get("types", []),
-            }
-            pack_data["Cards"].append(card_entry)
-
+            c = c_list[0]
+            pack_data["Cards"].append(
+                {
+                    "Name": c.get("name", ""),
+                    "Picked": (str(cid) in user_picks),
+                    "Colors": c.get("colors", []),
+                    "CMC": c.get("cmc", 0),
+                    "Type": c.get("types", []),
+                }
+            )
         output.append(pack_data)
-
     return json.dumps(output, indent=4)

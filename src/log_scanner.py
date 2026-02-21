@@ -432,6 +432,7 @@ class ArenaScanner:
             if not pack_cards:
                 return
 
+            self._check_and_wipe_stale_pool(1, 1)
             self.initial_pack[0] = pack_cards
             self.pack_cards[0] = pack_cards
             self.current_pack = 1
@@ -471,6 +472,7 @@ class ArenaScanner:
                         pick = json_find("PickNumber", draft_data)
 
                         if pack == 1 and pick == 1:
+                            self._check_and_wipe_stale_pool(pack, pick)
                             self.pack_cards[0] = pack_cards
                             self.initial_pack[0] = pack_cards
                             self.current_pack, self.current_pick = 1, 1
@@ -522,6 +524,19 @@ class ArenaScanner:
 
         except Exception as e:
             logger.error(f"V1 Pack Search Error: {e}")
+
+    def _check_and_wipe_stale_pool(self, pack, pick):
+        """
+        If we are at Pack 1 Pick 1, by definition our pool should be empty.
+        This wipes the pool to prevent consecutive drafts of the same format from merging.
+        """
+        if pack == 1 and pick == 1:
+            if len(self.taken_cards) > 0:
+                logger.info("New draft detected via P1P1. Wiping stale card pool.")
+                self.taken_cards = []
+                self.picked_cards = [[] for _ in range(self.number_of_players)]
+                self.draft_history = []
+                self.sideboard = []
 
     def __draft_picked_search_premier_v1(self):
         offset = self.pick_offset
@@ -613,6 +628,7 @@ class ArenaScanner:
                             if len(self.initial_pack[pack_index]) == 0:
                                 self.initial_pack[pack_index] = pack_cards
 
+                            self._check_and_wipe_stale_pool(pack, pick)
                             self.pack_cards[pack_index] = pack_cards
                             self.current_pack = pack
                             self.current_pick = pick
@@ -737,6 +753,7 @@ class ArenaScanner:
                                 if len(self.initial_pack[pack_index]) == 0:
                                     self.initial_pack[pack_index] = pack_cards
 
+                                self._check_and_wipe_stale_pool(pack, pick)
                                 self.pack_cards[pack_index] = pack_cards
                                 self.current_pack = pack
                                 self.current_pick = pick
@@ -844,6 +861,7 @@ class ArenaScanner:
                                 continue
 
                             pack_index = (pick - 1) % self.number_of_players
+                            self._check_and_wipe_stale_pool(pack, pick)
                             self.pack_cards[pack_index] = pack_cards
                             self.initial_pack[pack_index] = pack_cards
                             self.current_pack, self.current_pick = pack, pick
