@@ -1,6 +1,6 @@
 """
 src/advisor/engine.py
-Decision Engine v4.0 (The Compositional Brain).
+Decision Engine v4.0
 Implements Compositional Math, Relative Pack Strength, and Alien Gold Protection.
 """
 
@@ -29,6 +29,15 @@ class DraftAdvisor:
     def __init__(self, set_metrics, taken_cards: List[Dict]):
         self.metrics = set_metrics
         self.pool = taken_cards
+
+        # Base stats
+        self.global_mean, self.global_std = self.metrics.get_metrics(
+            "All Decks", "gihwr"
+        )
+        if self.global_mean == 0.0:
+            self.global_mean = 54.0
+        if self.global_std == 0.0:
+            self.global_std = 4.0
 
         # 1. Calculate Fixing First (Dependency for _analyze_pool)
         self.fixing_map = count_fixing(self.pool)
@@ -71,8 +80,12 @@ class DraftAdvisor:
             for c in pack_cards
         ]
         valid_wrs = [x for x in pack_wrs if x > 0]
-        pack_mean = statistics.mean(valid_wrs) if valid_wrs else 54.0
-        pack_std = statistics.pstdev(valid_wrs) if len(valid_wrs) > 1 else 2.0
+        pack_mean = statistics.mean(valid_wrs) if valid_wrs else self.global_mean
+        pack_std = (
+            statistics.pstdev(valid_wrs) if len(valid_wrs) > 1 else self.global_std
+        )
+        if pack_std == 0.0:
+            pack_std = self.global_std
 
         recommendations = []
 
@@ -157,8 +170,9 @@ class DraftAdvisor:
         # Sigmoid-like blend: Commit harder to archetype data later in draft
         expected_wr = (global_wr * (1.0 - progress)) + (arch_wr * progress)
 
-        # Normalize to 0-100 (Baseline 45 = 0)
-        return max(0, min(100, (expected_wr - 45) * 5))
+        # Scale dynamically based on set average and standard deviation
+        score = 50.0 + ((expected_wr - self.global_mean) / self.global_std) * 12.5
+        return max(0.0, min(100.0, score))
 
     def _calculate_castability_v4(
         self, card: Dict, pack: int, pick: int, z_score: float
@@ -305,14 +319,16 @@ class DraftAdvisor:
         Identifies main colors based on 'Quality Weight'.
         """
         weights = {c: 0.0 for c in constants.CARD_COLORS}
+        playable_threshold = self.global_mean - self.global_std
 
         for c in self.pool:
             wr = float(c.get("deck_colors", {}).get("All Decks", {}).get("gihwr", 0.0))
-            if wr < 50.0:
+            if wr < playable_threshold:
                 continue
 
-            # 55% WR = 1 point. 65% WR = 3 points.
-            points = (wr - 50.0) / 5.0
+            # Scale points dynamically. Average card = ~1 point. +1 std = ~3 points.
+            points = max(0.2, 1.0 + 2.0 * ((wr - self.global_mean) / self.global_std))
+
             for color in c.get("colors", []):
                 if color in weights:
                     weights[color] += points

@@ -82,6 +82,12 @@ class SetDictionary(BaseModel):
             set_code=REPLACE_PHRASE_LATEST,
             keywords=["Qualifier"],
         ),
+        SpecialEvent(
+            label="QualDraft",
+            type="PremierDraft",
+            set_code=REPLACE_PHRASE_LATEST,
+            keywords=["Qualifier", "Draft"],
+        ),
     ]
 
 

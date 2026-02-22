@@ -481,8 +481,19 @@ class DraftApp:
             self._set_dropdown_options(self.om_group, self.vars["selected_group"], [])
             return
 
+        # Look up the full, human-readable Set Name from the metadata dictionary
+        full_set_name = current_set
+        if self.orchestrator.scanner.set_list and self.orchestrator.scanner.set_list.data:
+            for name, info in self.orchestrator.scanner.set_list.data.items():
+                if info.set_code == current_set:
+                    full_set_name = name
+                    break
+
         self.detected_set_code = current_set
-        self.vars["set_label"].set(f"SET: {current_set}")
+        # Limit length so it doesn't push UI elements off the screen (e.g. Shadows over Innistrad Remastered)
+        display_name = full_set_name if len(full_set_name) <= 25 else full_set_name[:22] + "..."
+        
+        self.vars["set_label"].set(f"SET: {display_name}")
         self.lbl_set_code.config(foreground=Theme.ACCENT)
 
         all_files, _ = retrieve_local_set_list()
@@ -596,7 +607,27 @@ class DraftApp:
         save_img = (
             self.configuration.settings.save_screenshot_enabled if use_ocr else False
         )
-        if self.orchestrator.scanner.draft_data_search(use_ocr, save_img):
+        
+        # If performing OCR, do it asynchronously so the UI doesn't freeze
+        if use_ocr:
+            self.btn_p1p1.config(text="Scanning...", state="disabled")
+            
+            def _scan_thread():
+                data_found = self.orchestrator.scanner.draft_data_search(True, save_img)
+                self.root.after(0, lambda: self._on_scan_complete(data_found))
+                
+            import threading
+            threading.Thread(target=_scan_thread, daemon=True).start()
+        else:
+            # Standard log refresh is instant
+            if self.orchestrator.scanner.draft_data_search(False, save_img):
+                self._refresh_ui_data()
+
+    def _on_scan_complete(self, data_found):
+        """Callback from the async OCR thread."""
+        if self.btn_p1p1.winfo_exists():
+            self.btn_p1p1.config(text="P1P1", state="normal")
+        if data_found:
             self._refresh_ui_data()
 
     def _on_card_select(self, event, table, source_type):

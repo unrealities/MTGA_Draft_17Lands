@@ -81,7 +81,6 @@ class Notifications:
     def update_dataset(self):
         try:
             current_time = datetime.now().timestamp()
-            # FIX: Ensure we check at least once, even if timestamp logic might delay it
             if (
                 self.configuration.card_data.last_auto_check
                 and (current_time - self.configuration.card_data.last_auto_check)
@@ -95,7 +94,13 @@ class Notifications:
             if not dataset_info:
                 return
 
-            logger.info(f"Checking updates for {dataset_info[0]}...")
+            set_name = dataset_info[0]
+            event_type = dataset_info[1]
+            user_group = dataset_info[2]
+
+            logger.info(
+                f"Checking updates for {set_name} {event_type} ({user_group} players)..."
+            )
 
             # Fetch summary only (fast check)
             color_ratings, game_count = Seventeenlands().download_color_ratings(
@@ -115,12 +120,18 @@ class Notifications:
 
             if game_count > local_count:
                 logger.info(
-                    f"New data found: Local {local_count} vs Remote {game_count}"
+                    f"New data found for {set_name} {event_type} ({user_group} players): "
+                    f"Local {local_count} vs Remote {game_count}"
                 )
-                if tkinter.messagebox.askyesno(
-                    "Dataset Update",
-                    f"New data available for {dataset_info[0]} ({game_count} games).\nUpdate now?",
-                ):
+
+                prompt_msg = (
+                    f"New data available for {set_name} - {event_type} ({user_group} players).\n\n"
+                    f"Local Games: {local_count:,}\n"
+                    f"Remote Games: {game_count:,}\n\n"
+                    f"Would you like to update now?"
+                )
+
+                if tkinter.messagebox.askyesno("Dataset Update", prompt_msg):
                     args = DatasetArgs(
                         dataset_info[0],
                         dataset_info[1],

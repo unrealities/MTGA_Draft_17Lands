@@ -37,7 +37,7 @@ class DeckMetrics:
     fixing_sources: dict = field(default_factory=dict)
 
 
-# --- UI UTILITIES (Restored) ---
+# --- UI UTILITIES ---
 
 
 def filter_options(deck, option_selection, metrics, configuration):
@@ -323,10 +323,10 @@ def suggest_deck(taken_cards, metrics, configuration, event_type="PremierDraft")
 
         for main_colors in color_options:
             # 1. Variant: Consistency (Strictly 2 colors)
-            con_deck = build_variant_consistency(taken_cards, main_colors)
+            con_deck = build_variant_consistency(taken_cards, main_colors, metrics)
             if con_deck:
                 score, breakdown = calculate_holistic_score(
-                    con_deck, main_colors, pool_size
+                    con_deck, main_colors, pool_size, metrics
                 )
                 # THE EXECUTIONER: Do not display incomplete decks
                 if "Incomplete Deck" not in breakdown:
@@ -344,11 +344,13 @@ def suggest_deck(taken_cards, metrics, configuration, event_type="PremierDraft")
                     )
 
             # 2. Variant: Greedy (Splash bombs/synergy)
-            greedy_deck, splash_color = build_variant_greedy(taken_cards, main_colors)
+            greedy_deck, splash_color = build_variant_greedy(
+                taken_cards, main_colors, metrics
+            )
             if greedy_deck:
                 target_colors = main_colors + [splash_color]
                 score, breakdown = calculate_holistic_score(
-                    greedy_deck, target_colors, pool_size
+                    greedy_deck, target_colors, pool_size, metrics
                 )
                 if "Incomplete Deck" not in breakdown:
                     all_variants.append(
@@ -365,10 +367,10 @@ def suggest_deck(taken_cards, metrics, configuration, event_type="PremierDraft")
                     )
 
             # 3. Variant: Tempo (Low curve, aggro)
-            tempo_deck = build_variant_curve(taken_cards, main_colors)
+            tempo_deck = build_variant_curve(taken_cards, main_colors, metrics)
             if tempo_deck:
                 score, breakdown = calculate_holistic_score(
-                    tempo_deck, main_colors, pool_size
+                    tempo_deck, main_colors, pool_size, metrics
                 )
                 if "Incomplete Deck" not in breakdown:
                     all_variants.append(
@@ -383,6 +385,7 @@ def suggest_deck(taken_cards, metrics, configuration, event_type="PremierDraft")
                             "breakdown": breakdown,
                         }
                     )
+
         # Sort all generated variants by their holistic score
         all_variants.sort(key=lambda x: x["rating"], reverse=True)
 
@@ -419,13 +422,22 @@ def suggest_deck(taken_cards, metrics, configuration, event_type="PremierDraft")
 
 def identify_top_pairs(pool, metrics):
     """Returns top 2-color pairs based on playability and raw power."""
-    scores = {c: 0 for c in constants.CARD_COLORS}
+    global_mean, global_std = metrics.get_metrics("All Decks", "gihwr")
+    if global_mean == 0.0:
+        global_mean = 54.0
+    if global_std == 0.0:
+        global_std = 4.0
+
+    playable_baseline = global_mean - (global_std * 0.5)
+
+    scores = {c: 0.0 for c in constants.CARD_COLORS}
     for card in pool:
         colors = card.get(constants.DATA_FIELD_COLORS, [])
         stats = card.get("deck_colors", {}).get("All Decks", {})
         wr = float(stats.get(constants.DATA_FIELD_GIHWR, 0.0))
-        if wr > 52.0:  # Playable baseline
-            points = wr - 50.0
+
+        if wr > playable_baseline:
+            points = (wr - playable_baseline) / global_std
             for c in colors:
                 scores[c] += points
 
@@ -442,22 +454,11 @@ def identify_top_pairs(pool, metrics):
 
     return top_pairs
 
-    # Return the absolute best pair
-    top_pairs = [[sorted_c[0][0], sorted_c[1][0]]]
-
-    # ALWAYS return the 3rd best color paired with the 1st and 2nd,
-    # as long as it has a positive score, to provide more options.
-    if len(sorted_c) > 2 and sorted_c[2][1] > 0:
-        top_pairs.append([sorted_c[0][0], sorted_c[2][0]])
-        top_pairs.append([sorted_c[1][0], sorted_c[2][0]])
-
-    return top_pairs
-
 
 # --- UNIVERSAL LIQUID SCORING ENGINE ---
 
 
-def calculate_holistic_score(deck, colors, pool_size):
+def calculate_holistic_score(deck, colors, pool_size, metrics):
     """
     Evaluates a deck on a 0-100 Power Level scale.
     Universally applicable to any MTG set by analyzing mechanical structures.
@@ -465,10 +466,14 @@ def calculate_holistic_score(deck, colors, pool_size):
     if not deck:
         return 0.0, ""
 
+    global_mean, global_std = metrics.get_metrics("All Decks", "gihwr")
+    if global_mean == 0.0:
+        global_mean = 54.0
+    if global_std == 0.0:
+        global_std = 4.0
+
     spells = [c for c in deck if constants.CARD_TYPE_LAND not in c.get("types", [])]
-    spell_count = sum(
-        c.get("count", 1) for c in spells
-    )  # FIXED: Count actual cards, not rows
+    spell_count = sum(c.get("count", 1) for c in spells)
 
     if spell_count == 0:
         return 0.0, ""
@@ -481,22 +486,24 @@ def calculate_holistic_score(deck, colors, pool_size):
     # Weight the ratings by the number of copies
     valid_ratings = []
     for c in spells:
-        rating = get_card_rating(c, [arch_key])
+        rating = get_card_rating(c, [arch_key], metrics)
         if rating > 0.0:
             valid_ratings.extend([rating] * c.get("count", 1))
 
     if not valid_ratings:
-        avg_gihwr = 50.0
+        avg_gihwr = global_mean - global_std
     else:
         avg_gihwr = sum(valid_ratings) / len(valid_ratings)
 
-    power_level = (avg_gihwr - 48.0) * 10.0
+    # Convert to z_score of the deck average.
+    z_score = (avg_gihwr - global_mean) / global_std
+    power_level = 60.0 + (z_score * 16.67)
     breakdown_notes = []
 
     # 2. FLUID CURVE & MANA VELOCITY
     cmcs = []
     for c in spells:
-        cmcs.extend([int(c.get("cmc", 0))] * c.get("count", 1))  # FIXED
+        cmcs.extend([int(c.get("cmc", 0))] * c.get("count", 1))
 
     avg_cmc = sum(cmcs) / spell_count
 
@@ -536,7 +543,7 @@ def calculate_holistic_score(deck, colors, pool_size):
     changeling_count = 0
     for c in spells:
         text = str(c.get("text", "")).lower()
-        count = c.get("count", 1)  # FIXED
+        count = c.get("count", 1)
         if "changeling" in text:
             changeling_count += count
         for t in c.get("types", []):
@@ -627,13 +634,13 @@ def estimate_record(power_level, is_bo3=False):
 # --- HEURISTIC BUILDERS ---
 
 
-def build_variant_consistency(pool, colors):
+def build_variant_consistency(pool, colors, metrics):
     candidates = [
         c
         for c in pool
         if is_castable(c, colors, strict=True) and "Land" not in c.get("types", [])
     ]
-    candidates.sort(key=lambda x: get_card_rating(x, colors), reverse=True)
+    candidates.sort(key=lambda x: get_card_rating(x, colors, metrics), reverse=True)
     spells = candidates[:23]  # Caps at 23 spells max
     non_basic_lands = select_useful_lands(pool, colors)
 
@@ -645,10 +652,16 @@ def build_variant_consistency(pool, colors):
     return stack_cards(spells + non_basic_lands + basics)
 
 
-def build_variant_greedy(pool, colors):
+def build_variant_greedy(pool, colors, metrics):
+    global_mean, global_std = metrics.get_metrics("All Decks", "gihwr")
+    if global_mean == 0.0:
+        global_mean = 54.0
+    if global_std == 0.0:
+        global_std = 4.0
+
     fixing_sources = count_fixing(pool)
     best_splash = None
-    best_rating = 52.0
+    best_rating = global_mean - (global_std * 0.5)
 
     for card in pool:
         card_colors = card.get("colors", [])
@@ -663,7 +676,7 @@ def build_variant_greedy(pool, colors):
         if pips > 1:
             continue
 
-        rating = get_card_rating(card, ["All Decks"])
+        rating = get_card_rating(card, ["All Decks"], metrics)
         if rating > best_rating and fixing_sources.get(splash_col, 0) >= 1:
             best_rating = rating
             best_splash = (card, splash_col)
@@ -676,7 +689,7 @@ def build_variant_greedy(pool, colors):
         for c in pool
         if is_castable(c, colors, strict=True) and "Land" not in c.get("types", [])
     ]
-    main_spells.sort(key=lambda x: get_card_rating(x, colors), reverse=True)
+    main_spells.sort(key=lambda x: get_card_rating(x, colors, metrics), reverse=True)
     deck_spells = main_spells[:22] + [best_splash[0]]
 
     target_colors = colors + [best_splash[1]]
@@ -692,7 +705,7 @@ def build_variant_greedy(pool, colors):
     return stack_cards(deck_spells + non_basic_lands + basics), best_splash[1]
 
 
-def build_variant_curve(pool, colors):
+def build_variant_curve(pool, colors, metrics):
     candidates = [
         c
         for c in pool
@@ -700,7 +713,7 @@ def build_variant_curve(pool, colors):
     ]
 
     def tempo_rating(card):
-        base = get_card_rating(card, colors)
+        base = get_card_rating(card, colors, metrics)
         cmc = int(card.get("cmc", 0))
         if cmc <= 2:
             return base + 4.0
@@ -848,12 +861,18 @@ def is_castable(card, colors, strict=True):
     return any(c in colors for c in card_colors)
 
 
-def get_card_rating(card, colors):
+def get_card_rating(card, colors, metrics=None):
     """
     Synthesizes Archetype data with Global data.
     Ensures that universally good cards (Bombs) are always valued highly,
     even if data is sparse in a specific color pairing.
     """
+    global_mean = 54.0
+    if metrics:
+        mean_val, _ = metrics.get_metrics("All Decks", "gihwr")
+        if mean_val > 0:
+            global_mean = mean_val
+
     stats = card.get("deck_colors", {})
 
     # 1. Always get the Global baseline first
@@ -876,8 +895,8 @@ def get_card_rating(card, colors):
         # If the archetype data is missing or 0.0 (data sparsity), rely 100% on global stats.
         return global_wr
     else:
-        # If the card is completely unknown, assume baseline filler
-        return 50.0
+        # If the card is completely unknown, assume baseline filler relative to the set
+        return global_mean - 4.0
 
 
 class ManaSourceAnalyzer:
@@ -889,7 +908,7 @@ class ManaSourceAnalyzer:
             self._evaluate(card)
 
     def _evaluate(self, card):
-        count = card.get("count", 1)  # FIXED: Multiply sources by duplicates
+        count = card.get("count", 1)
         types, text, name = (
             card.get("types", []),
             str(card.get("text", "")).lower(),

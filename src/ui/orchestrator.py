@@ -22,6 +22,14 @@ class DraftOrchestrator:
         if self.loading:
             return False
 
+        try:
+            current_size = os.path.getsize(self.scanner.arena_file)
+            if current_size == getattr(self, '_last_file_size', -1):
+                return False  # File hasn't grown; skip the expensive open/read/close operations
+            self._last_file_size = current_size
+        except OSError:
+            return False
+
         changed = False
         # 1. New Event Detection
         if self.scanner.draft_start_search():

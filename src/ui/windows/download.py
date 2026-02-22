@@ -232,7 +232,6 @@ class DownloadWindow(ttk.Frame):
                 suc, gc = ex.retrieve_17lands_color_ratings()
 
             if suc:
-                # FIX: Explicitly unpack 3 values.
                 # If FileExtractor returns 2, this will error "not enough values"
                 # If FileExtractor returns 3, this works.
                 # If code was (success, msg = ...), then 3 values crashes it with "too many values"

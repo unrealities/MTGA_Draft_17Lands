@@ -13,6 +13,9 @@ import math
 import re
 from typing import List, Dict, Any, Tuple, Optional
 from PIL import Image, ImageTk
+import threading
+import hashlib
+import os
 
 from src import constants
 from src.card_logic import field_process_sort
@@ -172,7 +175,10 @@ class AutocompleteEntry(tkinter.Entry):
 
 
 class CardToolTip(tkinter.Toplevel):
-    """Data-dense popup for MTG cards."""
+    """Data-dense popup for MTG cards with async, cached image loading."""
+
+    # Set up a local cache directory for images
+    IMAGE_CACHE_DIR = os.path.join(os.getcwd(), "Temp", "Images")
 
     def __init__(
         self,
@@ -191,6 +197,10 @@ class CardToolTip(tkinter.Toplevel):
             bg=Theme.BG_PRIMARY, highlightthickness=1, highlightbackground=Theme.ACCENT
         )
 
+        # Ensure cache directory exists
+        if not os.path.exists(self.IMAGE_CACHE_DIR):
+            os.makedirs(self.IMAGE_CACHE_DIR)
+
         header = tkinter.Frame(self, bg=Theme.BG_SECONDARY)
         header.pack(fill="x")
         tkinter.Label(
@@ -206,19 +216,12 @@ class CardToolTip(tkinter.Toplevel):
         body = tkinter.Frame(self, bg=Theme.BG_PRIMARY, padx=10, pady=10)
         body.pack(fill="both", expand=True)
 
+        # Placeholder for the image label (packed immediately)
+        self.img_label = tkinter.Label(body, bg=Theme.BG_PRIMARY)
         if images_enabled and image_urls:
-            try:
-                raw = requests.get(image_urls[0], timeout=2).content
-                img = Image.open(io.BytesIO(raw))
-                img.thumbnail(
-                    (int(200 * scale), int(280 * scale)), Image.Resampling.LANCZOS
-                )
-                self.tk_img = ImageTk.PhotoImage(img)
-                tkinter.Label(body, image=self.tk_img, bg=Theme.BG_PRIMARY).pack(
-                    side="left", padx=(0, 10)
-                )
-            except:
-                pass
+            self.img_label.pack(side="left", padx=(0, 10))
+            # Fetch image asynchronously so we don't freeze the UI
+            self._load_image_async(image_urls[0], scale)
 
         stats_f = tkinter.Frame(body, bg=Theme.BG_PRIMARY)
         stats_f.pack(side="left", fill="y")
@@ -287,6 +290,46 @@ class CardToolTip(tkinter.Toplevel):
         parent_widget.bind("<Leave>", lambda e: self.destroy(), add="+")
         self.bind("<Button-1>", lambda e: self.destroy())
 
+    def _load_image_async(self, url: str, scale: float):
+        """Fetches the image on a background thread to prevent UI freezing."""
+
+        def fetch_and_resize():
+            try:
+                # 1. Create a safe filename using a hash of the URL
+                safe_name = hashlib.md5(url.encode("utf-8")).hexdigest() + ".jpg"
+                cache_path = os.path.join(self.IMAGE_CACHE_DIR, safe_name)
+
+                # 2. Check local disk cache first
+                if os.path.exists(cache_path):
+                    with open(cache_path, "rb") as f:
+                        raw = f.read()
+                else:
+                    # 3. Download and cache if missing
+                    raw = requests.get(url, timeout=2).content
+                    with open(cache_path, "wb") as f:
+                        f.write(raw)
+
+                # 4. Process Image
+                img = Image.open(io.BytesIO(raw))
+                img.thumbnail(
+                    (int(200 * scale), int(280 * scale)), Image.Resampling.LANCZOS
+                )
+
+                # 5. Push UI update back to the main thread
+                self.after(0, lambda: self._apply_image(img))
+            except Exception as e:
+                # Fail silently, the tooltip just won't show the image
+                pass
+
+        # Start the background thread
+        threading.Thread(target=fetch_and_resize, daemon=True).start()
+
+    def _apply_image(self, img):
+        """Safely applies the image to the widget on the main thread."""
+        if self.winfo_exists():
+            self.tk_img = ImageTk.PhotoImage(img)
+            self.img_label.configure(image=self.tk_img)
+
 
 class ModernTreeview(ttk.Treeview):
     """A high-density Treeview with built-in sorting logic."""
@@ -297,6 +340,7 @@ class ModernTreeview(ttk.Treeview):
         )
         self.column_sort_state = {col: False for col in columns}
         self.active_fields = []  # Injected by Manager
+        self.base_labels = {}  # Store original names for arrows
         self._setup_headers(columns)
         self._setup_row_colors()
 
@@ -310,6 +354,7 @@ class ModernTreeview(ttk.Treeview):
                 continue
 
             label = COLUMN_FIELD_LABELS.get(col, str(col).upper()).split(":")[0]
+            self.base_labels[col] = label
             width = 200 if col == "name" else 65
             self.heading(col, text=label, command=lambda c=col: self._handle_sort(c))
             self.column(
@@ -335,26 +380,17 @@ class ModernTreeview(ttk.Treeview):
 
         self.column_sort_state[col] = not self.column_sort_state[col]
         rev = self.column_sort_state[col]
+
+        # Apply the visual arrow to the active column, reset the others
+        for c in self["columns"]:
+            if c in self.base_labels:
+                if c == col:
+                    arrow = "▼" if rev else "▲"
+                    self.heading(c, text=f"{self.base_labels[c]} {arrow}")
+                else:
+                    self.heading(c, text=self.base_labels[c])
+
         items = [(self.item(k)["values"], k) for k in self.get_children("")]
-
-        try:
-            col_idx = list(self["columns"]).index(col)
-        except ValueError:
-            return
-
-        def _key(t):
-            p = field_process_sort(t[0][col_idx])
-            try:
-                return (1, float(p), str(t[0][0]))
-            except:
-                return (0, str(p), str(t[0][0]))
-
-        items.sort(key=_key, reverse=rev)
-        for i, (v, k) in enumerate(items):
-            self.move(k, "", i)
-            tags = [t for t in self.item(k, "tags") if t not in ("bw_odd", "bw_even")]
-            tags.append("bw_odd" if i % 2 == 0 else "bw_even")
-            self.item(k, tags=tuple(tags))
 
 
 class DynamicTreeviewManager(ttk.Frame):
@@ -618,7 +654,7 @@ class ManaCurvePlot(tb.Frame):
         start_x = (w - total_content_width) / 2
 
         max_val = max(max(self.current), max(self.ideal), 5)
-        scale = (self.canvas_height - 15) / max_val
+        scale = (self.canvas_height - 25) / max_val
 
         for i, count in enumerate(self.current):
             x = start_x + (i * (self.bar_width + self.gap))
@@ -655,6 +691,15 @@ class ManaCurvePlot(tb.Frame):
                 fill=color,
                 outline="",
             )
+
+            if count > 0:
+                self.canvas.create_text(
+                    x + self.bar_width / 2,
+                    self.canvas_height - bar_h - 17,
+                    text=str(count),
+                    fill=Theme.TEXT_MAIN,
+                    font=("Segoe UI", 7, "bold"),
+                )
 
             # Axis Label
             lbl = str(i) if i < 6 else "6+"

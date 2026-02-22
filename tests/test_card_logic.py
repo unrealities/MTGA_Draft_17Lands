@@ -31,7 +31,7 @@ TEST_TIER_LIST = {
 
 TIER_TESTS = [
     ([{"name": "Push // Pull"}], "C+"),
-    ([{"name": "Consign // Oblivion"}], "C+"),  # Fixed slash count to match key
+    ([{"name": "Consign // Oblivion"}], "C+"),
     ([{"name": "Etali, Primal Conqueror"}], "A+"),
     ([{"name": "Invasion of Gobakhan"}], "B+"),
     ([{"name": "The Mightstone and Weakstone"}], "B-"),
@@ -129,7 +129,6 @@ def test_export_draft_to_csv():
 
     # Mock Dataset
     mock_dataset = MagicMock()
-    # Fixed side_effect: Logic calls get_data_by_id for EACH card ID in the history list.
     # History has ["123", "789"].
     # Call 1: "123" -> returns Card A
     # Call 2: "789" -> returns Card B

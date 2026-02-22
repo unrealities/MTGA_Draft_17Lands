@@ -1,3 +1,6 @@
+===================== RELEASE NOTES 4.0 =====================
+* [TODO]: Add release notes here
+
 ===================== RELEASE NOTES 3.38 =====================
 * unrealities: [Bug]: confirmation window hidden #117
 * unrealities: [Bug]: local_data_folder not found when Arena is installed in additional Steam library on second disk #118

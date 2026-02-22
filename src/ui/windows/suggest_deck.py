@@ -58,9 +58,10 @@ class SuggestDeckPanel(ttk.Frame):
         )
         self.om_archetype.pack(side="left", padx=10, fill="x", expand=True)
 
-        ttk.Button(
+        self.btn_copy = ttk.Button(
             self.header, text="Copy Deck", width=12, command=self._copy_to_clipboard
-        ).pack(side="right", padx=5)
+        )
+        self.btn_copy.pack(side="right", padx=5)
 
         cols = ["Card", "#", "Cost", "Type", "Colors", "GIH WR"]
         self.table_manager = DynamicTreeviewManager(
@@ -224,6 +225,10 @@ class SuggestDeckPanel(ttk.Frame):
             )
             self.clipboard_clear()
             self.clipboard_append(export_text)
+            
+            # Visual Feedback
+            self.btn_copy.config(text="Copied! ✔")
+            self.after(2000, lambda: self.btn_copy.config(text="Copy Deck"))
 
     def _on_selection(self, event):
         selection = self.table.selection()

@@ -23,6 +23,11 @@ class CompactOverlay(tb.Toplevel):
         self.geometry("330x600+50+50")
         self.configure(bg=Theme.BG_PRIMARY)
 
+        try:
+            self.attributes("-alpha", 0.92)
+        except Exception:
+            pass
+
         self._bind_drag_events()
 
         self._build_ui()
