@@ -24,7 +24,7 @@ graph TD
     
     H[Taken Cards Pool] -->|Current Deck State| G
     
-    G -->|Calculate Score| I[UI Overlay]
+    G -->|Calculate Score| I[Tabbed UI / Dashboard]
     I -->|Render| J((User Display))
 ```
 

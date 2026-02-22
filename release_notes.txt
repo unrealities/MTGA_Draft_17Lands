@@ -1,11 +1,29 @@
 ===================== RELEASE NOTES 4.0 =====================
-* [TODO]: Add release notes here
-
-===================== RELEASE NOTES 3.38 =====================
+* unrealities: [Major Redesign] Completely overhauled the UI using a modern, tabbed interface powered by ttkbootstrap. Introduced a persistent Live Dashboard alongside dedicated tabs for Datasets, Card Pool, Deck Builder, Comparisons, and Tier Lists.
+* unrealities: [Major Feature] Introduced "The Compositional Brain" tactical advisor. Replaced static win-rate thresholds with dynamic Z-scores, compositional math, and relative wheel probability.
+* unrealities: [Major Feature] Added a draggable, always-on-top Compact Overlay mode featuring a translucent glass effect for seamless single-monitor drafting.
+* unrealities: [Performance] Implemented a "Zero-Idle" Fast Path in the log scanner. The application now checks log file growth before parsing, drastically reducing idle CPU usage and disk I/O thrashing.
+* unrealities: [Performance] Offloaded Card Tooltip image downloading to a background thread and added local disk caching, completely eliminating UI freezes when clicking cards.
+* unrealities: [Performance] Moved P1P1 OCR image scanning to an asynchronous background thread with a visual "Scanning..." indicator, preventing the application from locking up during API calls.
+* unrealities: [Feature] Completely rewrote the Deck Suggester to generate distinct archetypes (Consistent, Greedy/Splash, Tempo) utilizing Frank Karsten's mana base math to auto-generate perfect mana bases.
+* unrealities: [Feature] Upgraded Signal Detection to track wheel signals by comparing P1P9 contents against P1P1 contents to determine the true "Retention Rate" of color quality.
+* unrealities: [UX/UI] Consolidated all configuration options into a modernized Preferences window with real-time UI updates.
+* unrealities: [UX/UI] Expanded Dataset Update notifications to display highly verbose details, including Full Set Name, Event Type, User Group, and formatted local vs. remote game counts.
+* unrealities: [UX/UI] Added visual sort indicators (▲ / ▼) to the column headers of all data tables.
+* unrealities: [UX/UI] Added momentary "Copied! ✔" visual feedback to buttons when exporting decks or card pools to the clipboard.
+* unrealities: [UX/UI] Added exact numeric labels floating above the Mana Curve chart bars in the sidebar.
+* unrealities: [UX/UI] The application header now displays the full, human-readable Set Name (e.g., "Outlaws of Thunder Junction") instead of just the 3-letter set code.
+* unrealities: [UX/UI] Added support for custom .tcl themes and introduced several built-in Magic-themed color palettes ("Mana Flairs").
+* unrealities: [Architecture] Refactored the entire codebase into a clean `src/` directory structure, separating UI components, core logic, and the new advisor engine.
+* unrealities: [Architecture] Added comprehensive Markdown documentation in a new `docs/` directory covering system architecture, domain models, and external integrations.
 * unrealities: [Bug]: confirmation window hidden #117
 * unrealities: [Bug]: local_data_folder not found when Arena is installed in additional Steam library on second disk #118
 * unrealities: [Bug]: Taken Cards window persists in Sealed play #83
+* unrealities: Handle Arena Limited Qualifier Draft
 * unrealities: Added bump_version script
+
+===================== RELEASE NOTES 3.38 =====================
+* ebertin42: Fixed Scryfall API 400 Bad Request error by adding User-Agent headers to set retrieval requests
 
 ===================== RELEASE NOTES 3.37 =====================
 * jsherin & unrealities: [Bug]: Color pair win percentages missing #108
