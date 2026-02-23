@@ -1127,27 +1127,34 @@ class ArenaScanner:
 
     def retrieve_color_win_rate(self, label_type):
         deck_colors = {}
-        for filter_key in constants.DECK_FILTERS:
-            std_key = normalize_color_string(filter_key)
-            display_label = std_key
-            if (label_type == constants.DECK_FILTER_FORMAT_NAMES) and (
-                std_key in constants.COLOR_NAMES_DICT
-            ):
-                display_label = constants.COLOR_NAMES_DICT[std_key]
-            elif label_type == constants.DECK_FILTER_FORMAT_COLORS:
-                display_label = std_key
-            deck_colors[filter_key] = display_label
-
         try:
-            ratings = self.set_data.get_color_ratings()
-            if ratings:
-                for filter_key in list(deck_colors.keys()):
-                    std_menu_key = normalize_color_string(filter_key)
-                    if std_menu_key in ratings:
-                        winrate = ratings[std_menu_key]
-                        deck_colors[filter_key] = (
-                            f"{deck_colors[filter_key]} ({winrate}%)"
-                        )
+            ratings = self.set_data.get_color_ratings() if self.set_data else {}
+
+            for filter_key in constants.DECK_FILTERS:
+                std_key = normalize_color_string(filter_key)
+                display_label = std_key
+
+                if (label_type == constants.DECK_FILTER_FORMAT_NAMES) and (
+                    std_key in constants.COLOR_NAMES_DICT
+                ):
+                    display_label = constants.COLOR_NAMES_DICT[std_key]
+                elif label_type == constants.DECK_FILTER_FORMAT_COLORS:
+                    display_label = std_key
+
+                # Always include Auto and All Decks
+                if filter_key in [
+                    constants.FILTER_OPTION_AUTO,
+                    constants.FILTER_OPTION_ALL_DECKS,
+                ]:
+                    if std_key in ratings:
+                        display_label = f"{display_label} ({ratings[std_key]}%)"
+                    deck_colors[filter_key] = display_label
+                # Only include specific color pairs if they exist in the downloaded ratings
+                elif std_key in ratings:
+                    winrate = ratings[std_key]
+                    display_label = f"{display_label} ({winrate}%)"
+                    deck_colors[filter_key] = display_label
+
         except Exception as error:
             logger.error(error)
 

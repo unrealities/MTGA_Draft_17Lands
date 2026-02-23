@@ -353,7 +353,11 @@ class ModernTreeview(ttk.Treeview):
                 self.column(col, width=30, stretch=False, anchor=tkinter.CENTER)
                 continue
 
-            label = COLUMN_FIELD_LABELS.get(col, str(col).upper()).split(":")[0]
+            if "TIER" in col:
+                label = col
+            else:
+                label = COLUMN_FIELD_LABELS.get(col, str(col).upper()).split(":")[0]
+
             self.base_labels[col] = label
             width = 200 if col == "name" else 65
             self.heading(col, text=label, command=lambda c=col: self._handle_sort(c))
@@ -391,6 +395,35 @@ class ModernTreeview(ttk.Treeview):
                     self.heading(c, text=self.base_labels[c])
 
         items = [(self.item(k)["values"], k) for k in self.get_children("")]
+
+        # Guard against columns that have no index (like action buttons)
+        try:
+            col_idx = list(self["columns"]).index(col)
+        except ValueError:
+            return
+
+        # Sort dynamically using the multi-type priority tuples defined in card_logic
+        items.sort(
+            key=lambda x: field_process_sort(
+                x[0][col_idx] if col_idx < len(x[0]) else ""
+            ),
+            reverse=rev,
+        )
+
+        # Execute moves and re-calculate Zebra tags to match the new visible positions
+        for index, (val, k) in enumerate(items):
+            self.move(k, "", index)
+
+            # Extract tags safely
+            current_tags = self.item(k, "tags")
+            if isinstance(current_tags, str):
+                tags = current_tags.split() if current_tags else []
+            else:
+                tags = list(current_tags)
+
+            tags = [t for t in tags if t not in ("bw_odd", "bw_even")]
+            tags.append("bw_odd" if index % 2 == 0 else "bw_even")
+            self.item(k, tags=tags)
 
 
 class DynamicTreeviewManager(ttk.Frame):
@@ -487,6 +520,20 @@ class DynamicTreeviewManager(ttk.Frame):
                     label=label, command=lambda new_f=f: self._add_column(new_f)
                 )
 
+        # Tier lists
+        from src.tier_list import TierList
+
+        tier_files = TierList.retrieve_files()
+        if tier_files:
+            add_m.add_separator()
+            for idx, (set_code, lbl, _, _) in enumerate(tier_files):
+                f = f"TIER{idx}"
+                if f not in self.active_fields:
+                    label = f"TIER: {lbl} ({set_code})"
+                    add_m.add_command(
+                        label=label, command=lambda new_f=f: self._add_column(new_f)
+                    )
+
         # 3. Utility Options
         menu.add_separator()
         menu.add_command(label="Reset to Defaults", command=self._reset_defaults)
@@ -510,15 +557,34 @@ class DynamicTreeviewManager(ttk.Frame):
         menu = tkinter.Menu(self, tearoff=0)
         from src.constants import COLUMN_FIELD_LABELS
 
+        added = False
         for f, label in COLUMN_FIELD_LABELS.items():
             if f not in self.active_fields:
                 menu.add_command(
                     label=label, command=lambda new_f=f: self._add_column(new_f)
                 )
-        menu.post(event.x_root, event.y_root)
+                added = True
+
+        # Tier lists
+        from src.tier_list import TierList
+
+        tier_files = TierList.retrieve_files()
+        if tier_files:
+            menu.add_separator()
+            for idx, (set_code, lbl, _, _) in enumerate(tier_files):
+                f = f"TIER{idx}"
+                if f not in self.active_fields:
+                    label = f"TIER: {lbl} ({set_code})"
+                    menu.add_command(
+                        label=label, command=lambda new_f=f: self._add_column(new_f)
+                    )
+                    added = True
+
+        if added:
+            menu.post(event.x_root, event.y_root)
 
     def _add_column(self, field):
-        if len(self.active_fields) >= 10:
+        if len(self.active_fields) >= 15:
             return
         self.active_fields.append(field)
         self._persist()

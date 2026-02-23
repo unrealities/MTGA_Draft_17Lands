@@ -56,12 +56,20 @@ class DownloadWindow(ttk.Frame):
 
         cols = ["Set", "Event", "Group", "Start", "End", "Collected", "Games"]
         self.table_manager = DynamicTreeviewManager(
-            container, 
-            view_id="dataset_manager", 
+            container,
+            view_id="dataset_manager",
             configuration=self.configuration,
-            on_update_callback=lambda: None, # Static table doesn't need callback refresh
-            static_columns=["Set", "Event", "Group", "Start", "End", "Collected", "Games"],
-            height=6
+            on_update_callback=lambda: None,  # Static table doesn't need callback refresh
+            static_columns=[
+                "Set",
+                "Event",
+                "Group",
+                "Start",
+                "End",
+                "Collected",
+                "Games",
+            ],
+            height=6,
         )
         self.table_manager.pack(fill="both", expand=True, pady=(0, 10))
         self.table = self.table_manager.tree
@@ -76,9 +84,7 @@ class DownloadWindow(ttk.Frame):
         self.vars["set"] = tkinter.StringVar(
             value=set_options[0] if set_options else ""
         )
-        ttk.Label(form, text="SET:").grid(
-            row=0, column=0, sticky="e", padx=5
-        )
+        ttk.Label(form, text="SET:").grid(row=0, column=0, sticky="e", padx=5)
         self.om_set = ttk.OptionMenu(
             form,
             self.vars["set"],
@@ -89,42 +95,32 @@ class DownloadWindow(ttk.Frame):
         self.om_set.grid(row=0, column=1, sticky="ew", pady=2)
 
         self.vars["event"] = tkinter.StringVar(value="PremierDraft")
-        ttk.Label(form, text="EVENT:").grid(
-            row=0, column=2, sticky="e", padx=5
-        )
+        ttk.Label(form, text="EVENT:").grid(row=0, column=2, sticky="e", padx=5)
         self.om_event = ttk.OptionMenu(
             form, self.vars["event"], "PremierDraft", *constants.LIMITED_TYPE_LIST
         )
         self.om_event.grid(row=0, column=3, sticky="ew", pady=2)
 
         self.vars["group"] = tkinter.StringVar(value="All")
-        ttk.Label(form, text="USERS:").grid(
-            row=1, column=0, sticky="e", padx=5
-        )
+        ttk.Label(form, text="USERS:").grid(row=1, column=0, sticky="e", padx=5)
         ttk.OptionMenu(
             form, self.vars["group"], "All", *constants.LIMITED_GROUPS_LIST
         ).grid(row=1, column=1, sticky="ew", pady=2)
 
         self.vars["threshold"] = tkinter.StringVar(value="500")
-        ttk.Label(form, text="MIN GAMES:").grid(
-            row=1, column=2, sticky="e", padx=5
-        )
+        ttk.Label(form, text="MIN GAMES:").grid(row=1, column=2, sticky="e", padx=5)
         ttk.Entry(form, textvariable=self.vars["threshold"]).grid(
             row=1, column=3, sticky="ew", pady=2
         )
 
         self.vars["start"] = tkinter.StringVar(value="2019-01-01")
-        ttk.Label(form, text="START DATE:").grid(
-            row=2, column=0, sticky="e", padx=5
-        )
+        ttk.Label(form, text="START DATE:").grid(row=2, column=0, sticky="e", padx=5)
         ttk.Entry(form, textvariable=self.vars["start"]).grid(
             row=2, column=1, sticky="ew", pady=2
         )
 
         self.vars["end"] = tkinter.StringVar(value=str(date.today()))
-        ttk.Label(form, text="END DATE:").grid(
-            row=2, column=2, sticky="e", padx=5
-        )
+        ttk.Label(form, text="END DATE:").grid(row=2, column=2, sticky="e", padx=5)
         ttk.Entry(form, textvariable=self.vars["end"]).grid(
             row=2, column=3, sticky="ew", pady=2
         )
@@ -236,16 +232,31 @@ class DownloadWindow(ttk.Frame):
                 # If FileExtractor returns 3, this works.
                 # If code was (success, msg = ...), then 3 values crashes it with "too many values"
                 success, msg, size = ex.download_card_data(0)
-                
+
                 if success:
                     self.configuration.card_data.latest_dataset = ex.export_card_data()
                     write_configuration(self.configuration)
                     self._update_table()
                     if self.on_update_callback:
                         self.on_update_callback()
-                    self.vars["status"].set("DOWNLOAD SUCCESSFUL")
+
+                    # Differentiate between full success and partial success
+                    if "Min Games" in msg:
+                        self.vars["status"].set("DOWNLOADED (LIMITED DATA)")
+                        messagebox.showwarning(
+                            "Partial Data",
+                            msg
+                            + "\n\nTry lowering the Min Games threshold to get color-specific data.",
+                        )
+                    else:
+                        self.vars["status"].set("DOWNLOAD SUCCESSFUL")
                 else:
                     raise Exception(msg)
+            else:
+                raise Exception(
+                    "Failed to connect to 17Lands. You may be rate-limited or the dataset doesn't exist."
+                )
+
         except Exception as e:
             self.vars["status"].set("DOWNLOAD FAILED")
             messagebox.showerror("Download Error", str(e))

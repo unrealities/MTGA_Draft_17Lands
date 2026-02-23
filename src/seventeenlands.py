@@ -57,7 +57,7 @@ class Seventeenlands:
             self._process_archetype_data(color, raw_data, master_card_map)
 
             # Throttle if hitting network
-            time.sleep(1.5)
+            time.sleep(2.5)
 
         return master_card_map
 
@@ -88,6 +88,17 @@ class Seventeenlands:
             url += f"&user_group={user_group}"
 
         response = self.session.get(url, timeout=30)
+
+        # Hard stop if we hit anti-bot or rate-limits
+        if response.status_code == 429:
+            raise Exception(
+                "Rate Limited (HTTP 429). You are requesting data too fast."
+            )
+        if response.status_code == 403:
+            raise Exception(
+                "Access Denied (HTTP 403). 17Lands is blocking the request."
+            )
+
         response.raise_for_status()
         data = response.json()
 
@@ -118,6 +129,10 @@ class Seventeenlands:
 
             card_map[name]["deck_colors"][internal_color_key] = {
                 "gihwr": round(float(card.get("ever_drawn_win_rate") or 0) * 100, 2),
+                "ohwr": round(float(card.get("opening_hand_win_rate") or 0) * 100, 2),
+                "gpwr": round(float(card.get("win_rate") or 0) * 100, 2),
+                "gnswr": round(float(card.get("never_drawn_win_rate") or 0) * 100, 2),
+                "gdwr": round(float(card.get("drawn_win_rate") or 0) * 100, 2),
                 "alsa": round(float(card.get("avg_seen") or 0), 2),
                 "ata": round(float(card.get("avg_pick") or 0), 2),
                 "iwd": round(
@@ -159,6 +174,16 @@ class Seventeenlands:
 
         url = f"{self.URL_BASE}/color_ratings/data"
         response = self.session.get(url, params=params, timeout=30)
+
+        if response.status_code == 429:
+            raise Exception(
+                "Rate Limited (HTTP 429). You are requesting data too fast."
+            )
+        if response.status_code == 403:
+            raise Exception(
+                "Access Denied (HTTP 403). 17Lands is blocking the request."
+            )
+
         response.raise_for_status()
         data = response.json()
 

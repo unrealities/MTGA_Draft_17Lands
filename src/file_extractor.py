@@ -390,7 +390,11 @@ class FileExtractor(UIProgress):
 
         if filename:
             if not self.combined_data.get("color_ratings"):
-                return True, "Cards Downloaded (No Color Stats)", temp_size
+                return (
+                    True,
+                    "Cards Downloaded, but no color archetypes met your 'Min Games' threshold.",
+                    temp_size,
+                )
             return True, "Download Successful", temp_size
         else:
             return False, "Dataset Validation Failed", 0
@@ -1075,6 +1079,11 @@ class FileExtractor(UIProgress):
             except Exception as error:
                 logger.error(f"Color Ratings Error: {error}")
                 result = False
+
+                # If we are hard-blocked by 17Lands, do not hammer the server with retries
+                if "429" in str(error) or "403" in str(error):
+                    break
+
                 retry -= 1
 
                 if retry:

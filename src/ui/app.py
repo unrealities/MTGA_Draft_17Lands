@@ -483,7 +483,10 @@ class DraftApp:
 
         # Look up the full, human-readable Set Name from the metadata dictionary
         full_set_name = current_set
-        if self.orchestrator.scanner.set_list and self.orchestrator.scanner.set_list.data:
+        if (
+            self.orchestrator.scanner.set_list
+            and self.orchestrator.scanner.set_list.data
+        ):
             for name, info in self.orchestrator.scanner.set_list.data.items():
                 if info.set_code == current_set:
                     full_set_name = name
@@ -491,8 +494,10 @@ class DraftApp:
 
         self.detected_set_code = current_set
         # Limit length so it doesn't push UI elements off the screen (e.g. Shadows over Innistrad Remastered)
-        display_name = full_set_name if len(full_set_name) <= 25 else full_set_name[:22] + "..."
-        
+        display_name = (
+            full_set_name if len(full_set_name) <= 25 else full_set_name[:22] + "..."
+        )
+
         self.vars["set_label"].set(f"SET: {display_name}")
         self.lbl_set_code.config(foreground=Theme.ACCENT)
 
@@ -595,28 +600,36 @@ class DraftApp:
             menu.add_command(
                 label=label, command=lambda v=label: self.vars["deck_filter"].set(v)
             )
-        rev = {v: k for k, v in rate_map.items()}
-        self.vars["deck_filter"].set(
-            rev.get(
-                self.configuration.settings.deck_filter,
-                self.configuration.settings.deck_filter,
-            )
+
+        current_setting = self.configuration.settings.deck_filter
+
+        # Fallback to Auto if the saved color pair isn't in the dataset
+        if current_setting not in rate_map.values():
+            current_setting = constants.FILTER_OPTION_AUTO
+            self.configuration.settings.deck_filter = current_setting
+
+        # Set the UI dropdown to the mapped label (e.g., "WG (55.0%)")
+        target_label = next(
+            (label for label, key in rate_map.items() if key == current_setting),
+            current_setting,
         )
+        self.vars["deck_filter"].set(target_label)
 
     def _manual_refresh(self, use_ocr=False):
         save_img = (
             self.configuration.settings.save_screenshot_enabled if use_ocr else False
         )
-        
+
         # If performing OCR, do it asynchronously so the UI doesn't freeze
         if use_ocr:
             self.btn_p1p1.config(text="Scanning...", state="disabled")
-            
+
             def _scan_thread():
                 data_found = self.orchestrator.scanner.draft_data_search(True, save_img)
                 self.root.after(0, lambda: self._on_scan_complete(data_found))
-                
+
             import threading
+
             threading.Thread(target=_scan_thread, daemon=True).start()
         else:
             # Standard log refresh is instant

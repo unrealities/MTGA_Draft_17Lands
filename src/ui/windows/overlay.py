@@ -172,11 +172,28 @@ class CompactOverlay(tb.Toplevel):
                     row_values.append(f"{val:.0f}")
                 elif field == "colors":
                     row_values.append("".join(card.get("colors", [])))
+                elif field == "count":
+                    row_values.append(str(card.get("count", "-")))
+                elif field == "wheel":
+                    if rec and rec.wheel_chance > 0:
+                        row_values.append(f"{rec.wheel_chance:.0f}%")
+                    else:
+                        row_values.append("-")
+                elif "TIER" in field:
+                    if tier_data and field in tier_data:
+                        tier_obj = tier_data[field]
+                        raw_name = card.get(constants.DATA_FIELD_NAME, "")
+                        if raw_name in tier_obj.ratings:
+                            row_values.append(tier_obj.ratings[raw_name].rating)
+                        else:
+                            row_values.append("NA")
+                    else:
+                        row_values.append("NA")
                 else:
                     val = stats.get(field, 0.0)
                     row_values.append(
                         f"{val:.1f}"
-                        if field in ["gihwr", "ohwr", "gpwr", "iwd"]
+                        if field in ["gihwr", "ohwr", "gpwr", "gnswr", "gdwr", "iwd"]
                         else str(val)
                     )
 

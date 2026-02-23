@@ -58,8 +58,10 @@ def filter_options(deck, option_selection, metrics, configuration):
 
         top_pair = identify_top_pairs(deck, metrics)
         if top_pair and top_pair[0]:
-            # Convert ["U", "B"] -> "UB"
-            pair_str = "".join(sorted(top_pair[0]))
+            from src.utils import normalize_color_string
+
+            # Convert ["U", "B"] -> "UB" in strict WUBRG order
+            pair_str = normalize_color_string("".join(top_pair[0]))
 
             # Check if this pair exists in known deck colors (it should)
             # We also return All Decks as a fallback/context
@@ -157,12 +159,26 @@ def field_process_sort(field_value):
     """Helper for treeview sorting."""
     try:
         if isinstance(field_value, str):
-            field_value = field_value.replace("*", "").strip()
-        if field_value in constants.GRADE_ORDER_DICT:
-            return constants.GRADE_ORDER_DICT[field_value]
-        return float(field_value)
+            # Sanitize styling characters before parsing
+            val = field_value.replace("*", "").replace("%", "").strip()
+            
+            if val in ["NA", "-", ""]:
+                return (0, 0.0) # Bottom priority
+                
+            # Cross-reference with the GRADE dictionary via stripped keys
+            for k, v in constants.GRADE_ORDER_DICT.items():
+                if k.strip() == val:
+                    return (1, float(v))
+                    
+            return (1, float(val))
+            
+        elif field_value is None:
+            return (0, 0.0)
+            
+        return (1, float(field_value))
     except (ValueError, TypeError):
-        return 0
+        # Top priority fallback for valid strings (Names, Colors, etc)
+        return (2, str(field_value).lower())
 
 
 def stack_cards(cards):

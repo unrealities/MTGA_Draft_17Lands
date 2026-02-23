@@ -113,9 +113,9 @@ class DraftAdvisor:
                 card, pack_number
             )
 
-            # --- STEP 5: Relative Wheel Strength (v4) ---
+            # --- STEP 5: Relative Wheel Strength (v4.2) ---
             rank_in_pack = pack_ranks.get(name, 99)
-            wheel_mult, wheel_alert = self._check_relative_wheel(
+            wheel_mult, wheel_alert, wheel_pct = self._check_relative_wheel(
                 card, current_pick, rank_in_pack
             )
 
@@ -144,7 +144,7 @@ class DraftAdvisor:
                     contextual_score=round(final_score, 1),
                     z_score=round(z_score, 2),
                     cast_probability=cast_mult,
-                    wheel_chance=(wheel_mult < 1.0),
+                    wheel_chance=wheel_pct,
                     functional_cmc=self._get_functional_cmc(card),
                     reasoning=reasons,
                     is_elite=(z_score >= 1.5),
@@ -284,35 +284,47 @@ class DraftAdvisor:
 
     def _check_relative_wheel(
         self, card: Dict, pick: int, rank_in_pack: int
-    ) -> Tuple[float, str]:
+    ) -> Tuple[float, str, float]:
         """
-        v4 Logic: Relative Pack Strength.
-        A card wheels if there are better cards for other players to take.
+        v4.2 Logic: Polynomial Wheel Math + Contextual Pack Texture.
+        Returns: (Score Multiplier, Reason String, Wheel Percentage)
         """
         if pick >= 9:
-            return 1.0, ""  # Can't wheel if we are already wheeling
+            return 1.0, "", 0.0  # Impossible to wheel if we are already wheeling
 
-        # How many cards effectively "leave" the pack before it returns?
-        # 8 Players. Pack size 14.
-        # It comes back at Pick + 8.
-        # Cards taken by others = 7.
+        stats = card.get("deck_colors", {}).get("All Decks", {})
+        alsa = float(stats.get("alsa", 0.0))
 
-        # If this card is ranked #1-4 in the pack, it is GONE.
-        if rank_in_pack <= 3:
-            return 1.0, ""  # Won't wheel, take it now if you want it.
+        if alsa == 0.0 or alsa <= pick:
+            return 1.0, "", 0.0
 
-        # If this card is ranked #9 or worse, it is LIKELY to wheel.
-        # (Because 7 other cards get picked).
-        if rank_in_pack >= 8:
-            # Check ALSA to confirm stats agree
-            stats = card.get("deck_colors", {}).get("All Decks", {})
-            alsa = float(stats.get("alsa", 0.0))
+        # 1. Base Probability using Historical Polynomial Curves
+        import numpy as np
 
-            # Logic: It's weak in this pack AND generally wheels.
-            if alsa > (pick + 7.5):
-                return 0.8, "High Wheel Probability"
+        # The coefficients matrix only covers up to Pick 6 (index 5)
+        pick_idx = min(pick - 1, 5)
+        coeffs = constants.WHEEL_COEFFICIENTS[pick_idx]
+        base_prob = float(np.polyval(coeffs, alsa))
 
-        return 1.0, ""
+        # 2. Contextual Adjustment (Pack Texture)
+        # ALSA is an average. If this card is the absolute best card in THIS specific pack,
+        # it doesn't matter what its ALSA is, the next player will take it.
+        context_prob = base_prob
+        if rank_in_pack == 0:  # #1 Card in pack
+            context_prob *= 0.10
+        elif rank_in_pack <= 2:  # #2 or #3 Card
+            context_prob *= 0.40
+        elif rank_in_pack >= 8:  # Bottom half of pack (Nobody wants this)
+            context_prob = min(100.0, context_prob * 1.25)
+
+        final_prob = max(0.0, min(100.0, context_prob))
+
+        # 3. Score Modification (Greed Engine)
+        # If it has >75% chance to wheel, reduce its tactical score so the user takes something else now.
+        if final_prob >= 75.0 and rank_in_pack >= 4:
+            return 0.8, f"Wheels ~{final_prob:.0f}%", final_prob
+
+        return 1.0, "", final_prob
 
     def _identify_main_colors(self) -> List[str]:
         """
