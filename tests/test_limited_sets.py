@@ -2,6 +2,7 @@ import pytest
 import os
 import json
 import datetime
+import urllib.request
 from unittest.mock import patch
 from src.limited_sets import (
     LimitedSets,
@@ -876,6 +877,7 @@ def test_overwrite_old_sets(mock_cache, mock_urlopen, limited_sets):
     check_for_sets(output_sets.data, CHECKED_SETS_COMBINED)
 
 
+
 @patch("src.limited_sets.urllib.request.urlopen")
 @patch("src.limited_sets.LimitedSets._is_cache_valid", return_value=False)
 def test_substitute_string_latest(mock_cache, mock_urlopen, limited_sets):
@@ -888,6 +890,7 @@ def test_substitute_string_latest(mock_cache, mock_urlopen, limited_sets):
     ]
     output_sets = limited_sets.retrieve_limited_sets()
     assert output_sets.special_events[0].set_code == "MKM"
+
 
 
 @patch("src.limited_sets.urllib.request.urlopen")
