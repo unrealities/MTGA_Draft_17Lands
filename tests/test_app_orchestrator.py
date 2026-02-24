@@ -68,13 +68,50 @@ class TestAppOrchestrator:
             patch("src.ui.app.DraftApp._schedule_update"),
         ]
 
-    def test_startup_data_bootstrap(self, root, mock_scanner, config, ui_patches):
+    @patch("src.ui.app.retrieve_local_set_list")
+    def test_event_change_data_bootstrap(
+        self, mock_retrieve, root, mock_scanner, config, ui_patches
+    ):
+        # Mock file system lookup to provide valid paths for events
+        mock_retrieve.return_value = (
+            [
+                (
+                    "ECL",
+                    "TradDraft",
+                    "All",
+                    "2024",
+                    "2024",
+                    500,
+                    "/mock/traddraft.json",
+                    "2024",
+                ),
+                (
+                    "ECL",
+                    "PremierDraft",
+                    "All",
+                    "2024",
+                    "2024",
+                    500,
+                    "/mock/premier.json",
+                    "2024",
+                ),
+            ],
+            [],
+        )
         for p in ui_patches:
             p.start()
         try:
-            config.card_data.latest_dataset = "path.json"
+            config.card_data.latest_dataset = "premier.json"
             app = DraftApp(root, mock_scanner, config)
+
+            mock_scanner.retrieve_set_data.reset_mock()
+
+            # Simulate changing the event
+            app.vars["selected_event"].set("TradDraft")
+
+            # App should detect that traddraft.json != premier.json and retrieve it
             assert mock_scanner.retrieve_set_data.called
+            mock_scanner.retrieve_set_data.assert_called_with("/mock/traddraft.json")
         finally:
             for p in ui_patches:
                 p.stop()
