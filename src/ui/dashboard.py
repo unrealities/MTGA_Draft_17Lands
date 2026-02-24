@@ -51,13 +51,13 @@ class DashboardFrame(ttk.Frame):
 
         # --- LEFT: Tables ---
         f_left = ttk.Frame(self)
-        f_left.grid(row=0, column=0, sticky="nsew", padx=(0, 10))
+        f_left.grid(row=0, column=0, sticky="nsew", padx=(10, 15), pady=10)
 
         # 1. Pack Table
         self.table_pack_container = CollapsibleFrame(
             f_left, title="LIVE PACK: TACTICAL EVALUATION"
         )
-        self.table_pack_container.pack(fill="both", expand=True, pady=(0, 10))
+        self.table_pack_container.pack(fill="both", expand=True, pady=(0, 15))
 
         self.pack_manager = DynamicTreeviewManager(
             self.table_pack_container.content_frame,
@@ -75,7 +75,7 @@ class DashboardFrame(ttk.Frame):
         self.table_missing_container = CollapsibleFrame(
             f_left, title="SEEN CARDS (WHEEL TRACKER)", expanded=False
         )
-        self.table_missing_container.pack(fill="both", expand=True)
+        self.table_missing_container.pack(fill="both", expand=True, pady=(0, 10))
 
         self.missing_manager = DynamicTreeviewManager(
             self.table_missing_container.content_frame,
@@ -90,17 +90,17 @@ class DashboardFrame(ttk.Frame):
         )
 
         # --- RIGHT: Sidebar ---
-        f_side = ttk.Frame(self, width=220)
-        f_side.grid(row=0, column=1, sticky="nsew", padx=5)
+        f_side = ttk.Frame(self, width=250)
+        f_side.grid(row=0, column=1, sticky="nsew", padx=(5, 10), pady=10)
         f_side.pack_propagate(False)
 
         self.signal_container = CollapsibleFrame(f_side, title="OPEN LANES")
-        self.signal_container.pack(fill="x", pady=(0, 10))
+        self.signal_container.pack(fill="x", pady=(0, 15))
         self.signal_meter = SignalMeter(self.signal_container.content_frame)
         self.signal_meter.pack(fill="x")
 
         self.curve_container = CollapsibleFrame(f_side, title="MANA CURVE")
-        self.curve_container.pack(fill="x", pady=(0, 10))
+        self.curve_container.pack(fill="x", pady=(0, 15))
         default_ideal = self.configuration.card_logic.deck_mid.distribution
         self.curve_plot = ManaCurvePlot(
             self.curve_container.content_frame, ideal_distribution=default_ideal
@@ -108,7 +108,7 @@ class DashboardFrame(ttk.Frame):
         self.curve_plot.pack(fill="x")
 
         self.pool_container = CollapsibleFrame(f_side, title="POOL BALANCE")
-        self.pool_container.pack(fill="x", pady=(0, 10))
+        self.pool_container.pack(fill="x", pady=(0, 15))
         self.type_chart = TypePieChart(self.pool_container.content_frame)
         self.type_chart.pack(fill="x")
 

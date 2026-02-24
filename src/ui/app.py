@@ -400,6 +400,9 @@ class DraftApp:
                 pack_cards, colors, metrics, tier_data, pi, recommendations
             )
 
+        self.current_pack_data = pack_cards
+        self.current_missing_data = missing_cards
+
         self.dashboard.update_signals(self._calculate_signals(metrics))
         self.dashboard.update_stats(get_deck_metrics(taken_cards).distribution_all)
 
@@ -671,7 +674,16 @@ class DraftApp:
             else self.current_missing_data
         )
         item_vals = table.item(selection[0])["values"]
-        card_name = str(item_vals[0]).replace("*", "")
+
+        try:
+            name_idx = table.active_fields.index("name")
+            raw_name = str(item_vals[name_idx])
+            card_name = (
+                raw_name.replace("⭐ ", "").replace("[+] ", "").replace("*", "").strip()
+            )
+        except ValueError:
+            return
+
         found = next(
             (c for c in data_list if c[constants.DATA_FIELD_NAME] == card_name), None
         )

@@ -17,22 +17,22 @@ logger = logging.getLogger(__name__)
 
 
 class Theme:
-    FONT_FAMILY = "Verdana" if sys.platform == "darwin" else "Segoe UI"
-    FONT_SIZE_MAIN = 9
-    FONT_SIZE_SMALL = 8
+    FONT_FAMILY = "Helvetica Neue" if sys.platform == "darwin" else "Segoe UI"
+    FONT_SIZE_MAIN = 10
+    FONT_SIZE_SMALL = 9
 
     # --- BRIDGE VARIABLES ---
-    BG_PRIMARY = "#2b2b2b"
-    BG_SECONDARY = "#323232"
-    BG_TERTIARY = "#404040"
+    BG_PRIMARY = "#0f172a"
+    BG_SECONDARY = "#1e293b"
+    BG_TERTIARY = "#334155"
 
-    TEXT_MAIN = "#ffffff"
-    TEXT_MUTED = "#a0a0a0"
+    TEXT_MAIN = "#f8fafc"
+    TEXT_MUTED = "#94a3b8"
 
-    ACCENT = "#375a7f"
-    SUCCESS = "#00bc8c"
-    ERROR = "#e74c3c"
-    WARNING = "#f39c12"
+    ACCENT = "#3b82f6"
+    SUCCESS = "#10b981"
+    ERROR = "#ef4444"
+    WARNING = "#f59e0b"
 
     # Mapping Palette Names -> ttkbootstrap Themes OR 'native'
     THEME_MAPPING = {

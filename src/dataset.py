@@ -63,7 +63,7 @@ class Dataset:
                 card_data.append(ratings[string_id])
             elif self._retrieve_unknown:
                 # Return the raw ID as the name to satisfy unit tests
-                display_name = string_id 
+                display_name = string_id
                 empty_dict = {
                     DATA_FIELD_NAME: display_name,
                     DATA_FIELD_MANA_COST: "",
@@ -139,7 +139,12 @@ class Dataset:
                 spec = deck_stats[color]
                 if spec.get(field, 0) > 0:
                     archetype_list.append(
-                        [name, color, spec[field], spec[WIN_RATE_FIELDS_DICT[field]]]
+                        [
+                            name,
+                            color,
+                            spec[field],
+                            spec.get(WIN_RATE_FIELDS_DICT[field], 0),
+                        ]
                     )
 
         return sorted(archetype_list, key=lambda x: x[3], reverse=True)

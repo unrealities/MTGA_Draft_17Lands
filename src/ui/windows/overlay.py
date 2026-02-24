@@ -74,7 +74,7 @@ class CompactOverlay(tb.Toplevel):
         self.lbl_status = tb.Label(
             header,
             text="Waiting...",
-            font=("Segoe UI", 9, "bold"),
+            font=(Theme.FONT_FAMILY, 10, "bold"),
             bootstyle="inverse-secondary",
         )
         self.lbl_status.pack(side=RIGHT, padx=5)

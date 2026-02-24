@@ -37,12 +37,12 @@ def identify_safe_coordinates(
         screen_height = root.winfo_screenheight()
 
         if pointer_x + offset_x + window_width > screen_width:
-            location_x = max(pointer_x - offset_x - window_width, 0)
+            location_x = max(pointer_x - offset_x - window_width - 10, 0)
         else:
             location_x = max(pointer_x + offset_x, 0)
 
         if pointer_y + offset_y + window_height > screen_height:
-            location_y = max(pointer_y - offset_y - window_height, 0)
+            location_y = max(pointer_y - offset_y - window_height - 10, 0)
         else:
             location_y = max(pointer_y + offset_y, 0)
     except Exception:
@@ -69,21 +69,32 @@ class CollapsibleFrame(ttk.Frame):
             self.header_frame,
             text="▼" if expanded else "▶",
             width=2,
-            font=(Theme.FONT_FAMILY, 9),
-            foreground=Theme.TEXT_MUTED,
+            font=(Theme.FONT_FAMILY, 10),
+            foreground=Theme.ACCENT,
             cursor="hand2",
         )
-        self.toggle_label.pack(side="left", padx=(0, 2))
+        self.toggle_label.pack(side="left", padx=(5, 5), pady=(5, 5))
 
         # Title Label
         self.title_label = ttk.Label(
-            self.header_frame, text=title.upper(), style="Muted.TLabel", cursor="hand2"
+            self.header_frame,
+            text=title.upper(),
+            cursor="hand2",
+            font=(Theme.FONT_FAMILY, 10, "bold"),
+            foreground=Theme.TEXT_MAIN,
         )
-        self.title_label.pack(side="left")
+        self.title_label.pack(side="left", pady=(5, 5))
 
         self.content_frame = ttk.Frame(self)
         if self.expanded:
             self.content_frame.pack(fill="both", expand=True, pady=(5, 0))
+
+        self.bind_all("<<ThemeChanged>>", self._on_theme_change, add="+")
+
+    def _on_theme_change(self, event=None):
+        if self.winfo_exists():
+            self.toggle_label.configure(foreground=Theme.ACCENT)
+            self.title_label.configure(foreground=Theme.TEXT_MAIN)
 
         # Bind clicks to the toggle method
         self.header_frame.bind("<Button-1>", self.toggle)
@@ -366,18 +377,18 @@ class ModernTreeview(ttk.Treeview):
             )
 
     def _setup_row_colors(self):
-        """Universal definition of color tags so Highlights work on every single table."""
-        self.tag_configure("white_card", background="#FFF8E1", foreground="black")
-        self.tag_configure("blue_card", background="#E3F2FD", foreground="black")
-        self.tag_configure("black_card", background="#E0E0E0", foreground="black")
-        self.tag_configure("red_card", background="#FFEBEE", foreground="black")
-        self.tag_configure("green_card", background="#E8F5E9", foreground="black")
-        self.tag_configure("gold_card", background="#FFF3E0", foreground="black")
-        self.tag_configure("colorless_card", background="#F5F5F5", foreground="black")
+        """Premium tailored row tags for the tables."""
+        self.tag_configure("white_card", background="#f4f4f5", foreground="#18181b")
+        self.tag_configure("blue_card", background="#e0f2fe", foreground="#0c4a6e")
+        self.tag_configure("black_card", background="#3f3f46", foreground="#f4f4f5")
+        self.tag_configure("red_card", background="#fee2e2", foreground="#7f1d1d")
+        self.tag_configure("green_card", background="#dcfce7", foreground="#14532d")
+        self.tag_configure("gold_card", background="#fef3c7", foreground="#78350f")
+        self.tag_configure("colorless_card", background="#e4e4e7", foreground="#27272a")
 
         # Elite tags
-        self.tag_configure("elite_bomb", background="#4a3f1d", foreground="#ffd700")
-        self.tag_configure("high_fit", background="#1d3a4a", foreground="#00d4ff")
+        self.tag_configure("elite_bomb", background="#78350f", foreground="#fde047")
+        self.tag_configure("high_fit", background="#0c4a6e", foreground="#7dd3fc")
 
     def _handle_sort(self, col):
         from src.card_logic import field_process_sort
@@ -622,10 +633,24 @@ class SignalMeter(tb.Frame):
         self.scores = {}
 
         self.canvas = tb.Canvas(
-            self, height=self.canvas_height, bg=Theme.BG_SECONDARY, highlightthickness=0
+            self, height=self.canvas_height, bg=Theme.BG_PRIMARY, highlightthickness=0
         )
         self.canvas.pack(fill=BOTH, expand=True)
         self.canvas.bind("<Configure>", lambda e: self.redraw())
+        self.bind_all("<<ThemeChanged>>", self._on_theme_change, add="+")
+
+    def _on_theme_change(self, event=None):
+        if not self.winfo_exists():
+            return
+        self.canvas.configure(bg=Theme.BG_PRIMARY)
+        self.color_map = {
+            "W": (Theme.WARNING, "White"),
+            "U": (Theme.ACCENT, "Blue"),
+            "B": (Theme.BG_TERTIARY, "Black"),
+            "R": (Theme.ERROR, "Red"),
+            "G": (Theme.SUCCESS, "Green"),
+        }
+        self.redraw()
 
         self.color_map = {
             "W": (Theme.WARNING, "White"),
@@ -679,7 +704,7 @@ class SignalMeter(tb.Frame):
                 self.canvas_height - 5,
                 text=code,
                 fill=Theme.TEXT_MUTED,
-                font=("Segoe UI", 7, "bold"),
+                font=(Theme.FONT_FAMILY, 9, "bold"),
             )
 
 
@@ -695,10 +720,17 @@ class ManaCurvePlot(tb.Frame):
 
         self.canvas_height = 100  # Reduced height
         self.canvas = tb.Canvas(
-            self, height=self.canvas_height, bg=Theme.BG_SECONDARY, highlightthickness=0
+            self, height=self.canvas_height, bg=Theme.BG_PRIMARY, highlightthickness=0
         )
         self.canvas.pack(fill=BOTH, expand=True)
         self.canvas.bind("<Configure>", lambda e: self.redraw())
+        self.bind_all("<<ThemeChanged>>", self._on_theme_change, add="+")
+
+    def _on_theme_change(self, event=None):
+        if not self.winfo_exists():
+            return
+        self.canvas.configure(bg=Theme.BG_PRIMARY)
+        self.redraw()
 
         self.bar_width = 14
         self.gap = 2
@@ -764,7 +796,7 @@ class ManaCurvePlot(tb.Frame):
                     self.canvas_height - bar_h - 17,
                     text=str(count),
                     fill=Theme.TEXT_MAIN,
-                    font=("Segoe UI", 7, "bold"),
+                    font=(Theme.FONT_FAMILY, 9, "bold"),
                 )
 
             # Axis Label
@@ -774,7 +806,7 @@ class ManaCurvePlot(tb.Frame):
                 self.canvas_height - 4,
                 text=lbl,
                 fill=Theme.TEXT_MUTED,
-                font=("Segoe UI", 6),
+                font=(Theme.FONT_FAMILY, 8),
             )
 
 
@@ -790,7 +822,7 @@ class TypePieChart(tb.Frame):
             self,
             height=self.canvas_size,
             width=self.canvas_size,
-            bg=Theme.BG_SECONDARY,
+            bg=Theme.BG_PRIMARY,
             highlightthickness=0,
         )
         self.canvas.pack(side=LEFT, padx=10)
@@ -798,6 +830,13 @@ class TypePieChart(tb.Frame):
         self.legend_frame.pack(side=LEFT, fill=Y, padx=5)
 
         self.counts = {"Creatures": 0, "Non-Creatures": 0, "Lands": 0}
+        self.bind_all("<<ThemeChanged>>", self._on_theme_change, add="+")
+
+    def _on_theme_change(self, event=None):
+        if not self.winfo_exists():
+            return
+        self.canvas.configure(bg=Theme.BG_PRIMARY)
+        self.redraw()
 
     def update_counts(self, creatures, non_creatures, lands):
         self.counts["Creatures"] = creatures
@@ -822,7 +861,7 @@ class TypePieChart(tb.Frame):
             row = tb.Frame(self.legend_frame)
             row.pack(anchor="w")
             tb.Label(row, text="●", foreground=col, font=(None, 6)).pack(side=LEFT)
-            tb.Label(row, text=f"{lbl}: {count}", font=("Segoe UI", 10)).pack(
+            tb.Label(row, text=f"{lbl}: {count}", font=(Theme.FONT_FAMILY, 10)).pack(
                 side=LEFT, padx=2
             )
 
@@ -863,11 +902,15 @@ class TypePieChart(tb.Frame):
             cy - radius / 2,
             cx + radius / 2,
             cy + radius / 2,
-            fill=Theme.BG_SECONDARY,
+            fill=Theme.BG_PRIMARY,
             outline="",
         )
         self.canvas.create_text(
-            cx, cy, text=str(total), fill=Theme.TEXT_MAIN, font=("Segoe UI", 8, "bold")
+            cx,
+            cy,
+            text=str(total),
+            fill=Theme.TEXT_MAIN,
+            font=(Theme.FONT_FAMILY, 9, "bold"),
         )
 
 
@@ -924,7 +967,7 @@ class CardPile(tb.Frame):
         tb.Label(
             self,
             text=title,
-            font=("Segoe UI", 9, "bold"),
+            font=(Theme.FONT_FAMILY, 10, "bold"),
             bootstyle="inverse-secondary",
             anchor="center",
             padding=5,
@@ -975,7 +1018,7 @@ class CardPile(tb.Frame):
             lbl = tb.Label(
                 chip_frame,
                 text=display_text,
-                font=("Segoe UI", 9),
+                font=(Theme.FONT_FAMILY, 10),
                 foreground="#000000",
                 background=gold_bg,
                 anchor="w",
@@ -1010,7 +1053,7 @@ class CardPile(tb.Frame):
                 chip_frame,
                 text=display_text,
                 bootstyle="inverse-secondary",
-                font=("Segoe UI", 9),
+                font=(Theme.FONT_FAMILY, 10),
                 anchor="w",
                 padding=(5, 2),
             )
@@ -1027,7 +1070,7 @@ class CardPile(tb.Frame):
                     text=display_text,
                     foreground="#000000",
                     background="#f0f0f0",
-                    font=("Segoe UI", 9),
+                    font=(Theme.FONT_FAMILY, 10),
                     anchor="w",
                     padding=(5, 2),
                 )
@@ -1036,7 +1079,7 @@ class CardPile(tb.Frame):
                     chip_frame,
                     text=display_text,
                     bootstyle=f"inverse-{s}",
-                    font=("Segoe UI", 9),
+                    font=(Theme.FONT_FAMILY, 10),
                     anchor="w",
                     padding=(5, 2),
                 )

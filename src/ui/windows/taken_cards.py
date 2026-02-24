@@ -189,7 +189,7 @@ class TakenCardsPanel(ttk.Frame):
                         )
 
             tag = "bw_odd" if idx % 2 == 0 else "bw_even"
-            if self.configuration.settings.card_colors_enabled:
+            if int(self.configuration.settings.card_colors_enabled):
                 tag = row_color_tag(card.get(constants.DATA_FIELD_MANA_COST, ""))
 
             t.insert("", "end", values=row_values, tags=(tag,))
@@ -270,9 +270,24 @@ class TakenCardsPanel(ttk.Frame):
         sel = self.table.selection()
         if not sel:
             return
-        idx = self.table.index(sel[0])
-        if idx < len(self.current_display_list):
-            card = self.current_display_list[idx]
+
+        item_vals = self.table.item(sel[0])["values"]
+        try:
+            name_idx = self.table_manager.active_fields.index("name")
+            card_name = (
+                str(item_vals[name_idx])
+                .replace("⭐ ", "")
+                .replace("[+] ", "")
+                .replace("*", "")
+                .strip()
+            )
+        except ValueError:
+            return
+
+        card = next(
+            (c for c in self.current_display_list if c.get("name") == card_name), None
+        )
+        if card:
             CardToolTip(
                 self.table,
                 card.get("name", ""),
