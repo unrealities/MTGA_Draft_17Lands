@@ -414,10 +414,13 @@ class ModernTreeview(ttk.Treeview):
 
         def _key(t):
             p = field_process_sort(t[0][col_idx])
+            if isinstance(p, tuple):
+                return (p[0], p[1], str(t[0][0]).lower())
+
             try:
-                return (1, float(p), str(t[0][0]))
+                return (1, float(p), str(t[0][0]).lower())
             except:
-                return (0, str(p), str(t[0][0]))
+                return (0, str(p), str(t[0][0]).lower())
 
         # Sort the items and re-insert them with fresh zebra striping
         items.sort(key=_key, reverse=rev)

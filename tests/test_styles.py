@@ -125,7 +125,7 @@ class TestThemeEngine:
         import src.ui.styles
 
         reload(src.ui.styles)
-        assert src.ui.styles.Theme.FONT_FAMILY == "Verdana"
+        assert src.ui.styles.Theme.FONT_FAMILY == "Helvetica Neue"
 
     @patch("sys.platform", "win32")
     def test_windows_font_stability(self):

@@ -50,6 +50,8 @@ class DraftApp:
         # New State for Set Selection
         self.current_set_data_map: Dict[str, Dict[str, str]] = {}
         self.detected_set_code = ""
+        self.active_event_set = ""
+        self.active_event_type = ""
         self._notified_missing_sets = set()
 
         # 2. Logic Initialization
@@ -477,6 +479,16 @@ class DraftApp:
             self.orchestrator.scanner.retrieve_current_limited_event()
         )
 
+        event_transitioned = False
+        if (
+            current_set != self.active_event_set
+            or current_event_type != self.active_event_type
+            or self.orchestrator.new_event_detected
+        ):
+            event_transitioned = True
+            self.active_event_set = current_set
+            self.active_event_type = current_event_type
+
         if not current_set:
             self.vars["set_label"].set("NO SET")
             self.lbl_set_code.config(foreground=Theme.ERROR)
@@ -540,14 +552,39 @@ class DraftApp:
             self.om_event, self.vars["selected_event"], available_events
         )
 
-        target_event = available_events[0]
-        if current_event_type and current_event_type in available_events:
-            target_event = current_event_type
-        elif "PremierDraft" in available_events:
-            target_event = "PremierDraft"
+        current_selection = self.vars["selected_event"].get()
+
+        if event_transitioned:
+            target_event = (
+                current_event_type
+                if current_event_type in available_events
+                else (
+                    "PremierDraft"
+                    if "PremierDraft" in available_events
+                    else available_events[0]
+                )
+            )
+        else:
+            if current_selection in available_events:
+                target_event = current_selection
+            else:
+                target_event = (
+                    current_event_type
+                    if current_event_type in available_events
+                    else (
+                        "PremierDraft"
+                        if "PremierDraft" in available_events
+                        else available_events[0]
+                    )
+                )
 
         if self.vars["selected_event"].get() != target_event:
             self.vars["selected_event"].set(target_event)
+        elif event_transitioned:
+            # Event was the same, but it transitioned (e.g. back-to-back drafts of same format).
+            if "All" in self.current_set_data_map.get(target_event, {}):
+                if self.vars["selected_group"].get() != "All":
+                    self.vars["selected_group"].set("All")
 
     def _set_dropdown_options(self, menu_widget, variable, options):
         menu = menu_widget["menu"]
@@ -568,11 +605,24 @@ class DraftApp:
             self.om_group, self.vars["selected_group"], available_groups
         )
 
-        target_group = "All"
-        if "All" not in available_groups and available_groups:
-            target_group = available_groups[0]
+        target_group = self.vars["selected_group"].get()
+        if target_group not in available_groups:
+            target_group = (
+                "All"
+                if "All" in available_groups
+                else (available_groups[0] if available_groups else "")
+            )
 
-        self.vars["selected_group"].set(target_group)
+        if getattr(self, "orchestrator", None) and getattr(
+            self.orchestrator, "new_event_detected", False
+        ):
+            if "All" in available_groups:
+                target_group = "All"
+
+        if target_group and self.vars["selected_group"].get() != target_group:
+            self.vars["selected_group"].set(target_group)
+        else:
+            self._on_group_change()
 
     def _on_group_change(self):
         if not self._initialized:
