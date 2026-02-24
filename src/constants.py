@@ -1,9 +1,9 @@
 import os
 import getpass
 
-APPLICATION_VERSION = 3.38
+APPLICATION_VERSION = 4.0
 OLD_APPLICATION_VERSION = "0320"
-PREVIOUS_APPLICATION_VERSION = "0337"
+PREVIOUS_APPLICATION_VERSION = "0338"
 
 FONT_SANS_SERIF = "Arial"
 FONT_MONO_SPACE = "Courier"
@@ -32,7 +32,7 @@ CARD_COLOR_LABEL_RED = "Red"
 CARD_COLOR_LABEL_GREEN = "Green"
 CARD_COLOR_LABEL_NC = "NC"
 
-COLOR_WIN_RATE_GAME_COUNT_THRESHOLD_DEFAULT = 5000
+COLOR_WIN_RATE_GAME_COUNT_THRESHOLD_DEFAULT = 500
 
 LIMITED_TYPE_UNKNOWN = 0
 LIMITED_TYPE_DRAFT_PREMIER_V1 = 1
@@ -155,12 +155,19 @@ NON_COLORS_OPTIONS = WIN_RATE_OPTIONS + [
 ]
 COLUMN_OPTIONS = NON_COLORS_OPTIONS
 
-COLUMN_2_DEFAULT = FIELD_LABEL_GIHWR
-COLUMN_3_DEFAULT = FIELD_LABEL_DISABLED
-COLUMN_4_DEFAULT = FIELD_LABEL_DISABLED
-COLUMN_5_DEFAULT = FIELD_LABEL_DISABLED
-COLUMN_6_DEFAULT = FIELD_LABEL_DISABLED
-COLUMN_7_DEFAULT = FIELD_LABEL_DISABLED
+COLUMN_FIELD_LABELS = {
+    "gihwr": "GIH WR: Games in Hand Win Rate",
+    "ohwr": "OH WR: Opening Hand Win Rate",
+    "gpwr": "GP WR: Games Played Win Rate",
+    "alsa": "ALSA: Average Last Seen At",
+    "ata": "ATA: Average Taken At",
+    "iwd": "IWD: Improvement When Drawn",
+    "wheel": "WHEEL: Probability of Wheeling",
+    "colors": "COLORS: Card Colors",
+    "count": "COUNT: Total Card Count",
+    "value": "VALUE: Advisor Tactical Score",
+}
+LABEL_TO_COLUMN_FIELD = {v: k for k, v in COLUMN_FIELD_LABELS.items()}
 
 DECK_FILTER_DEFAULT = FILTER_OPTION_AUTO
 
@@ -210,7 +217,13 @@ LOCAL_DATA_FOLDER_PATH_OSX = os.path.join(
     "Library", "Application Support", "com.wizards.mtga"
 )
 LOCAL_DATA_FOLDER_PATH_OSX_STEAM = os.path.join(
-    "Library", "Application Support", "Steam", "steamapps", "common", "MTGA", "MTGA_Data"
+    "Library",
+    "Application Support",
+    "Steam",
+    "steamapps",
+    "common",
+    "MTGA",
+    "MTGA_Data",
 )
 LOCAL_DATA_FOLDER_PATH_LINUX = next(
     filter(
@@ -500,7 +513,7 @@ CARD_RARITY_MYTHIC = "mythic"
 # Dictionaries
 # Used to identify the limited type based on log string
 LIMITED_TYPES_DICT = {
-    LIMITED_TYPE_STRING_DRAFT_PREMIER: LIMITED_TYPE_DRAFT_PREMIER_V1,
+    LIMITED_TYPE_STRING_DRAFT_PREMIER: LIMITED_TYPE_DRAFT_PREMIER_V2,  # UPDATED to V2
     LIMITED_TYPE_STRING_DRAFT_QUICK: LIMITED_TYPE_DRAFT_QUICK,
     LIMITED_TYPE_STRING_DRAFT_TRAD: LIMITED_TYPE_DRAFT_TRADITIONAL,
     LIMITED_TYPE_STRING_DRAFT_BOT: LIMITED_TYPE_DRAFT_QUICK,
@@ -778,3 +791,55 @@ PICK_TWO_EVENT_STRING = "PickTwo"
 CARD_RATINGS_BACKOFF_DELAY_SECONDS = 30
 CARD_RATINGS_INTER_DELAY_SECONDS = 1
 CARD_RATINGS_ATTEMPT_MAX = 5
+
+# --- MANA FIXING HEURISTICS ---
+# Substrings to search for in card oracle text (Case Insensitive)
+FIXING_KEYWORDS = [
+    # Direct Production (Any Color)
+    "add one mana of any color",
+    "add one mana of any type",
+    "add x mana of any one color",
+    "add one mana of the chosen color",
+    
+    # "Choose a color" usually implies fixing (e.g. Thriving lands, Unknown Shores)
+    "choose a color", 
+    
+    # Fetching / Tutoring
+    "search your library for a land card",
+    "search your library for a basic land",
+    "search your library for a land",
+    "search your library for a plains",
+    "search your library for an island",
+    "search your library for a swamp",
+    "search your library for a mountain",
+    "search your library for a forest",
+    "search your library for up to two basic land cards",
+    "search your library for up to X basic land cards",
+    "basic landcycling",
+    "plainscycling",
+    "islandcycling",
+    "swampcycling",
+    "mountaincycling",
+    "forestcycling",
+    
+    # Token Generation (Treasure/Gold)
+    "create a treasure",
+    "create x treasure",
+    "create a gold token",
+    
+    # Enchantments
+    "whenever enchanted land is tapped for mana, its controller adds an additional one mana of any color",
+]
+
+# Cards with these strings in their NAME are likely fixers.
+FIXING_NAMES = [
+    "riveteers overlook",
+    "brokers hideout",
+    "cabaretti courtyard",
+    "maestros theater",
+    "obscura storefront",
+    "great hall",
+    "cactus preserve",
+    "guild globe",
+    "omenpath journey",
+]

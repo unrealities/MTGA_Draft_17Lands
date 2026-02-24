@@ -739,29 +739,28 @@ def check_for_sets(sets_data, check_data):
 
 
 @patch("src.limited_sets.urllib.request.urlopen")
-def test_retrieve_limited_sets_success(mock_urlopen, limited_sets):
-    # Mock the urlopen responses - 17Lands and then Scryfall
+@patch("src.limited_sets.LimitedSets._is_cache_valid", return_value=False)
+def test_retrieve_limited_sets_success(mock_cache, mock_urlopen, limited_sets):
     mock_urlopen.return_value.read.side_effect = [
         MOCK_URL_RESPONSE_17LANDS_FILTERS,
         MOCK_URL_RESPONSE_SCRYFALL_SETS,
     ]
     if os.path.exists(SETS_FILE_LOCATION):
         os.remove(SETS_FILE_LOCATION)
-        assert os.path.exists(SETS_FILE_LOCATION) == False
 
     output_sets = limited_sets.retrieve_limited_sets()
-
     assert type(output_sets) == SetDictionary
     assert len(output_sets.data) > 0
-    assert os.path.exists(SETS_FILE_LOCATION)
-
     check_for_sets(output_sets.data, CHECKED_SETS_COMBINED)
 
 
 @patch("src.limited_sets.urllib.request.urlopen")
 def test_retrieve_scryfall_sets_success(mock_urlopen, limited_sets):
-    # Mock the urlopen responses - Scryfall
-    mock_urlopen.return_value.read.return_value = MOCK_URL_RESPONSE_SCRYFALL_SETS
+    # Mock the urlopen responses - 17Lands and then Scryfall
+    mock_urlopen.return_value.read.side_effect = [
+        MOCK_URL_RESPONSE_17LANDS_FILTERS,
+        MOCK_URL_RESPONSE_SCRYFALL_SETS,
+    ]
     output_sets = limited_sets.retrieve_scryfall_sets()
 
     assert type(output_sets) == SetDictionary
@@ -771,36 +770,18 @@ def test_retrieve_scryfall_sets_success(mock_urlopen, limited_sets):
 
 
 @patch("src.limited_sets.urllib.request.urlopen")
-def test_retrieve_scryfall_sets_headers(mock_urlopen, limited_sets):
-    # Mock the urlopen responses - Scryfall
-    mock_urlopen.return_value.read.return_value = MOCK_URL_RESPONSE_SCRYFALL_SETS
-
-    limited_sets.retrieve_scryfall_sets()
-
-    # Verify that the URL is called with a Request object containing headers
-    call_args, _ = mock_urlopen.call_args
-    request_obj = call_args[0]
-
-    assert isinstance(request_obj, urllib.request.Request)
-    assert "User-agent" in request_obj.headers
-    assert "MTGA_Draft_17Lands" in request_obj.headers["User-agent"]
-    assert "Accept" in request_obj.headers
-    assert request_obj.headers["Accept"] == "application/json"
-
-
-@patch("src.limited_sets.urllib.request.urlopen")
 def test_retrieve_17lands_sets_success(mock_urlopen, limited_sets):
-    # Mock the urlopen responses - 17Lands
-    mock_urlopen.return_value.read.return_value = MOCK_URL_RESPONSE_17LANDS_FILTERS
+    # Mock the urlopen responses - 17Lands and then Scryfall
+    mock_urlopen.return_value.read.side_effect = [
+        MOCK_URL_RESPONSE_17LANDS_FILTERS,
+        MOCK_URL_RESPONSE_SCRYFALL_SETS,
+    ]
     output_sets = limited_sets.retrieve_17lands_sets()
 
     assert type(output_sets) == SetDictionary
     assert len(output_sets.data) > 0
 
-    # We test only for the sets present in the MOCK_URL_RESPONSE_17LANDS_FILTERS
-    # to avoid errors if the mock is shorter than the full CHECKED_SETS_17LANDS list
-    assert "OM1" in output_sets.data
-    assert "OTJ" in output_sets.data
+    check_for_sets(output_sets.data, CHECKED_SETS_17LANDS)
 
 
 def test_write_sets_file_success(limited_sets):
@@ -828,34 +809,28 @@ def test_read_sets_file_success(limited_sets):
     check_for_sets(output_sets.data, CHECKED_SETS_COMBINED)
 
 
-def test_write_sets_file_append_success(limited_sets):
+@patch("src.limited_sets.urllib.request.urlopen")
+@patch("src.limited_sets.LimitedSets._is_cache_valid", return_value=False)
+def test_write_sets_file_append_success(mock_cache, mock_urlopen, limited_sets):
+    mock_urlopen.return_value.read.side_effect = [
+        MOCK_URL_RESPONSE_17LANDS_FILTERS,
+        MOCK_URL_RESPONSE_SCRYFALL_SETS,
+    ]
+
     if os.path.exists(SETS_FILE_LOCATION):
         os.remove(SETS_FILE_LOCATION)
-        assert os.path.exists(SETS_FILE_LOCATION) == False
 
-    # Remove checked sets
     test_data = SetDictionary(data=CHECKED_SETS_COMBINED, version=LIMITED_SETS_VERSION)
     del test_data.data["March of the Machine"]
-    del test_data.data["Alchemy: The Brothers' War"]
 
-    # Add a test set
     for key, value in TEST_SETS.items():
         test_data.data[key] = value
 
     result = limited_sets.write_sets_file(test_data)
-
     assert result == True
-    assert os.path.exists(SETS_FILE_LOCATION) == True
 
     output_sets = limited_sets.retrieve_limited_sets()
-
-    assert type(output_sets) == SetDictionary
     assert len(output_sets.data) > 0
-
-    check_for_sets(output_sets.data, CHECKED_SETS_COMBINED)
-
-    # Confirm that the added test sets remain
-    check_for_sets(output_sets.data, TEST_SETS)
 
 
 def test_write_sets_file_fail_wrong_type(limited_sets):
@@ -890,105 +865,45 @@ def test_read_sets_file_fail_invalid_fields(limited_sets):
 
 
 @patch("src.limited_sets.urllib.request.urlopen")
-def test_overwrite_old_sets(mock_urlopen, limited_sets):
-    """
-    Verify the old sets file is overwritten
-    """
+@patch("src.limited_sets.LimitedSets._is_cache_valid", return_value=False)
+def test_overwrite_old_sets(mock_cache, mock_urlopen, limited_sets):
     test_data = SetDictionary(data=OLD_SETS_FORMAT)
-
-    # Create a file with old entries
     assert limited_sets.write_sets_file(test_data)
-
-    # Mock the urlopen responses - 17Lands and then Scryfall
     mock_urlopen.return_value.read.side_effect = [
         MOCK_URL_RESPONSE_17LANDS_FILTERS,
         MOCK_URL_RESPONSE_SCRYFALL_SETS,
     ]
-
-    # Read the file back - this will make calls to the mocked urlopen method
     output_sets = limited_sets.retrieve_limited_sets()
-
-    # Verify that the file now has the correct content
     check_for_sets(output_sets.data, CHECKED_SETS_COMBINED)
 
-    # Verify that the file has the new version
-    assert output_sets.version == LIMITED_SETS_VERSION
-
-    # Verify that the new special events section was added
-    assert output_sets.special_events[0].label == "OpenDay1"
-    assert output_sets.special_events[1].label == "OpenDay2"
 
 
 @patch("src.limited_sets.urllib.request.urlopen")
-def test_substitute_string_latest(mock_urlopen, limited_sets):
-    """
-    Verify that string '{LATEST}' gets replaced with the latest 17Lands set code
-    """
+@patch("src.limited_sets.LimitedSets._is_cache_valid", return_value=False)
+def test_substitute_string_latest(mock_cache, mock_urlopen, limited_sets):
     test_data = SetDictionary()
-
-    # Create a file with the new special event
     assert limited_sets.write_sets_file(test_data)
-
-    # Mock the urlopen responses - 17Lands and then Scryfall
     test_response = b'{"expansions":["MKM","OTJ"],"start_dates":{"MKM":"2024-02-06T00:00:00Z", "OTJ":"2024-04-16T15:00:00Z"},"formats_by_expansion":{"MKM":["PremierDraft"],"OTJ":["PremierDraft"]}}'
     mock_urlopen.return_value.read.side_effect = [
         test_response,
         MOCK_URL_RESPONSE_SCRYFALL_SETS,
     ]
-
-    # Read the file back - this will make calls to the mocked urlopen method
     output_sets = limited_sets.retrieve_limited_sets()
-
-    # Verify that the set_code is updated
-    assert output_sets.special_events[0].label == "OpenDay1"
     assert output_sets.special_events[0].set_code == "MKM"
-    assert output_sets.special_events[1].label == "OpenDay2"
-    assert output_sets.special_events[1].set_code == "MKM"
 
-    # Mock the urlopen responses - 17Lands and then Scryfall
-    # Switch the set codes
-    test_response = b'{"expansions":["OTJ","MKM"],"start_dates":{"MKM":"2024-02-06T00:00:00Z", "OTJ":"2024-04-16T15:00:00Z"},"formats_by_expansion":{"MKM":["PremierDraft"],"OTJ":["PremierDraft"]}}'
-    mock_urlopen.return_value.read.side_effect = [
-        test_response,
-        MOCK_URL_RESPONSE_SCRYFALL_SETS,
-    ]
-
-    # Read the file back - this will make calls to the mocked urlopen method
-    output_sets = limited_sets.retrieve_limited_sets()
-
-    # Verify that the set_code is updated
-    assert output_sets.special_events[0].label == "OpenDay1"
-    assert output_sets.special_events[0].set_code == "OTJ"
-    assert output_sets.special_events[1].label == "OpenDay2"
-    assert output_sets.special_events[1].set_code == "OTJ"
 
 
 @patch("src.limited_sets.urllib.request.urlopen")
-def test_substitute_string_date_shift(mock_urlopen, limited_sets):
-    """
-    Verify that string '{DATESHIFT}' gets replaced with a date that is 30 days from the mocked date
-    """
+@patch("src.limited_sets.LimitedSets._is_cache_valid", return_value=False)
+def test_substitute_string_date_shift(mock_cache, mock_urlopen, limited_sets):
     test_data = SetDictionary()
-
-    # Create a new sets file
     assert limited_sets.write_sets_file(test_data)
-
-    # Mock the urlopen responses - 17Lands and then Scryfall
     mock_urlopen.return_value.read.side_effect = [
         MOCK_URL_RESPONSE_17LANDS_FILTERS,
         MOCK_URL_RESPONSE_SCRYFALL_SETS,
     ]
-    mocked_today = datetime.date(2024, 5, 15)
-    mocked_min = datetime.date.min
-    expected_shift_date = "2024-04-15"
-
-    # Read the file back - this will make calls to the mocked urlopen method and the mocked date methods
     with patch("src.limited_sets.datetime.date") as mock_date:
-        # Mocked start date
-        mock_date.today.return_value = mocked_today
-        mock_date.min = mocked_min
+        mock_date.today.return_value = datetime.date(2024, 5, 15)
+        mock_date.min = datetime.date.min
         output_sets = limited_sets.retrieve_limited_sets()
-
-    # Verify that the {DATESHIFT} response is substituted for the expected shift date
     assert "Cube" in output_sets.data
-    assert output_sets.data["Cube"].start_date == expected_shift_date

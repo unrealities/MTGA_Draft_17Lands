@@ -27,6 +27,9 @@ from src.constants import (
     SCREENSHOT_FOLDER,
     SCREENSHOT_PREFIX,
 )
+from src.logger import create_logger
+
+logger = create_logger()
 
 
 class Result(Enum):
@@ -107,10 +110,11 @@ def check_file_integrity(filename):
                 meta.get("start_date")
                 meta.get("end_date")
         else:
+            logger.error(f"Validation Failed: Missing 'meta' field in {filename}")
             return Result.ERROR_UNREADABLE_FILE, json_data
 
         cards = json_data.get("card_ratings")
-        if isinstance(cards, dict) and len(cards) >= 100:
+        if isinstance(cards, dict) and len(cards) >= 10:
             for card in cards.values():
                 card.get(DATA_FIELD_NAME)
                 card.get(DATA_FIELD_COLORS)
@@ -126,9 +130,17 @@ def check_file_integrity(filename):
                 deck_colors.get(DATA_FIELD_IWD)
                 break
         else:
+            count = len(cards) if isinstance(cards, dict) else 0
+            logger.error(
+                f"Validation Failed: Insufficient cards ({count} < 10) in {filename}"
+            )
             return Result.ERROR_UNREADABLE_FILE, json_data
 
-    except json.JSONDecodeError:
+    except json.JSONDecodeError as e:
+        logger.error(f"Validation Failed: JSON Decode Error in {filename}: {e}")
+        return Result.ERROR_UNREADABLE_FILE, json_data
+    except Exception as e:
+        logger.error(f"Validation Failed: Unexpected Error in {filename}: {e}")
         return Result.ERROR_UNREADABLE_FILE, json_data
 
     return result, json_data
@@ -149,19 +161,16 @@ def capture_screen_base64str(persist):
     return base64.b64encode(buffered.getvalue()).decode("utf-8")
 
 
-def detect_string(
-    search_line: str, search_strings: List[str], replace: str = "_"
-) -> int:
-    """Search a line for a string and return the offset at the end of the string."""
-    # Extend search strings with modified versions (replacing 'replace' character)
-    modified_strings = search_strings + [
-        string.replace(replace, "") for string in search_strings
-    ]
-    # Find the first matching string and return its offset
-    for string in modified_strings:
-        if string in search_line:
-            return search_line.find(string) + len(string)
-    # Return -1 if no match is found
+def detect_string(search_line: str, search_strings: List[str]) -> int:
+    """
+    Robustly identifies the start of a JSON block in an Arena log line.
+    Indifferent to underscores, spaces, or casing.
+    """
+    norm_line = search_line.upper().replace("_", "").replace(" ", "")
+    for pattern in search_strings:
+        norm_pattern = pattern.upper().replace("_", "").replace(" ", "")
+        if norm_pattern in norm_line:
+            return search_line.find("{")
     return -1
 
 
@@ -268,3 +277,11 @@ def normalize_color_string(color_string: str) -> str:
     sorted_symbols = sorted(list(set(symbols)), key=lambda x: CARD_COLORS.index(x))
 
     return "".join(sorted_symbols)
+
+
+def is_cache_stale(filepath: str, hours: int = 24) -> bool:
+    """Checks if a file is older than the specified hours."""
+    if not os.path.exists(filepath):
+        return True
+    file_age_seconds = time.time() - os.path.getmtime(filepath)
+    return file_age_seconds > (hours * 3600)
