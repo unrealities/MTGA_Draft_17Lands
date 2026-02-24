@@ -42,28 +42,48 @@ class Seventeenlands:
         master_card_map = {}
         target_colors = colors if colors else self.ARCHETYPES
 
+        start_time = time.time()
+
         for i, color in enumerate(target_colors):
+            pct = int((i / len(target_colors)) * 100)
+
             if progress_callback:
-                progress_callback(
-                    f"Fetching {color} Archetype...", (i / len(target_colors)) * 100
-                )
+                elapsed = time.time() - start_time
+                if i > 0:
+                    # Calculate rolling average time per request
+                    avg_time = elapsed / i
+                    rem_time = avg_time * (len(target_colors) - i)
+                else:
+                    # Initial guess: ~1.5s delay + ~0.5s network time per archetype
+                    rem_time = 2.0 * len(target_colors)
+
+                rem_mins = int(rem_time // 60)
+                rem_secs = int(rem_time % 60)
+                eta_str = f"{rem_mins}m {rem_secs}s" if rem_mins > 0 else f"{rem_secs}s"
+
+                msg = f"Downloading '{color}' ({i+1}/{len(target_colors)}) - {pct}% [ETA: {eta_str}]"
+                progress_callback(msg, pct)
 
             # Fetch raw data (from cache or network)
-            raw_data = self._fetch_archetype_with_cache(
+            raw_data, from_cache = self._fetch_archetype_with_cache(
                 set_code, draft_format, color, user_group
             )
 
             # Process into master map
             self._process_archetype_data(color, raw_data, master_card_map)
 
-            # Throttle if hitting network
-            time.sleep(2.5)
+            # Throttle ONLY if we actually hit the network, otherwise blast through cache!
+            if not from_cache:
+                time.sleep(1.5)
+
+        if progress_callback:
+            progress_callback("Finalizing Dataset...", 100)
 
         return master_card_map
 
     def _fetch_archetype_with_cache(
         self, set_code: str, draft_format: str, color: str, user_group: str = "All"
-    ) -> List[Dict]:
+    ):
         """Retrieves data from 17Lands, prioritizing the local raw cache."""
         ug_label = user_group if user_group and user_group != "All" else "All"
         cache_name = f"{set_code}_{draft_format}_{color}_{ug_label}.json".lower()
@@ -73,7 +93,7 @@ class Seventeenlands:
             logger.info(f"Using cached 17Lands data for {set_code}/{color}/{ug_label}")
             try:
                 with open(cache_path, "r") as f:
-                    return json.load(f)
+                    return json.load(f), True
             except json.JSONDecodeError:
                 pass  # Cache corrupt, fetch new
 
@@ -88,17 +108,6 @@ class Seventeenlands:
             url += f"&user_group={user_group}"
 
         response = self.session.get(url, timeout=30)
-
-        # Hard stop if we hit anti-bot or rate-limits
-        if response.status_code == 429:
-            raise Exception(
-                "Rate Limited (HTTP 429). You are requesting data too fast."
-            )
-        if response.status_code == 403:
-            raise Exception(
-                "Access Denied (HTTP 403). 17Lands is blocking the request."
-            )
-
         response.raise_for_status()
         data = response.json()
 
@@ -106,7 +115,7 @@ class Seventeenlands:
         with open(cache_path, "w") as f:
             json.dump(data, f)
 
-        return data
+        return data, False
 
     def _process_archetype_data(
         self, color_key: str, raw_list: List[Dict], card_map: Dict

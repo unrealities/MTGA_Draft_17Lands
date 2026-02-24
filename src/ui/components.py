@@ -407,34 +407,25 @@ class ModernTreeview(ttk.Treeview):
 
         items = [(self.item(k)["values"], k) for k in self.get_children("")]
 
-        # Guard against columns that have no index (like action buttons)
         try:
             col_idx = list(self["columns"]).index(col)
         except ValueError:
             return
 
-        # Sort dynamically using the multi-type priority tuples defined in card_logic
-        items.sort(
-            key=lambda x: field_process_sort(
-                x[0][col_idx] if col_idx < len(x[0]) else ""
-            ),
-            reverse=rev,
-        )
+        def _key(t):
+            p = field_process_sort(t[0][col_idx])
+            try:
+                return (1, float(p), str(t[0][0]))
+            except:
+                return (0, str(p), str(t[0][0]))
 
-        # Execute moves and re-calculate Zebra tags to match the new visible positions
-        for index, (val, k) in enumerate(items):
-            self.move(k, "", index)
-
-            # Extract tags safely
-            current_tags = self.item(k, "tags")
-            if isinstance(current_tags, str):
-                tags = current_tags.split() if current_tags else []
-            else:
-                tags = list(current_tags)
-
-            tags = [t for t in tags if t not in ("bw_odd", "bw_even")]
-            tags.append("bw_odd" if index % 2 == 0 else "bw_even")
-            self.item(k, tags=tags)
+        # Sort the items and re-insert them with fresh zebra striping
+        items.sort(key=_key, reverse=rev)
+        for i, (v, k) in enumerate(items):
+            self.move(k, "", i)
+            tags = [t for t in self.item(k, "tags") if t not in ("bw_odd", "bw_even")]
+            tags.append("bw_odd" if i % 2 == 0 else "bw_even")
+            self.item(k, tags=tuple(tags))
 
 
 class DynamicTreeviewManager(ttk.Frame):
