@@ -71,7 +71,7 @@ class Settings(BaseModel):
 
     # Core Feature Toggles
     card_colors_enabled: bool = False
-    auto_highest_enabled: bool = True
+    auto_highest_enabled: bool = False
     draft_log_enabled: bool = True
     p1p1_ocr_enabled: bool = True
     save_screenshot_enabled: bool = False

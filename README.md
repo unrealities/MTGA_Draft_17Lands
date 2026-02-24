@@ -28,6 +28,7 @@ Magic: The Gathering Arena draft tool that utilizes 17Lands data.
   - [Dataset Notifications](#dataset-notifications)
   - [Troubleshooting](#troubleshooting)
     - [Known Issues](#known-issues)
+    - [Desyncs & Missed Picks](#desyncs--missed-picks)
     - [Arena Log Issues](#arena-log-issues)
   - [Development \& Documentation](#development--documentation)
     - [Environment Setup](#environment-setup)
@@ -164,10 +165,12 @@ The application includes notifications to ensure datasets are always up-to-date.
 - **SSL errors on MacOS:** Install SSL certificates via `/Applications/Python 3.12/Install Certificates.command`
 - **Missing cards after restarting Arena:** Arena creates a new log after every restart. The application cannot track cards picked prior to an Arena restart.
 
+### Desyncs & Missed Picks
+If you disconnect from MTG Arena, or the application misses a pick, click the **Reload** button in the main dashboard. This will wipe the application's current memory, instantly re-read the entire log file from the beginning, and reconstruct your exact draft state.
+
 ### Arena Log Issues
 
 If the application cannot detect an active event, click `File -> Read Player.log` and ensure the proper file is selected.
-If the game updates and breaks logging, please create a GitHub issue with the relevant log lines containing `[UnityCrossThreadLogger]==> EventJoin`.
 
 ## Development & Documentation
 

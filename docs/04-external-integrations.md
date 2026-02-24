@@ -41,7 +41,7 @@ The API returns colors in varying orders (e.g., "GW").
 
 This is a stateless microservice used to solve the "P1P1 Gap" (where logs don't show cards until after a pick).
 
-* **Trigger:** User clicks "Refresh" button (manual action).
+* **Trigger:** User clicks "P1P1" button (manual action).
 * **URL:** `https://us-central1-mtgalimited.cloudfunctions.net/pack_parser`
 * **Method:** POST
 * **Payload (JSON):**

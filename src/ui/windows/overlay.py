@@ -168,8 +168,11 @@ class CompactOverlay(tb.Toplevel):
                     )
                     row_values.append(short_name)
                 elif field == "value":
-                    val = rec.contextual_score if rec else stats.get("gihwr", 0.0)
-                    row_values.append(f"{val:.0f}")
+                    if rec:
+                        row_values.append(f"{rec.contextual_score:.0f}")
+                    else:
+                        val = stats.get("gihwr", 0.0)
+                        row_values.append(f"{val:.0f}" if val != 0.0 else "-")
                 elif field == "colors":
                     row_values.append("".join(card.get("colors", [])))
                 elif field == "count":
@@ -191,11 +194,15 @@ class CompactOverlay(tb.Toplevel):
                         row_values.append("NA")
                 else:
                     val = stats.get(field, 0.0)
-                    row_values.append(
-                        f"{val:.1f}"
-                        if field in ["gihwr", "ohwr", "gpwr", "gnswr", "gdwr", "iwd"]
-                        else str(val)
-                    )
+                    if val == 0.0:
+                        row_values.append("-")
+                    else:
+                        row_values.append(
+                            f"{val:.1f}"
+                            if field
+                            in ["gihwr", "ohwr", "gpwr", "gnswr", "gdwr", "iwd"]
+                            else str(val)
+                        )
 
             # Sort by Tactical Value if available, else fallback to raw win rate
             sort_val = rec.contextual_score if rec else stats.get("gihwr", 0.0)

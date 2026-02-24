@@ -9,8 +9,8 @@
 * unrealities: [Feature] Upgraded Signal Detection to track wheel signals by comparing P1P9 contents against P1P1 contents to determine the true "Retention Rate" of color quality.
 * unrealities: [UX/UI] Consolidated all configuration options into a modernized Preferences window with real-time UI updates.
 * unrealities: [UX/UI] Expanded Dataset Update notifications to display highly verbose details, including Full Set Name, Event Type, User Group, and formatted local vs. remote game counts.
-* unrealities: [UX/UI] Added visual sort indicators (▲ / ▼) to the column headers of all data tables.
-* unrealities: [UX/UI] Added momentary "Copied! ✔" visual feedback to buttons when exporting decks or card pools to the clipboard.
+* unrealities: [UX/UI] Replaced the redundant "Logs" button with a "Reload" button. Clicking this performs a complete reset and re-parse of the current log file to instantly fix desync issues.
+* unrealities: [UX/UI] Added visual sort indicators (▲ / ▼) to the column headers of all data tables.* unrealities: [UX/UI] Added momentary "Copied! ✔" visual feedback to buttons when exporting decks or card pools to the clipboard.
 * unrealities: [UX/UI] Added exact numeric labels floating above the Mana Curve chart bars in the sidebar.
 * unrealities: [UX/UI] The application header now displays the full, human-readable Set Name (e.g., "Outlaws of Thunder Junction") instead of just the 3-letter set code.
 * unrealities: [UX/UI] Added support for custom .tcl themes and introduced several built-in Magic-themed color palettes ("Mana Flairs").

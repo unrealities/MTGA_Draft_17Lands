@@ -50,27 +50,31 @@ def filter_options(deck, option_selection, metrics, configuration):
     if not configuration.settings.auto_highest_enabled:
         return [constants.FILTER_OPTION_ALL_DECKS]
 
-    # Auto Logic: Identify top 2 colors
-    try:
-        # Don't auto-switch until we have enough data (e.g. pick 5)
-        if len(deck) < 5:
-            return [constants.FILTER_OPTION_ALL_DECKS]
+        # Auto Logic: Identify top 2 colors
+        try:
+            # Don't auto-switch until we have enough data (e.g. pick 5)
+            if len(deck) < 5:
+                return [constants.FILTER_OPTION_ALL_DECKS]
 
-        top_pair = identify_top_pairs(deck, metrics)
-        if top_pair and top_pair[0]:
-            from src.utils import normalize_color_string
+            top_pair = identify_top_pairs(deck, metrics)
+            if top_pair and top_pair[0]:
+                from src.utils import normalize_color_string
 
-            # Convert ["U", "B"] -> "UB" in strict WUBRG order
-            pair_str = normalize_color_string("".join(top_pair[0]))
+                # Convert ["U", "B"] -> "UB" in strict WUBRG order
+                pair_str = normalize_color_string("".join(top_pair[0]))
 
-            # Check if this pair exists in known deck colors (it should)
-            # We also return All Decks as a fallback/context
-            return [pair_str] if pair_str else [constants.FILTER_OPTION_ALL_DECKS]
+                # Check if we actually have data for this archetype
+                if pair_str:
+                    mean, std = metrics.get_metrics(
+                        pair_str, constants.DATA_FIELD_GIHWR
+                    )
+                    if mean > 0.0:
+                        return [pair_str]
 
-    except Exception as e:
-        logger.error(f"Auto filter error: {e}")
+        except Exception as e:
+            logger.error(f"Auto filter error: {e}")
 
-    return [constants.FILTER_OPTION_ALL_DECKS]
+        return [constants.FILTER_OPTION_ALL_DECKS]
 
 
 def get_deck_metrics(deck):
@@ -161,20 +165,20 @@ def field_process_sort(field_value):
         if isinstance(field_value, str):
             # Sanitize styling characters before parsing
             val = field_value.replace("*", "").replace("%", "").strip()
-            
+
             if val in ["NA", "-", ""]:
-                return (0, 0.0) # Bottom priority
-                
+                return (0, 0.0)  # Bottom priority
+
             # Cross-reference with the GRADE dictionary via stripped keys
             for k, v in constants.GRADE_ORDER_DICT.items():
                 if k.strip() == val:
                     return (1, float(v))
-                    
+
             return (1, float(val))
-            
+
         elif field_value is None:
             return (0, 0.0)
-            
+
         return (1, float(field_value))
     except (ValueError, TypeError):
         # Top priority fallback for valid strings (Names, Colors, etc)

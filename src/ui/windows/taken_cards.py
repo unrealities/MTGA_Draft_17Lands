@@ -179,11 +179,14 @@ class TakenCardsPanel(ttk.Frame):
                     row_values.append("".join(card.get("colors", [])))
                 else:
                     val = (
-                        card.get("deck_colors", {}).get("All Decks", {}).get(field, "-")
+                        card.get("deck_colors", {}).get("All Decks", {}).get(field, 0.0)
                     )
-                    row_values.append(
-                        f"{val:.1f}" if isinstance(val, float) else str(val)
-                    )
+                    if val == 0.0 or val == "-":
+                        row_values.append("-")
+                    else:
+                        row_values.append(
+                            f"{val:.1f}" if isinstance(val, float) else str(val)
+                        )
 
             tag = "bw_odd" if idx % 2 == 0 else "bw_even"
             if self.configuration.settings.card_colors_enabled:

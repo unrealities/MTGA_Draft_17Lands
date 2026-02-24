@@ -176,10 +176,10 @@ class DraftApp:
         row2.pack(fill="x")
 
         # Controls (Left)
-        self.btn_logs = ttk.Button(
-            row2, text="Logs", command=lambda: self._manual_refresh(False), width=6
+        self.btn_reload = ttk.Button(
+            row2, text="Reload", command=self._force_reload, width=7
         )
-        self.btn_logs.pack(side="left", padx=2)
+        self.btn_reload.pack(side="left", padx=2)
 
         self.btn_p1p1 = ttk.Button(
             row2, text="P1P1", command=lambda: self._manual_refresh(True), width=6
@@ -368,7 +368,7 @@ class DraftApp:
         # Dynamic P1P1 Button Visibility
         # Only show if setting is enabled, a draft is active, and we are on Pick 1 of Pack 1 (or waiting)
         if self.configuration.settings.p1p1_ocr_enabled and es and pk <= 1 and pi <= 1:
-            self.btn_p1p1.pack(side="left", padx=2, after=self.btn_logs)
+            self.btn_p1p1.pack(side="left", padx=2, after=self.btn_reload)
         else:
             self.btn_p1p1.pack_forget()
 
@@ -589,6 +589,24 @@ class DraftApp:
                 self._update_deck_filter_options()
                 self._refresh_ui_data()
 
+    def _force_reload(self):
+        """Completely resets the scanner and re-parses the current log file."""
+        self.vars["status_text"].set("Reloading...")
+        self.root.update_idletasks()
+
+        # 1. Reset scanner state to byte 0
+        self.orchestrator.scanner.clear_draft(True)
+        self.orchestrator.scanner.file_size = 0
+
+        # 2. Re-run searches from the beginning
+        self.orchestrator.scanner.draft_start_search()
+        self.orchestrator.scanner.draft_data_search(
+            use_ocr=False, save_screenshot=False
+        )
+
+        # 3. Force UI Redraw
+        self._refresh_ui_data()
+
     def _update_deck_filter_options(self):
         rate_map = self.orchestrator.scanner.retrieve_color_win_rate(
             self.configuration.settings.filter_format
@@ -688,7 +706,7 @@ class DraftApp:
             )
 
             if s.p1p1_ocr_enabled:
-                self.btn_p1p1.pack(side="left", padx=2, after=self.btn_logs)
+                self.btn_p1p1.pack(side="left", padx=2, after=self.btn_reload)
             else:
                 self.btn_p1p1.pack_forget()
 
