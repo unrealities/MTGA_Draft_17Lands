@@ -166,6 +166,7 @@ COLUMN_FIELD_LABELS = {
     "colors": "COLORS: Card Colors",
     "count": "COUNT: Total Card Count",
     "value": "VALUE: Advisor Tactical Score",
+    "tags": "TAGS: Card Roles",
 }
 LABEL_TO_COLUMN_FIELD = {v: k for k, v in COLUMN_FIELD_LABELS.items()}
 
@@ -800,10 +801,8 @@ FIXING_KEYWORDS = [
     "add one mana of any type",
     "add x mana of any one color",
     "add one mana of the chosen color",
-    
     # "Choose a color" usually implies fixing (e.g. Thriving lands, Unknown Shores)
-    "choose a color", 
-    
+    "choose a color",
     # Fetching / Tutoring
     "search your library for a land card",
     "search your library for a basic land",
@@ -821,12 +820,10 @@ FIXING_KEYWORDS = [
     "swampcycling",
     "mountaincycling",
     "forestcycling",
-    
     # Token Generation (Treasure/Gold)
     "create a treasure",
     "create x treasure",
     "create a gold token",
-    
     # Enchantments
     "whenever enchanted land is tapped for mana, its controller adds an additional one mana of any color",
 ]
@@ -843,3 +840,15 @@ FIXING_NAMES = [
     "guild globe",
     "omenpath journey",
 ]
+
+DATA_FIELD_TAGS = "tags"
+
+# Map internal Scryfall tags to UI-friendly icons and labels
+TAG_VISUALS = {
+    "removal": "🎯 Removal",
+    "evasion": "🦅 Evasion",
+    "card_draw": "📚 Draw",
+    "fixing": "🌈 Fixing",
+    "combat_trick": "⚔️ Trick",
+    "mana_sink": "⚙️ Sink",
+}
