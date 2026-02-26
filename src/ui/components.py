@@ -200,6 +200,7 @@ class CardToolTip(tkinter.Toplevel):
         images_enabled: bool,
         scale: float,
         archetypes: Optional[List[List]] = None,
+        tags: Optional[List[str]] = None,
     ):
         super().__init__(parent_widget)
         self.wm_overrideredirect(True)
@@ -288,6 +289,25 @@ class CardToolTip(tkinter.Toplevel):
                 tkinter.Label(
                     stats_f,
                     text=f"• {arch[0]}: {arch[2]}%",
+                    fg=Theme.TEXT_MAIN,
+                    bg=Theme.BG_PRIMARY,
+                    font=(Theme.FONT_FAMILY, 8),
+                ).pack(anchor="w")
+
+        if tags:
+            tkinter.Label(
+                stats_f,
+                text="CARD ROLES",
+                fg=Theme.ACCENT,
+                bg=Theme.BG_PRIMARY,
+                font=(Theme.FONT_FAMILY, int(7 * scale), "bold"),
+            ).pack(anchor="w", pady=(10, 0))
+
+            for t in tags:
+                display_tag = constants.TAG_VISUALS.get(t, t.capitalize())
+                tkinter.Label(
+                    stats_f,
+                    text=f"• {display_tag}",
                     fg=Theme.TEXT_MAIN,
                     bg=Theme.BG_PRIMARY,
                     font=(Theme.FONT_FAMILY, 8),

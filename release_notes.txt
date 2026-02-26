@@ -1,3 +1,12 @@
+===================== RELEASE NOTES 4.01 =====================
+* unrealities: [Bug] Fixed an issue where "Cube - Powered" events would fail to load dataset data due to legacy cache artifacts and strict string spacing mismatches (#125).
+* unrealities: [Bug] Fixed an issue where the Card Pool and Comparisons tables would turn completely blank when the "Tags" column was added to the view.
+* unrealities: [Bug] Fixed an issue where clicking a card to view its tooltip would stop working after right-clicking to add or remove table columns.
+* unrealities: [Performance] Disabled Scryfall community tag harvesting for Cube events to prevent severe API timeouts and application freezes during dataset downloads.
+* unrealities: [UX/UI] Added live progress tracking to the Dataset Download screen during the tag harvesting phase, ensuring the app no longer appears frozen when building a new set.
+* unrealities: [UX/UI] Added visual card role tags (e.g., 🎯 Removal) to the Advisor Recommendations panel.
+* unrealities: [Documentation] Cleaned up legacy v4 architecture artifacts in the business logic documentation to reflect the new v5 Compositional Brain.
+
 ===================== RELEASE NOTES 4.0 =====================
 * unrealities: [Major Redesign] Completely overhauled the UI using a modern, tabbed interface powered by ttkbootstrap. Introduced a persistent Live Dashboard alongside dedicated tabs for Datasets, Card Pool, Deck Builder, Comparisons, and Tier Lists.
 * unrealities: [Major Feature] Introduced "The Compositional Brain" tactical advisor. Replaced static win-rate thresholds with dynamic Z-scores, compositional math, and relative wheel probability.

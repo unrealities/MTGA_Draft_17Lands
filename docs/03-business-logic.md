@@ -1,102 +1,60 @@
-# Business Logic & Scoring Specification: "Compositional Brain" (v4)
+# Business Logic & Scoring Specification: "Compositional Brain" (v5 Pro)
 
-**Version:** 4.1 | **Architecture:** Formulaic Balance & Context Engine
+**Version:** 5.0 | **Architecture:** Pro-Tour Context Engine & Velocity Math
 
 ## 1. Introduction
 
-The v4 "Compositional Brain" replaces strict logic gates with formulaic curves. It treats the draft as a math problem of resource allocation (Creatures vs. Spells) and reads the table relative to the power level of the current pack.
+The v5 Engine abandons rigid heuristics and emulates the fluid decision-making of a high-level drafter. It interprets draft logs through the lenses of **Sunk Cost Evasion**, **Mana Velocity**, and **Signal Capitalization**.
 
-## 2. Dynamic Lane Identification
+## 2. Lane Detection (Sunk Cost Evasion)
 
-- **Quality Weighting:** We do not count cards. We count _power_.
-- **Formula:** `Score = Sum((Card.GIHWR - 50.0) / 5.0)`.
-- **Effect:** A 65% WR Bomb contributes 3 points to color commitment. A 52% Filler card contributes 0.4 points.
+We do not lock into colors based on Pick 1. We weight recent picks heavier than early picks to detect the *actual* open lane.
 
-## 3. Compositional Math (Role Theory)
+- **Formula:** `Score = Base Z-Score * Recency Multiplier`
+- **Recency Multiplier:** Scales from `1.0` (P1P1) up to `2.5` (Current Pick).
+- **Effect:** If you take 3 Red cards early, but switch to Blue/Black in Pack 2, the engine's "Memory" of Red decays rapidly, correctly aligning the UI filters and Castability math to your *current* UX reality, not your past mistakes.
 
-Instead of "If < 15 Creatures", we use a continuous supply/demand curve.
+## 3. Compositional Math (The 2-Drop Rule)
 
-### 3.1. Projections
+Modern limited is dictated by the 2-drop slot. Counting "15 creatures" is a fatal trap if five of them cost 5 mana.
 
-The engine projects your final deck composition based on current draft progress.
+- **Velocity Target:** 7+ "Early Plays" (CMC <= 2 Creatures or premium Interaction).
+- **Hunger Formula:** The engine projects your final 2-drop count based on `(Current Early Plays) * (45 / Picks_Made)`.
+- **Panic Mode:** If `Projected < 7` entering Pack 2, 2-drops receive up to a `1.5x` score multiplier.
+- **Top-Heavy Penalty:** If you have 4+ cards costing 5+ mana, future expensive cards receive a severe `0.7x` dampening multiplier, regardless of their GIHWR.
 
-- `Projected_Count = Current_Count * (45 / Picks_Made)`
+## 4. Signal Capitalization (Draft Navigation)
 
-### 3.2. Hunger Formula
+The engine reads signals in Pack 1 to gently push you into open colors.
 
-- **Creatures:** Target 15.
-- **Calculation:** `Ratio = Projected / Target`.
-- **Bonus:** If `Ratio < 0.8` (Behind schedule), apply multiplier `1 + (0.8 - Ratio)`.
-- **Penalty:** If `Ratio > 1.4` (Oversaturated), apply penalty decay.
+- **Trigger:** Pack 1, Pick 5+.
+- **Math:** `Lateness = Current Pick - ALSA`.
+- **Application:** If a card with a positive Z-Score (above average) has a `Lateness >= 2.0`, it receives a flat point bonus equal to `Lateness * Z-Score * 3.0`.
+- **Effect:** Seeing a great card at pick 7 that normally goes at pick 3 temporarily overrides the "Alien Gold/Off-Color" penalties, suggesting a strategic pivot.
 
-## 4. Alien Gold Protection
+## 5. True Bomb Detection (IWD Injection)
 
-Strict logic to prevent "Shiny Object Syndrome" with multicolor cards.
+A high Win-Rate doesn't mean a card is a bomb (e.g., strong 1-drops have high WR but don't win the game alone).
 
-- **Rule:** If a card is Multicolor AND shares _zero_ colors with the established main colors:
-  - **Score:** **0.0** (Hard Lock).
-  - **Reason:** "Alien Gold".
-  - _Exception:_ If the pool has 4+ Fixing sources, it is treated as a 5-color soup candidate.
+- **Logic:** If a card's Z-Score is `> 1.0` AND its Improvement When Drawn (IWD) is `> 4.5%`, its power bonus is multiplied by `1.15x`.
+- **Effect:** Distinguishes between "Great Filler" and "Cards you should abandon your current draft lane to play."
 
-## 5. Pack 2 Discipline (New in v4.1)
+## 6. The Archetype Delta (Synergy Engine)
 
-To prevent speculative picking from derailing a solid deck, the logic enforces strict penalties for off-color cards once the draft enters Pack 2.
+Cards are evaluated not just globally, but relative to how they perform in your specific lane.
 
-- **Trigger:** Pack >= 2 AND Card is Off-Color.
-- **Logic:**
-  - If **Fixing Sources <= 1** (Meaning no duals/treasures, just a basic):
-    - **Penalty:** Multiplier **0.2** (Severe).
-    - **Exception:** If Z-Score > 2.5 (True Bomb), Multiplier is **0.6**.
-  - This ensures that a "Good" off-color card (e.g., 61% WR) does not score higher than a "Great" on-color card (e.g., 64% WR) simply due to raw stats.
+- **Delta Math:** `Archetype_GIHWR - Global_GIHWR`
+- **Synergy Payoff:** If a card performs > 2.0% better in your specific color pair than the average, it receives a heavy point bonus.
+- **Archetype Trap:** If a globally "Good" card performs significantly worse in your established archetype, its score is heavily penalized.
 
-## 6. Relative Wheel Probability
+## 7. Interaction Quotas & Diminishing Returns
 
-We do not look at ALSA in a vacuum. We look at the pack texture.
+The app parses card oracle text to understand the mechanical role of a card, preventing deck saturation.
 
-- **Rank Logic:**
-  1. Sort Pack by GIHWR.
-  2. Identify Rank of Target Card (1 = Best).
-- **Algorithm:**
-  - If `Rank <= 3`: **Wheel Chance 0%**. (Will be taken).
-  - If `Rank >= 8` AND `ALSA > Pick + 7.5`: **High Wheel Chance**.
-- **Strategy:** This allows taking the _second_ best card if the _best_ card is weak enough to wheel, netting two cards.
+- **Hard Removal Quota:** The engine actively searches for text like `"destroy target"`, `"exile target"`, or `"damage to target"`. If the pool has fewer than 3 removal spells in Pack 2/3, interaction cards receive a `1.3x` panic multiplier.
+- **Diminishing Returns:** Auras, Equipment, and Combat Tricks (parsed via text) receive a strict `0.5x` penalty if the pool already contains 3 or more of them, preventing the drafting of "All tricks, no creatures" decks.
 
-## 7. Wheel Signal Analysis (P1P9)
+## 8. Premium Fixing Speculation
 
-The signal engine now remembers Pack 1 Pick 1.
-
-- **Trigger:** Pick 9.
-- **Logic:** Compare P1P9 contents to P1P1 contents.
-- **Quality Retention:** `Sum(GIHWR > 54) of P1P9 / Sum(GIHWR > 54) of P1P1`.
-- **Interpretation:**
-  - If `Retention > 30%`: The color was passed by 7 players. **OPEN LANE.**
-  - If `Retention < 10%`: The good cards were stripped. **CLOSED LANE.**
-
-## 8. Deck Generation Engine (v4)
-
-The v4 Deck Suggester abandons strict hardcoded requirements (e.g., "Must have exactly 15 creatures") in favor of generating distinct strategic archetypes and evaluating them using a holistic scoring matrix.
-
-### 8.1. Archetype Variants
-
-For every viable color pair, the engine attempts to build three variants:
-
-1. **Consistency (Midrange):** Strictly adheres to the 2 main colors. Prioritizes raw Z-Score.
-2. **Greedy (Bomb Splash):** Identifies the highest WR off-color card in the pool and forces it into the deck, recalculating the mana base to accommodate it.
-3. **Tempo (Aggro):** Applies a weighted modifier to cards based on CMC (+4.0 for CMC 1-2, -8.0 for CMC 5+).
-
-### 8.2. Holistic Power Level
-
-Instead of counting cards, decks are scored on a 0-100 scale using four pillars:
-
-1. **Base Power:** The average Z-score of all non-lands in the deck.
-2. **Mana Velocity:** Penalizes the deck if the `(Average CMC * 5.5)` exceeds the number of available mana sources. Rewards ultra-low CMC decks.
-3. **Synergy Matrix:** Scans the deck for Tribal overlap (e.g., 6+ matching creature types + 2 payoffs) or Domain enablers.
-4. **Playables Deficit:** Severely penalizes the deck if it is forced to run basic lands in spell slots due to a lack of playable cards.
-
-### 8.3. Frank Karsten Mana Bases
-
-Mana bases are dynamically generated using proportional math with safety floors:
-
-- **Primary/Secondary Colors:** Guaranteed a minimum of 6 sources.
-- **Splash Colors:** Guaranteed a minimum of 3 sources.
-- Remaining lands are distributed proportionally based on pip density. Overflows/underflows are awarded to the color with the highest/lowest pip count to strictly enforce a 40-card deck size.
+- **Pack 1:** Dual lands automatically receive a 1.15x multiplier to encourage staying open.
+- **Splash Enablers:** If the user drafted a high Z-score bomb early but abandoned its color, the engine logs it as a "Splash Target". Any lands drafted later that produce that color receive a 1.3x multiplier to actively fix the mana base for the abandoned bomb.

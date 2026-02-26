@@ -14,6 +14,7 @@ from src.logger import create_logger
 from src.utils import Result, check_file_integrity, clean_string
 from src.ui_progress import UIProgress
 from src.seventeenlands import Seventeenlands
+from src.scryfall_tagger import ScryfallTagger
 from src.constants import COLOR_WIN_RATE_GAME_COUNT_THRESHOLD_DEFAULT
 
 logger = create_logger()
@@ -384,6 +385,8 @@ class FileExtractor(UIProgress):
             if max_samples > 0:
                 self.combined_data["meta"]["game_count"] = max_samples
                 logger.info(f"Backfilled game_count to {max_samples} from card data")
+
+        self._inject_community_tags(update_ui)
 
         # 4. Export
         filename = self.export_card_data()
@@ -1043,6 +1046,23 @@ class FileExtractor(UIProgress):
                 time.sleep(constants.CARD_RATINGS_INTER_DELAY_SECONDS)
 
         return result
+
+    def _inject_community_tags(self, progress_callback=None):
+        """Fetches Scryfall otags and injects them into the card dictionary."""
+        set_code = (
+            self.selected_sets.scryfall[0]
+            if self.selected_sets.scryfall
+            else self.selected_sets.seventeenlands[0]
+        )
+
+        tagger = ScryfallTagger()
+        harvested_tags = tagger.harvest_set_tags(set_code, progress_callback)
+
+        # Inject into the combined data
+        if "card_ratings" in self.combined_data:
+            for arena_id, card in self.combined_data["card_ratings"].items():
+                card_name = card.get("name", "")
+                card["tags"] = harvested_tags.get(card_name, [])
 
     def _assemble_set(self, matching_only):
         """Combine the 17Lands ratings and the card data to form the complete set data"""

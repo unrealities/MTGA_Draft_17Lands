@@ -31,7 +31,9 @@ OTJ_PREMIER_SNAPSHOT = os.path.join(
 
 TEST_SETS = SetDictionary(
     data={
-        "CUBE-POWERED": SetInfo(seventeenlands=["Cube - Powered"], set_code="CUBE"),
+        "CUBE-POWERED": SetInfo(
+            seventeenlands=["Cube - Powered"], set_code="CUBE-POWERED"
+        ),
         "OM1": SetInfo(seventeenlands=["OM1"], set_code="OM1"),
         "TDM": SetInfo(seventeenlands=["TDM"], set_code="TDM"),
         "DSK": SetInfo(seventeenlands=["DSK"], set_code="DSK"),
@@ -1214,7 +1216,9 @@ OM1_PICK_TWO_PREMIER_DRAFT_ENTRIES = [
 POWERED_CUBE_DRAFT_ENTRIES = [
     (
         "Event Start",
-        EventResults(new_event=True, current_set="CUBE", current_event="PremierDraft"),
+        EventResults(
+            new_event=True, current_set="CUBE-POWERED", current_event="PremierDraft"
+        ),
         r'[UnityCrossThreadLogger]==> EventJoin {"id":"23c1c6a7-3ce2-4a8c-88cf-88ef6dbc266b","request":"{\"EventName\":\"CubeDraft_Powered_20251028\",\"EntryCurrencyType\":\"Gem\",\"EntryCurrencyPaid\":1500,\"CustomTokenId\":null,\"EventChoice\":\"\"}"}',
     ),
 ]

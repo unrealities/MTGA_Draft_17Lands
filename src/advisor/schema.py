@@ -18,3 +18,4 @@ class Recommendation(BaseModel):
     reasoning: List[str]  # e.g. ["Uncastable (Double Pip)", "Wheels 80%"]
     is_elite: bool = False
     archetype_fit: str = "Neutral"
+    tags: List[str] = []

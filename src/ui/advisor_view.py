@@ -9,6 +9,7 @@ from typing import List
 from src.advisor.schema import Recommendation
 from src.ui.styles import Theme
 from src.ui.components import CollapsibleFrame
+from src.constants import TAG_VISUALS
 
 
 class AdvisorPanel(ttk.Frame):
@@ -24,7 +25,7 @@ class AdvisorPanel(ttk.Frame):
         self.container.pack(fill="x", expand=True)
 
     def update_recommendations(self, recs: List[Recommendation]):
-        """Renders the top choices with reasoning."""
+        """Renders the top choices with reasoning and semantic tags."""
         for widget in self.container.winfo_children():
             widget.destroy()
 
@@ -46,9 +47,15 @@ class AdvisorPanel(ttk.Frame):
             name_color = Theme.ACCENT if rec.is_elite else Theme.TEXT_MAIN
             font_weight = "bold" if rec.is_elite else "normal"
 
+            tag_string = ""
+            if rec.tags:
+                # Convert ["removal", "evasion"] -> "[🎯 Removal, 🦅 Evasion]"
+                formatted_tags = [TAG_VISUALS.get(t, t.capitalize()) for t in rec.tags]
+                tag_string = f"  [{', '.join(formatted_tags)}]"
+
             lbl_name = ttk.Label(
                 header,
-                text=f"{i+1}. {rec.card_name.upper()}",
+                text=f"{i+1}. {rec.card_name.upper()}{tag_string}",
                 foreground=name_color,
                 font=(Theme.FONT_FAMILY, 9, font_weight),
             )

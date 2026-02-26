@@ -80,6 +80,9 @@ class ComparePanel(ttk.Frame):
         t = self.table
         if t is None:
             return
+            
+        t.bind("<<TreeviewSelect>>", self._on_selection)
+            
         for item in t.get_children():
             t.delete(item)
         for idx, card in enumerate(self.compare_list):
@@ -89,6 +92,16 @@ class ComparePanel(ttk.Frame):
                     row.append(card.get("name", ""))
                 elif field == "colors":
                     row.append("".join(card.get("colors", [])))
+                elif field == "tags":
+                    raw_tags = card.get("tags", [])
+                    if raw_tags:
+                        icons_only = [
+                            constants.TAG_VISUALS.get(t, t).split(" ")[0]
+                            for t in raw_tags
+                        ]
+                        row.append(" ".join(icons_only))
+                    else:
+                        row.append("-")
                 else:
                     val = (
                         card.get("deck_colors", {}).get("All Decks", {}).get(field, 0.0)

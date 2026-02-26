@@ -123,9 +123,13 @@ class DashboardFrame(ttk.Frame):
         recommendations=None,
     ):
         tree = self.get_treeview(source_type)
-        # Ensure we have a valid widget and it has its configuration injected
         if not tree or not hasattr(tree, "active_fields"):
             return
+
+        tree.bind(
+            "<<TreeviewSelect>>",
+            lambda e, t=tree, s=source_type: self.on_card_select(e, t, s),
+        )
 
         for item in tree.get_children():
             tree.delete(item)
@@ -178,6 +182,16 @@ class DashboardFrame(ttk.Frame):
                         row_values.append(f"{val:.0f}" if val != 0.0 else "-")
                 elif field == "colors":
                     row_values.append("".join(card.get("colors", [])))
+                elif field == "tags":
+                    raw_tags = card.get("tags", [])
+                    if raw_tags:
+                        icons_only = [
+                            constants.TAG_VISUALS.get(t, t).split(" ")[0]
+                            for t in raw_tags
+                        ]
+                        row_values.append(" ".join(icons_only))
+                    else:
+                        row_values.append("-")
                 elif field == "count":
                     row_values.append(str(card.get("count", "-")))
                 elif field == "wheel":

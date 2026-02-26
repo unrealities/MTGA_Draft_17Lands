@@ -49,11 +49,6 @@ class DraftOrchestrator:
     def sync_dataset_to_event(
         self, target_set=None, target_format=None, target_user=None
     ):
-        """
-        Aligns the active JSON dataset.
-        If targets are provided (e.g. from tests/notifications), it uses them.
-        Otherwise, it retrieves current state from the scanner.
-        """
         event_set, event_format = self.scanner.retrieve_current_limited_event()
 
         s_code = target_set or event_set
@@ -69,18 +64,23 @@ class DraftOrchestrator:
         format_match = None
         set_match = None
 
-        set_prefix = f"[{s_code}]"
+        # FIX: Clean the set code for robust matching (e.g. CUBE-POWERED)
+        clean_s_code = s_code.replace(" ", "").upper()
+        set_prefix = f"[{clean_s_code}]"
 
         for label, path in sources.items():
-            if set_prefix in label:
+            # FIX: Clean the label to ignore spacing differences (e.g. [Cube - Powered] vs [CUBE-POWERED])
+            clean_label = label.replace(" ", "").upper()
+
+            if set_prefix in clean_label:
                 if not set_match:
                     set_match = path
 
-                if f_code and f_code in label:
+                if f_code and f_code.upper() in clean_label:
                     if not format_match:
                         format_match = path
 
-                    if f"({u_code})" in label:
+                    if f"({u_code.upper()})" in clean_label:
                         exact_match = path
                         break
 

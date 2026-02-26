@@ -121,10 +121,12 @@ class CompactOverlay(tb.Toplevel):
 
         # Update Table Reference (in case it was rebuilt)
         self.tree = self.table_manager.tree
+        self.tree.bind(
+            "<<TreeviewSelect>>", self._on_card_select
+        )
 
         for item in self.tree.get_children():
             self.tree.delete(item)
-
         if not pack_cards:
             return
 
@@ -175,6 +177,16 @@ class CompactOverlay(tb.Toplevel):
                         row_values.append(f"{val:.0f}" if val != 0.0 else "-")
                 elif field == "colors":
                     row_values.append("".join(card.get("colors", [])))
+                elif field == "tags":
+                    raw_tags = card.get("tags", [])
+                    if raw_tags:
+                        icons_only = [
+                            constants.TAG_VISUALS.get(t, t).split(" ")[0]
+                            for t in raw_tags
+                        ]
+                        row_values.append(" ".join(icons_only))
+                    else:
+                        row_values.append("-")
                 elif field == "count":
                     row_values.append(str(card.get("count", "-")))
                 elif field == "wheel":
