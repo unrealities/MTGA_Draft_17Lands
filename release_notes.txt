@@ -1,3 +1,6 @@
+===================== RELEASE NOTES 4.01 =====================
+* [TODO]: Add release notes here
+
 ===================== RELEASE NOTES 4.0 =====================
 * unrealities: [Major Redesign] Completely overhauled the UI using a modern, tabbed interface powered by ttkbootstrap. Introduced a persistent Live Dashboard alongside dedicated tabs for Datasets, Card Pool, Deck Builder, Comparisons, and Tier Lists.
 * unrealities: [Major Feature] Introduced "The Compositional Brain" tactical advisor. Replaced static win-rate thresholds with dynamic Z-scores, compositional math, and relative wheel probability.

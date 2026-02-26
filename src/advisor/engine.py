@@ -4,8 +4,6 @@ src/advisor/engine.py
 ================================================================================
 The "Compositional Brain" (v5 Pro-Tour Architecture)
 ================================================================================
-This engine moves beyond strict logic gates and raw win-rates. It evaluates a
-draft pack through the lens of advanced Pro Tour draft theories:
 
 1. Sunk Cost Evasion: Weights recent picks heavier than early picks to find the
    *true* open lane, quickly abandoning cut colors.
@@ -277,13 +275,15 @@ class DraftAdvisor:
                 if cmc <= 2:
                     early_plays += 1
 
-            if "combat_trick" in tags:
+            if "combat_trick" in tags or "enhancement" in tags:
                 combat_trick_count += 1
 
-            if "fixing" in tags or ("Land" in types and len(c.get("colors", [])) > 1):
+            if "fixing_ramp" in tags or (
+                "Land" in types and len(c.get("colors", [])) > 1
+            ):
                 fixing_count += 1
 
-            if "card_draw" in tags:
+            if "card_advantage" in tags:
                 card_draw_count += 1
 
             if "evasion" in tags:
@@ -323,7 +323,7 @@ class DraftAdvisor:
         cmc = self._get_functional_cmc(card)
 
         # --- Lands & Fixing Speculation ---
-        if "Land" in types or "fixing" in tags:
+        if "Land" in types or "fixing_ramp" in tags:
             card_colors = card.get("colors", [])
             splash_targets = self.pool_metrics.get("splash_targets", set())
             if any(c in splash_targets for c in card_colors):
@@ -353,13 +353,13 @@ class DraftAdvisor:
                     return multiplier, "Critical: Needs 2-Drops"
                 return 1.1, "Curve Foundation"
 
-        # --- 3. Consistency (Card Draw) ---
-        if "card_draw" in tags:
+        # --- 3. Consistency (Card Advantage) ---
+        if "card_advantage" in tags:
             current_draw = self.pool_metrics.get("card_draw_count", 0)
             if pack >= 2 and current_draw < self.TARGET_CARD_DRAW:
                 return 1.2, "Needs Card Advantage"
             elif current_draw >= 5:
-                return 0.7, "Card Draw Saturated"
+                return 0.7, "Card Advantage Saturated"
 
         # --- 4. Board Stall Breakers (Evasion) ---
         if "evasion" in tags:
@@ -373,9 +373,9 @@ class DraftAdvisor:
                 return 1.1, "Flood Insurance"
 
         # --- 6. Diminishing Returns on Tricks ---
-        if "combat_trick" in tags:
+        if "combat_trick" in tags or "enhancement" in tags:
             if self.pool_metrics.get("combat_trick_count", 0) >= self.CAP_COMBAT_TRICKS:
-                return 0.5, "Trick Saturated"
+                return 0.5, "Trick/Enhancement Saturated"
 
         # --- 7. Top-Heavy Penalty ---
         if cmc >= 5 and "mana_sink" not in tags:

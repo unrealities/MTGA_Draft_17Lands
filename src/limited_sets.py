@@ -191,6 +191,13 @@ class LimitedSets:
             sets_object = SetDictionary.model_validate(json_data)
             if sets_object.version < LIMITED_SETS_VERSION:
                 return temp_sets, success
+
+            for name, info in sets_object.data.items():
+                if "Cube" in name:
+                    info.set_code = name.replace(" ", "").upper()
+                elif not info.set_code:
+                    info.set_code = name.split(" ")[0].upper()
+
             temp_sets = sets_object
             success = True
         except Exception:
@@ -246,10 +253,16 @@ class LimitedSets:
     def __process_17lands_sets(self, data: dict):
         try:
             for card_set in data["expansions"]:
+                set_code = (
+                    card_set.replace(" ", "").upper()
+                    if "Cube" in card_set
+                    else card_set.split(" ")[0].upper()
+                )
+
                 self.sets_17lands.data[card_set] = SetInfo(
                     arena=[constants.SET_SELECTION_ALL],
                     seventeenlands=[card_set],
-                    set_code=card_set.split(" ")[0].upper(),
+                    set_code=set_code,
                 )
             for card_set, date_string in data["start_dates"].items():
                 if card_set in self.sets_17lands.data:

@@ -240,7 +240,7 @@ CHECKED_SETS_17LANDS = {
         scryfall=[],
         seventeenlands=["Cube - Powered"],
         start_date=REPLACE_PHRASE_DATE_SHIFT,
-        set_code="CUBE",
+        set_code="CUBE-POWERED",
         formats=[
             "PremierDraft",
             "TradDraft",
@@ -877,7 +877,6 @@ def test_overwrite_old_sets(mock_cache, mock_urlopen, limited_sets):
     check_for_sets(output_sets.data, CHECKED_SETS_COMBINED)
 
 
-
 @patch("src.limited_sets.urllib.request.urlopen")
 @patch("src.limited_sets.LimitedSets._is_cache_valid", return_value=False)
 def test_substitute_string_latest(mock_cache, mock_urlopen, limited_sets):
@@ -890,7 +889,6 @@ def test_substitute_string_latest(mock_cache, mock_urlopen, limited_sets):
     ]
     output_sets = limited_sets.retrieve_limited_sets()
     assert output_sets.special_events[0].set_code == "MKM"
-
 
 
 @patch("src.limited_sets.urllib.request.urlopen")

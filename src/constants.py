@@ -1,9 +1,9 @@
 import os
 import getpass
 
-APPLICATION_VERSION = 4.0
+APPLICATION_VERSION = 4.01
 OLD_APPLICATION_VERSION = "0320"
-PREVIOUS_APPLICATION_VERSION = "0338"
+PREVIOUS_APPLICATION_VERSION = "0400"
 
 FONT_SANS_SERIF = "Arial"
 FONT_MONO_SPACE = "Courier"
@@ -847,8 +847,14 @@ DATA_FIELD_TAGS = "tags"
 TAG_VISUALS = {
     "removal": "🎯 Removal",
     "evasion": "🦅 Evasion",
-    "card_draw": "📚 Draw",
-    "fixing": "🌈 Fixing",
+    "card_advantage": "📚 Advantage",
+    "fixing_ramp": "🌈 Fixing",  # Changed from 🌱 Mana/Fix
+    "fixing": "🌈 Fixing",  # Catch-all in case the internal tag was renamed
     "combat_trick": "⚔️ Trick",
+    "enhancement": "🛡️ Enhance",
+    "token_maker": "👯 Tokens",
+    "lifegain": "💖 Lifegain",
     "mana_sink": "⚙️ Sink",
+    "protection": "🛡️ Protect",
+    "hate": "🚫 Hate",
 }

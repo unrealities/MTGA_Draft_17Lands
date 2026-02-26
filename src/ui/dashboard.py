@@ -123,9 +123,13 @@ class DashboardFrame(ttk.Frame):
         recommendations=None,
     ):
         tree = self.get_treeview(source_type)
-        # Ensure we have a valid widget and it has its configuration injected
         if not tree or not hasattr(tree, "active_fields"):
             return
+
+        tree.bind(
+            "<<TreeviewSelect>>",
+            lambda e, t=tree, s=source_type: self.on_card_select(e, t, s),
+        )
 
         for item in tree.get_children():
             tree.delete(item)

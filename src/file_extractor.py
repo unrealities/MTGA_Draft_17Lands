@@ -386,8 +386,7 @@ class FileExtractor(UIProgress):
                 self.combined_data["meta"]["game_count"] = max_samples
                 logger.info(f"Backfilled game_count to {max_samples} from card data")
 
-        # Inject the Scryfall community tags before writing to disk
-        self._inject_community_tags()
+        self._inject_community_tags(update_ui)
 
         # 4. Export
         filename = self.export_card_data()
@@ -1048,24 +1047,21 @@ class FileExtractor(UIProgress):
 
         return result
 
-    def _inject_community_tags(self):
+    def _inject_community_tags(self, progress_callback=None):
         """Fetches Scryfall otags and injects them into the card dictionary."""
-        # Fallback to 17Lands code if Scryfall code isn't explicitly defined
         set_code = (
             self.selected_sets.scryfall[0]
             if self.selected_sets.scryfall
             else self.selected_sets.seventeenlands[0]
         )
-        self._update_status("Harvesting Community Tags (Scryfall)...")
 
         tagger = ScryfallTagger()
-        harvested_tags = tagger.harvest_set_tags(set_code)
+        harvested_tags = tagger.harvest_set_tags(set_code, progress_callback)
 
         # Inject into the combined data
         if "card_ratings" in self.combined_data:
             for arena_id, card in self.combined_data["card_ratings"].items():
                 card_name = card.get("name", "")
-                # Apply tags if found, otherwise empty array
                 card["tags"] = harvested_tags.get(card_name, [])
 
     def _assemble_set(self, matching_only):

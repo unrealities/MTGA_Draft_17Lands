@@ -315,14 +315,27 @@ class ArenaScanner:
             events.append(constants.LIMITED_TYPE_STRING_DRAFT_PREMIER)
 
         if events:
+            upper_sections = [sec.upper() for sec in event_sections]
+
             # 1. Try to find the set code in the known Set List
-            event_set = [
-                i.set_code
-                for i in self.set_list.data.values()
-                for x in event_sections
-                if i.set_code.lower() in x.lower()
-            ]
-            event_set = list(dict.fromkeys(event_set))
+            # Sort by length descending to match more specific cubes (CUBE-POWERED) before generic (CUBE)
+            for i in sorted(
+                self.set_list.data.values(), key=lambda v: len(v.set_code), reverse=True
+            ):
+                if not i.set_code:
+                    continue
+
+                # FIX: Ensure "CUBE" is treated as a separate word for robust matching (e.g. POWEREDCUBE vs CUBE-POWERED)
+                normalized_code = i.set_code.replace("-", " ").replace("CUBE", " CUBE ")
+                code_parts = normalized_code.split()
+
+                # A set matches if ALL of its parts are found as substrings in ANY of the separated sections
+                if all(
+                    any(part.upper() in sec for sec in upper_sections)
+                    for part in code_parts
+                ):
+                    event_set = [i.set_code]
+                    break
 
             # 2. Heuristic Fallback: If not found in metadata, try to extract a plausible Set Code
             # This handles new sets (like ECL) that haven't been added to set_list.json yet.
@@ -1092,10 +1105,7 @@ class ArenaScanner:
                 user_group = file[2]
                 location = file[6]
                 if re.search(r"^[Yy]\d{2}", set_code):
-                    type_string = f"[{set_code[0:3]}]{event_type} ({user_group})"
-                elif re.search(r"[.\-/]", set_code):
-                    dataset_type = re.split(r"[.\-/]", set_code)[-1]
-                    type_string = f"[{dataset_type[0:3]}] {event_type} ({user_group})"
+                    type_string = f"[{set_code[0:6]}] {event_type} ({user_group})"
                 else:
                     type_string = f"[{set_code}] {event_type} ({user_group})"
                 data_sources[type_string] = location

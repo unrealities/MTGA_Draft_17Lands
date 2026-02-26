@@ -121,10 +121,12 @@ class CompactOverlay(tb.Toplevel):
 
         # Update Table Reference (in case it was rebuilt)
         self.tree = self.table_manager.tree
+        self.tree.bind(
+            "<<TreeviewSelect>>", self._on_card_select
+        )
 
         for item in self.tree.get_children():
             self.tree.delete(item)
-
         if not pack_cards:
             return
 

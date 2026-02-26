@@ -137,7 +137,7 @@ class TakenCardsPanel(ttk.Frame):
             self.content_area,
             view_id="taken_table",
             configuration=self.configuration,
-            on_update_callback=lambda: None,  # We handle updates manually via refresh()
+            on_update_callback=self._update_table_view,
         )
         self.table_manager.pack(fill="both", expand=True)
         self.table.bind("<<TreeviewSelect>>", self._on_selection)
@@ -165,6 +165,8 @@ class TakenCardsPanel(ttk.Frame):
         if t is None:
             return
 
+        t.bind("<<TreeviewSelect>>", self._on_selection)
+
         for item in t.get_children():
             t.delete(item)
 
@@ -177,6 +179,16 @@ class TakenCardsPanel(ttk.Frame):
                     row_values.append(card.get("count", 1))
                 elif field == "colors":
                     row_values.append("".join(card.get("colors", [])))
+                elif field == "tags":
+                    raw_tags = card.get("tags", [])
+                    if raw_tags:
+                        icons_only = [
+                            constants.TAG_VISUALS.get(t, t).split(" ")[0]
+                            for t in raw_tags
+                        ]
+                        row_values.append(" ".join(icons_only))
+                    else:
+                        row_values.append("-")
                 else:
                     val = (
                         card.get("deck_colors", {}).get("All Decks", {}).get(field, 0.0)
