@@ -173,7 +173,7 @@ class Theme:
                 cls.WARNING = colors.warning
 
         # 3. Global Configuration (Applies regardless of theme engine)
-        row_height = max(22, int(22 * scale))
+        row_height = max(26, int(26 * scale))
         style.configure("Treeview", rowheight=row_height)
         style.configure("TNotebook", borderwidth=0)
 
