@@ -429,8 +429,8 @@ def suggest_deck(taken_cards, metrics, configuration, event_type="PremierDraft")
             label = f"{pair_key} {variant['label_prefix']}"
             sorted_decks[label] = variant
 
-            # Limit to top 5 unique options so we don't overwhelm the UI
-            if len(sorted_decks) >= 5:
+            # Limit to top 10 unique options so we don't overwhelm the UI
+            if len(sorted_decks) >= 10:
                 break
 
     except Exception as e:
@@ -463,14 +463,13 @@ def identify_top_pairs(pool, metrics):
 
     sorted_c = sorted(scores.items(), key=lambda x: x[1], reverse=True)
 
-    # Return the absolute best pair
-    top_pairs = [[sorted_c[0][0], sorted_c[1][0]]]
+    top_pairs = []
+    top_4_colors = [c[0] for c in sorted_c[:4]]
 
-    # ONLY return the 3rd best color if it has at least 25% of the power points of your main color.
-    # This prevents the builder from generating options for a color you only picked 2 cards for.
-    if len(sorted_c) > 2 and sorted_c[2][1] > (sorted_c[0][1] * 0.25):
-        top_pairs.append([sorted_c[0][0], sorted_c[2][0]])
-        top_pairs.append([sorted_c[1][0], sorted_c[2][0]])
+    from itertools import combinations
+
+    for pair in combinations(top_4_colors, 2):
+        top_pairs.append(list(pair))
 
     return top_pairs
 

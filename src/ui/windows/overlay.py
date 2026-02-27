@@ -121,9 +121,7 @@ class CompactOverlay(tb.Toplevel):
 
         # Update Table Reference (in case it was rebuilt)
         self.tree = self.table_manager.tree
-        self.tree.bind(
-            "<<TreeviewSelect>>", self._on_card_select
-        )
+        self.tree.bind("<<TreeviewSelect>>", self._on_card_select)
 
         for item in self.tree.get_children():
             self.tree.delete(item)
@@ -258,10 +256,7 @@ class CompactOverlay(tb.Toplevel):
             )
             CardToolTip(
                 self.tree,
-                found[constants.DATA_FIELD_NAME],
-                found.get(constants.DATA_FIELD_DECK_COLORS, {}),
-                found.get(constants.DATA_SECTION_IMAGES, []),
+                found,
                 self.configuration.features.images_enabled,
                 constants.UI_SIZE_DICT.get(self.configuration.settings.ui_size, 1.0),
-                archetypes=arch,
             )

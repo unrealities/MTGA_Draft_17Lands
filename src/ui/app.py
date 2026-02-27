@@ -384,6 +384,8 @@ class DraftApp:
             self.configuration,
         )
 
+        self.panel_taken.active_color = colors[0] if colors else "All Decks"
+
         self.dashboard.update_pack_data(
             pack_cards,
             colors,
@@ -746,12 +748,9 @@ class DraftApp:
             )
             CardToolTip(
                 table,
-                card_name,
-                found.get(constants.DATA_FIELD_DECK_COLORS, {}),
-                found.get(constants.DATA_SECTION_IMAGES, []),
+                found,
                 self.configuration.features.images_enabled,
                 current_scale,
-                archetypes=arch,
             )
 
     def _open_settings(self):

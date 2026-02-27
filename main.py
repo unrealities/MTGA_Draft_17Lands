@@ -4,6 +4,22 @@ MTGA Draft Tool - Entry Point.
 Handles Robust Path Discovery and Splash Lifecycle.
 """
 
+import locale
+
+# Intercept unsupported locale settings that cause ttkbootstrap to crash on certain Windows regions.
+_original_setlocale = locale.setlocale
+
+
+def _safe_setlocale(category, loc=None):
+    try:
+        return _original_setlocale(category, loc)
+    except locale.Error:
+        # Fallback to the safe 'C' standard locale if the system's regional setting is unsupported
+        return _original_setlocale(category, "C")
+
+
+locale.setlocale = _safe_setlocale
+
 import ttkbootstrap as ttk
 import argparse
 import os

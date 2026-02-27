@@ -225,7 +225,7 @@ class SuggestDeckPanel(ttk.Frame):
             )
             self.clipboard_clear()
             self.clipboard_append(export_text)
-            
+
             # Visual Feedback
             self.btn_copy.config(text="Copied! ✔")
             self.after(2000, lambda: self.btn_copy.config(text="Copy Deck"))
@@ -239,9 +239,7 @@ class SuggestDeckPanel(ttk.Frame):
             card = self.current_deck_list[idx]
             CardToolTip(
                 self.table,
-                card.get(constants.DATA_FIELD_NAME, "Unknown"),
-                card.get(constants.DATA_FIELD_DECK_COLORS, {}),
-                card.get(constants.DATA_SECTION_IMAGES, []),
+                card,
                 self.configuration.features.images_enabled,
                 constants.UI_SIZE_DICT.get(self.configuration.settings.ui_size, 1.0),
             )

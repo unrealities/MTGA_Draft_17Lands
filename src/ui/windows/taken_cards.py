@@ -27,6 +27,7 @@ class TakenCardsPanel(ttk.Frame):
 
         self.current_display_list = []
         self.view_mode = "list"  # "list" or "visual"
+        self.active_color = "All Decks"
 
         # UI State for Checkbuttons
         self.vars = {}
@@ -44,7 +45,19 @@ class TakenCardsPanel(ttk.Frame):
         raw_pool = self.draft.retrieve_taken_cards()
         if not raw_pool:
             self.current_display_list = []
+            self.active_color = "All Decks"
         else:
+            from src.card_logic import filter_options
+
+            metrics = self.draft.retrieve_set_metrics()
+            colors = filter_options(
+                raw_pool,
+                self.configuration.settings.deck_filter,
+                metrics,
+                self.configuration,
+            )
+            self.active_color = colors[0] if colors else "All Decks"
+
             # 2. Filter
             active_types = []
             if self.vars["creature"].get():
@@ -191,8 +204,11 @@ class TakenCardsPanel(ttk.Frame):
                         row_values.append("-")
                 else:
                     val = (
-                        card.get("deck_colors", {}).get("All Decks", {}).get(field, 0.0)
+                        card.get("deck_colors", {})
+                        .get(self.active_color, {})
+                        .get(field, 0.0)
                     )
+
                     if val == 0.0 or val == "-":
                         row_values.append("-")
                     else:
@@ -302,9 +318,7 @@ class TakenCardsPanel(ttk.Frame):
         if card:
             CardToolTip(
                 self.table,
-                card.get("name", ""),
-                card.get("deck_colors", {}),
-                card.get("image", []),
+                card,
                 self.configuration.features.images_enabled,
                 constants.UI_SIZE_DICT.get(self.configuration.settings.ui_size, 1.0),
             )
