@@ -186,22 +186,11 @@ class AutocompleteEntry(tkinter.Entry):
 
 
 class CardToolTip(tkinter.Toplevel):
-    """Data-dense popup for MTG cards with async, cached image loading."""
+    """Data-dense, professional popup for MTG cards with async, cached image loading."""
 
-    # Set up a local cache directory for images
     IMAGE_CACHE_DIR = os.path.join(os.getcwd(), "Temp", "Images")
 
-    def __init__(
-        self,
-        parent_widget,
-        card_name: str,
-        stats: Dict[str, Dict[str, Any]],
-        image_urls: List[str],
-        images_enabled: bool,
-        scale: float,
-        archetypes: Optional[List[List]] = None,
-        tags: Optional[List[str]] = None,
-    ):
+    def __init__(self, parent_widget, card: Dict, images_enabled: bool, scale: float):
         super().__init__(parent_widget)
         self.wm_overrideredirect(True)
         self.attributes("-topmost", True)
@@ -209,109 +198,227 @@ class CardToolTip(tkinter.Toplevel):
             bg=Theme.BG_PRIMARY, highlightthickness=1, highlightbackground=Theme.ACCENT
         )
 
-        # Ensure cache directory exists
         if not os.path.exists(self.IMAGE_CACHE_DIR):
             os.makedirs(self.IMAGE_CACHE_DIR)
 
+        # Extract Card Data
+        card_name = card.get(constants.DATA_FIELD_NAME, "Unknown")
+        stats = card.get(constants.DATA_FIELD_DECK_COLORS, {})
+        image_urls = card.get(constants.DATA_SECTION_IMAGES, [])
+        tags = card.get("tags", [])
+        rarity = card.get(constants.DATA_FIELD_RARITY, "Common").capitalize()
+
+        # Dynamic Fonts
+        title_font = (Theme.FONT_FAMILY, int(13 * scale), "bold")
+        header_font = (Theme.FONT_FAMILY, int(10 * scale), "bold")
+        label_font = (Theme.FONT_FAMILY, int(9 * scale))
+        value_font = (Theme.FONT_FAMILY, int(9 * scale), "bold")
+
+        # --- Top Header ---
         header = tkinter.Frame(self, bg=Theme.BG_SECONDARY)
         header.pack(fill="x")
+
         tkinter.Label(
             header,
             text=card_name,
             bg=Theme.BG_SECONDARY,
             fg=Theme.TEXT_MAIN,
-            font=(Theme.FONT_FAMILY, int(10 * scale), "bold"),
+            font=title_font,
             padx=10,
-            pady=5,
+            pady=6,
         ).pack(side="left")
 
-        body = tkinter.Frame(self, bg=Theme.BG_PRIMARY, padx=10, pady=10)
+        # Rarity Color Coding
+        rarity_color = Theme.TEXT_MAIN
+        if rarity == "Mythic":
+            rarity_color = "#f97316"  # Orange
+        elif rarity == "Rare":
+            rarity_color = "#eab308"  # Gold
+        elif rarity == "Uncommon":
+            rarity_color = "#94a3b8"  # Silver
+
+        tkinter.Label(
+            header,
+            text=rarity,
+            bg=Theme.BG_SECONDARY,
+            fg=rarity_color,
+            font=header_font,
+            padx=10,
+        ).pack(side="right")
+
+        # --- Main Body Container ---
+        body = tkinter.Frame(self, bg=Theme.BG_PRIMARY, padx=12, pady=12)
         body.pack(fill="both", expand=True)
 
-        # Placeholder for the image label (packed immediately)
+        # --- Left: Card Image ---
         self.img_label = tkinter.Label(body, bg=Theme.BG_PRIMARY)
         if images_enabled and image_urls:
-            self.img_label.pack(side="left", padx=(0, 10))
-            # Fetch image asynchronously so we don't freeze the UI
+            self.img_label.pack(side="left", padx=(0, 15), anchor="n")
             self._load_image_async(image_urls[0], scale)
 
+        # --- Right: Data Metrics ---
         stats_f = tkinter.Frame(body, bg=Theme.BG_PRIMARY)
-        stats_f.pack(side="left", fill="y")
-        best = ["All Decks"] + [
+        stats_f.pack(side="left", fill="both", expand=True, anchor="n")
+
+        global_stats = stats.get("All Decks", {})
+        gihwr = global_stats.get(constants.DATA_FIELD_GIHWR, 0.0)
+        iwd = global_stats.get(constants.DATA_FIELD_IWD, 0.0)
+        ohwr = global_stats.get(constants.DATA_FIELD_OHWR, 0.0)
+        gpwr = global_stats.get(constants.DATA_FIELD_GPWR, 0.0)
+        alsa = global_stats.get(constants.DATA_FIELD_ALSA, 0.0)
+        ata = global_stats.get(constants.DATA_FIELD_ATA, 0.0)
+        samples = global_stats.get("samples", 0)
+
+        # 1. GLOBAL PERFORMANCE GRID
+        tkinter.Label(
+            stats_f,
+            text="GLOBAL PERFORMANCE",
+            fg=Theme.ACCENT,
+            bg=Theme.BG_PRIMARY,
+            font=header_font,
+        ).pack(anchor="w")
+
+        grid_f = tkinter.Frame(stats_f, bg=Theme.BG_PRIMARY)
+        grid_f.pack(anchor="w", fill="x", pady=(4, 12))
+
+        def fmt_pct(v, is_iwd=False):
+            if not v:
+                return "-"
+            return f"{v:+.1f}%" if is_iwd else f"{v:.1f}%"
+
+        def fmt_num(v):
+            if not v:
+                return "-"
+            return f"{v:.2f}" if isinstance(v, float) else f"{v:,}"
+
+        # Add Statistical Confidence Context
+        conf_text = ""
+        if samples > 0:
+            if samples < 300:
+                conf_text = " (Low Sample)"
+            elif samples > 1500:
+                conf_text = " (High Confidence)"
+
+        metrics = [
+            [
+                (
+                    "GIH WR:",
+                    fmt_pct(gihwr),
+                    Theme.SUCCESS if gihwr >= 55.0 else Theme.TEXT_MAIN,
+                ),
+                (
+                    "IWD:",
+                    fmt_pct(iwd, True),
+                    Theme.ACCENT if iwd >= 3.0 else Theme.TEXT_MAIN,
+                ),
+            ],
+            [
+                ("OH WR:", fmt_pct(ohwr), Theme.TEXT_MAIN),
+                ("GP WR:", fmt_pct(gpwr), Theme.TEXT_MAIN),
+            ],
+            [
+                ("ALSA:", fmt_num(alsa), Theme.TEXT_MAIN),
+                ("ATA:", fmt_num(ata), Theme.TEXT_MAIN),
+            ],
+            [
+                ("Games:", f"{fmt_num(samples)}{conf_text}", Theme.TEXT_MUTED),
+                ("", "", Theme.TEXT_MAIN),
+            ],
+        ]
+
+        for r_idx, row in enumerate(metrics):
+            for c_idx, (lbl, val, col) in enumerate(row):
+                if not lbl:
+                    continue
+                tkinter.Label(
+                    grid_f,
+                    text=lbl,
+                    fg=Theme.TEXT_MUTED,
+                    bg=Theme.BG_PRIMARY,
+                    font=label_font,
+                ).grid(row=r_idx, column=c_idx * 2, sticky="w", padx=(0, 6))
+                tkinter.Label(
+                    grid_f, text=val, fg=col, bg=Theme.BG_PRIMARY, font=value_font
+                ).grid(row=r_idx, column=c_idx * 2 + 1, sticky="w", padx=(0, 20))
+
+        # 2. TOP ARCHETYPES (% OF PLAYS)
+        tkinter.Label(
+            stats_f,
+            text="ARCHETYPE PLAY SHARE",
+            fg=Theme.SUCCESS,
+            bg=Theme.BG_PRIMARY,
+            font=header_font,
+        ).pack(anchor="w")
+
+        valid_archs = [
             k
             for k in stats.keys()
             if k != "All Decks" and stats[k].get(constants.DATA_FIELD_GIHWR, 0) > 0
         ]
+        valid_archs.sort(key=lambda k: stats[k].get("samples", 0), reverse=True)
 
-        for k in best[:3]:
-            data = stats.get(k, {})
+        if not valid_archs:
             tkinter.Label(
                 stats_f,
-                text=k.upper(),
-                fg=Theme.ACCENT,
+                text="Not enough archetype data.",
+                fg=Theme.TEXT_MUTED,
                 bg=Theme.BG_PRIMARY,
-                font=(Theme.FONT_FAMILY, int(8 * scale), "bold"),
-            ).pack(anchor="w")
-            grid = tkinter.Frame(stats_f, bg=Theme.BG_PRIMARY)
-            grid.pack(anchor="w", pady=(0, 8))
-            rows = [
-                ("GIH WR", constants.DATA_FIELD_GIHWR, "%"),
-                ("ALSA", constants.DATA_FIELD_ALSA, ""),
-            ]
-            for i, (lbl, fld, sfx) in enumerate(rows):
-                val = data.get(fld, 0.0)
-                txt = f"{val}{sfx}" if val > 0 else "-"
+                font=label_font,
+            ).pack(anchor="w", pady=(2, 0))
+        else:
+            for k in valid_archs[:10]:
+                data = stats.get(k, {})
+                wr = data.get(constants.DATA_FIELD_GIHWR, 0.0)
+                count = data.get("samples", 0)
+                arch_name = constants.COLOR_NAMES_DICT.get(k, k)
+
+                # Contextual Percentage Math
+                pct_share = (count / samples * 100) if samples > 0 else 0
+
+                row_frame = tkinter.Frame(stats_f, bg=Theme.BG_PRIMARY)
+                row_frame.pack(anchor="w", fill="x", pady=(2, 0))
+
                 tkinter.Label(
-                    grid,
-                    text=lbl,
+                    row_frame,
+                    text=f"• {arch_name} ({k}):",
                     fg=Theme.TEXT_MUTED,
                     bg=Theme.BG_PRIMARY,
-                    font=(Theme.FONT_FAMILY, 8),
-                ).grid(row=i, column=0, sticky="w")
+                    font=label_font,
+                ).pack(side="left")
                 tkinter.Label(
-                    grid,
-                    text=txt,
-                    fg=Theme.TEXT_MAIN,
+                    row_frame,
+                    text=f" {wr:.1f}% WR",
+                    fg=Theme.TEXT_MAIN if wr < 55.0 else Theme.SUCCESS,
                     bg=Theme.BG_PRIMARY,
-                    font=(Theme.FONT_FAMILY, 8, "bold"),
-                    padx=10,
-                ).grid(row=i, column=1, sticky="e")
-
-        if archetypes:
-            tkinter.Label(
-                stats_f,
-                text="ARCHETYPES",
-                fg=Theme.SUCCESS,
-                bg=Theme.BG_PRIMARY,
-                font=(Theme.FONT_FAMILY, int(7 * scale), "bold"),
-            ).pack(anchor="w", pady=(5, 0))
-            for arch in archetypes[:2]:
+                    font=value_font,
+                ).pack(side="left")
                 tkinter.Label(
-                    stats_f,
-                    text=f"• {arch[0]}: {arch[2]}%",
-                    fg=Theme.TEXT_MAIN,
+                    row_frame,
+                    text=f"  |  {pct_share:.0f}% of Plays",
+                    fg=Theme.TEXT_MUTED,
                     bg=Theme.BG_PRIMARY,
-                    font=(Theme.FONT_FAMILY, 8),
-                ).pack(anchor="w")
+                    font=label_font,
+                ).pack(side="left")
 
+        # 3. CARD ROLES (Tags)
         if tags:
             tkinter.Label(
                 stats_f,
                 text="CARD ROLES",
-                fg=Theme.ACCENT,
+                fg=Theme.WARNING,
                 bg=Theme.BG_PRIMARY,
-                font=(Theme.FONT_FAMILY, int(7 * scale), "bold"),
-            ).pack(anchor="w", pady=(10, 0))
-
-            for t in tags:
-                display_tag = constants.TAG_VISUALS.get(t, t.capitalize())
-                tkinter.Label(
-                    stats_f,
-                    text=f"• {display_tag}",
-                    fg=Theme.TEXT_MAIN,
-                    bg=Theme.BG_PRIMARY,
-                    font=(Theme.FONT_FAMILY, 8),
-                ).pack(anchor="w")
+                font=header_font,
+            ).pack(anchor="w", pady=(12, 4))
+            tag_strings = [constants.TAG_VISUALS.get(t, t.capitalize()) for t in tags]
+            tkinter.Label(
+                stats_f,
+                text="   ".join(tag_strings),
+                fg=Theme.TEXT_MAIN,
+                bg=Theme.BG_PRIMARY,
+                font=value_font,
+                wraplength=int(280 * scale),
+                justify="left",
+            ).pack(anchor="w")
 
         self.update_idletasks()
         tx, ty = identify_safe_coordinates(
@@ -322,41 +429,35 @@ class CardToolTip(tkinter.Toplevel):
         self.bind("<Button-1>", lambda e: self.destroy())
 
     def _load_image_async(self, url: str, scale: float):
-        """Fetches the image on a background thread to prevent UI freezing."""
-
         def fetch_and_resize():
+            import hashlib, requests, io
+            from PIL import Image, ImageTk
+
             try:
-                # 1. Create a safe filename using a hash of the URL
                 safe_name = hashlib.md5(url.encode("utf-8")).hexdigest() + ".jpg"
                 cache_path = os.path.join(self.IMAGE_CACHE_DIR, safe_name)
-
-                # 2. Check local disk cache first
                 if os.path.exists(cache_path):
                     with open(cache_path, "rb") as f:
                         raw = f.read()
                 else:
-                    # 3. Download and cache if missing
                     raw = requests.get(url, timeout=2).content
                     with open(cache_path, "wb") as f:
                         f.write(raw)
-
-                # 4. Process Image
                 img = Image.open(io.BytesIO(raw))
                 img.thumbnail(
-                    (int(200 * scale), int(280 * scale)), Image.Resampling.LANCZOS
+                    (int(240 * scale), int(335 * scale)), Image.Resampling.LANCZOS
                 )
-
-                # 5. Push UI update back to the main thread
                 self.after(0, lambda: self._apply_image(img))
             except Exception as e:
-                # Fail silently, the tooltip just won't show the image
                 pass
 
-        # Start the background thread
+        import threading
+
         threading.Thread(target=fetch_and_resize, daemon=True).start()
 
     def _apply_image(self, img):
-        """Safely applies the image to the widget on the main thread."""
+        from PIL import ImageTk
+
         if self.winfo_exists():
             self.tk_img = ImageTk.PhotoImage(img)
             self.img_label.configure(image=self.tk_img)
@@ -400,7 +501,7 @@ class ModernTreeview(ttk.Treeview):
         """Premium tailored row tags for the tables."""
         self.tag_configure("white_card", background="#f4f4f5", foreground="#18181b")
         self.tag_configure("blue_card", background="#e0f2fe", foreground="#0c4a6e")
-        self.tag_configure("black_card", background="#3f3f46", foreground="#f4f4f5")
+        self.tag_configure("black_card", background="#d1d5db", foreground="#111827")
         self.tag_configure("red_card", background="#fee2e2", foreground="#7f1d1d")
         self.tag_configure("green_card", background="#dcfce7", foreground="#14532d")
         self.tag_configure("gold_card", background="#fef3c7", foreground="#78350f")
@@ -1107,9 +1208,7 @@ class CardPile(tb.Frame):
         stats = card_data.get(constants.DATA_FIELD_DECK_COLORS, {})
         CardToolTip(
             widget,
-            card_data[constants.DATA_FIELD_NAME],
-            stats,
-            card_data.get(constants.DATA_SECTION_IMAGES, []),
+            card_data,
             self.app.configuration.features.images_enabled,
             constants.UI_SIZE_DICT.get(self.app.configuration.settings.ui_size, 1.0),
         )

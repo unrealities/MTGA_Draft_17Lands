@@ -1,3 +1,10 @@
+===================== RELEASE NOTES 4.02 =====================
+* unrealities: [Bug] Fixed a fatal crash on startup (`locale.Error: unsupported locale setting`) affecting Windows users with specific regional/language formats by safely patching the UI library's calendar initialization.
+* unrealities: [Bug] Fixed an issue where changing the archetype filter dropdown did not update the win rates displayed in the Card Pool and Comparisons tabs.
+* unrealities: [Feature] Expanded the Deck Builder's search algorithm to analyze the top 4 colors in a pool (up from 2), generating a much wider variety of distinct archetype suggestions (highly beneficial for Sealed pools).
+* unrealities: [UX/UI] Streamlined the Card Tooltip UI
+* unrealities: [UX/UI] Adjusted the row highlight background color for Black cards in the data tables from a harsh dark gray to a pastel silver to improve text readability and match the aesthetic of the other colors.
+
 ===================== RELEASE NOTES 4.01 =====================
 * unrealities: [Bug] Fixed an issue where "Cube - Powered" events would fail to load dataset data due to legacy cache artifacts and strict string spacing mismatches (#125).
 * unrealities: [Bug] Fixed an issue where the Card Pool and Comparisons tables would turn completely blank when the "Tags" column was added to the view.

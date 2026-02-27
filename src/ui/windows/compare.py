@@ -80,11 +80,24 @@ class ComparePanel(ttk.Frame):
         t = self.table
         if t is None:
             return
-            
+
         t.bind("<<TreeviewSelect>>", self._on_selection)
-            
+
+        from src.card_logic import filter_options
+
+        raw_pool = self.draft.retrieve_taken_cards()
+        metrics = self.draft.retrieve_set_metrics()
+        colors = filter_options(
+            raw_pool,
+            self.configuration.settings.deck_filter,
+            metrics,
+            self.configuration,
+        )
+        active_color = colors[0] if colors else "All Decks"
+
         for item in t.get_children():
             t.delete(item)
+
         for idx, card in enumerate(self.compare_list):
             row = []
             for field in self.table_manager.active_fields:
@@ -103,13 +116,18 @@ class ComparePanel(ttk.Frame):
                     else:
                         row.append("-")
                 else:
+                    # FIX: Use the dynamic active_color
                     val = (
-                        card.get("deck_colors", {}).get("All Decks", {}).get(field, 0.0)
+                        card.get("deck_colors", {})
+                        .get(active_color, {})
+                        .get(field, 0.0)
                     )
+
                     if val == 0.0 or val == "-":
                         row.append("-")
                     else:
                         row.append(f"{val:.1f}" if isinstance(val, float) else str(val))
+
             t.insert(
                 "", "end", values=row, tags=("bw_odd" if idx % 2 == 0 else "bw_even",)
             )
@@ -123,9 +141,7 @@ class ComparePanel(ttk.Frame):
             card = self.compare_list[idx]
             CardToolTip(
                 self.table,
-                card.get("name", ""),
-                card.get("deck_colors", {}),
-                card.get("image", []),
+                card,
                 self.configuration.features.images_enabled,
                 constants.UI_SIZE_DICT.get(self.configuration.settings.ui_size, 1.0),
             )
