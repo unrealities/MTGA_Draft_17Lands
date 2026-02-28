@@ -6,6 +6,7 @@ Main UI Orchestrator. Coordinates Logic (Orchestrator) and UI (App).
 import tkinter
 from tkinter import ttk, filedialog, messagebox
 import os
+import sys
 from typing import Dict, List, Any, Optional
 
 from src import constants
@@ -107,9 +108,40 @@ class DraftApp:
         # 6. Reveal
         if splash:
             splash.close()
+
         self.root.title(f"MTGA Draft Tool v{constants.APPLICATION_VERSION}")
+
+        # Load window geometry
+        geom = getattr(self.configuration.settings, "main_window_geometry", "")
+        if geom and "x" in geom:
+            self.root.geometry(geom)
+        else:
+            self.root.geometry("1200x800")
+
+        self.root.protocol("WM_DELETE_WINDOW", self._on_close)
         self.root.deiconify()
         self._schedule_update()
+        self.root.after(100, self._restore_sash)
+
+    def _restore_sash(self):
+        try:
+            sash_pos = getattr(self.configuration.settings, "paned_window_sash", 400)
+            if sash_pos > 0:
+                self.splitter.sashpos(0, sash_pos)
+        except Exception:
+            pass
+
+    def _on_close(self):
+        """Save geometry and sash state before closing."""
+        try:
+            self.configuration.settings.main_window_geometry = self.root.geometry()
+            self.configuration.settings.paned_window_sash = self.splitter.sashpos(0)
+            write_configuration(self.configuration)
+        except Exception:
+            pass
+
+        self.root.destroy()
+        sys.exit(0)
 
     def _setup_variables(self):
         self.vars["deck_filter"] = tkinter.StringVar(
@@ -158,7 +190,7 @@ class DraftApp:
 
         ttk.Button(
             row1,
-            text="Overlay Mode",
+            text="Mini Mode",
             bootstyle="info-outline",
             command=self._enable_overlay,
             width=12,
@@ -166,10 +198,10 @@ class DraftApp:
 
         self.btn_toggle_tabs = ttk.Button(
             row1,
-            text="▼ Hide Tabs",
+            text="▼ Hide Bottom Tabs",
             bootstyle="secondary-outline",
             command=self._toggle_tabs,
-            width=10,
+            width=16,
         )
         self.btn_toggle_tabs.pack(side="right", padx=5)
 
@@ -216,9 +248,6 @@ class DraftApp:
         self.lbl_set_code.pack(side="right", padx=5)
 
         # --- BODY ---
-        self.advisor_panel = AdvisorPanel(self.main_container)
-        self.advisor_panel.pack(fill="x", pady=(0, 10))
-
         self.splitter = ttk.PanedWindow(self.main_container, orient=tkinter.VERTICAL)
         self.splitter.pack(fill="both", expand=True)
 
@@ -288,7 +317,7 @@ class DraftApp:
         file_m.add_command(label="Export Draft (CSV)", command=self._export_csv)
         file_m.add_command(label="Export Draft (JSON)", command=self._export_json)
         file_m.add_separator()
-        file_m.add_command(label="Exit", command=self.root.destroy)
+        file_m.add_command(label="Exit", command=self._on_close)
 
         theme_m = tkinter.Menu(m, tearoff=0)
         m.add_cascade(label="Theme", menu=theme_m)
@@ -374,8 +403,7 @@ class DraftApp:
         else:
             self.btn_p1p1.pack_forget()
 
-        if hasattr(self, "advisor_panel"):
-            self.advisor_panel.update_recommendations(recommendations)
+        self.dashboard.update_recommendations(recommendations)
 
         colors = filter_options(
             taken_cards,

@@ -113,7 +113,8 @@ class TestThemeEngine:
             if call[0][0] == "Treeview"
         ]
         assert len(treeview_config_calls) > 0
-        assert treeview_config_calls[0][1]["rowheight"] == 22
+
+        assert treeview_config_calls[0][1]["rowheight"] == 28
 
     def test_live_update_trigger(self, mock_root, mock_style):
         """Verify that applying a theme triggers the virtual event for live updates."""

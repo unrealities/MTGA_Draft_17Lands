@@ -40,12 +40,12 @@ class TierListWindow(ttk.Frame):
 
         cols = ["Set", "Label", "Date"]
         self.table_manager = DynamicTreeviewManager(
-            container, 
+            container,
             view_id="tier_list_history",
             configuration=self.configuration,
             on_update_callback=self.refresh,
             static_columns=["Set", "Label", "Date"],
-            height=10
+            height=4,
         )
         self.table_manager.pack(fill="both", expand=True, pady=(0, 15))
         self.table = self.table_manager.tree

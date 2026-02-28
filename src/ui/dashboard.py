@@ -20,6 +20,7 @@ from src.ui.components import (
     CollapsibleFrame,
 )
 from src.advisor.schema import Recommendation
+from src.ui.advisor_view import AdvisorPanel
 
 
 class DashboardFrame(ttk.Frame):
@@ -55,7 +56,10 @@ class DashboardFrame(ttk.Frame):
 
         # 1. Pack Table
         self.table_pack_container = CollapsibleFrame(
-            f_left, title="LIVE PACK: TACTICAL EVALUATION"
+            f_left,
+            title="LIVE PACK: TACTICAL EVALUATION",
+            configuration=self.configuration,
+            setting_key="pack_table_panel",
         )
         self.table_pack_container.pack(fill="both", expand=True, pady=(0, 15))
 
@@ -73,7 +77,11 @@ class DashboardFrame(ttk.Frame):
 
         # 2. Missing Table
         self.table_missing_container = CollapsibleFrame(
-            f_left, title="SEEN CARDS (WHEEL TRACKER)", expanded=False
+            f_left,
+            title="SEEN CARDS (WHEEL TRACKER)",
+            expanded=False,
+            configuration=self.configuration,
+            setting_key="missing_table_panel",
         )
         self.table_missing_container.pack(fill="both", expand=True, pady=(0, 10))
 
@@ -90,16 +98,29 @@ class DashboardFrame(ttk.Frame):
         )
 
         # --- RIGHT: Sidebar ---
-        f_side = ttk.Frame(self, width=250)
+        f_side = ttk.Frame(self, width=200)
         f_side.grid(row=0, column=1, sticky="nsew", padx=(5, 10), pady=10)
         f_side.pack_propagate(False)
 
-        self.signal_container = CollapsibleFrame(f_side, title="OPEN LANES")
+        self.advisor_panel = AdvisorPanel(f_side, self.configuration)
+        self.advisor_panel.pack(fill="x", pady=(0, 15))
+
+        self.signal_container = CollapsibleFrame(
+            f_side,
+            title="OPEN LANES",
+            configuration=self.configuration,
+            setting_key="missing_table_panel",
+        )
         self.signal_container.pack(fill="x", pady=(0, 15))
         self.signal_meter = SignalMeter(self.signal_container.content_frame)
         self.signal_meter.pack(fill="x")
 
-        self.curve_container = CollapsibleFrame(f_side, title="MANA CURVE")
+        self.curve_container = CollapsibleFrame(
+            f_side,
+            title="MANA CURVE",
+            configuration=self.configuration,
+            setting_key="missing_table_panel",
+        )
         self.curve_container.pack(fill="x", pady=(0, 15))
         default_ideal = self.configuration.card_logic.deck_mid.distribution
         self.curve_plot = ManaCurvePlot(
@@ -107,7 +128,12 @@ class DashboardFrame(ttk.Frame):
         )
         self.curve_plot.pack(fill="x")
 
-        self.pool_container = CollapsibleFrame(f_side, title="POOL BALANCE")
+        self.pool_container = CollapsibleFrame(
+            f_side,
+            title="POOL BALANCE",
+            configuration=self.configuration,
+            setting_key="missing_table_panel",
+        )
         self.pool_container.pack(fill="x", pady=(0, 15))
         self.type_chart = TypePieChart(self.pool_container.content_frame)
         self.type_chart.pack(fill="x")
@@ -257,3 +283,7 @@ class DashboardFrame(ttk.Frame):
             else:
                 n += 1
         self.type_chart.update_counts(c, n, l)
+
+    def update_recommendations(self, recs):
+        if hasattr(self, "advisor_panel"):
+            self.advisor_panel.update_recommendations(recs)

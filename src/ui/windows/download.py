@@ -69,7 +69,7 @@ class DownloadWindow(ttk.Frame):
                 "Collected",
                 "Games",
             ],
-            height=6,
+            height=4,
         )
         self.table_manager.pack(fill="both", expand=True, pady=(0, 10))
         self.table = self.table_manager.tree
