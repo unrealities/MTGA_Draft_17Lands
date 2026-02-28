@@ -64,7 +64,8 @@ TEST_SETS = SetDictionary(
 # --- CONSTANTS ---
 
 OTJ_EVENT_ENTRY = r'[UnityCrossThreadLogger]==> Event_Join {"id":"11a8f74b-1afb-4d25-bb35-55d43674c808","request":"{\"EventName\":\"PremierDraft_OTJ_20240416\",\"EntryCurrencyType\":\"Gem\",\"EntryCurrencyPaid\":1500,\"CustomTokenId\":null}"}'
-OTJ_P1P1_ENTRY = r'[UnityCrossThreadLogger]==> LogBusinessEvents {"id":"a5515a1a-d96e-4da3-9a4a-c03cc4b2b938","request":"{\"PlayerId\":null,\"ClientPlatform\":null,\"DraftId\":\"87b408d1-43e0-4fb5-8c74-a1227fde087c\",\"EventId\":\"PremierDraft_OTJ_20240416\",\"SeatNumber\":1,\"PackNumber\":1,\"PickNumber\":1,\"PickGrpId\":90459,\"CardsInPack\":[90734,90584,90631,90362,90440,90349,90486,90527,90406,90439,90488,90480,90388,90459],\"AutoPick\":false,\"TimeRemainingOnPick\":63.99701,\"EventType\":24,\"EventTime\":\"2024-05-08T00:56:34.4223433Z\"}"}'
+OTJ_P1P1_ENTRY = r'[UnityCrossThreadLogger]==> LogBusinessEvents {"id":"a5515a1a-d96e-4da3-9a4a-c03cc4b2b938","request":"{\"PlayerId\":null,\"ClientPlatform\":null,\"DraftId\":\"87b408d1-43e0-4fb5-8c74-a1257fde087c\",\"EventId\":\"PremierDraft_OTJ_20240416\",\"SeatNumber\":1,\"PackNumber\":1,\"PickNumber\":1,\"PickGrpId\":90459,\"CardsInPack\":[90734,90584,90631,90362,90440,90349,90486,90527,90406,90439,90488,90480,90388,90459],\"AutoPick\":false,\"TimeRemainingOnPick\":63.99701,\"EventType\":24,\"EventTime\":\"2024-05-08T00:56:34.4223433Z\"}"}'
+OTJ_P1P2_ENTRY_SKIP = r'[UnityCrossThreadLogger]==> LogBusinessEvents {"id":"972efef7-cd60-4254-ae18-634210287c95","request":"{\"PlayerId\":null,\"ClientPlatform\":null,\"DraftId\":\"87b408d1-43e0-4fb5-8c74-a1257fde087c\",\"EventId\":\"PremierDraft_OTJ_20240416\",\"SeatNumber\":1,\"PackNumber\":1,\"PickNumber\":2,\"PickGrpId\":90701,\"CardsInPack\":[90702,90417,90607,90524,90481,90588,90440,90418,90353,90494,90360,90609,90548],\"AutoPick\":false,\"TimeRemainingOnPick\":30.8176479,\"EventType\":24,\"EventTime\":\"2024-05-08T00:57:07.6027017Z\"}"}'
 OTJ_P1P1_CARD_NAMES = [
     "Back for More",
     "Wrangler of the Damned",
@@ -235,7 +236,7 @@ OTJ_PREMIER_DRAFT_ENTRIES_2024_5_7 = [
             ],
             card_pool=["90459"],
         ),
-        r'[UnityCrossThreadLogger]==> Event_PlayerDraftMakePick {"id":"a14a9a98-f408-4051-8799-50df13eb18ad","request":"{\"DraftId\":\"87b408d1-43e0-4fb5-8c74-a1257fde387c\",\"GrpId\":90459,\"Pack\":1,\"Pick\":1}"}',
+        r'[UnityCrossThreadLogger]==> Event_PlayerDraftMakePick {"id":"a14a9a98-f408-4051-8799-50df13eb18ad","request":"{\"DraftId\":\"87b408d1-43e0-4fb5-8c74-a1257fde087c\",\"GrpId\":90459,\"Pack\":1,\"Pick\":1}"}',
     ),
     (
         "P1P2 - Pack",
@@ -262,7 +263,7 @@ OTJ_PREMIER_DRAFT_ENTRIES_2024_5_7 = [
             ],
             card_pool=["90459"],
         ),
-        r'[UnityCrossThreadLogger]Draft.Notify {"draftId":"87b408d1-43e0-4fb5-8c74-a1257fde017c","SelfPick":2,"SelfPack":1,"PackCards":"90701,90416,90606,90524,90481,90588,90440,90418,90353,90494,90360,90609,90548"}',
+        r'[UnityCrossThreadLogger]Draft.Notify {"draftId":"87b408d1-43e0-4fb5-8c74-a1257fde087c","SelfPick":2,"SelfPack":1,"PackCards":"90701,90416,90606,90524,90481,90588,90440,90418,90353,90494,90360,90609,90548"}',
     ),
     (
         "P1P2 - Pack Skip Repeat",
@@ -312,7 +313,7 @@ OTJ_PREMIER_DRAFT_ENTRIES_2024_5_7 = [
                 "90459",
             ],
         ),
-        r'[UnityCrossThreadLogger]Draft.Notify {"draftId":"87b108d1-43e0-4fb5-8c74-a1257fde087c","SelfPick":9,"SelfPack":1,"PackCards":"90631,90349,90486,90406,90488,90480"}',
+        r'[UnityCrossThreadLogger]Draft.Notify {"draftId":"87b408d1-43e0-4fb5-8c74-a1257fde087c","SelfPick":9,"SelfPack":1,"PackCards":"90631,90349,90486,90406,90488,90480"}',
     ),
     (
         "P3P14 - Pack",

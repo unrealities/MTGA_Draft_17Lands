@@ -53,7 +53,7 @@ class Settings(BaseModel):
     table_width: int = 270
     overlay_geometry: str = "380x600+50+50"
     main_window_geometry: str = "620x1080+50+50"
-    paned_window_sash: int = 510
+    paned_window_sash: int = 550
     collapsible_states: Dict[str, bool] = Field(default_factory=dict)
 
     column_configs: Dict[str, List[str]] = Field(
