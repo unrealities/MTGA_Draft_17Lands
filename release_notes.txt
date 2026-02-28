@@ -1,3 +1,11 @@
+===================== RELEASE NOTES 4.03 =====================
+* unrealities: [Bug] Fixed an issue where the Mana Curve chart displayed two separate "6+" columns on the X-axis. All high-cost cards are now correctly combined into a single 6+ bucket.
+* unrealities: [UX/UI] Moved the Advisor Recommendations panel into the top of the right sidebar, drastically freeing up vertical space for the main draft tables. Added a solid-colored, pill-shaped score badge next to the card names for a much cleaner, modern look.
+* unrealities: [UX/UI] The "Open Lanes" bar chart now strictly uses standard MTG color codes (White, Blue, Black, Red, Green) instead of inheriting arbitrary UI theme colors, making it much easier to read at a glance.
+* unrealities: [UX/UI] Implemented persistent application layout saving. The app now remembers your exact window size, where you dragged the divider line between the dashboard and the bottom tabs, and which sidebar panels you left collapsed.
+* unrealities: [UX/UI] Fixed a font rendering issue on Windows where the bottom of letters like "g" and "p" were being clipped in the data tables.
+* unrealities: [UX/UI] Added a resize grip to the bottom right of the Compact Overlay, allowing you to freely drag and adjust its width/height. Its dimensions are now saved to your preferences.
+
 ===================== RELEASE NOTES 4.02 =====================
 * unrealities: [Bug] Fixed a fatal crash on startup (`locale.Error: unsupported locale setting`) affecting Windows users with specific regional/language formats by safely patching the UI library's calendar initialization.
 * unrealities: [Bug] Fixed an issue where changing the archetype filter dropdown did not update the win rates displayed in the Card Pool and Comparisons tabs.

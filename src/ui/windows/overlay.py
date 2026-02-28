@@ -10,6 +10,7 @@ from src import constants
 from src.card_logic import row_color_tag
 from src.ui.styles import Theme
 from src.ui.components import DynamicTreeviewManager, CardToolTip
+from src.configuration import write_configuration
 
 
 class CompactOverlay(tb.Toplevel):
@@ -19,8 +20,12 @@ class CompactOverlay(tb.Toplevel):
         self.configuration = configuration
         self.on_restore = on_restore
         self.current_pack_cards = []
-        self.overrideredirect(True)
-        self.geometry("330x600+50+50")
+
+        self.overrideredirect(True)  # Frameless window
+
+        # Load persisted geometry
+        geom = getattr(self.configuration.settings, "overlay_geometry", "380x600+50+50")
+        self.geometry(geom)
         self.configure(bg=Theme.BG_PRIMARY)
 
         try:
@@ -28,14 +33,7 @@ class CompactOverlay(tb.Toplevel):
         except Exception:
             pass
 
-        self._bind_drag_events()
-
         self._build_ui()
-
-    def _bind_drag_events(self):
-        self.bind("<ButtonPress-1>", self._start_move)
-        self.bind("<ButtonRelease-1>", self._stop_move)
-        self.bind("<B1-Motion>", self._do_move)
 
     def _start_move(self, event):
         self.x = event.x
@@ -44,6 +42,7 @@ class CompactOverlay(tb.Toplevel):
     def _stop_move(self, event):
         self.x = None
         self.y = None
+        self._save_geometry()
 
     def _do_move(self, event):
         deltax = event.x - self.x
@@ -52,12 +51,39 @@ class CompactOverlay(tb.Toplevel):
         y = self.winfo_y() + deltay
         self.geometry(f"+{x}+{y}")
 
+    def _start_resize(self, event):
+        self._start_w = self.winfo_width()
+        self._start_h = self.winfo_height()
+        self._start_x = event.x_root
+        self._start_y = event.y_root
+
+    def _do_resize(self, event):
+        new_w = max(250, self._start_w + (event.x_root - self._start_x))
+        new_h = max(200, self._start_h + (event.y_root - self._start_y))
+        self.geometry(f"{new_w}x{new_h}")
+
+    def _stop_resize(self, event):
+        self._save_geometry()
+
+    def _save_geometry(self):
+        """Persists size and coordinates to the config file."""
+        self.configuration.settings.overlay_geometry = self.geometry()
+        write_configuration(self.configuration)
+
+    def _close_overlay(self):
+        """Saves before returning to the main app."""
+        self._save_geometry()
+        self.on_restore()
+
     def _build_ui(self):
         # --- HEADER (Draggable) ---
         header = tb.Frame(self, bootstyle="secondary")
         header.pack(fill=X, ipady=5)
 
-        # Scan / Refresh Button (Packed dynamically in update_data)
+        header.bind("<ButtonPress-1>", self._start_move)
+        header.bind("<ButtonRelease-1>", self._stop_move)
+        header.bind("<B1-Motion>", self._do_move)
+
         self.btn_scan = tb.Button(
             header,
             text="SCAN P1P1",
@@ -65,12 +91,10 @@ class CompactOverlay(tb.Toplevel):
             command=self._manual_scan,
         )
 
-        # Restore Button (Return to Main App)
-        tb.Button(header, text="⤢", bootstyle="link", command=self.on_restore).pack(
+        tb.Button(header, text="⤢", bootstyle="link", command=self._close_overlay).pack(
             side=RIGHT, padx=5
         )
 
-        # Status Label
         self.lbl_status = tb.Label(
             header,
             text="Waiting...",
@@ -79,6 +103,24 @@ class CompactOverlay(tb.Toplevel):
         )
         self.lbl_status.pack(side=RIGHT, padx=5)
 
+        # --- FOOTER (Resize Grip) ---
+        footer = tb.Frame(self, bootstyle="secondary")
+        footer.pack(fill=X, side=BOTTOM)
+
+        # Custom visual grip indicator
+        grip = tb.Label(
+            footer,
+            text=" ⇲ ",
+            cursor="hand2",
+            bootstyle="inverse-secondary",
+            font=(Theme.FONT_FAMILY, 12),
+        )
+        grip.pack(side=RIGHT, padx=2)
+
+        grip.bind("<ButtonPress-1>", self._start_resize)
+        grip.bind("<B1-Motion>", self._do_resize)
+        grip.bind("<ButtonRelease-1>", self._stop_resize)
+
         # --- DYNAMIC CARD LIST ---
         self.table_manager = DynamicTreeviewManager(
             self,
@@ -86,45 +128,39 @@ class CompactOverlay(tb.Toplevel):
             configuration=self.configuration,
             on_update_callback=self._trigger_refresh,
         )
-        self.table_manager.pack(fill=BOTH, expand=True, padx=2, pady=2)
+        self.table_manager.pack(fill=BOTH, expand=True, padx=2, pady=2, side=TOP)
 
-        # Link the tooltip logic
         self.tree = self.table_manager.tree
         self.tree.bind("<<TreeviewSelect>>", self._on_card_select)
 
     def _trigger_refresh(self):
-        """Called when user right-clicks to add/remove columns. Forces re-render."""
         if hasattr(self.orchestrator, "refresh_callback"):
             self.orchestrator.refresh_callback()
 
     def _manual_scan(self):
-        """Manually triggers a P1P1 scan via the Orchestrator."""
         save_img = self.configuration.settings.save_screenshot_enabled
         data_found = self.orchestrator.scanner.draft_data_search(True, save_img)
-
         if data_found and hasattr(self.orchestrator, "refresh_callback"):
             self.orchestrator.refresh_callback()
 
     def update_data(
         self, pack_cards, colors, metrics, tier_data, current_pick, recommendations=None
     ):
-        # Update State
         self.current_pack_cards = pack_cards or []
         pk, pi = self.orchestrator.scanner.retrieve_current_pack_and_pick()
         self.lbl_status.config(text=f"P{pk} / P{pi}")
 
-        # Dynamic P1P1 Button Logic
         if pk <= 1 and pi <= 1:
             self.btn_scan.pack(side=LEFT, padx=5, before=self.lbl_status)
         else:
             self.btn_scan.pack_forget()
 
-        # Update Table Reference (in case it was rebuilt)
         self.tree = self.table_manager.tree
         self.tree.bind("<<TreeviewSelect>>", self._on_card_select)
 
         for item in self.tree.get_children():
             self.tree.delete(item)
+
         if not pack_cards:
             return
 
@@ -214,19 +250,16 @@ class CompactOverlay(tb.Toplevel):
                             else str(val)
                         )
 
-            # Sort by Tactical Value if available, else fallback to raw win rate
             sort_val = rec.contextual_score if rec else stats.get("gihwr", 0.0)
             processed_rows.append(
                 {"vals": row_values, "tag": row_tag, "sort_key": sort_val}
             )
 
-        # Apply Sort and Render
         processed_rows.sort(key=lambda x: x["sort_key"], reverse=True)
         for row in processed_rows:
             self.tree.insert("", "end", values=row["vals"], tags=(row["tag"],))
 
     def _on_card_select(self, event):
-        """Displays the robust Card Tooltip when a row is clicked."""
         selection = self.tree.selection()
         if not selection:
             return
@@ -240,7 +273,6 @@ class CompactOverlay(tb.Toplevel):
             .strip()
         )
 
-        # Fuzzy match to handle the '..' truncation
         found = next(
             (
                 c
@@ -251,9 +283,6 @@ class CompactOverlay(tb.Toplevel):
         )
 
         if found:
-            arch = self.orchestrator.scanner.set_data.get_card_archetypes_by_field(
-                found[constants.DATA_FIELD_NAME], constants.DATA_FIELD_GIHWR
-            )
             CardToolTip(
                 self.tree,
                 found,

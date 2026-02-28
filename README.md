@@ -67,7 +67,7 @@ Magic: The Gathering Arena draft tool that utilizes 17Lands data.
 ## Marquee Features
 
 - **Tactical Advisor ("The Brain"):** A custom formulaic engine that calculates a 0-100 `VALUE` score for cards in your pack. It dynamically weighs raw Z-Score power, color commitment (Alien Gold protection), curve needs, and relative wheel probability to suggest optimal picks. Look for the ⭐ symbol for elite "Bomb" picks.
-- **Overlay Mode:** Click the `Overlay Mode` button to hide the main dashboard and display a compact, draggable, always-on-top window. Perfect for single-monitor setups or playing seamlessly over the Arena client.
+- **Mini Mode:** Click the `Mini Mode` button to hide the main dashboard and display a compact, draggable, always-on-top window. Perfect for single-monitor setups or playing seamlessly over the Arena client.
 - **Dynamic Columns:** You can customize the columns displayed in any table (Pack, Missing, Card Pool, Compare) by **Right-Clicking the column header**. Add specific 17Lands stats or remove ones you don't need. The app remembers your layout.
 - **Themes & Mana Flairs:** Under the `Theme` menu, you can select custom "Mana Flairs" (Forest, Island, Swamp, Mountain, Plains, Wastes) or fall back to your Native OS System theme.
 - **Card Tooltips:** Clicking on any card row will display a tooltip containing the card images (back and front), detailed 17Lands data, and archetype breakdown.

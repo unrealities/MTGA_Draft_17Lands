@@ -56,9 +56,26 @@ class CollapsibleFrame(ttk.Frame):
     A custom frame that allows its contents to be collapsed and expanded vertically.
     """
 
-    def __init__(self, parent, title="", expanded=True, **kwargs):
+    def __init__(
+        self,
+        parent,
+        title="",
+        expanded=True,
+        configuration=None,
+        setting_key=None,
+        **kwargs,
+    ):
         super().__init__(parent, **kwargs)
-        self.expanded = expanded
+        self.configuration = configuration
+        self.setting_key = setting_key
+
+        # Check config for state if a setting_key was provided
+        if self.configuration and self.setting_key:
+            self.expanded = self.configuration.settings.collapsible_states.get(
+                self.setting_key, expanded
+            )
+        else:
+            self.expanded = expanded
 
         # Header container
         self.header_frame = ttk.Frame(self)
@@ -67,7 +84,7 @@ class CollapsibleFrame(ttk.Frame):
         # Toggle Icon
         self.toggle_label = ttk.Label(
             self.header_frame,
-            text="▼" if expanded else "▶",
+            text="▼" if self.expanded else "▶",
             width=2,
             font=(Theme.FONT_FAMILY, 10),
             foreground=Theme.ACCENT,
@@ -109,6 +126,15 @@ class CollapsibleFrame(ttk.Frame):
         else:
             self.toggle_label.config(text="▶")
             self.content_frame.pack_forget()
+
+        # Save state when toggled
+        if self.configuration and self.setting_key:
+            self.configuration.settings.collapsible_states[self.setting_key] = (
+                self.expanded
+            )
+            from src.configuration import write_configuration
+
+            write_configuration(self.configuration)
 
 
 class AutocompleteEntry(tkinter.Entry):
@@ -742,7 +768,7 @@ class SignalMeter(tb.Frame):
 
     def __init__(self, parent, **kwargs):
         super().__init__(parent, **kwargs)
-        self.canvas_height = 100
+        self.canvas_height = 80
         self.bar_width = 20
         self.gap = 4
         self.scores = {}
@@ -833,7 +859,7 @@ class ManaCurvePlot(tb.Frame):
         self.ideal = ideal_distribution
         self.current = [0] * 7
 
-        self.canvas_height = 100  # Reduced height
+        self.canvas_height = 80
         self.canvas = tb.Canvas(
             self, height=self.canvas_height, bg=Theme.BG_PRIMARY, highlightthickness=0
         )
@@ -851,7 +877,10 @@ class ManaCurvePlot(tb.Frame):
         self.gap = 2
 
     def update_curve(self, current_distribution: List[int]):
-        self.current = current_distribution
+        if len(current_distribution) > 6:
+            self.current = current_distribution[:6] + [sum(current_distribution[6:])]
+        else:
+            self.current = current_distribution
         self.redraw()
 
     def redraw(self):
@@ -932,7 +961,7 @@ class TypePieChart(tb.Frame):
 
     def __init__(self, parent, **kwargs):
         super().__init__(parent, **kwargs)
-        self.canvas_size = 100
+        self.canvas_size = 80
         self.canvas = tb.Canvas(
             self,
             height=self.canvas_size,
@@ -950,7 +979,14 @@ class TypePieChart(tb.Frame):
     def _on_theme_change(self, event=None):
         if not self.winfo_exists():
             return
-        self.canvas.configure(bg=Theme.BG_PRIMARY)
+        self.canvas.configure(bg=Theme.BG_PRIMARY)  
+        self.color_map = {
+            "W": ("#e2e8f0", "White"),  # Silver/Off-White
+            "U": ("#3b82f6", "Blue"),  # Classic Blue
+            "B": ("#3f3f46", "Black"),  # Dark Gray
+            "R": ("#ef4444", "Red"),  # Classic Red
+            "G": ("#10b981", "Green"),  # Classic Green
+        }
         self.redraw()
 
     def update_counts(self, creatures, non_creatures, lands):
