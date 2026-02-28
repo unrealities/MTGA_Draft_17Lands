@@ -158,6 +158,11 @@ def search_local_files(paths, file_prefixes):
         except Exception as error:
             logger.error(error)
 
+    try:
+        file_locations.sort(key=lambda x: os.path.getmtime(x), reverse=True)
+    except Exception as e:
+        logger.error(f"Error sorting local files: {e}")
+
     return file_locations
 
 
