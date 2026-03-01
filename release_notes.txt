@@ -1,3 +1,11 @@
+===================== RELEASE NOTES 4.04 =====================
+* unrealities: [Major Feature] Overhauled "Compact Overlay" into a significantly more powerful "Mini Mode." It now includes a built-in Advisor panel, Signal Meter, Mana Curve, and Deck Balance charts, allowing for a fully functional drafting experience in a small, always-on-top window.
+* unrealities: [Feature] Added a dedicated "Card Pool" tab to the Mini Mode, making it easier to track your current draft picks and collection progress without switching back to the main window.
+* unrealities: [UX/UI] Improved column management in Mini Mode; the window now automatically expands its width when adding new data columns to ensure they remain readable.
+* unrealities: [UX/UI] Standardized table font sizes and column widths across all views for a more consistent and professional aesthetic.
+* unrealities: [UX/UI] Enhanced Card Tooltips to prevent multiple overlapping popups; opening a new tooltip now automatically closes the previous one.
+* unrealities: [Bug] Fixed a layout bug where the sidebar would sometimes fail to reclaim space when panels were collapsed or hidden.
+
 ===================== RELEASE NOTES 4.03 =====================
 * unrealities: [Bug] Fixed an issue where the Mana Curve chart displayed two separate "6+" columns on the X-axis. All high-cost cards are now correctly combined into a single 6+ bucket.
 * unrealities: [UX/UI] Moved the Advisor Recommendations panel into the top of the right sidebar, drastically freeing up vertical space for the main draft tables. Added a solid-colored, pill-shaped score badge next to the card names for a much cleaner, modern look.

@@ -327,7 +327,6 @@ class ArenaScanner:
                 if not i.set_code:
                     continue
 
-                # FIX: Ensure "CUBE" is treated as a separate word for robust matching (e.g. POWEREDCUBE vs CUBE-POWERED)
                 normalized_code = i.set_code.replace("-", " ").replace("CUBE", " CUBE ")
                 code_parts = normalized_code.split()
 

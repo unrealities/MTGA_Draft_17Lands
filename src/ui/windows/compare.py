@@ -116,7 +116,6 @@ class ComparePanel(ttk.Frame):
                     else:
                         row.append("-")
                 else:
-                    # FIX: Use the dynamic active_color
                     val = (
                         card.get("deck_colors", {})
                         .get(active_color, {})
