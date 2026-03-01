@@ -51,9 +51,11 @@ class Settings(BaseModel):
     """This class holds UI settings"""
 
     table_width: int = 270
-    overlay_geometry: str = "380x600+50+50"
-    main_window_geometry: str = "620x1080+50+50"
+    overlay_geometry: str = "300x600+50+50"
+
+    main_window_geometry: str = "600x1080"
     paned_window_sash: int = 550
+
     collapsible_states: Dict[str, bool] = Field(default_factory=dict)
 
     column_configs: Dict[str, List[str]] = Field(
@@ -63,6 +65,7 @@ class Settings(BaseModel):
             "taken_table": ["name", "count", "gihwr"],
             "compare_table": ["name", "gihwr", "iwd"],
             "overlay_table": ["name", "value", "gihwr"],
+            "overlay_pool_table": ["name", "count", "gihwr"],
         }
     )
     deck_filter: str = constants.DECK_FILTER_DEFAULT

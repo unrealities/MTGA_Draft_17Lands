@@ -47,7 +47,6 @@ class ScryfallTagger:
         """
         Queries Scryfall for specific tags in a set.
         """
-        # FIX: Explicitly abort for Cubes to prevent API abuse
         if "CUBE" in set_code.upper():
             logger.info(
                 f"Skipping Scryfall community tags for {set_code} to prevent API abuse."

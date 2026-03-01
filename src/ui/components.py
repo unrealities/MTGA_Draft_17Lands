@@ -215,8 +215,13 @@ class CardToolTip(tkinter.Toplevel):
     """Data-dense, professional popup for MTG cards with async, cached image loading."""
 
     IMAGE_CACHE_DIR = os.path.join(os.getcwd(), "Temp", "Images")
+    _active_tooltip = None
 
     def __init__(self, parent_widget, card: Dict, images_enabled: bool, scale: float):
+        if CardToolTip._active_tooltip and CardToolTip._active_tooltip.winfo_exists():
+            CardToolTip._active_tooltip.destroy()
+        CardToolTip._active_tooltip = self
+
         super().__init__(parent_widget)
         self.wm_overrideredirect(True)
         self.attributes("-topmost", True)
@@ -508,7 +513,9 @@ class ModernTreeview(ttk.Treeview):
         for col in columns:
             if col == "add_btn":
                 self.heading(col, text="+")
-                self.column(col, width=30, stretch=False, anchor=tkinter.CENTER)
+                self.column(
+                    col, width=20, minwidth=20, stretch=False, anchor=tkinter.CENTER
+                )
                 continue
 
             if "TIER" in col:
@@ -517,10 +524,17 @@ class ModernTreeview(ttk.Treeview):
                 label = COLUMN_FIELD_LABELS.get(col, str(col).upper()).split(":")[0]
 
             self.base_labels[col] = label
-            width = 200 if col == "name" else 65
+
+            width = 140 if col == "name" else 50
+            minwidth = 70 if col == "name" else 30
+
             self.heading(col, text=label, command=lambda c=col: self._handle_sort(c))
             self.column(
-                col, width=width, anchor=tkinter.W if col == "name" else tkinter.CENTER
+                col,
+                width=width,
+                minwidth=minwidth,
+                stretch=True,
+                anchor=tkinter.W if col == "name" else tkinter.CENTER,
             )
 
     def _setup_row_colors(self):
@@ -738,7 +752,29 @@ class DynamicTreeviewManager(ttk.Frame):
     def _add_column(self, field):
         if len(self.active_fields) >= 15:
             return
+
         self.active_fields.append(field)
+
+        # Dynamically snap the window wider if it's too narrow for the new column
+        try:
+            top = self.winfo_toplevel()
+            current_width = top.winfo_width()
+
+            # Calculate an estimated required width (Name column + Number of extra columns)
+            # Assuming Name=140px, each extra stat=60px, padding=40px
+            required_width = 140 + (len(self.active_fields) * 40) + 40
+
+            if current_width < required_width:
+                # Keep the same height, just push the width out
+                current_height = top.winfo_height()
+                top.geometry(f"{required_width}x{current_height}")
+
+                # If this is the Mini Mode, force it to instantly save its new size
+                if hasattr(top, "_save_geometry"):
+                    top._save_geometry()
+        except Exception:
+            pass
+
         self._persist()
 
     def _remove_column(self, idx):
@@ -979,7 +1015,7 @@ class TypePieChart(tb.Frame):
     def _on_theme_change(self, event=None):
         if not self.winfo_exists():
             return
-        self.canvas.configure(bg=Theme.BG_PRIMARY)  
+        self.canvas.configure(bg=Theme.BG_PRIMARY)
         self.color_map = {
             "W": ("#e2e8f0", "White"),  # Silver/Off-White
             "U": ("#3b82f6", "Blue"),  # Classic Blue

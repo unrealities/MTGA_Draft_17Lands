@@ -1,7 +1,8 @@
 """
 src/ui/dashboard.py
 The Professional Live Draft Dashboard.
-Supports dynamic columns for both Pack and Missing card tables.
+Supports dynamic grid layouts that auto-adjust based on pack/wheel card counts.
+Features built-in state management for onboarding UX and waiting screens.
 """
 
 import tkinter
@@ -30,13 +31,17 @@ class DashboardFrame(ttk.Frame):
         self.on_card_select = on_card_select
         self.on_reconfigure_ui = on_reconfigure_ui
 
-        # Managers and Components
         self.pack_manager: Optional[DynamicTreeviewManager] = None
         self.missing_manager: Optional[DynamicTreeviewManager] = None
 
         self.signal_meter: Optional[SignalMeter] = None
         self.curve_plot: Optional[ManaCurvePlot] = None
         self.type_chart: Optional[TypePieChart] = None
+
+        # Track counts for dynamic vertical splitting and State Evaluation
+        self._pack_count = 0
+        self._missing_count = 0
+        self._taken_count = 0
 
         self._build_layout()
 
@@ -46,50 +51,146 @@ class DashboardFrame(ttk.Frame):
         return self.missing_manager.tree if self.missing_manager else None
 
     def _build_layout(self):
-        self.columnconfigure(0, weight=4)
-        self.columnconfigure(1, weight=1)
+        # Base grid for the Dashboard to hold the State Frames
+        self.columnconfigure(0, weight=1)
         self.rowconfigure(0, weight=1)
 
+        self._build_no_data_state()
+        self._build_waiting_state()
+        self._build_active_state()
+
+        self._update_dashboard_state()
+
+    def _build_no_data_state(self):
+        """State 1: First time user, no data downloaded."""
+        self.no_data_frame = ttk.Frame(self)
+
+        center_box = ttk.Frame(self.no_data_frame, style="Card.TFrame", padding=40)
+        center_box.place(relx=0.5, rely=0.45, anchor="center")
+
+        ttk.Label(
+            center_box,
+            text="👋 Welcome to MTGA Draft Tool",
+            font=(Theme.FONT_FAMILY, 16, "bold"),
+            foreground=Theme.ACCENT,
+        ).pack(pady=(0, 10))
+        ttk.Label(
+            center_box,
+            text="No 17Lands dataset is currently loaded. You need to download data before you can draft.",
+            font=(Theme.FONT_FAMILY, 11),
+        ).pack(pady=(0, 25))
+
+        step_frame = ttk.Frame(center_box, style="Card.TFrame")
+        step_frame.pack(fill="x")
+
+        steps = [
+            "1. Click the 'Datasets' tab below.",
+            "2. Select the SET and EVENT you want to play.",
+            "3. Click the 'Download Selected Dataset' button.",
+        ]
+        for s in steps:
+            ttk.Label(
+                step_frame,
+                text=s,
+                font=(Theme.FONT_FAMILY, 11, "bold"),
+                foreground=Theme.TEXT_MAIN,
+            ).pack(anchor="w", pady=6)
+
+        expl_frame = ttk.Frame(center_box, style="Card.TFrame")
+        expl_frame.pack(fill="x", pady=(25, 0))
+
+        ttk.Label(
+            expl_frame,
+            text="Dataset Options:",
+            font=(Theme.FONT_FAMILY, 10, "bold"),
+            foreground=Theme.WARNING,
+        ).pack(anchor="w", pady=(0, 5))
+        ttk.Label(
+            expl_frame,
+            text="• USERS: 'All' pulls data from everyone. 'Top' pulls data exclusively from top players.",
+            font=(Theme.FONT_FAMILY, 10),
+        ).pack(anchor="w", pady=2)
+        ttk.Label(
+            expl_frame,
+            text="• MIN GAMES: The minimum amount of data required to show color-specific win rates.",
+            font=(Theme.FONT_FAMILY, 10),
+        ).pack(anchor="w", pady=2)
+
+    def _build_waiting_state(self):
+        """State 2: Data downloaded, but no draft is active."""
+        self.waiting_frame = ttk.Frame(self)
+
+        center_box = ttk.Frame(self.waiting_frame, padding=40)
+        center_box.place(relx=0.5, rely=0.45, anchor="center")
+
+        ttk.Label(
+            center_box,
+            text="Waiting for draft to begin...",
+            font=(Theme.FONT_FAMILY, 15, "bold"),
+            foreground=Theme.ACCENT,
+        ).pack(pady=(0, 10))
+        ttk.Label(
+            center_box,
+            text="Ensure 'Detailed Logs (Plugin Support)' is checked in your MTGA Account Settings.",
+            font=(Theme.FONT_FAMILY, 10),
+            foreground=Theme.TEXT_MUTED,
+        ).pack()
+
+    def _build_active_state(self):
+        """State 3: Active drafting / deckbuilding."""
+        self.content_frame = ttk.Frame(self)
+        self.content_frame.columnconfigure(0, weight=4)
+        self.content_frame.columnconfigure(1, weight=1)
+        self.content_frame.rowconfigure(0, weight=1)
+
         # --- LEFT: Tables ---
-        f_left = ttk.Frame(self)
-        f_left.grid(row=0, column=0, sticky="nsew", padx=(10, 15), pady=10)
+        self.f_left = ttk.Frame(self.content_frame)
+        self.f_left.grid(row=0, column=0, sticky="nsew", padx=(10, 15), pady=10)
+        self.f_left.columnconfigure(0, weight=1)
+        self.f_left.rowconfigure(0, weight=1)
+        self.f_left.rowconfigure(1, weight=0)
 
         # 1. Pack Table
-        self.table_pack_container = CollapsibleFrame(
-            f_left,
-            title="LIVE PACK: TACTICAL EVALUATION",
-            configuration=self.configuration,
-            setting_key="pack_table_panel",
-        )
-        self.table_pack_container.pack(fill="both", expand=True, pady=(0, 15))
+        self.pack_frame = ttk.Frame(self.f_left)
+        self.pack_frame.grid(row=0, column=0, sticky="nsew")
+
+        ttk.Label(
+            self.pack_frame,
+            text="LIVE PACK: TACTICAL EVALUATION",
+            font=(Theme.FONT_FAMILY, 10, "bold"),
+            foreground=Theme.TEXT_MAIN,
+        ).pack(anchor="w", pady=(0, 5))
 
         self.pack_manager = DynamicTreeviewManager(
-            self.table_pack_container.content_frame,
+            self.pack_frame,
             view_id="pack_table",
             configuration=self.configuration,
             on_update_callback=self.on_reconfigure_ui,
+            height=1,
         )
         self.pack_manager.pack(fill="both", expand=True)
+
         self.pack_manager.tree.bind(
             "<<TreeviewSelect>>",
             lambda e: self.on_card_select(e, self.pack_manager.tree, "pack"),
         )
 
-        # 2. Missing Table
-        self.table_missing_container = CollapsibleFrame(
-            f_left,
-            title="SEEN CARDS (WHEEL TRACKER)",
-            expanded=False,
-            configuration=self.configuration,
-            setting_key="missing_table_panel",
-        )
-        self.table_missing_container.pack(fill="both", expand=True, pady=(0, 10))
+        # 2. Missing Table (Wheel Tracker)
+        self.missing_frame = ttk.Frame(self.f_left)
+
+        ttk.Label(
+            self.missing_frame,
+            text="SEEN CARDS (WHEEL TRACKER)",
+            font=(Theme.FONT_FAMILY, 10, "bold"),
+            foreground=Theme.TEXT_MAIN,
+        ).pack(anchor="w", pady=(0, 5))
 
         self.missing_manager = DynamicTreeviewManager(
-            self.table_missing_container.content_frame,
+            self.missing_frame,
             view_id="missing_table",
             configuration=self.configuration,
             on_update_callback=self.on_reconfigure_ui,
+            height=1,
         )
         self.missing_manager.pack(fill="both", expand=True)
         self.missing_manager.tree.bind(
@@ -97,29 +198,31 @@ class DashboardFrame(ttk.Frame):
             lambda e: self.on_card_select(e, self.missing_manager.tree, "missing"),
         )
 
-        # --- RIGHT: Sidebar ---
-        f_side = ttk.Frame(self, width=200)
-        f_side.grid(row=0, column=1, sticky="nsew", padx=(5, 10), pady=10)
-        f_side.pack_propagate(False)
+        self.missing_frame.grid_remove()
 
-        self.advisor_panel = AdvisorPanel(f_side, self.configuration)
+        # --- RIGHT: Sidebar ---
+        self.sidebar_frame = ttk.Frame(self.content_frame, width=250)
+        self.sidebar_frame.grid(row=0, column=1, sticky="nsew", padx=(5, 10), pady=10)
+        self.sidebar_frame.pack_propagate(False)
+
+        self.advisor_panel = AdvisorPanel(self.sidebar_frame, self.configuration)
         self.advisor_panel.pack(fill="x", pady=(0, 15))
 
         self.signal_container = CollapsibleFrame(
-            f_side,
+            self.sidebar_frame,
             title="OPEN LANES",
             configuration=self.configuration,
-            setting_key="missing_table_panel",
+            setting_key="open_lanes_panel",
         )
         self.signal_container.pack(fill="x", pady=(0, 15))
         self.signal_meter = SignalMeter(self.signal_container.content_frame)
         self.signal_meter.pack(fill="x")
 
         self.curve_container = CollapsibleFrame(
-            f_side,
+            self.sidebar_frame,
             title="MANA CURVE",
             configuration=self.configuration,
-            setting_key="missing_table_panel",
+            setting_key="mana_curve_panel",
         )
         self.curve_container.pack(fill="x", pady=(0, 15))
         default_ideal = self.configuration.card_logic.deck_mid.distribution
@@ -129,14 +232,47 @@ class DashboardFrame(ttk.Frame):
         self.curve_plot.pack(fill="x")
 
         self.pool_container = CollapsibleFrame(
-            f_side,
+            self.sidebar_frame,
             title="POOL BALANCE",
             configuration=self.configuration,
-            setting_key="missing_table_panel",
+            setting_key="pool_balance_panel",
         )
         self.pool_container.pack(fill="x", pady=(0, 15))
         self.type_chart = TypePieChart(self.pool_container.content_frame)
         self.type_chart.pack(fill="x")
+
+    def _update_dashboard_state(self):
+        """Evaluates the application data and smoothly swaps the active frame."""
+        has_dataset = bool(self.configuration.card_data.latest_dataset)
+        has_draft_data = (
+            self._pack_count > 0 or self._missing_count > 0 or self._taken_count > 0
+        )
+
+        if not has_dataset:
+            self.content_frame.grid_remove()
+            self.waiting_frame.grid_remove()
+            self.no_data_frame.grid(row=0, column=0, sticky="nsew")
+        elif not has_draft_data:
+            self.content_frame.grid_remove()
+            self.no_data_frame.grid_remove()
+            self.waiting_frame.grid(row=0, column=0, sticky="nsew")
+        else:
+            self.no_data_frame.grid_remove()
+            self.waiting_frame.grid_remove()
+            self.content_frame.grid(row=0, column=0, sticky="nsew")
+
+    def _adjust_grid_weights(self, current_pick):
+        """Dynamically shifts vertical space based on wheel tracker visibility."""
+        if self._missing_count == 0 or current_pick < 9:
+            self.missing_frame.grid_remove()
+            self.f_left.rowconfigure(0, weight=1)
+            self.f_left.rowconfigure(1, weight=0)
+        else:
+            self.missing_frame.grid(row=1, column=0, sticky="nsew", pady=(15, 0))
+            pack_w = max(1, self._pack_count)
+            miss_w = max(1, self._missing_count)
+            self.f_left.rowconfigure(0, weight=pack_w)
+            self.f_left.rowconfigure(1, weight=miss_w)
 
     def update_pack_data(
         self,
@@ -159,6 +295,16 @@ class DashboardFrame(ttk.Frame):
 
         for item in tree.get_children():
             tree.delete(item)
+
+        # Track card counts for dynamic layout rendering
+        if source_type == "pack":
+            self._pack_count = len(cards) if cards else 0
+        else:
+            self._missing_count = len(cards) if cards else 0
+
+        self._adjust_grid_weights(current_pick)
+        self._update_dashboard_state()
+
         if not cards:
             return
 
@@ -173,9 +319,7 @@ class DashboardFrame(ttk.Frame):
 
             row_tag = "bw_odd" if len(processed_rows) % 2 == 0 else "bw_even"
             if self.configuration.settings.card_colors_enabled:
-                from src.card_logic import (
-                    row_color_tag,
-                )  # Inline import to avoid circular dependency
+                from src.card_logic import row_color_tag
 
                 row_tag = row_color_tag(card.get(constants.DATA_FIELD_MANA_COST, ""))
 
@@ -268,11 +412,15 @@ class DashboardFrame(ttk.Frame):
     def update_stats(self, distribution: List[int]):
         if self.curve_plot:
             self.curve_plot.update_curve(distribution)
-            self.curve_plot.redraw()
 
     def update_deck_balance(self, taken_cards):
+        # Determine if we have a pool loaded to enforce the "Active" state
+        self._taken_count = len(taken_cards) if taken_cards else 0
+        self._update_dashboard_state()
+
         if not self.type_chart:
             return
+
         c, n, l = 0, 0, 0
         for card in taken_cards:
             types = card.get(constants.DATA_FIELD_TYPES, [])
@@ -287,3 +435,10 @@ class DashboardFrame(ttk.Frame):
     def update_recommendations(self, recs):
         if hasattr(self, "advisor_panel"):
             self.advisor_panel.update_recommendations(recs)
+
+    def set_sidebar_visible(self, visible: bool):
+        """Dynamically grid or hide the sidebar to reclaim table width."""
+        if visible:
+            self.sidebar_frame.grid()
+        else:
+            self.sidebar_frame.grid_remove()

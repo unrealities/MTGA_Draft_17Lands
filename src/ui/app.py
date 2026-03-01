@@ -81,10 +81,8 @@ class DraftApp:
         self.orchestrator.scanner.log_enable(
             self.configuration.settings.draft_log_enabled
         )
-        self._update_data_sources()
-        self._update_deck_filter_options()
 
-        # Apply Configuration Styling
+        # Apply Configuration Styling FIRST so the UI calculates bounds correctly
         current_scale = constants.UI_SIZE_DICT.get(
             self.configuration.settings.ui_size, 1.0
         )
@@ -96,19 +94,20 @@ class DraftApp:
             scale=current_scale,
         )
 
+        # Force an immediate, synchronous read of the Arena log before revealing the window.
+        self.orchestrator.update_cycle()
+
+        self._update_data_sources()
+        self._update_deck_filter_options()
         self._refresh_ui_data()
 
         # Logic: Default to Datasets tab if no valid data source is loaded
         if not self.configuration.card_data.latest_dataset:
             self.notebook.select(self.panel_data)
 
-        # Trigger update checks immediately
-        self.root.after(1000, self.notifications.check_for_updates)
-
         # 6. Reveal
         if splash:
             splash.close()
-
         self.root.title(f"MTGA Draft Tool v{constants.APPLICATION_VERSION}")
 
         # Load window geometry
@@ -198,12 +197,24 @@ class DraftApp:
 
         self.btn_toggle_tabs = ttk.Button(
             row1,
-            text="▼ Hide Bottom Tabs",
+            text="▼ Hide Tabs",
             bootstyle="secondary-outline",
             command=self._toggle_tabs,
-            width=16,
+            width=10,
         )
         self.btn_toggle_tabs.pack(side="right", padx=5)
+
+        self.sidebar_visible = self.configuration.settings.collapsible_states.get(
+            "sidebar_panel", True
+        )
+        self.btn_toggle_sidebar = ttk.Button(
+            row1,
+            text="◀ Hide Sidebar" if self.sidebar_visible else "▶ Show Sidebar",
+            bootstyle="secondary-outline",
+            command=self._toggle_sidebar,
+            width=13,
+        )
+        self.btn_toggle_sidebar.pack(side="right", padx=5)
 
         # ROW 2: Controls
         row2 = ttk.Frame(header_frame, style="Card.TFrame")
@@ -297,6 +308,20 @@ class DraftApp:
             self.splitter.add(self.notebook, weight=2)
             self.btn_toggle_tabs.config(text="▼ Hide Tabs")
             self.tabs_visible = True
+
+    def _toggle_sidebar(self):
+        """Hides or reveals the right sidebar to save screen space."""
+        self.sidebar_visible = not self.sidebar_visible
+        self.dashboard.set_sidebar_visible(self.sidebar_visible)
+
+        self.btn_toggle_sidebar.config(
+            text="◀ Hide Sidebar" if self.sidebar_visible else "▶ Show Sidebar"
+        )
+
+        self.configuration.settings.collapsible_states["sidebar_panel"] = (
+            self.sidebar_visible
+        )
+        write_configuration(self.configuration)
 
     def _ensure_tabs_visible(self):
         """Helper to force tabs open if an external event demands it."""
@@ -860,7 +885,7 @@ class DraftApp:
 
         self.root.withdraw()
         self.overlay_window = CompactOverlay(
-            self.root, self.orchestrator, self.configuration, self._disable_overlay
+            self.root, self, self.configuration, self._disable_overlay
         )
         self._refresh_ui_data()
 
