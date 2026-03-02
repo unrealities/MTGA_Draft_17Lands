@@ -45,21 +45,16 @@ def initialize_card_data(card_data):
 
 def check_set_data(set_data, ratings_data):
     """Run through 17Lands card list and determine if there are any cards missing from the assembled set file"""
-    for rated_card in ratings_data:
-        try:
-            card_found = False
-            for card_id in set_data:
-                card_name = set_data[card_id][constants.DATA_FIELD_NAME].replace(
-                    "///", "//"
-                )
-                if rated_card == card_name:
-                    card_found = True
-                    break
-            if not card_found:
-                logger.error("Card %s Missing", rated_card)
+    try:
+        local_names = {
+            v[constants.DATA_FIELD_NAME].replace("///", "//") for v in set_data.values()
+        }
 
-        except Exception as error:
-            logger.error(error)
+        for rated_card in ratings_data:
+            if rated_card not in local_names:
+                logger.error("Card %s Missing", rated_card)
+    except Exception as error:
+        logger.error(error)
 
 
 def decode_mana_cost(encoded_cost):

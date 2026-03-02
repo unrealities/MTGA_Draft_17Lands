@@ -70,16 +70,37 @@ def load_data(args, config, progress_callback):
         filename=log_path, set_list=limited_sets, retrieve_unknown=True
     )
 
-    # 5. DATASET PRE-LOAD
-    # Attempt to load the most recently used dataset so the app isn't empty on launch
-    last_dataset = config.card_data.latest_dataset
-    if last_dataset:
-        progress_callback(f"Indexing {last_dataset.split('_')[0]}...")
+    # 5. DRAFT DISCOVERY (Deep Scan)
+    # We scan the logs while the splash is active to prevent the main UI from hanging.
+    progress_callback("Searching for active draft...")
+    if scanner.draft_start_search():
+        # Identify the event
+        e_set, e_type = scanner.retrieve_current_limited_event()
+        progress_callback(f"Found {e_set} {e_type}...")
+
+        # Auto-load the correct dataset for this draft
         sources = scanner.retrieve_data_sources()
         for label, path in sources.items():
-            if os.path.basename(path) == last_dataset:
+            if f"[{e_set.upper()}]" in label.upper():
                 scanner.retrieve_set_data(path)
+                config.card_data.latest_dataset = os.path.basename(path)
                 break
+
+        # Deep-scan for the current pack/pick state
+        scanner.draft_data_search()
+        pk, pi = scanner.retrieve_current_pack_and_pick()
+        if pk > 0:
+            progress_callback(f"Loading {e_set} - Pack {pk} Pick {pi}...")
+    else:
+        # Fallback: load the most recently used dataset if no active draft
+        last_dataset = config.card_data.latest_dataset
+        if last_dataset:
+            progress_callback(f"Indexing {last_dataset.split('_')[0]}...")
+            sources = scanner.retrieve_data_sources()
+            for label, path in sources.items():
+                if os.path.basename(path) == last_dataset:
+                    scanner.retrieve_set_data(path)
+                    break
 
     return {"scanner": scanner, "config": config}
 
@@ -106,11 +127,19 @@ def main():
     )
 
     def on_ready(data, splash):
-        """Handoff from splash thread to Main UI thread."""
         try:
-            DraftApp(root, data["scanner"], data["config"], splash)
+            splash.close()
+            app = DraftApp(root, data["scanner"], data["config"])
+
+            # 1. Show the window skeleton immediately
+            root.deiconify()
+
+            # 2. Immediately trigger Phase 1 (Geometry & Data Sync)
+            # We use a very short delay (10ms) to ensure the window is 'active'
+            root.after(10, app._perform_boot_sync)
+
         except Exception as e:
-            logger.error(f"Failed to launch DraftApp: {e}", exc_info=True)
+            logger.error(f"Launch Error: {e}", exc_info=True)
             root.destroy()
 
     # Launch non-blocking Splash

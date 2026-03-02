@@ -33,18 +33,15 @@ class TakenCardsPanel(ttk.Frame):
         self.vars = {}
 
         self._build_ui()
-        # Trigger first load manually
-        self.refresh()
 
     @property
     def table(self) -> ttk.Treeview:
         return self.table_manager.tree if hasattr(self, "table_manager") else None
 
     def refresh(self):
-        # 1. Get Data
         raw_pool = self.draft.retrieve_taken_cards()
         if not raw_pool:
-            self.current_display_list = []
+            self.current_display_list = []  # Ensure it's an empty list, not None
             self.active_color = "All Decks"
         else:
             from src.card_logic import filter_options
@@ -91,11 +88,7 @@ class TakenCardsPanel(ttk.Frame):
 
             self.current_display_list = stack_cards(filtered)
 
-        # 3. Render based on mode
-        if self.view_mode == "list":
-            self._update_table_view()
-        else:
-            self._render_visual_view()
+        self._update_table_view() if self.view_mode == "list" else self._render_visual_view()
 
     def _build_ui(self):
         # --- Control Bar ---

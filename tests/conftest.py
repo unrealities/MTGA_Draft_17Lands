@@ -59,6 +59,9 @@ def patch_tk_lifecycle(monkeypatch, session_tk_root):
     # Clean up any leftover widgets from previous tests to ensure test isolation
     for widget in session_tk_root.winfo_children():
         try:
+            # Force completion of all background idle tasks before starting a new test
+            session_tk_root.update_idletasks()
+            session_tk_root.update()
             widget.destroy()
         except tkinter.TclError:
             pass

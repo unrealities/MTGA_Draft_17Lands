@@ -8,15 +8,16 @@ from tkinter import ttk
 from typing import List
 from src.advisor.schema import Recommendation
 from src.ui.styles import Theme
-from src.ui.components import CollapsibleFrame
 from src.constants import TAG_VISUALS
+from src.ui.components import CollapsibleFrame
 
 
 class AdvisorPanel(ttk.Frame):
-    def __init__(self, parent, configuration, collapsible=True):
+    def __init__(self, parent, configuration, collapsible=True, mini_mode=False):
         super().__init__(parent)
         self.configuration = configuration
         self.is_collapsible = collapsible
+        self.mini_mode = mini_mode
         self._build_ui()
 
     def _build_ui(self):
@@ -42,15 +43,23 @@ class AdvisorPanel(ttk.Frame):
         if not recs:
             ttk.Label(
                 self.container,
-                text="Analyzing draft path...",
+                text="Calculating tactical scores...",
                 foreground=Theme.TEXT_MAIN,
-                font=(Theme.FONT_FAMILY, 9),
-            ).pack(pady=5, anchor="nw")
+                font=(Theme.FONT_FAMILY, 10 if self.mini_mode else 9),
+            ).pack(pady=10, anchor="nw")
             return
 
-        for i, rec in enumerate(recs[:3]):
+        # Show top 5 in Mini Mode or Sidebar
+        limit = 5 if self.mini_mode else 3
+
+        # Font Scaling
+        name_font_size = 14 if self.mini_mode else 12
+        reason_font_size = 11 if self.mini_mode else 9
+        badge_size = 28 if self.mini_mode else 24
+
+        for i, rec in enumerate(recs[:limit]):
             item_frame = ttk.Frame(self.container)
-            item_frame.pack(fill="x", side="top", anchor="nw", pady=(0, 10))
+            item_frame.pack(fill="x", side="top", anchor="nw", pady=(0, 12))
 
             # --- Header: Score Badge + Card Name ---
             header_frame = ttk.Frame(item_frame)
@@ -62,20 +71,22 @@ class AdvisorPanel(ttk.Frame):
             # 1. The Score Badge
             badge = tkinter.Canvas(
                 header_frame,
-                width=24,
-                height=24,
+                width=badge_size,
+                height=badge_size,
                 bg=Theme.BG_PRIMARY,
                 highlightthickness=0,
             )
-            badge.pack(side="left", pady=1, padx=(0, 6), anchor="nw")
+            badge.pack(side="left", pady=1, padx=(0, 8), anchor="nw")
 
-            badge.create_oval(2, 2, 22, 22, fill=badge_bg, outline=badge_bg)
+            badge.create_oval(
+                2, 2, badge_size - 2, badge_size - 2, fill=badge_bg, outline=badge_bg
+            )
             badge.create_text(
-                12,
-                12,
+                badge_size // 2,
+                badge_size // 2,
                 text=f"{rec.contextual_score:.0f}",
                 fill="#ffffff",
-                font=(Theme.FONT_FAMILY, 9, "bold"),
+                font=(Theme.FONT_FAMILY, name_font_size - 3, "bold"),
             )
 
             # 2. The Card Name
@@ -86,8 +97,8 @@ class AdvisorPanel(ttk.Frame):
                 header_frame,
                 text=rec.card_name.upper(),
                 foreground=name_color,
-                font=(Theme.FONT_FAMILY, 12, font_weight),
-                wraplength=180,
+                font=(Theme.FONT_FAMILY, name_font_size, font_weight),
+                wraplength=200 if self.mini_mode else 180,
                 justify="left",
             )
             lbl_name.pack(side="left", anchor="nw", pady=(2, 0))
@@ -101,7 +112,7 @@ class AdvisorPanel(ttk.Frame):
             elif rec.reasoning:
                 reason_text += " | ".join(rec.reasoning)
             else:
-                reason_text += "Tactically superior for your current pool"
+                reason_text += "Tactically superior for your pool"
 
             if rec.tags:
                 tag_strings = [TAG_VISUALS.get(t, t.capitalize()) for t in rec.tags]
@@ -110,9 +121,9 @@ class AdvisorPanel(ttk.Frame):
             lbl_reason = ttk.Label(
                 item_frame,
                 text=reason_text,
-                font=(Theme.FONT_FAMILY, 9),
+                font=(Theme.FONT_FAMILY, reason_font_size),
                 foreground=Theme.TEXT_MAIN,
-                wraplength=230,
+                wraplength=260 if self.mini_mode else 230,
                 justify="left",
             )
             lbl_reason.pack(anchor="nw", pady=(4, 0))

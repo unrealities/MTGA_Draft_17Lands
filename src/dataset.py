@@ -22,9 +22,13 @@ class Dataset:
     def __init__(self, retrieve_unknown: bool = False):
         self._dataset = None
         self._retrieve_unknown = retrieve_unknown
+        self._name_index = {}
+        self._id_index = {}
 
     def clear(self) -> None:
         self._dataset = None
+        self._name_index.clear()
+        self._id_index.clear()
 
     def open_file(self, file_location: str) -> Result:
         if not file_location:
@@ -40,13 +44,20 @@ class Dataset:
                 for k, v in json_data["color_ratings"].items()
             }
 
+        self._name_index.clear()
+        self._id_index.clear()
+
         if "card_ratings" in json_data:
-            for card in json_data["card_ratings"].values():
+            for k, card in json_data["card_ratings"].items():
                 if "deck_colors" in card:
                     card["deck_colors"] = {
-                        normalize_color_string(k): v
-                        for k, v in card["deck_colors"].items()
+                        normalize_color_string(k_color): v_color
+                        for k_color, v_color in card["deck_colors"].items()
                     }
+                card_name = card.get(DATA_FIELD_NAME)
+                if card_name:
+                    self._name_index[card_name] = card
+                    self._id_index[card_name] = k
 
         self._dataset = json_data
         return result
@@ -77,9 +88,7 @@ class Dataset:
     def get_data_by_name(self, name_list: List[str]) -> List[Dict]:
         if not isinstance(name_list, list) or not self._dataset:
             return []
-        ratings = self._dataset.get("card_ratings", {})
-        transformed = {v[DATA_FIELD_NAME]: v for v in ratings.values()}
-        return [transformed[n] for n in name_list if n in transformed]
+        return [self._name_index[n] for n in name_list if n in self._name_index]
 
     def get_names_by_id(self, id_list: List[str]) -> List[str]:
         """Restored for test and scanner compatibility."""
@@ -90,13 +99,10 @@ class Dataset:
         """Restored for test and scanner compatibility."""
         if not self._dataset:
             return []
-        ratings = self._dataset.get("card_ratings", {})
-        # Create mapping of Name -> ID
-        name_to_id = {v[DATA_FIELD_NAME]: k for k, v in ratings.items()}
         results = []
         for name in name_list:
-            if name in name_to_id:
-                val = name_to_id[name]
+            if name in self._id_index:
+                val = self._id_index[name]
                 results.append(int(val) if return_int else str(val))
         return results
 

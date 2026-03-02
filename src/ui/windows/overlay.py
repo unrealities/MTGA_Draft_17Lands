@@ -203,7 +203,7 @@ class CompactOverlay(tb.Toplevel):
 
         # 3. Advisor Tab
         self.advisor_panel = AdvisorPanel(
-            self.tab_advisor, self.configuration, collapsible=False
+            self.tab_advisor, self.configuration, collapsible=False, mini_mode=True
         )
         self.advisor_panel.pack(fill=BOTH, expand=True, anchor="n", side="top")
 
@@ -242,6 +242,16 @@ class CompactOverlay(tb.Toplevel):
 
     def _on_tab_changed(self, event):
         """Forces Tkinter to redraw the contents of the newly selected tab."""
+        self.update_idletasks()
+        if hasattr(self, "signal_meter"):
+            self.signal_meter.redraw()
+        if hasattr(self, "curve_plot"):
+            self.curve_plot.redraw()
+        if hasattr(self, "type_chart"):
+            self.type_chart.redraw()
+
+    def _force_stats_redraw(self):
+        """Deep redraw to ensure canvases appear even if the tab was hidden."""
         self.update_idletasks()
         if hasattr(self, "signal_meter"):
             self.signal_meter.redraw()
@@ -289,11 +299,8 @@ class CompactOverlay(tb.Toplevel):
             self.orchestrator.refresh_callback()
 
     def _manual_scan(self):
-        save_img = self.configuration.settings.save_screenshot_enabled
-        if self.orchestrator.scanner.draft_data_search(True, save_img) and hasattr(
-            self.orchestrator, "refresh_callback"
-        ):
-            self.orchestrator.refresh_callback()
+        # Offload to async thread in the main app to prevent UI freezing
+        self.app_context._manual_refresh(use_ocr=True)
 
     def update_data(
         self, pack_cards, colors, metrics, tier_data, current_pick, recommendations=None
@@ -301,6 +308,14 @@ class CompactOverlay(tb.Toplevel):
         evt = self.app_context.vars["selected_event"].get()
         grp = self.app_context.vars["selected_group"].get()
         filt = self.app_context.vars["deck_filter"].get()
+
+        # Graceful fallback if no data is loaded
+        if not evt:
+            _, evt = (
+                self.app_context.orchestrator.scanner.retrieve_current_limited_event()
+            )
+            grp = "No Data"
+
         self.lbl_info.config(text=f"{evt} ({grp}) | {filt}")
 
         self.current_pack_cards = pack_cards or []
@@ -335,6 +350,8 @@ class CompactOverlay(tb.Toplevel):
         else:
             self.curve_plot.update_curve([0] * 8)
             self.type_chart.update_counts(0, 0, 0)
+
+        self._force_stats_redraw()
 
         # Dynamic Grid Weights for Pack Tab (Wheel Tracker Logic)
         if not missing_cards or pi < 9:
@@ -394,7 +411,10 @@ class CompactOverlay(tb.Toplevel):
                     elif field == "count":
                         row_values.append(str(card.get("count", 1) if is_pool else "-"))
                     elif field == "value":
-                        row_values.append(f"{rec.contextual_score:.0f}" if rec else "-")
+                        if rec:
+                            row_values.append(f"{rec.contextual_score:.0f}")
+                        else:
+                            row_values.append("-")
                     elif field == "colors":
                         row_values.append("".join(card.get("colors", [])))
                     elif field == "tags":

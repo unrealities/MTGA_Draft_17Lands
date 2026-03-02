@@ -75,15 +75,18 @@ class SetMetrics:
         if not dataset:
             return metrics
 
-        # Iterate over the card list and retrieve the GIHWR for unique cards (remove duplicates and 0.0 values)
+        from src.utils import normalize_color_string
+
+        std_color = normalize_color_string(color)
+
+        # Iterate over the card list and retrieve the GIHWR for unique cards
         for card_data in dataset.values():
             card_name = card_data[DATA_FIELD_NAME]
+            if not hasattr(self, "_processed_set"):
+                self._processed_set = set()
+
             if card_name not in processed_cards:
                 processed_cards.append(card_name)
-
-                from src.utils import normalize_color_string
-
-                std_color = normalize_color_string(color)
 
                 deck_stats = card_data.get(DATA_FIELD_DECK_COLORS, {})
                 if std_color not in deck_stats:

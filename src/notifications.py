@@ -48,14 +48,18 @@ class Notifications:
         self.check_dataset()
         return True
 
-    def prompt_missing_dataset(self, current_set, current_event_type):
+    def prompt_missing_dataset(self, set_code, current_event_type, full_set_name=None):
         """Displays a prompt allowing users to immediately route to the Dataset window for a missing set."""
-        if tkinter.messagebox.askyesno(
-            "Missing Dataset",
-            f"No dataset found for expansion {current_set} ({current_event_type}).\n\nWould you like to open the Dataset Manager to download it now?",
-        ):
+        display_name = full_set_name if full_set_name else set_code
+
+        msg = (
+            f"No dataset found for {display_name} ({current_event_type}).\n\n"
+            f"Would you like to automatically download the 17Lands 'All Users' data for this event?"
+        )
+
+        if tkinter.messagebox.askyesno("Missing Dataset", msg):
             args = DatasetArgs(
-                draft_set=current_set,
+                draft_set=set_code,
                 draft=current_event_type if current_event_type else "PremierDraft",
                 start=str(
                     date.today() - timedelta(days=90)
@@ -76,7 +80,9 @@ class Notifications:
             self.configuration.settings.update_notifications_enabled
             and self.configuration.card_data.latest_dataset
         ):
-            self.update_dataset()
+            import threading
+
+            threading.Thread(target=self.update_dataset, daemon=True).start()
 
     def update_dataset(self):
         try:
@@ -131,22 +137,28 @@ class Notifications:
                     f"Would you like to update now?"
                 )
 
-                if tkinter.messagebox.askyesno("Dataset Update", prompt_msg):
-                    args = DatasetArgs(
-                        dataset_info[0],
-                        dataset_info[1],
-                        str(date.today()),
-                        str(date.today()),
-                        dataset_info[2],
-                        game_count,
-                        color_ratings,
-                    )
+                def prompt_user():
+                    if tkinter.messagebox.askyesno("Dataset Update", prompt_msg):
+                        args = DatasetArgs(
+                            dataset_info[0],
+                            dataset_info[1],
+                            str(date.today()),
+                            str(date.today()),
+                            dataset_info[2],
+                            game_count,
+                            color_ratings,
+                        )
 
-                    # Switch to the Data tab in the UI
-                    if hasattr(self.root, "event_generate"):
-                        self.root.event_generate("<<ShowDataTab>>")
+                        if hasattr(self.root, "event_generate"):
+                            self.root.event_generate("<<ShowDataTab>>")
 
-                    self.dataset_window.enter(args)
+                        self.dataset_window.enter(args)
+
+                try:
+                    self.root.after(0, prompt_user)
+                except RuntimeError:
+                    pass
+
         except Exception as e:
             logger.error(f"Notification error: {e}")
 

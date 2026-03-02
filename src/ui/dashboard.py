@@ -348,8 +348,7 @@ class DashboardFrame(ttk.Frame):
                     if rec:
                         row_values.append(f"{rec.contextual_score:.0f}")
                     else:
-                        val = stats.get("gihwr", 0.0)
-                        row_values.append(f"{val:.0f}" if val != 0.0 else "-")
+                        row_values.append("-")
                 elif field == "colors":
                     row_values.append("".join(card.get("colors", [])))
                 elif field == "tags":

@@ -31,17 +31,19 @@ class AppUpdate:
     def retrieve_file_version(
         self, search_location: str = UPDATE_LATEST_URL
     ) -> Tuple[str, str]:
-        """Retrieve the file version"""
+        """Retrieve the file version with strict timeout to prevent hangs."""
         self.version = ""
         self.file_location = ""
         try:
-            url_data = urllib.request.urlopen(
-                search_location, context=self.context
-            ).read()
-            url_json = json.loads(url_data)
-            self.__process_file_version(url_json)
+            # Added 2-second timeout. Startup should never hang on non-critical updates.
+            with urllib.request.urlopen(
+                search_location, context=self.context, timeout=2
+            ) as response:
+                url_data = response.read()
+                url_json = json.loads(url_data)
+                self.__process_file_version(url_json)
         except Exception as error:
-            logger.error(error)
+            logger.error(f"AppUpdate network error: {error}")
         return self.version, self.file_location
 
     def download_file(
@@ -75,8 +77,20 @@ class AppUpdate:
 
     def __process_file_version(self, release: dict) -> None:
         try:
-            filename = release["assets"][0]["name"]
-            self.version = re.findall(r"\d+", filename, re.DOTALL)[0]
+            tag_name = release.get("tag_name", "")
+            match = re.search(r"(\d+\.\d+)", tag_name)
+            if match:
+                self.version = match.group(1)
+            else:
+                # Fallback to asset name
+                filename = release["assets"][0]["name"]
+                nums = re.findall(r"\d+", filename)
+            if nums:
+                version_code = nums[0]
+                if len(version_code) >= 3:
+                    self.version = str(float(version_code) / 100.0)
+                else:
+                    self.version = version_code
             self.file_location = release["assets"][0]["browser_download_url"]
         except Exception as error:
             logger.error(error)

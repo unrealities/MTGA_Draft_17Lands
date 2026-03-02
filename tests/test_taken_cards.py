@@ -57,6 +57,8 @@ class TestTakenCardsPanel:
     def test_card_stacking(self, root, mock_draft):
         """Verify duplicate cards are stacked with the correct count."""
         panel = TakenCardsPanel(root, mock_draft, Configuration())
+        panel.refresh()
+
         # The stack_cards function adds a "count" key to the dictionary
         plains = next(
             c

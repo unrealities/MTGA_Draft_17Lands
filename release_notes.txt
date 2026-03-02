@@ -1,3 +1,39 @@
+===================== RELEASE NOTES 4.05 =====================
+This is a major performance and stability update focused on speed, responsiveness, and smarter draft advice.
+
+## Performance Improvements
+
+- Application now launches instantly with a new background loading system
+- Eliminated UI freezes, spinning wheels, and startup hangs
+- Dramatically reduced CPU usage during drafts
+- Faster dataset validation and near-instant archetype switching
+
+## Advisor Engine v5.2 — “Archetype Gravity”
+
+- Evaluates all 10 color pairs simultaneously
+- Dynamically shifts from global stats to archetype-specific data as the draft progresses
+- Stronger synergy detection within your selected colors
+- Encourages lane commitment beginning late Pack 1
+
+## UI & Quality Improvements
+
+- Higher-resolution card images in tooltips
+- Tooltips intelligently reposition to avoid screen clipping
+- Real-time status updates during P1P1 OCR scanning
+- Window size and layout now reliably restore
+
+## New Features
+
+- Automatic update checker
+- Proactive dataset download when starting a new draft format
+
+## Stability Fixes
+
+- Fixed rare OCR scanning crash
+- Fixed consecutive draft data carryover issue
+- Resolved reload blank-screen issue
+- Multiple threading and race-condition fixes
+
 ===================== RELEASE NOTES 4.04 =====================
 * unrealities: [Major Feature] Overhauled "Compact Overlay" into a significantly more powerful "Mini Mode." It now includes a built-in Advisor panel, Signal Meter, Mana Curve, and Deck Balance charts, allowing for a fully functional drafting experience in a small, always-on-top window.
 * unrealities: [Feature] Added a dedicated "Card Pool" tab to the Mini Mode, making it easier to track your current draft picks and collection progress without switching back to the main window.

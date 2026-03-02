@@ -25,7 +25,6 @@ class SuggestDeckPanel(ttk.Frame):
         self.current_archetype_key: str = ""
 
         self._build_ui()
-        self.refresh()
 
     @property
     def table(self) -> ttk.Treeview:

@@ -104,17 +104,28 @@ class TestLogPipelineIntegration:
                 f'[UnityCrossThreadLogger]==> Event_Join {{"id":"1","request":"{{\\"EventName\\":\\"PremierDraft_OTJ_20240416\\"}}"}}\n'
             )
 
-        # Manually trigger the update loop logic since we patched the scheduler
-        app._update_loop()
+        # Initialize test state
+        app._loading = False
+
+        # Pumping the loop to ensure background detection runs
+        for _ in range(3):
+            app._update_loop()
+            root.update()
 
         ready = False
         for _ in range(50):
             root.update()
-            if not app._loading and "OTJ" in app.vars["set_label"].get():
+            # Verify the logic variable instead of the UI string
+            if not app._loading and app.detected_set_code == "OTJ":
                 ready = True
                 break
+            import time
+
             time.sleep(0.1)
-        assert ready
+
+        assert (
+            ready
+        ), f"Failed to detect OTJ. Current detected code: '{app.detected_set_code}'"
 
         p1p1 = (
             '[UnityCrossThreadLogger]==> LogBusinessEvents {"id":"2","request":"{\\"PackNumber\\":1,\\"PickNumber\\":1,'
@@ -124,13 +135,13 @@ class TestLogPipelineIntegration:
             f.write(p1p1)
 
         # Pumping the loop to ensure detection
-        for _ in range(2):
+        for _ in range(3):
             app._update_loop()
             root.update()
 
         tree = app.dashboard.get_treeview("pack")
         rows = []
-        for _ in range(50):  # Increase wait for slow CI environments
+        for _ in range(50):
             root.update()
             rows = tree.get_children()
             if len(rows) >= 14:
@@ -139,7 +150,6 @@ class TestLogPipelineIntegration:
 
         assert len(rows) >= 14
 
-        # Verify that the table is populated with known cards from the pack.
         first_row_val = str(tree.item(rows[0])["values"][0])
         assert any(
             x in first_row_val for x in ["Back for More", "90734", "Vadmir", "90459"]

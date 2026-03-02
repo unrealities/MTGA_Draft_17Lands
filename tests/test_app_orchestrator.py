@@ -73,7 +73,6 @@ class TestAppOrchestrator:
     def test_event_change_data_bootstrap(
         self, mock_retrieve, root, mock_scanner, config, ui_patches
     ):
-        # Mock file system lookup to provide valid paths for events
         mock_retrieve.return_value = (
             [
                 (
@@ -104,6 +103,11 @@ class TestAppOrchestrator:
         try:
             config.card_data.latest_dataset = "premier.json"
             app = DraftApp(root, mock_scanner, config)
+            app._loading = False
+
+            # FIX: Ensure maps are populated before changing events
+            app._update_data_sources()
+            app._update_deck_filter_options()
 
             mock_scanner.retrieve_set_data.reset_mock()
 
@@ -123,6 +127,8 @@ class TestAppOrchestrator:
         try:
             with patch("src.ui.app.write_configuration") as mock_write:
                 app = DraftApp(root, mock_scanner, config)
+                app._loading = False
+
                 app.vars["deck_filter"].set("WG")
                 assert app.configuration.settings.deck_filter == "WG"
                 assert mock_write.called
