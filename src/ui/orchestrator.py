@@ -33,16 +33,15 @@ class DraftOrchestrator(threading.Thread):
             if self._file_has_changed():
                 # Acquire lock briefly, do work, release
                 self.step_process()
-        
-        # Sleep more aggressively to give UI thread priority
-        time.sleep(0.5) 
+            # Yield to the UI thread between polls
+            time.sleep(0.5)
 
     def _file_has_changed(self):
+        """Returns True if the log file size has changed since the last scan.
+        Does NOT mutate _last_file_size — that is owned by check_for_updates()."""
         try:
             current_size = os.path.getsize(self.scanner.arena_file)
-            if current_size != self._last_file_size:
-                self._last_file_size = current_size
-                return True
+            return current_size != self._last_file_size
         except:
             pass
         return False
@@ -57,11 +56,16 @@ class DraftOrchestrator(threading.Thread):
             except Exception as e:
                 logger.error(f"Logic Step Error: {e}")
 
-    def check_for_updates(self):
+    def check_for_updates(self, force=False):
+        """
+        Scans for changes. If 'force' is True, bypasses the file-size check.
+        """
         try:
             current_size = os.path.getsize(self.scanner.arena_file)
-            if current_size == self._last_file_size:
+            if not force and current_size == self._last_file_size:
                 return False
+
+            # Define first_run for the Mock-Safe check below
             first_run = self._last_file_size == -1
             self._last_file_size = current_size
         except:
@@ -69,9 +73,12 @@ class DraftOrchestrator(threading.Thread):
 
         with self.scanner.lock:
             changed = False
+            # SEARCH 1: Did the user join a new event?
             if self.scanner.draft_start_search():
                 changed, self.new_event_detected = True, True
                 self.sync_dataset_to_event()
+
+            # SEARCH 2: Is there new pack/pick data?
             if self.scanner.draft_data_search(use_ocr=False, save_screenshot=False):
                 changed = True
 

@@ -547,6 +547,11 @@ class ArenaScanner:
         Co-ordinates card pool state. Wipes previous data only on definitive
         new-session signals to prevent mid-draft data loss.
         """
+        # CRITICAL: If the DraftId is identical to our current session,
+        # do NOT wipe, even if we see a P1P1 signal. Arena repeats P1P1 logs frequently.
+        if draft_id and self.current_draft_id and draft_id == self.current_draft_id:
+            return
+
         wipe_needed = False
         reason = ""
 
@@ -555,15 +560,15 @@ class ArenaScanner:
             wipe_needed = True
             reason = f"New DraftId detected ({draft_id})"
 
-        # 2. START OF DRAFT: If we see P1P1 and we aren't at the very start, it's a new draft
+        # 2. START OF DRAFT: If we see P1P1 and we already have a session active, it's a new one.
         elif pack == 1 and pick == 1:
-            if self.current_pack > 1 or self.current_pick > 2:
+            if self.current_pack > 0 or self.current_pick > 0:
                 wipe_needed = True
                 reason = "New Draft Start (P1P1) detected"
-            elif self.current_pack == 0 and len(self.taken_cards) > 0:
+            elif len(self.taken_cards) > 0:
                 # Transition from Deck Builder/Sealed back to Draft
                 wipe_needed = True
-                reason = "Transitioning to new Draft session"
+                reason = "Transitioning from Pool to Draft"
 
         if wipe_needed:
             logger.info(f"{reason}. Wiping stale card pool.")
@@ -619,7 +624,12 @@ class ArenaScanner:
                                 pack,
                                 pick,
                             )
-                            self.current_pack, self.current_pick = pack, pick
+
+                            if pack > self.current_pack or (
+                                pack == self.current_pack and pick >= self.current_pick
+                            ):
+                                self.current_pack, self.current_pick = pack, pick
+
                             if self.step_through:
                                 break
                         except Exception as e:
@@ -734,7 +744,12 @@ class ArenaScanner:
                                 pack,
                                 pick,
                             )
-                            self.current_pack, self.current_pick = pack, pick
+
+                            if pack > self.current_pack or (
+                                pack == self.current_pack and pick >= self.current_pick
+                            ):
+                                self.current_pack, self.current_pick = pack, pick
+
                             if self.step_through:
                                 break
                         except Exception as e:
@@ -834,7 +849,12 @@ class ArenaScanner:
                                 pack,
                                 pick,
                             )
-                            self.current_pack, self.current_pick = pack, pick
+
+                            if pack > self.current_pack or (
+                                pack == self.current_pack and pick >= self.current_pick
+                            ):
+                                self.current_pack, self.current_pick = pack, pick
+
                             if self.step_through:
                                 break
                         except Exception as e:
@@ -983,7 +1003,12 @@ class ArenaScanner:
                                 pack,
                                 pick,
                             )
-                            self.current_pack, self.current_pick = pack, pick
+
+                            if pack > self.current_pack or (
+                                pack == self.current_pack and pick >= self.current_pick
+                            ):
+                                self.current_pack, self.current_pick = pack, pick
+
                             if self.step_through:
                                 break
                         except Exception as e:

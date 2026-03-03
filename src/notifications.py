@@ -142,7 +142,7 @@ class Notifications:
                         args = DatasetArgs(
                             dataset_info[0],
                             dataset_info[1],
-                            str(date.today()),
+                            dataset_info[3],
                             str(date.today()),
                             dataset_info[2],
                             game_count,

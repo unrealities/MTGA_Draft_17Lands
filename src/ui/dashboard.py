@@ -252,10 +252,6 @@ class DashboardFrame(ttk.Frame):
             self.content_frame.grid_remove()
             self.waiting_frame.grid_remove()
             self.no_data_frame.grid(row=0, column=0, sticky="nsew")
-        elif not has_draft_data:
-            self.content_frame.grid_remove()
-            self.no_data_frame.grid_remove()
-            self.waiting_frame.grid(row=0, column=0, sticky="nsew")
         else:
             self.no_data_frame.grid_remove()
             self.waiting_frame.grid_remove()

@@ -117,7 +117,7 @@ class DraftApp:
 
         try:
             self.vars["status_text"].set("Syncing with Arena...")
-            
+
             # 1. APPLY GEOMETRY
             try:
                 geom = self.configuration.settings.main_window_geometry
@@ -125,15 +125,18 @@ class DraftApp:
                     self.root.geometry(geom)
                 else:
                     self.root.geometry("1200x800")
-                
+
                 self.root.update_idletasks()
-                
+
                 sash_pos = self.configuration.settings.paned_window_sash
                 if sash_pos > 50:
                     self.splitter.sashpos(0, sash_pos)
             except Exception as e:
                 import logging
-                logging.getLogger(__name__).warning(f"Failed to apply window preferences: {e}")
+
+                logging.getLogger(__name__).warning(
+                    f"Failed to apply window preferences: {e}"
+                )
 
             # 2. START THE ENGINE
             self.orchestrator.start()
@@ -144,14 +147,17 @@ class DraftApp:
                 self._update_deck_filter_options()
             except Exception as e:
                 import logging
-                logging.getLogger(__name__).error(f"Dropdown sync failed: {e}", exc_info=True)
+
+                logging.getLogger(__name__).error(
+                    f"Dropdown sync failed: {e}", exc_info=True
+                )
 
             # 4. INITIAL REFRESH
             self._refresh_ui_data()
 
             # 5. DEFER HEAVY TABS
             self.root.after(500, self._perform_deep_sync)
-            
+
         finally:
             self._loading = False
 
@@ -528,10 +534,10 @@ class DraftApp:
                 scores[c] += v
 
         # 3. DRAW BASIC UI ELEMENTS
-        self.vars["event_info"].set(f"{es} {et}" if es else "Scan logs...")
+        self.vars["event_info"].set(f"{es} {et}" if es else "Waiting for draft...")
         self.vars["status_text"].set(f"Pack {pk} Pick {pi}" if pk > 0 else "Idle")
 
-        if self.configuration.settings.p1p1_ocr_enabled and es and pk <= 1 and pi <= 1:
+        if self.configuration.settings.p1p1_ocr_enabled and pk <= 1 and pi <= 1:
             self.btn_p1p1.pack(side="left", padx=2, after=self.btn_reload)
         else:
             self.btn_p1p1.pack_forget()
@@ -651,17 +657,19 @@ class DraftApp:
         """Synchronizes UI dropdowns with the detected set and local files."""
         import re
         from src import constants
-        
+
         try:
             current_set, current_event_type = (
                 self.orchestrator.scanner.retrieve_current_limited_event()
             )
 
             event_transitioned = False
-            if (current_set != self.active_event_set or 
-                current_event_type != self.active_event_type or 
-                self.orchestrator.new_event_detected):
-                
+            if (
+                current_set != self.active_event_set
+                or current_event_type != self.active_event_type
+                or self.orchestrator.new_event_detected
+            ):
+
                 event_transitioned = True
                 self.active_event_set = current_set
                 self.active_event_type = current_event_type
@@ -669,36 +677,47 @@ class DraftApp:
 
             if not current_set:
                 self.vars["set_label"].set("NO SET")
-                self._set_dropdown_options(self.om_event, self.vars["selected_event"], [])
-                self._set_dropdown_options(self.om_group, self.vars["selected_group"], [])
+                self._set_dropdown_options(
+                    self.om_event, self.vars["selected_event"], []
+                )
+                self._set_dropdown_options(
+                    self.om_group, self.vars["selected_group"], []
+                )
                 return
 
             # Map the raw Set Code to the Human-Readable Set Name
             full_set_name = current_set
-            if self.orchestrator.scanner.set_list and self.orchestrator.scanner.set_list.data:
+            if (
+                self.orchestrator.scanner.set_list
+                and self.orchestrator.scanner.set_list.data
+            ):
                 for name, info in self.orchestrator.scanner.set_list.data.items():
                     if info.set_code == current_set:
                         full_set_name = name
                         break
 
             self.detected_set_code = current_set
-            display_name = full_set_name if len(full_set_name) <= 25 else full_set_name[:22] + "..."
-            
+            display_name = (
+                full_set_name
+                if len(full_set_name) <= 25
+                else full_set_name[:22] + "..."
+            )
+
             all_files, _ = retrieve_local_set_list()
             self.current_set_data_map = {}
 
             # UNIVERSAL MATCHER: Strips all punctuation/spaces for a pure alphanumeric comparison
             def normalize_code(code_string):
-                return re.sub(r'[^A-Z0-9]', '', str(code_string).upper())
+                return re.sub(r"[^A-Z0-9]", "", str(code_string).upper())
 
             normalized_current = normalize_code(current_set)
 
             for f in all_files:
                 file_set, f_event, f_group, _, _, _, f_path, _ = f
-                
-                if normalize_code(file_set) != normalized_current: 
+
+                if normalize_code(file_set) != normalized_current:
                     continue
-                    
+
                 if f_event not in self.current_set_data_map:
                     self.current_set_data_map[f_event] = {}
                 self.current_set_data_map[f_event][f_group] = f_path
@@ -708,15 +727,21 @@ class DraftApp:
             # If no data is found for the event, clear dropdowns and alert the user
             if not available_events:
                 self.vars["set_label"].set(f"SET: {display_name} (No Data)")
-                self._set_dropdown_options(self.om_event, self.vars["selected_event"], [])
-                self._set_dropdown_options(self.om_group, self.vars["selected_group"], [])
+                self._set_dropdown_options(
+                    self.om_event, self.vars["selected_event"], []
+                )
+                self._set_dropdown_options(
+                    self.om_group, self.vars["selected_group"], []
+                )
                 return
 
             self.vars["set_label"].set(f"SET: {display_name}")
-            self._set_dropdown_options(self.om_event, self.vars["selected_event"], available_events)
+            self._set_dropdown_options(
+                self.om_event, self.vars["selected_event"], available_events
+            )
 
             current_selection = self.vars["selected_event"].get()
-            
+
             # STATE TRANSITION LOGIC:
             # 1. Try to select the exact event type you are playing (e.g. QuickDraft)
             # 2. Fallback to PremierDraft (The baseline format for 17Lands data)
@@ -729,17 +754,24 @@ class DraftApp:
                 else:
                     target_event = available_events[0]
             else:
-                target_event = current_selection if current_selection in available_events else available_events[0]
-            
+                target_event = (
+                    current_selection
+                    if current_selection in available_events
+                    else available_events[0]
+                )
+
             # Apply the selection and trigger UI updates
             if self.vars["selected_event"].get() != target_event:
                 self.vars["selected_event"].set(target_event)
             else:
                 self._on_event_change()
-                
+
         except Exception as e:
             import logging
-            logging.getLogger(__name__).error(f"Error in _update_data_sources: {e}", exc_info=True)
+
+            logging.getLogger(__name__).error(
+                f"Error in _update_data_sources: {e}", exc_info=True
+            )
 
     def _set_dropdown_options(self, menu_widget, variable, options):
         menu = menu_widget["menu"]
@@ -786,22 +818,20 @@ class DraftApp:
                 self._refresh_ui_data()
 
     def _force_reload(self):
-        """Wipes state and re-syncs. Done via background thread logic."""
-        self.vars["status_text"].set("Reloading...")
+        """Perform a complete deep-scan of the Arena logs to rebuild the state."""
+        self.vars["status_text"].set("Deep Scanning Log...")
         self.root.update_idletasks()
-        last_dataset = self.configuration.card_data.latest_dataset
-        self.orchestrator.scanner.clear_draft(True)
 
-        # Trigger logic in worker context
-        self.orchestrator.check_for_updates()
-        if last_dataset:
-            for (
-                label,
-                path,
-            ) in self.orchestrator.scanner.retrieve_data_sources().items():
-                if os.path.basename(path) == last_dataset:
-                    self.orchestrator.scanner.retrieve_set_data(path)
-                    break
+        # 1. Reset scanner to byte 0
+        with self.orchestrator.scanner.lock:
+            self.orchestrator.scanner.clear_draft(True)
+
+        # 2. Command Orchestrator to bypass size-check and re-parse everything
+        self.orchestrator.check_for_updates(force=True)
+
+        # 3. Synchronize the UI state
+        self._update_data_sources()
+        self._update_deck_filter_options()
         self.orchestrator.request_math_update()
         self._refresh_ui_data()
 

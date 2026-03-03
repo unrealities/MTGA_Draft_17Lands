@@ -8,7 +8,7 @@ This is a major performance and stability update focused on speed, responsivenes
 - Dramatically reduced CPU usage during drafts
 - Faster dataset validation and near-instant archetype switching
 
-## Advisor Engine v5.2 — “Archetype Gravity”
+## Advisor Engine v5.1 — “Archetype Gravity”
 
 - Evaluates all 10 color pairs simultaneously
 - Dynamically shifts from global stats to archetype-specific data as the draft progresses
@@ -33,6 +33,8 @@ This is a major performance and stability update focused on speed, responsivenes
 - Fixed consecutive draft data carryover issue
 - Resolved reload blank-screen issue
 - Multiple threading and race-condition fixes
+- Resolved a failure where the "Reload" button would leave the dashboard in an "Idle" state
+- Fixed an issue where the "Download" button would not download the dataset for the selected set
 
 ===================== RELEASE NOTES 4.04 =====================
 * unrealities: [Major Feature] Overhauled "Compact Overlay" into a significantly more powerful "Mini Mode." It now includes a built-in Advisor panel, Signal Meter, Mana Curve, and Deck Balance charts, allowing for a fully functional drafting experience in a small, always-on-top window.
