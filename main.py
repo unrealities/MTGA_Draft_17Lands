@@ -59,6 +59,7 @@ def load_data(args, config, progress_callback):
     db_loc = args.data or (retrieve_arena_directory(log_path) if log_path else None)
     if db_loc:
         config.settings.database_location = db_loc
+        write_configuration(config)
 
     # 3. METADATA REFRESH
     progress_callback("Checking 17Lands for New Sets...")

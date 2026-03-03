@@ -3,12 +3,15 @@
 import json
 import os
 import sys
+import tempfile
+import threading
 from pydantic import BaseModel, field_validator, Field
 from typing import List, Dict, Tuple
 from src import constants
 from src.logger import create_logger
 
 logger = create_logger()
+CONFIG_LOCK = threading.RLock()
 
 
 def get_config_path():
@@ -178,18 +181,24 @@ class Configuration(BaseModel):
 
 
 def read_configuration(file_location: str = CONFIG_FILE) -> Tuple[Configuration, bool]:
-    """function is responsible for reading the contents of file and storing it as a Configuration object"""
+    """Reads the configuration object from disk safely."""
     config_object = Configuration()
     success = False
 
     try:
         with open(file_location, "r", encoding="utf8", errors="replace") as data:
-            config_data = json.loads(data.read())
+            file_content = data.read()
+            if not file_content.strip():
+                raise json.JSONDecodeError("File is empty", file_content, 0)
+
+            config_data = json.loads(file_content)
 
         config_object = Configuration.model_validate(config_data)
         success = True
     except (FileNotFoundError, json.JSONDecodeError) as error:
-        logger.error(error)
+        logger.warning(f"Using default config. Could not read {file_location}: {error}")
+    except Exception as error:
+        logger.error(f"Unexpected error loading config: {error}")
 
     return config_object, success
 
@@ -197,15 +206,38 @@ def read_configuration(file_location: str = CONFIG_FILE) -> Tuple[Configuration,
 def write_configuration(
     config_object: Configuration, file_location: str = CONFIG_FILE
 ) -> bool:
-    """function is responsible for writing the contents of a Configuration object to a specified file location"""
+    """Atomically writes the configuration object to disk using Pydantic's native JSON dumper."""
     success = False
 
-    try:
-        with open(file_location, "w", encoding="utf8", errors="replace") as data:
-            json.dump(config_object.model_dump(), data, ensure_ascii=False, indent=4)
-        success = True
-    except (FileNotFoundError, TypeError, OSError) as error:
-        logger.error(error)
+    with CONFIG_LOCK:
+        try:
+            dir_name = os.path.dirname(file_location)
+
+            # Ensure the target directory actually exists before writing
+            if not os.path.exists(dir_name):
+                os.makedirs(dir_name)
+
+            fd, tmp_path = tempfile.mkstemp(dir=dir_name, suffix=".tmp")
+
+            with os.fdopen(fd, "w", encoding="utf8") as data:
+                # Use Pydantic's native JSON dumper to guarantee 100% safe serialization
+                json_str = config_object.model_dump_json(indent=4)
+                data.write(json_str)
+
+            # Atomic replacement prevents 0-byte corruption
+            os.replace(tmp_path, file_location)
+            success = True
+
+        except Exception as error:
+            logger.error(f"Config write error: {error}")
+            print(f"Failed to save settings to {file_location}: {error}")
+
+            # Clean up the temp file if the replace failed
+            try:
+                if "tmp_path" in locals() and os.path.exists(tmp_path):
+                    os.remove(tmp_path)
+            except Exception:
+                pass
 
     return success
 
@@ -224,5 +256,6 @@ def reset_configuration(file_location: str = CONFIG_FILE) -> bool:
     return success
 
 
+# Safety Check: Initialize file if missing on boot
 if not os.path.exists(CONFIG_FILE):
     reset_configuration(CONFIG_FILE)

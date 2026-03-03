@@ -1,10 +1,12 @@
 ===================== RELEASE NOTES 4.05 =====================
 This is a major performance and stability update focused on speed, responsiveness, and smarter draft advice.
 
-## Performance Improvements
+## Performance & Concurrency Improvements
 
 - Application now launches instantly with a new background loading system
 - Eliminated UI freezes, spinning wheels, and startup hangs
+- Offloaded Card Tooltip image downloading to a dedicated thread pool to prevent CPU bogging and stuttering during rapid mouse movements
+- Implemented Atomic File Writes and thread-safe locks for configuration and dataset caching, preventing file corruption if the app closes unexpectedly
 - Dramatically reduced CPU usage during drafts
 - Faster dataset validation and near-instant archetype switching
 
@@ -17,6 +19,9 @@ This is a major performance and stability update focused on speed, responsivenes
 
 ## UI & Quality Improvements
 
+- Redesigned the "Waiting for Draft" and "No Datasets" dashboard screens to perfectly center and include helpful tips for customizing Themes, Columns, and Preferences
+- Restored the "Win Rate Format" feature: the new data tables now correctly display Letter Grades (A+ to F) or 5-point Ratings if selected in Preferences
+- The Preferences window is now fully accessible directly from the Mini Mode gear menu
 - Higher-resolution card images in tooltips
 - Tooltips intelligently reposition to avoid screen clipping
 - Real-time status updates during P1P1 OCR scanning
@@ -27,12 +32,14 @@ This is a major performance and stability update focused on speed, responsivenes
 - Automatic update checker
 - Proactive dataset download when starting a new draft format
 
-## Stability Fixes
+## Stability & Log Parsing Fixes
 
+- Fixed a critical log parsing bug where missing MTGA `Draft.Notify` lines (frequently occurring on P1P2) would cause the app to permanently fall "one pick behind" the active draft. The app now safely rescues missed packs using backup telemetry data
+- Fixed an internal list-referencing bug that was corrupting the Wheel Tracker (Seen Cards) across all draft formats
 - Fixed rare OCR scanning crash
 - Fixed consecutive draft data carryover issue
 - Resolved reload blank-screen issue
-- Multiple threading and race-condition fixes
+- Multiple threading, UI event-loop (re-entrancy), and race-condition fixes
 - Resolved a failure where the "Reload" button would leave the dashboard in an "Idle" state
 - Fixed an issue where the "Download" button would not download the dataset for the selected set
 

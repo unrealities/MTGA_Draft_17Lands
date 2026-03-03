@@ -37,12 +37,12 @@ class Theme:
     # Mapping Palette Names -> ttkbootstrap Themes OR 'native'
     THEME_MAPPING = {
         "System": "native",
-        "Neutral": "darkly",
-        "Dark": "darkly",
+        "Neutral": "superhero",
+        "Dark": "cyborg",
         "Light": "flatly",
         "Forest": "solar",
-        "Island": "superhero",
-        "Swamp": "cyborg",
+        "Island": "morph",
+        "Swamp": "darkly",
         "Mountain": "united",
         "Plains": "sandstone",
         "Wastes": "vapor",
@@ -117,9 +117,10 @@ class Theme:
             cls.SUCCESS = "#00bc8c"
             cls.ERROR = "#e74c3c"
             cls.WARNING = "#f39c12"
+            cls.INFO = "#3b82f6"
 
         else:
-            target_theme = cls.THEME_MAPPING.get(palette, "darkly")
+            target_theme = cls.THEME_MAPPING.get(palette, "cyborg")
 
             if target_theme == "native":
                 # NATIVE MODE
@@ -151,13 +152,14 @@ class Theme:
                 cls.SUCCESS = "#008000"
                 cls.ERROR = "#ff0000"
                 cls.WARNING = "#ffcc00"
+                cls.INFO = "#3b82f6"
 
             else:
                 # BOOTSTRAP MODE
                 try:
                     style.theme_use(target_theme)
                 except:
-                    style.theme_use("darkly")
+                    style.theme_use("cyborg")
 
                 colors = style.colors
                 cls.BG_PRIMARY = colors.bg
@@ -171,6 +173,7 @@ class Theme:
                 cls.SUCCESS = colors.success
                 cls.ERROR = colors.danger
                 cls.WARNING = colors.warning
+                cls.INFO = colors.info
 
         # 3. Global Configuration (Applies regardless of theme engine)
         row_height = max(28, int(28 * scale))

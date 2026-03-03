@@ -18,6 +18,7 @@ from src.ui.components import (
 )
 from src.ui.advisor_view import AdvisorPanel
 from src.configuration import write_configuration
+from src.card_logic import format_win_rate
 
 
 class CompactOverlay(tb.Toplevel):
@@ -289,6 +290,11 @@ class CompactOverlay(tb.Toplevel):
                     ),
                 )
         menu.add_cascade(label="User Group", menu=group_menu)
+        menu.add_separator()
+        menu.add_command(
+            label="Preferences...", command=self.app_context._open_settings
+        )
+
         menu.post(
             self.btn_settings.winfo_rootx(),
             self.btn_settings.winfo_rooty() + self.btn_settings.winfo_height(),
@@ -441,12 +447,15 @@ class CompactOverlay(tb.Toplevel):
                             row_values.append("NA")
                     else:
                         val = stats.get(field, 0.0)
-                        if val == 0.0:
-                            row_values.append("-")
-                        else:
-                            row_values.append(
-                                f"{val:.1f}" if isinstance(val, float) else str(val)
+                        row_values.append(
+                            format_win_rate(
+                                val,
+                                active_filter,
+                                field,
+                                metrics,
+                                self.configuration.settings.result_format,
                             )
+                        )
 
                 sort_val = rec.contextual_score if rec else stats.get("gihwr", 0.0)
                 processed_rows.append(

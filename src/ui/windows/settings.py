@@ -52,7 +52,7 @@ class SettingsWindow(tkinter.Toplevel):
             container, text="DATA EVALUATION", font=(Theme.FONT_FAMILY, 9, "bold")
         ).grid(row=0, column=0, columnspan=2, sticky="w", pady=(0, 10))
 
-        ttk.Label(container, text="Win Rate Format:", foreground=Theme.TEXT_MUTED).grid(
+        ttk.Label(container, text="Win Rate Format:", foreground=Theme.TEXT_MAIN).grid(
             row=1, column=0, sticky="e", padx=5
         )
         self.vars["result_format"] = tkinter.StringVar()
@@ -66,7 +66,7 @@ class SettingsWindow(tkinter.Toplevel):
         fmt_om.grid(row=1, column=1, sticky="ew", pady=2)
 
         ttk.Label(
-            container, text="Deck Filter Format:", foreground=Theme.TEXT_MUTED
+            container, text="Deck Filter Format:", foreground=Theme.TEXT_MAIN
         ).grid(row=2, column=0, sticky="e", padx=5)
         self.vars["filter_format"] = tkinter.StringVar()
         filter_om = ttk.OptionMenu(
@@ -78,7 +78,7 @@ class SettingsWindow(tkinter.Toplevel):
         )
         filter_om.grid(row=2, column=1, sticky="ew", pady=2)
 
-        ttk.Label(container, text="UI Scale:", foreground=Theme.TEXT_MUTED).grid(
+        ttk.Label(container, text="UI Scale:", foreground=Theme.TEXT_MAIN).grid(
             row=3, column=0, sticky="e", padx=5
         )
         self.vars["ui_size"] = tkinter.StringVar()

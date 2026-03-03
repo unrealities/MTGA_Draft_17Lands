@@ -271,7 +271,7 @@ class DraftApp:
         row1 = ttk.Frame(header_frame, style="Card.TFrame")
         row1.pack(fill="x", pady=(0, 5))
 
-        self.status_dot = ttk.Label(row1, text="●", foreground=Theme.TEXT_MUTED)
+        self.status_dot = ttk.Label(row1, text="●", foreground=Theme.TEXT_MAIN)
         self.status_dot.pack(side="left", padx=5)
 
         ttk.Label(
@@ -280,7 +280,7 @@ class DraftApp:
             font=(Theme.FONT_FAMILY, 9, "bold"),
         ).pack(side="left")
 
-        ttk.Label(row1, text=" | ", foreground=Theme.TEXT_MUTED).pack(side="left")
+        ttk.Label(row1, text=" | ", foreground=Theme.TEXT_MAIN).pack(side="left")
         ttk.Label(row1, textvariable=self.vars["status_text"]).pack(side="left")
 
         ttk.Button(
@@ -482,6 +482,10 @@ class DraftApp:
             custom_path=s.theme_custom_path,
             scale=current_scale,
         )
+
+        if hasattr(self, "lbl_set_code") and self.lbl_set_code.winfo_exists():
+            self.lbl_set_code.configure(foreground=Theme.ACCENT)
+
         self._refresh_ui_data()
 
     def _browse_custom_tcl(self):
@@ -632,7 +636,7 @@ class DraftApp:
             ts = os.stat(self.orchestrator.scanner.arena_file).st_mtime
             self.status_dot.config(
                 foreground=(
-                    Theme.SUCCESS if ts != self.previous_timestamp else Theme.TEXT_MUTED
+                    Theme.SUCCESS if ts != self.previous_timestamp else Theme.TEXT_MAIN
                 )
             )
             self.previous_timestamp = ts
@@ -822,18 +826,10 @@ class DraftApp:
         self.vars["status_text"].set("Deep Scanning Log...")
         self.root.update_idletasks()
 
-        # 1. Reset scanner to byte 0
         with self.orchestrator.scanner.lock:
             self.orchestrator.scanner.clear_draft(True)
 
-        # 2. Command Orchestrator to bypass size-check and re-parse everything
-        self.orchestrator.check_for_updates(force=True)
-
-        # 3. Synchronize the UI state
-        self._update_data_sources()
-        self._update_deck_filter_options()
-        self.orchestrator.request_math_update()
-        self._refresh_ui_data()
+        self.orchestrator.trigger_full_scan()
 
     def _update_deck_filter_options(self):
         """Refreshes the Deck Filter dropdown with latest 17Lands win rates."""
@@ -985,7 +981,8 @@ class DraftApp:
             self._update_deck_filter_options()
             self._refresh_ui_data()
 
-        SettingsWindow(self.root, self.configuration, _on_settings_changed)
+        parent_window = self.overlay_window if self.overlay_window else self.root
+        SettingsWindow(parent_window, self.configuration, _on_settings_changed)
 
     def _read_draft_log(self):
         f = filedialog.askopenfilename(filetypes=(("Log", "*.log"), ("All", "*.*")))

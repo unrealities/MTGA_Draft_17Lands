@@ -36,16 +36,17 @@ class SuggestDeckPanel(ttk.Frame):
         self._calculate_suggestions()
 
     def _build_ui(self):
-        """Constructs the deck selection header and the static data table."""
         self.header = ttk.Frame(self, style="Card.TFrame", padding=5)
         self.header.pack(fill="x", pady=(0, 5))
 
-        ttk.Label(
+        self.lbl_archetype = ttk.Label(
             self.header,
             text="ARCHETYPE:",
             font=(Theme.FONT_FAMILY, 8, "bold"),
             foreground=Theme.ACCENT,
-        ).pack(side="left", padx=5)
+        )
+        self.lbl_archetype.pack(side="left", padx=5)
+        self.bind_all("<<ThemeChanged>>", self._on_theme_change, add="+")
 
         self.var_archetype = tkinter.StringVar()
         self.om_archetype = ttk.OptionMenu(
@@ -72,6 +73,10 @@ class SuggestDeckPanel(ttk.Frame):
         )
         self.table_manager.pack(fill="both", expand=True)
         self.table.bind("<<TreeviewSelect>>", self._on_selection)
+
+    def _on_theme_change(self, event=None):
+        if self.winfo_exists() and hasattr(self, "lbl_archetype"):
+            self.lbl_archetype.configure(foreground=Theme.ACCENT)
 
     def _calculate_suggestions(self):
         """Invokes the card_logic to build decks based on current pool."""

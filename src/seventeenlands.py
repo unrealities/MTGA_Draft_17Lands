@@ -111,9 +111,12 @@ class Seventeenlands:
         response.raise_for_status()
         data = response.json()
 
-        # Save to cache
-        with open(cache_path, "w") as f:
+        import tempfile
+
+        fd, temp_path = tempfile.mkstemp(dir=self.CACHE_DIR)
+        with os.fdopen(fd, "w") as f:
             json.dump(data, f)
+        os.replace(temp_path, cache_path)
 
         return data, False
 

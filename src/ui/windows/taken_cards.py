@@ -17,6 +17,7 @@ from src.ui.components import (
     ScrolledFrame,
     CardPile,
 )
+from src.card_logic import format_win_rate
 
 
 class TakenCardsPanel(ttk.Frame):
@@ -88,7 +89,11 @@ class TakenCardsPanel(ttk.Frame):
 
             self.current_display_list = stack_cards(filtered)
 
-        self._update_table_view() if self.view_mode == "list" else self._render_visual_view()
+        (
+            self._update_table_view()
+            if self.view_mode == "list"
+            else self._render_visual_view()
+        )
 
     def _build_ui(self):
         # --- Control Bar ---
@@ -98,12 +103,14 @@ class TakenCardsPanel(ttk.Frame):
         type_grp = ttk.Frame(self.filter_frame, style="Card.TFrame")
         type_grp.pack(side="left", padx=5)
 
-        ttk.Label(
+        self.lbl_filter = ttk.Label(
             type_grp,
             text="FILTER:",
             font=(Theme.FONT_FAMILY, 8, "bold"),
             foreground=Theme.ACCENT,
-        ).pack(side="left", padx=5)
+        )
+        self.lbl_filter.pack(side="left", padx=5)
+        self.bind_all("<<ThemeChanged>>", self._on_theme_change, add="+")
 
         self.vars = {}
         for lbl, key in [
@@ -152,6 +159,10 @@ class TakenCardsPanel(ttk.Frame):
         self.visual_scroller = ScrolledFrame(self.content_area)
         # We don't pack it yet
 
+    def _on_theme_change(self, event=None):
+        if self.winfo_exists() and hasattr(self, "lbl_filter"):
+            self.lbl_filter.configure(foreground=Theme.ACCENT)
+
     def _toggle_view(self):
         if self.view_mode == "list":
             self.view_mode = "visual"
@@ -171,6 +182,7 @@ class TakenCardsPanel(ttk.Frame):
         if t is None:
             return
 
+        metrics = self.draft.retrieve_set_metrics()
         t.bind("<<TreeviewSelect>>", self._on_selection)
 
         for item in t.get_children():
@@ -195,19 +207,22 @@ class TakenCardsPanel(ttk.Frame):
                         row_values.append(" ".join(icons_only))
                     else:
                         row_values.append("-")
+
                 else:
                     val = (
                         card.get("deck_colors", {})
                         .get(self.active_color, {})
                         .get(field, 0.0)
                     )
-
-                    if val == 0.0 or val == "-":
-                        row_values.append("-")
-                    else:
-                        row_values.append(
-                            f"{val:.1f}" if isinstance(val, float) else str(val)
+                    row_values.append(
+                        format_win_rate(
+                            val,
+                            self.active_color,
+                            field,
+                            metrics,
+                            self.configuration.settings.result_format,
                         )
+                    )
 
             tag = "bw_odd" if idx % 2 == 0 else "bw_even"
             if int(self.configuration.settings.card_colors_enabled):

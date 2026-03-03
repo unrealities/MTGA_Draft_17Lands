@@ -12,9 +12,9 @@ class UIProgress:
         self.ui = ui
 
     def _update_ui(self):
-        """Update the UI if available."""
+        """Update the UI safely without triggering event loop re-entrancy."""
         if self.ui and self.ui.winfo_exists():
-            self.ui.update()
+            self.ui.update_idletasks()
 
     def _update_status(self, message: str):
         """Update status message safely across threads."""

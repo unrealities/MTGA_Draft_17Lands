@@ -1036,3 +1036,42 @@ def export_draft_to_json(history, dataset, picked_cards_map):
             )
         output.append(pack_data)
     return json.dumps(output, indent=4)
+
+
+def format_win_rate(val, color, field, metrics, result_format):
+    """Converts raw winrate to Grade (A+) or Rating (0-5.0) based on set metrics."""
+    from src import constants
+
+    if val == 0.0 or val == "-":
+        return "-"
+
+    # If format is percentage or the field isn't a win rate (like ALSA), just return the number
+    if (
+        not metrics
+        or result_format == constants.RESULT_FORMAT_WIN_RATE
+        or field not in constants.WIN_RATE_OPTIONS
+    ):
+        return f"{val:.1f}" if isinstance(val, float) else str(val)
+
+    mean, std = metrics.get_metrics(color, field)
+    if std == 0:
+        return f"{val:.1f}" if isinstance(val, float) else str(val)
+
+    z_score = (val - mean) / std
+
+    if result_format == constants.RESULT_FORMAT_GRADE:
+        for grade, limit in constants.GRADE_DEVIATION_DICT.items():
+            if z_score >= limit:
+                # Strip trailing spaces used for sorting (e.g. "A " -> "A")
+                return grade.strip()
+        return "F"
+
+    elif result_format == constants.RESULT_FORMAT_RATING:
+        upper = mean + (2.0 * std)
+        lower = mean - (1.67 * std)
+        if upper == lower:
+            return "2.5"
+        rating = ((val - lower) / (upper - lower)) * 5.0
+        return f"{max(0.0, min(5.0, rating)):.1f}"
+
+    return f"{val:.1f}" if isinstance(val, float) else str(val)

@@ -11,6 +11,7 @@ from ttkbootstrap.constants import *
 import requests, io, math, re, threading, hashlib, os
 from typing import List, Dict, Any, Tuple, Optional
 from PIL import Image, ImageTk
+from concurrent.futures import ThreadPoolExecutor
 from src import constants
 from src.card_logic import field_process_sort
 from src.ui.styles import Theme
@@ -185,6 +186,7 @@ class AutocompleteEntry(tkinter.Entry):
 class CardToolTip(tkinter.Toplevel):
     IMAGE_CACHE_DIR = os.path.join(os.getcwd(), "Temp", "Images")
     _active_tooltip = None
+    _image_executor = ThreadPoolExecutor(max_workers=4)
 
     def __init__(self, parent, card, images_enabled, scale):
         if CardToolTip._active_tooltip and CardToolTip._active_tooltip.winfo_exists():
@@ -272,7 +274,7 @@ class CardToolTip(tkinter.Toplevel):
                 ("ALSA:", fn(gs.get("alsa", 0.0)), Theme.TEXT_MAIN),
                 ("ATA:", fn(gs.get("ata", 0.0)), Theme.TEXT_MAIN),
             ],
-            [("Games:", f"{fn(smp)}", Theme.TEXT_MUTED), ("", "", "")],
+            [("Games:", f"{fn(smp)}", Theme.TEXT_MAIN), ("", "", "")],
         ]
         for ri, row in enumerate(mt):
             for ci, (lbl, val, col) in enumerate(row):
@@ -281,7 +283,7 @@ class CardToolTip(tkinter.Toplevel):
                 tkinter.Label(
                     gf,
                     text=lbl,
-                    fg=Theme.TEXT_MUTED,
+                    fg=Theme.TEXT_MAIN,
                     bg=Theme.BG_PRIMARY,
                     font=(Theme.FONT_FAMILY, int(9 * scale)),
                 ).grid(row=ri, column=ci * 2, sticky="w", padx=(0, 6))
@@ -315,7 +317,7 @@ class CardToolTip(tkinter.Toplevel):
                 tkinter.Label(
                     rf,
                     text=f"• {constants.COLOR_NAMES_DICT.get(k, k)} ({k}):",
-                    fg=Theme.TEXT_MUTED,
+                    fg=Theme.TEXT_MAIN,
                     bg=Theme.BG_PRIMARY,
                     font=(Theme.FONT_FAMILY, int(9 * scale)),
                 ).pack(side="left")
@@ -390,37 +392,35 @@ class CardToolTip(tkinter.Toplevel):
         if "scryfall" in u:
             u = u.replace("/small/", "/large/").replace("/normal/", "/large/")
 
-        def f():
-            try:
-                sn = hashlib.md5(u.encode("utf-8")).hexdigest() + ".jpg"
-                cp = os.path.join(self.IMAGE_CACHE_DIR, sn)
-                if os.path.exists(cp):
-                    with open(cp, "rb") as fi:
-                        r = fi.read()
-                else:
-                    r = requests.get(u, timeout=5).content
-                    with open(cp, "wb") as fi:
-                        fi.write(r)
+        self._image_executor.submit(self._fetch_and_apply_image, u, s)
 
-                im = Image.open(io.BytesIO(r))
-                im.thumbnail((int(240 * s), int(335 * s)), Image.Resampling.LANCZOS)
+    def _fetch_and_apply_image(self, u, s):
+        """Moved the core logic into a clean worker method"""
+        try:
+            sn = hashlib.md5(u.encode("utf-8")).hexdigest() + ".jpg"
+            cp = os.path.join(self.IMAGE_CACHE_DIR, sn)
+            if os.path.exists(cp):
+                with open(cp, "rb") as fi:
+                    r = fi.read()
+            else:
+                r = requests.get(u, timeout=5).content
+                with open(cp, "wb") as fi:
+                    fi.write(r)
 
-                if hasattr(self, "winfo_exists"):
-                    try:
-                        self.after(
-                            0,
-                            lambda: (
-                                self._apply_image(im)
-                                if hasattr(self, "winfo_exists") and self.winfo_exists()
-                                else None
-                            ),
-                        )
-                    except RuntimeError:
-                        pass
-            except:
-                pass
+            im = Image.open(io.BytesIO(r))
+            im.thumbnail((int(240 * s), int(335 * s)), Image.Resampling.LANCZOS)
 
-        threading.Thread(target=f, daemon=True).start()
+            # Safely route back to Tkinter Main Thread
+            if hasattr(self, "winfo_exists"):
+                try:
+                    self.after(
+                        0,
+                        lambda: self._apply_image(im) if self.winfo_exists() else None,
+                    )
+                except RuntimeError:
+                    pass
+        except Exception:
+            pass
 
     def _apply_image(self, im):
         if hasattr(self, "winfo_exists") and self.winfo_exists():
@@ -713,7 +713,7 @@ class SignalMeter(tb.Frame):
                 x + self.bar_width / 2,
                 self.canvas_height - 5,
                 text=c,
-                fill=Theme.TEXT_MUTED,
+                fill=Theme.TEXT_MAIN,
                 font=(Theme.FONT_FAMILY, 9, "bold"),
             )
 
@@ -756,7 +756,7 @@ class ManaCurvePlot(tb.Frame):
                     self.canvas_height - (t * sc) - 10,
                     x + bw,
                     self.canvas_height - 10,
-                    outline=Theme.TEXT_MUTED,
+                    outline=Theme.TEXT_MAIN,
                     width=1,
                     dash=(2, 2),
                 )
@@ -789,7 +789,7 @@ class ManaCurvePlot(tb.Frame):
                 x + bw / 2,
                 self.canvas_height - 4,
                 text=str(i) if i < 6 else "6+",
-                fill=Theme.TEXT_MUTED,
+                fill=Theme.TEXT_MAIN,
                 font=(Theme.FONT_FAMILY, 8),
             )
 

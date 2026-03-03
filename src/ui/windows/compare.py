@@ -8,6 +8,7 @@ from tkinter import ttk
 from src import constants
 from src.ui.styles import Theme
 from src.ui.components import DynamicTreeviewManager, AutocompleteEntry, CardToolTip
+from src.card_logic import format_win_rate
 
 
 class ComparePanel(ttk.Frame):
@@ -121,11 +122,15 @@ class ComparePanel(ttk.Frame):
                         .get(active_color, {})
                         .get(field, 0.0)
                     )
-
-                    if val == 0.0 or val == "-":
-                        row.append("-")
-                    else:
-                        row.append(f"{val:.1f}" if isinstance(val, float) else str(val))
+                    row.append(
+                        format_win_rate(
+                            val,
+                            active_color,
+                            field,
+                            metrics,
+                            self.configuration.settings.result_format,
+                        )
+                    )
 
             t.insert(
                 "", "end", values=row, tags=("bw_odd" if idx % 2 == 0 else "bw_even",)

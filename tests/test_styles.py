@@ -95,8 +95,8 @@ class TestThemeEngine:
 
         assert Theme.BG_PRIMARY == "#1e1e1e"
         # In src/ui/styles.py fallback logic for unknown themes:
-        # if target_theme not found in mapping -> uses "darkly"
-        # "darkly" corresponds to our default mock values
+        # if target_theme not found in mapping -> uses "cyborg"
+        # "cyborg" corresponds to our default mock values
         # Note: ACCENT logic in the code relies on what ttkbootstrap returns
         # Our mock ensures we test that the CLASS VARIABLE updates from the STYLE object
         assert Theme.ACCENT == "#4dabff"

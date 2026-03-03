@@ -19,6 +19,12 @@ class DraftOrchestrator(threading.Thread):
         self.loading, self.new_event_detected = False, False
         self._stop_event, self._force_math_event = threading.Event(), threading.Event()
         self.daemon, self.update_queue, self._last_file_size = True, queue.Queue(), -1
+        self._force_math_event = threading.Event()
+        self._force_full_scan_event = threading.Event()
+
+    def trigger_full_scan(self):
+        """Thread-safe way for the UI to demand a deep log scan."""
+        self._force_full_scan_event.set()
 
     def stop(self):
         self._stop_event.set()
@@ -49,7 +55,12 @@ class DraftOrchestrator(threading.Thread):
     def step_process(self):
         if not self.loading:
             try:
-                log_changed = self.check_for_updates()
+                # Check our flag safely on the background thread
+                force = self._force_full_scan_event.is_set()
+                if force:
+                    self._force_full_scan_event.clear()
+
+                log_changed = self.check_for_updates(force=force)
                 if log_changed or self._force_math_event.is_set():
                     self._force_math_event.clear()
                     self.update_queue.put("REFRESH")
