@@ -158,6 +158,9 @@ class DraftApp:
             # 5. DEFER HEAVY TABS
             self.root.after(500, self._perform_deep_sync)
 
+            # 6. START AUTO-UPDATE LOOP
+            self._schedule_update()
+
         finally:
             self._loading = False
 
@@ -608,36 +611,41 @@ class DraftApp:
         if not self.root.winfo_exists():
             return
 
-        is_test = "pytest" in sys.modules
-        if not self.orchestrator.is_alive() or is_test:
-            self.orchestrator.step_process()
-
-        # 1. Process Logic Updates from Background Thread
-        update_detected = False
-        while True:
-            try:
-                self.orchestrator.update_queue.get_nowait()
-                update_detected = True
-            except queue.Empty:
-                break
-
-        if update_detected:
-            # Check if event changed to update dropdowns
-            self._update_data_sources()
-            self._update_deck_filter_options()
-            self._refresh_ui_data()
-            if is_test:
-                self.root.update()
-
-        # 2. Update status dot color based on file modified time
         try:
-            ts = os.stat(self.orchestrator.scanner.arena_file).st_mtime
-            self.status_dot.config(
-                bootstyle="success" if ts != self.previous_timestamp else "secondary"
-            )
-            self.previous_timestamp = ts
-        except:
-            pass
+            is_test = "pytest" in sys.modules
+            if not self.orchestrator.is_alive() or is_test:
+                self.orchestrator.step_process()
+
+            # 1. Process Logic Updates from Background Thread
+            update_detected = False
+            while True:
+                try:
+                    self.orchestrator.update_queue.get_nowait()
+                    update_detected = True
+                except queue.Empty:
+                    break
+
+            if update_detected:
+                # Check if event changed to update dropdowns
+                self._update_data_sources()
+                self._update_deck_filter_options()
+                self._refresh_ui_data()
+                if is_test:
+                    self.root.update()
+
+            # 2. Update status dot color based on file modified time
+            try:
+                ts = os.stat(self.orchestrator.scanner.arena_file).st_mtime
+                self.status_dot.config(
+                    bootstyle=(
+                        "success" if ts != self.previous_timestamp else "secondary"
+                    )
+                )
+                self.previous_timestamp = ts
+            except:
+                pass
+        except Exception as e:
+            logger.error(f"Update loop error: {e}")
 
         self._schedule_update()
 

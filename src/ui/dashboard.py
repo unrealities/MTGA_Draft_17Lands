@@ -401,6 +401,10 @@ class DashboardFrame(ttk.Frame):
                         else row_tag
                     )
 
+            returnable_at = card.get("returnable_at", [])
+            if returnable_at:
+                display_name += " ⟳" + ",".join(str(p) for p in returnable_at)
+
             row_values = []
             for field in tree.active_fields:
                 if field == "name":

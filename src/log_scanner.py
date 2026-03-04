@@ -908,7 +908,9 @@ class ArenaScanner:
 
     def retrieve_current_picked_cards(self):
         with self.lock:
-            pack_index = max(self.current_pick - 1, 0) % self.number_of_players
+            if self.current_pick == 0:
+                return []
+            pack_index = (self.current_pick - 1) % self.number_of_players
             if pack_index < len(self.picked_cards):
                 return self.set_data.get_data_by_id(self.picked_cards[pack_index])
             return []
@@ -916,7 +918,7 @@ class ArenaScanner:
     def retrieve_current_missing_cards(self):
         with self.lock:
             try:
-                pack_index = max(self.current_pick - 1, 0) % self.number_of_players
+                pack_index = (self.current_pick - 1) % self.number_of_players
                 if pack_index < len(self.pack_cards) and pack_index < len(
                     self.initial_pack
                 ):
@@ -936,12 +938,46 @@ class ArenaScanner:
                 return []
             pack_index = (self.current_pick - 1) % self.number_of_players
             if pack_index < len(self.pack_cards):
-                cards = self.pack_cards[pack_index]
-                expected_max = 15 - ((self.current_pick - 1) // self.number_of_players)
-                if self.current_pick > 1 and len(cards) > expected_max:
-                    return []
-                return self.set_data.get_data_by_id(cards)
+                # We return copies of the card dicts so the UI can mutate them (e.g. for display names)
+                raw_cards = self.set_data.get_data_by_id(self.pack_cards[pack_index])
+                pack_cards = []
+
+                # WHEEL PREDICTION: Cross-reference initial_pack slots to see which cards might come back.
+                rotation_size = self.number_of_players
+
+                returnable_picks_by_name = {}
+                for i, slot_ids in enumerate(self.initial_pack):
+                    if i == pack_index or not slot_ids:
+                        continue
+                    # A pack from slot i wheels back at pick (i+1) + rotation_size
+                    return_pick = (i + 1) + rotation_size
+                    if return_pick > self.current_pick:
+                        for name in self.set_data.get_names_by_id(slot_ids):
+                            returnable_picks_by_name.setdefault(name, []).append(
+                                return_pick
+                            )
+
+                for card in raw_cards:
+                    card_copy = dict(card)
+                    name = card.get(constants.DATA_FIELD_NAME, "")
+                    card_copy["returnable_at"] = sorted(
+                        returnable_picks_by_name.get(name, [])
+                    )
+                    pack_cards.append(card_copy)
+
+                return pack_cards
             return []
+
+    @property
+    def cards_per_pick(self):
+        """Returns the number of cards taken per passing round (usually 1, or 2 for PickTwo)."""
+        if self.draft_type in [
+            constants.LIMITED_TYPE_DRAFT_PICK_TWO,
+            constants.LIMITED_TYPE_DRAFT_PICK_TWO_TRAD,
+            constants.LIMITED_TYPE_DRAFT_PICK_TWO_QUICK,
+        ]:
+            return 2
+        return 1
 
     def retrieve_taken_cards(self):
         with self.lock:
