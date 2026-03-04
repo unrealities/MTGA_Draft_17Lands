@@ -43,7 +43,7 @@ class SuggestDeckPanel(ttk.Frame):
             self.header,
             text="ARCHETYPE:",
             font=(Theme.FONT_FAMILY, 8, "bold"),
-            foreground=Theme.ACCENT,
+            bootstyle="primary",
         )
         self.lbl_archetype.pack(side="left", padx=5)
         self.bind_all("<<ThemeChanged>>", self._on_theme_change, add="+")
@@ -75,8 +75,7 @@ class SuggestDeckPanel(ttk.Frame):
         self.table.bind("<<TreeviewSelect>>", self._on_selection)
 
     def _on_theme_change(self, event=None):
-        if self.winfo_exists() and hasattr(self, "lbl_archetype"):
-            self.lbl_archetype.configure(foreground=Theme.ACCENT)
+        pass
 
     def _calculate_suggestions(self):
         """Invokes the card_logic to build decks based on current pool."""

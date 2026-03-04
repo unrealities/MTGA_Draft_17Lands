@@ -20,8 +20,8 @@ from tests.test_log_scanner_data import (
     ARENA_OPEN_TEST_ENTRIES,
     DSK_SEALED_NAVIGATION_ENTRY,
     OM1_PICK_TWO_PREMIER_DRAFT_ENTRIES,
+    TMT_PICK_TWO_DRAFT_ENTRIES_2026_03_03,
     POWERED_CUBE_DRAFT_ENTRIES,
-    # ADDED MISSING IMPORTS BELOW
     OTJ_EVENT_ENTRY,
     OTJ_P1P1_ENTRY,
     OTJ_P1P1_CARD_NAMES,
@@ -321,6 +321,24 @@ def test_om1_pick_two_premier(session_scanner, entry_label, expected, entry_stri
         event_test_cases(
             session_scanner,
             "Pick Two OM1 Premier Draft ",
+            entry_label,
+            expected,
+            entry_string,
+            mock_ocr,
+        )
+
+
+@pytest.mark.parametrize(
+    "entry_label, expected, entry_string", TMT_PICK_TWO_DRAFT_ENTRIES_2026_03_03
+)
+def test_tmt_pick_two_draft(session_scanner, entry_label, expected, entry_string):
+    with (
+        patch("src.log_scanner.OCR.get_pack") as mock_ocr,
+        patch("src.log_scanner.capture_screen_base64str"),
+    ):
+        event_test_cases(
+            session_scanner,
+            "TMT PickTwoDraft",
             entry_label,
             expected,
             entry_string,

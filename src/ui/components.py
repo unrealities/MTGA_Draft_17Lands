@@ -62,7 +62,7 @@ class CollapsibleFrame(ttk.Frame):
             text="▼" if self.expanded else "▶",
             width=2,
             font=(Theme.FONT_FAMILY, 10),
-            foreground=Theme.ACCENT,
+            bootstyle="primary",
             cursor="hand2",
         )
         self.toggle_label.pack(side="left", padx=(5, 5), pady=(5, 5))
@@ -71,7 +71,6 @@ class CollapsibleFrame(ttk.Frame):
             text=title.upper(),
             cursor="hand2",
             font=(Theme.FONT_FAMILY, 10, "bold"),
-            foreground=Theme.TEXT_MAIN,
         )
         self.title_label.pack(side="left", pady=(5, 5))
         self.content_frame = ttk.Frame(self)
@@ -91,8 +90,6 @@ class CollapsibleFrame(ttk.Frame):
     def _on_theme_change(self, event=None):
         try:
             if self.winfo_exists():
-                self.toggle_label.configure(foreground=Theme.ACCENT)
-                self.title_label.configure(foreground=Theme.TEXT_MAIN)
                 self._apply_bindings()
         except:
             pass
@@ -116,21 +113,12 @@ class CollapsibleFrame(ttk.Frame):
             write_configuration(self.configuration)
 
 
-class AutocompleteEntry(tkinter.Entry):
+class AutocompleteEntry(tb.Entry):
     def __init__(self, master, completion_list, **kwargs):
         super().__init__(master, **kwargs)
         self.completion_list = sorted(completion_list)
         self.hits, self.hit_index = [], 0
-        self.configure(
-            bg=Theme.BG_TERTIARY,
-            fg=Theme.TEXT_MAIN,
-            insertbackground=Theme.TEXT_MAIN,
-            relief="flat",
-            borderwidth=1,
-            highlightthickness=1,
-            highlightbackground=Theme.BG_SECONDARY,
-            highlightcolor=Theme.ACCENT,
-        )
+        self.configure(bootstyle="primary")
         self.bind("<KeyRelease>", self._on_key_release)
         self.bind("<FocusOut>", lambda e: self.selection_clear())
 
@@ -218,7 +206,7 @@ class CardToolTip(tkinter.Toplevel):
             card.get("tags", []),
             card.get("rarity", "common").capitalize(),
         )
-        h = tkinter.Frame(self, bg=Theme.BG_SECONDARY)
+        h = tb.Frame(self, bootstyle="secondary")
         h.pack(fill="x")
         rc = (
             "#f97316"
@@ -226,27 +214,29 @@ class CardToolTip(tkinter.Toplevel):
             else (
                 "#eab308"
                 if rarity == "Rare"
-                else "#94a3b8" if rarity == "Uncommon" else Theme.TEXT_MAIN
+                else "#94a3b8" if rarity == "Uncommon" else None
             )
         )
-        tkinter.Label(
+        tb.Label(
             h,
             text=name,
-            bg=Theme.BG_SECONDARY,
-            fg=Theme.TEXT_MAIN,
+            bootstyle="inverse-secondary",
             font=(Theme.FONT_FAMILY, int(13 * scale), "bold"),
-            padx=10,
-            pady=6,
+            padding=(10, 6),
         ).pack(side="left")
-        tkinter.Label(
+
+        lbl_rarity = tb.Label(
             h,
             text=rarity,
-            bg=Theme.BG_SECONDARY,
-            fg=rc,
+            bootstyle="inverse-secondary",
             font=(Theme.FONT_FAMILY, int(10 * scale), "bold"),
-            padx=10,
-        ).pack(side="right")
-        b = tkinter.Frame(self, bg=Theme.BG_PRIMARY, padx=12, pady=12)
+            padding=(10, 0),
+        )
+        if rc:
+            lbl_rarity.configure(foreground=rc)
+        lbl_rarity.pack(side="right")
+
+        b = tb.Frame(self, padding=12)
         b.pack(fill="both", expand=True)
 
         # --- 2. Image Container ---
@@ -256,31 +246,28 @@ class CardToolTip(tkinter.Toplevel):
             img_h = int(335 * scale)
 
             # Create a fixed-size container frame
-            self.img_frame = tkinter.Frame(
-                b, width=img_w, height=img_h, bg=Theme.BG_PRIMARY
-            )
+            self.img_frame = tb.Frame(b, width=img_w, height=img_h)
             # This is key: tell the frame NOT to shrink to fit its (currently empty) children
             self.img_frame.pack_propagate(False)
             self.img_frame.pack(side="left", padx=(0, 15), anchor="n")
 
-            self.img_label = tkinter.Label(self.img_frame, bg=Theme.BG_PRIMARY)
+            self.img_label = tb.Label(self.img_frame)
             self.img_label.pack(fill="both", expand=True)
 
             if urls:
                 self._load_image_async(urls[0], scale)
 
-        sf = tkinter.Frame(b, bg=Theme.BG_PRIMARY)
+        sf = tb.Frame(b)
         sf.pack(side="left", fill="both", expand=True, anchor="n")
         gs = stats.get("All Decks", {})
         wr, iwd, smp = gs.get("gihwr", 0.0), gs.get("iwd", 0.0), gs.get("samples", 0)
-        tkinter.Label(
+        tb.Label(
             sf,
             text="GLOBAL PERFORMANCE",
-            fg=Theme.ACCENT,
-            bg=Theme.BG_PRIMARY,
+            bootstyle="primary",
             font=(Theme.FONT_FAMILY, int(10 * scale), "bold"),
         ).pack(anchor="w")
-        gf = tkinter.Frame(sf, bg=Theme.BG_PRIMARY)
+        gf = tb.Frame(sf)
         gf.pack(anchor="w", fill="x", pady=(4, 12))
 
         def fp(v, i=False):
@@ -308,18 +295,15 @@ class CardToolTip(tkinter.Toplevel):
             for ci, (lbl, val, col) in enumerate(row):
                 if not lbl:
                     continue
-                tkinter.Label(
+                tb.Label(
                     gf,
                     text=lbl,
-                    fg=Theme.TEXT_MAIN,
-                    bg=Theme.BG_PRIMARY,
                     font=(Theme.FONT_FAMILY, int(9 * scale)),
                 ).grid(row=ri, column=ci * 2, sticky="w", padx=(0, 6))
-                tkinter.Label(
+                tb.Label(
                     gf,
                     text=val,
-                    fg=col,
-                    bg=Theme.BG_PRIMARY,
+                    foreground=col,
                     font=(Theme.FONT_FAMILY, int(9 * scale), "bold"),
                 ).grid(row=ri, column=ci * 2 + 1, sticky="w", padx=(0, 20))
         va = sorted(
@@ -332,49 +316,40 @@ class CardToolTip(tkinter.Toplevel):
             reverse=True,
         )
         if va:
-            tkinter.Label(
+            tb.Label(
                 sf,
                 text="ARCHETYPE PLAY SHARE",
-                fg=Theme.SUCCESS,
-                bg=Theme.BG_PRIMARY,
+                bootstyle="success",
                 font=(Theme.FONT_FAMILY, int(10 * scale), "bold"),
             ).pack(anchor="w")
             for k in va[:10]:
-                rf = tkinter.Frame(sf, bg=Theme.BG_PRIMARY)
+                rf = tb.Frame(sf)
                 rf.pack(anchor="w", fill="x", pady=(2, 0))
-                tkinter.Label(
+                tb.Label(
                     rf,
                     text=f"• {constants.COLOR_NAMES_DICT.get(k, k)} ({k}):",
-                    fg=Theme.TEXT_MAIN,
-                    bg=Theme.BG_PRIMARY,
                     font=(Theme.FONT_FAMILY, int(9 * scale)),
                 ).pack(side="left")
-                tkinter.Label(
+                tb.Label(
                     rf,
                     text=f" {stats[k].get('gihwr', 0.0):.1f}% WR",
-                    fg=(
-                        Theme.TEXT_MAIN
-                        if stats[k].get("gihwr", 0.0) < 55.0
-                        else Theme.SUCCESS
+                    foreground=(
+                        None if stats[k].get("gihwr", 0.0) < 55.0 else Theme.SUCCESS
                     ),
-                    bg=Theme.BG_PRIMARY,
                     font=(Theme.FONT_FAMILY, int(9 * scale), "bold"),
                 ).pack(side="left")
         if tags:
-            tkinter.Label(
+            tb.Label(
                 sf,
                 text="CARD ROLES",
-                fg=Theme.WARNING,
-                bg=Theme.BG_PRIMARY,
+                bootstyle="warning",
                 font=(Theme.FONT_FAMILY, int(10 * scale), "bold"),
             ).pack(anchor="w", pady=(12, 4))
-            tkinter.Label(
+            tb.Label(
                 sf,
                 text="   ".join(
                     [constants.TAG_VISUALS.get(t, t.capitalize()) for t in tags]
                 ),
-                fg=Theme.TEXT_MAIN,
-                bg=Theme.BG_PRIMARY,
                 font=(Theme.FONT_FAMILY, int(9 * scale), "bold"),
                 wraplength=int(280 * scale),
                 justify="left",
@@ -497,16 +472,18 @@ class ModernTreeview(ttk.Treeview):
             )
 
     def _setup_row_colors(self):
+        # We use dynamic theme colors for row highlighting to ensure text is always readable.
+        # These will be updated in _on_theme_change if we want to be fully dynamic.
         for t, b, f in [
-            ("white", "#f4f4f5", "#18181b"),
-            ("blue", "#e0f2fe", "#0c4a6e"),
-            ("black", "#d1d5db", "#111827"),
-            ("red", "#fee2e2", "#7f1d1d"),
-            ("green", "#dcfce7", "#14532d"),
-            ("gold", "#fef3c7", "#78350f"),
-            ("colorless", "#e4e4e7", "#27272a"),
+            ("white", "#f8fafc", "#0f172a"),
+            ("blue", "#e0f2fe", "#0369a1"),
+            ("black", "#334155", "#f8fafc"),
+            ("red", "#fee2e2", "#991b1b"),
+            ("green", "#dcfce7", "#166534"),
+            ("gold", "#fef3c7", "#92400e"),
+            ("colorless", "#e2e8f0", "#1e293b"),
             ("elite_bomb", "#78350f", "#fde047"),
-            ("high_fit", "#0c4a6e", "#7dd3fc"),
+            ("high_fit", "#0c4a6e", "#e0f2fe"),
         ]:
             self.tag_configure(
                 f"{t}_card" if "elite" not in t and "high" not in t else t,
@@ -1037,9 +1014,19 @@ class CardPile(tb.Frame):
             lb = tb.Label(
                 ch,
                 text=tx,
-                foreground="#000000" if c == "W" else None,
-                background="#f0f0f0" if c == "W" else None,
-                bootstyle=None if c == "W" else f"inverse-{s}",
+                bootstyle=(
+                    "info"
+                    if c == "U"
+                    else (
+                        "success"
+                        if c == "G"
+                        else (
+                            "danger"
+                            if c == "R"
+                            else ("dark" if c == "B" else "secondary")
+                        )
+                    )
+                ),
                 font=(Theme.FONT_FAMILY, 10),
                 anchor="w",
                 padding=(5, 2),

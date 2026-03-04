@@ -124,7 +124,7 @@ class DownloadWindow(ttk.Frame):
         self.progress.pack(fill="x", pady=5)
         self.vars["status"] = tkinter.StringVar(value="Ready")
         ttk.Label(
-            container, textvariable=self.vars["status"], style="Muted.TLabel"
+            container, textvariable=self.vars["status"], bootstyle="secondary"
         ).pack()
         self._update_table()
 

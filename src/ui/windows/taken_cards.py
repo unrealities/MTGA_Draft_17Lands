@@ -107,7 +107,7 @@ class TakenCardsPanel(ttk.Frame):
             type_grp,
             text="FILTER:",
             font=(Theme.FONT_FAMILY, 8, "bold"),
-            foreground=Theme.ACCENT,
+            bootstyle="primary",
         )
         self.lbl_filter.pack(side="left", padx=5)
         self.bind_all("<<ThemeChanged>>", self._on_theme_change, add="+")
@@ -160,8 +160,7 @@ class TakenCardsPanel(ttk.Frame):
         # We don't pack it yet
 
     def _on_theme_change(self, event=None):
-        if self.winfo_exists() and hasattr(self, "lbl_filter"):
-            self.lbl_filter.configure(foreground=Theme.ACCENT)
+        pass
 
     def _toggle_view(self):
         if self.view_mode == "list":

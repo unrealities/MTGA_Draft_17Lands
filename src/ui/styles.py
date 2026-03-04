@@ -207,24 +207,7 @@ class Theme:
                 "Treeview.Heading", font=(cls.FONT_FAMILY, main_font_size, "bold")
             )
 
-        # 4. Patch Standard Native OS Widgets to match the theme colors
-        cls._force_recursive_update(root)
-
+        # Let ttkbootstrap handle standard widget styles
+        # Only perform specific repairs for internal elements that are hard to style via bootstyle
+        root.configure(bg=cls.BG_PRIMARY)
         root.event_generate("<<ThemeChanged>>")
-
-    @classmethod
-    def _force_recursive_update(cls, widget):
-        try:
-            if not widget.winfo_exists():
-                return
-
-            tk_class = widget.winfo_class()
-            if tk_class in ("Tk", "Toplevel", "Frame", "Canvas", "Label", "Labelframe"):
-                try:
-                    widget.configure(bg=cls.BG_PRIMARY)
-                except:
-                    pass
-            for child in widget.winfo_children():
-                cls._force_recursive_update(child)
-        except Exception:
-            pass

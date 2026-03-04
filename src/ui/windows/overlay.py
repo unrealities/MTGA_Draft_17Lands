@@ -42,7 +42,6 @@ class CompactOverlay(tb.Toplevel):
         self.overrideredirect(True)
         geom = getattr(self.configuration.settings, "overlay_geometry", "380x600+50+50")
         self.geometry(geom)
-        self.configure(bg=Theme.BG_PRIMARY)
 
         try:
             self.attributes("-alpha", 0.92)
@@ -179,8 +178,8 @@ class CompactOverlay(tb.Toplevel):
         tb.Label(
             self.missing_frame,
             text="SEEN CARDS (WHEEL)",
-            font=(Theme.FONT_FAMILY, 9, "bold"),
-            foreground=Theme.ACCENT,
+            foreground=None,
+            bootstyle="primary",
         ).pack(anchor="w", pady=(4, 2), padx=2)
         self.missing_manager = DynamicTreeviewManager(
             self.missing_frame,
@@ -213,7 +212,7 @@ class CompactOverlay(tb.Toplevel):
             self.tab_stats,
             text="OPEN LANES",
             font=(Theme.FONT_FAMILY, 10, "bold"),
-            foreground=Theme.ACCENT,
+            bootstyle="primary",
         ).pack(anchor="w", pady=(0, 5))
         self.signal_meter = SignalMeter(self.tab_stats)
         self.signal_meter.pack(fill=X, pady=(0, 15))
@@ -222,7 +221,7 @@ class CompactOverlay(tb.Toplevel):
             self.tab_stats,
             text="MANA CURVE",
             font=(Theme.FONT_FAMILY, 10, "bold"),
-            foreground=Theme.ACCENT,
+            bootstyle="primary",
         ).pack(anchor="w", pady=(0, 5))
         self.curve_plot = ManaCurvePlot(
             self.tab_stats,
@@ -234,7 +233,7 @@ class CompactOverlay(tb.Toplevel):
             self.tab_stats,
             text="POOL BALANCE",
             font=(Theme.FONT_FAMILY, 10, "bold"),
-            foreground=Theme.ACCENT,
+            bootstyle="primary",
         ).pack(anchor="w", pady=(0, 5))
         self.type_chart = TypePieChart(self.tab_stats)
         self.type_chart.pack(fill=X, pady=(0, 15))

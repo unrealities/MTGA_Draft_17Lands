@@ -19,7 +19,6 @@ class DraftOrchestrator(threading.Thread):
         self.loading, self.new_event_detected = False, False
         self._stop_event, self._force_math_event = threading.Event(), threading.Event()
         self.daemon, self.update_queue, self._last_file_size = True, queue.Queue(), -1
-        self._force_math_event = threading.Event()
         self._force_full_scan_event = threading.Event()
 
     def trigger_full_scan(self):
@@ -35,8 +34,12 @@ class DraftOrchestrator(threading.Thread):
     def run(self):
         logger.info("Background Watchdog started.")
         while not self._stop_event.is_set():
-            # Check if file changed before even TRYING to lock
-            if self._file_has_changed():
+            # Check if file changed OR if a manual event was triggered
+            if (
+                self._file_has_changed()
+                or self._force_full_scan_event.is_set()
+                or self._force_math_event.is_set()
+            ):
                 # Acquire lock briefly, do work, release
                 self.step_process()
             # Yield to the UI thread between polls

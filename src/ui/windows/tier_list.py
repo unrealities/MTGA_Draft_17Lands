@@ -31,7 +31,7 @@ class TierListWindow(ttk.Frame):
         top_bar = ttk.Frame(container)
         top_bar.pack(fill="x", pady=(0, 5))
 
-        ttk.Label(top_bar, text="IMPORTED TIER LISTS", style="Muted.TLabel").pack(
+        ttk.Label(top_bar, text="IMPORTED TIER LISTS", bootstyle="secondary").pack(
             side="left"
         )
 
@@ -50,7 +50,7 @@ class TierListWindow(ttk.Frame):
         self.combo_filter.pack(side="right")
         self.combo_filter.bind("<<ComboboxSelected>>", lambda e: self.refresh())
 
-        ttk.Label(top_bar, text="Filter:", style="Muted.TLabel").pack(
+        ttk.Label(top_bar, text="Filter:", bootstyle="secondary").pack(
             side="right", padx=5
         )
 
@@ -73,9 +73,9 @@ class TierListWindow(ttk.Frame):
             form_frame,
             text="IMPORT NEW TIER LIST",
             font=(Theme.FONT_FAMILY, 9, "bold"),
-            foreground=Theme.ACCENT,
+            bootstyle="primary",
         ).pack(anchor="w", pady=(0, 10))
-        ttk.Label(form_frame, text="17LANDS URL:", style="Muted.TLabel").pack(
+        ttk.Label(form_frame, text="17LANDS URL:", bootstyle="secondary").pack(
             anchor="w"
         )
         self.vars["url"] = tkinter.StringVar(
@@ -84,7 +84,7 @@ class TierListWindow(ttk.Frame):
         self.entry_url = ttk.Entry(form_frame, textvariable=self.vars["url"])
         self.entry_url.pack(fill="x", pady=(2, 10))
         ttk.Label(
-            form_frame, text="CUSTOM LABEL (e.g. 'Pro Review'):", style="Muted.TLabel"
+            form_frame, text="CUSTOM LABEL (e.g. 'Pro Review'):", bootstyle="secondary"
         ).pack(anchor="w")
         self.vars["label"] = tkinter.StringVar()
         self.entry_label = ttk.Entry(form_frame, textvariable=self.vars["label"])
@@ -95,7 +95,7 @@ class TierListWindow(ttk.Frame):
         self.btn_import.pack(fill="x")
         self.vars["status"] = tkinter.StringVar(value="Ready")
         ttk.Label(
-            form_frame, textvariable=self.vars["status"], style="Muted.TLabel"
+            form_frame, textvariable=self.vars["status"], bootstyle="secondary"
         ).pack(pady=(5, 0))
 
     def _update_history_table(self):

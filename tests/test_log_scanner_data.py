@@ -35,6 +35,7 @@ TEST_SETS = SetDictionary(
             seventeenlands=["Cube - Powered"], set_code="CUBE-POWERED"
         ),
         "OM1": SetInfo(seventeenlands=["OM1"], set_code="OM1"),
+        "TMT": SetInfo(seventeenlands=["TMT"], set_code="TMT"),
         "TDM": SetInfo(seventeenlands=["TDM"], set_code="TDM"),
         "DSK": SetInfo(seventeenlands=["DSK"], set_code="DSK"),
         "MH3": SetInfo(seventeenlands=["MH3"], set_code="MH3"),
@@ -1211,6 +1212,80 @@ OM1_PICK_TWO_PREMIER_DRAFT_ENTRIES = [
             ],
         ),
         r'[UnityCrossThreadLogger]==> EventPlayerDraftMakePick {"id":"c6948135-4148-4104-8a6a-c8accde18edd","request":"{\"DraftId\":\"dbd971d5-5bee-4d10-a2ec-eac0530d6553\",\"GrpIds\":[97918,97864],\"Pack\":1,\"Pick\":5}"}',
+    ),
+]
+
+TMT_PICK_TWO_DRAFT_ENTRIES_2026_03_03 = [
+    (
+        "Event Start",
+        EventResults(new_event=True, current_set="TMT", current_event="PickTwoDraft"),
+        r'[UnityCrossThreadLogger]==> EventJoin {"id":"f01d6a4e-9145-455b-a571-677b2102862c","request":"{\"EventName\":\"PickTwoDraft_TMT_20260303\",\"EntryCurrencyType\":\"Gold\",\"EntryCurrencyPaid\":6000,\"CustomTokenId\":null,\"EventChoice\":\"\"}"}',
+    ),
+    (
+        "P1P1 - Pick",
+        EventResults(
+            data_update=True,
+            current_set="TMT",
+            current_event="PickTwoDraft",
+            current_pack=1,
+            current_pick=1,
+            picks=["100632", "100607"],
+            card_pool=["100632", "100607"],
+        ),
+        r'[UnityCrossThreadLogger]==> EventPlayerDraftMakePick {"id":"499cb4d8-7964-46f1-8e73-f7b6e47c2015","request":"{\"DraftId\":\"142bff93-2a35-4286-9f01-aa64f495f898\",\"GrpIds\":[100632,100607],\"Pack\":1,\"Pick\":1}"}',
+    ),
+    (
+        "P1P2 - Pack",
+        EventResults(
+            data_update=True,
+            current_set="TMT",
+            current_event="PickTwoDraft",
+            current_pack=1,
+            current_pick=2,
+            pack=[
+                "100525",
+                "100464",
+                "100568",
+                "100595",
+                "100502",
+                "100590",
+                "100669",
+                "100569",
+                "100567",
+                "100468",
+                "100471",
+                "100640",
+            ],
+            card_pool=["100632", "100607"],
+        ),
+        r'[UnityCrossThreadLogger]Draft.Notify {"draftId":"142bff93-2a35-4286-9f01-aa64f495f898","SelfPick":2,"SelfPack":1,"PackCards":"100525,100464,100568,100595,100502,100590,100669,100569,100567,100468,100471,100640"}',
+    ),
+    (
+        "P1P2 - Pick",
+        EventResults(
+            data_update=True,
+            current_set="TMT",
+            current_event="PickTwoDraft",
+            current_pack=1,
+            current_pick=2,
+            picks=["100569", "100590"],
+            pack=[
+                "100525",
+                "100464",
+                "100568",
+                "100595",
+                "100502",
+                "100590",
+                "100669",
+                "100569",
+                "100567",
+                "100468",
+                "100471",
+                "100640",
+            ],
+            card_pool=["100632", "100607", "100569", "100590"],
+        ),
+        r'[UnityCrossThreadLogger]==> EventPlayerDraftMakePick {"id":"6bc6ef9d-5e52-4821-ac68-eee075f45e7d","request":"{\"DraftId\":\"142bff93-2a35-4286-9f01-aa64f495f898\",\"GrpIds\":[100569,100590],\"Pack\":1,\"Pick\":2}"}',
     ),
 ]
 

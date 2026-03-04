@@ -70,7 +70,7 @@ class DashboardFrame(ttk.Frame):
             tips_frame,
             text="✨ Personalize Your Experience",
             font=(Theme.FONT_FAMILY, 16, "bold"),
-            foreground=Theme.ACCENT,
+            bootstyle="primary",
         ).pack(anchor="w", pady=(0, 8))
 
         tips = [
@@ -96,14 +96,14 @@ class DashboardFrame(ttk.Frame):
                 row,
                 text=title,
                 font=(Theme.FONT_FAMILY, 12, "bold"),
-                foreground=Theme.ACCENT,
+                bootstyle="primary",
             ).pack(anchor="nw")
 
             ttk.Label(
                 row,
                 text=desc,
                 font=(Theme.FONT_FAMILY, 11),
-                foreground=Theme.INFO,
+                bootstyle="info",
                 wraplength=400,
                 justify="left",
             ).pack(anchor="nw", pady=(2, 0))
@@ -121,7 +121,7 @@ class DashboardFrame(ttk.Frame):
             center_box,
             text="👋 Welcome to MTGA Draft Tool",
             font=(Theme.FONT_FAMILY, 16, "bold"),
-            foreground=Theme.ACCENT,
+            bootstyle="primary",
         ).pack(pady=(0, 10))
 
         ttk.Label(
@@ -143,7 +143,6 @@ class DashboardFrame(ttk.Frame):
                 step_frame,
                 text=s,
                 font=(Theme.FONT_FAMILY, 12, "bold"),
-                foreground=Theme.TEXT_MAIN,
             ).pack(anchor="w", pady=4)
 
         expl_frame = ttk.Frame(center_box, style="Card.TFrame")
@@ -153,7 +152,7 @@ class DashboardFrame(ttk.Frame):
             expl_frame,
             text="Dataset Options:",
             font=(Theme.FONT_FAMILY, 11, "bold"),
-            foreground=Theme.WARNING,
+            bootstyle="warning",
         ).pack(anchor="w", pady=(0, 5))
         ttk.Label(
             expl_frame,
@@ -180,14 +179,13 @@ class DashboardFrame(ttk.Frame):
             center_box,
             text="Waiting for draft to begin...",
             font=(Theme.FONT_FAMILY, 16, "bold"),
-            foreground=Theme.ACCENT,
+            bootstyle="primary",
         ).pack(pady=(0, 10))
 
         ttk.Label(
             center_box,
             text="Ensure 'Detailed Logs (Plugin Support)' is checked in your MTGA Account Settings.",
             font=(Theme.FONT_FAMILY, 11),
-            foreground=Theme.TEXT_MAIN,
         ).pack(pady=(0, 20))
 
         tips = self._build_customization_tips(center_box)
@@ -215,7 +213,6 @@ class DashboardFrame(ttk.Frame):
             self.pack_frame,
             text="LIVE PACK: TACTICAL EVALUATION",
             font=(Theme.FONT_FAMILY, 10, "bold"),
-            foreground=Theme.TEXT_MAIN,
         )
         self.lbl_pack_header.pack(anchor="w", pady=(0, 5))
 
@@ -240,7 +237,6 @@ class DashboardFrame(ttk.Frame):
             self.missing_frame,
             text="SEEN CARDS (WHEEL TRACKER)",
             font=(Theme.FONT_FAMILY, 10, "bold"),
-            foreground=Theme.TEXT_MAIN,
         )
         self.lbl_missing_header.pack(anchor="w", pady=(0, 5))
 

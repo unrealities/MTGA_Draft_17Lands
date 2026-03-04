@@ -271,7 +271,7 @@ class DraftApp:
         row1 = ttk.Frame(header_frame, style="Card.TFrame")
         row1.pack(fill="x", pady=(0, 5))
 
-        self.status_dot = ttk.Label(row1, text="●", foreground=Theme.TEXT_MAIN)
+        self.status_dot = ttk.Label(row1, text="●", bootstyle="secondary")
         self.status_dot.pack(side="left", padx=5)
 
         ttk.Label(
@@ -280,7 +280,7 @@ class DraftApp:
             font=(Theme.FONT_FAMILY, 9, "bold"),
         ).pack(side="left")
 
-        ttk.Label(row1, text=" | ", foreground=Theme.TEXT_MAIN).pack(side="left")
+        ttk.Label(row1, text=" | ").pack(side="left")
         ttk.Label(row1, textvariable=self.vars["status_text"]).pack(side="left")
 
         ttk.Button(
@@ -349,7 +349,7 @@ class DraftApp:
             row2,
             textvariable=self.vars["set_label"],
             font=(Theme.FONT_FAMILY, 9, "bold"),
-            foreground=Theme.ACCENT,
+            bootstyle="primary",
             padding=(5, 2),
         )
         self.lbl_set_code.pack(side="right", padx=5)
@@ -483,10 +483,7 @@ class DraftApp:
             scale=current_scale,
         )
 
-        if hasattr(self, "lbl_set_code") and self.lbl_set_code.winfo_exists():
-            self.lbl_set_code.configure(foreground=Theme.ACCENT)
-
-        self._refresh_ui_data()
+        # Let bootstyle handle color automatically on theme update
 
     def _browse_custom_tcl(self):
         f = filedialog.askopenfilename(
@@ -636,9 +633,7 @@ class DraftApp:
         try:
             ts = os.stat(self.orchestrator.scanner.arena_file).st_mtime
             self.status_dot.config(
-                foreground=(
-                    Theme.SUCCESS if ts != self.previous_timestamp else Theme.TEXT_MAIN
-                )
+                bootstyle="success" if ts != self.previous_timestamp else "secondary"
             )
             self.previous_timestamp = ts
         except:
