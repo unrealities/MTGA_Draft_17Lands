@@ -1234,7 +1234,25 @@ class ArenaScanner:
         pack_cards = []
         pack_index = max(self.current_pick - 1, 0) % self.number_of_players
         if pack_index < len(self.pack_cards):
-            pack_cards = self.set_data.get_data_by_id(self.pack_cards[pack_index])
+            raw_cards = self.set_data.get_data_by_id(self.pack_cards[pack_index])
+
+            # For each other physical pack slot in the current round, check whether it contains
+            # a copy of the card and hasn't returned yet. Slot i is first seen at pick i+1
+            # and returns at pick i+1+num_players.
+            returnable_picks_by_name = {}
+            for i, slot_ids in enumerate(self.initial_pack):
+                if i == pack_index or not slot_ids:
+                    continue
+                return_pick = (i + 1) + self.number_of_players
+                if return_pick > self.current_pick:
+                    for name in self.set_data.get_names_by_id(slot_ids):
+                        returnable_picks_by_name.setdefault(name, []).append(return_pick)
+
+            for card in raw_cards:
+                card_copy = dict(card)
+                name = card.get(constants.DATA_FIELD_NAME, "")
+                card_copy["returnable_at"] = sorted(returnable_picks_by_name.get(name, []))
+                pack_cards.append(card_copy)
         return pack_cards
 
     def retrieve_taken_cards(self):
