@@ -116,7 +116,7 @@ def main():
     # Load Config
     config, _ = read_configuration()
 
-    root = ttk.Window(themename="darkly")
+    root = ttk.Window(themename="cyborg")
     root.withdraw()
 
     # Initialize Styling Engine

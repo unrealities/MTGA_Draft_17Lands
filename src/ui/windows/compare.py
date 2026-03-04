@@ -88,6 +88,7 @@ class ComparePanel(ttk.Frame):
 
         raw_pool = self.draft.retrieve_taken_cards()
         metrics = self.draft.retrieve_set_metrics()
+        tier_data = self.draft.retrieve_tier_data()
         colors = filter_options(
             raw_pool,
             self.configuration.settings.deck_filter,
@@ -113,9 +114,19 @@ class ComparePanel(ttk.Frame):
                             constants.TAG_VISUALS.get(t, t).split(" ")[0]
                             for t in raw_tags
                         ]
-                        row.append(" ".join(icons_only))
+                        row_values.append(" ".join(icons_only))
                     else:
-                        row.append("-")
+                        row_values.append("-")
+                elif "TIER" in field:
+                    if tier_data and field in tier_data:
+                        tier_obj = tier_data[field]
+                        raw_name = card.get("name", "")
+                        if raw_name in tier_obj.ratings:
+                            row_values.append(tier_obj.ratings[raw_name].rating)
+                        else:
+                            row_values.append("NA")
+                    else:
+                        row_values.append("NA")
                 else:
                     val = (
                         card.get("deck_colors", {})

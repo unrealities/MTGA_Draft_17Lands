@@ -189,6 +189,17 @@ class CardToolTip(tkinter.Toplevel):
     _image_executor = ThreadPoolExecutor(max_workers=4)
 
     def __init__(self, parent, card, images_enabled, scale):
+        # --- 1. Basic Land Filter ---
+        # Prevent tooltips from appearing for Basic Lands to reduce clutter
+        card_types = card.get("types", [])
+        if "Land" in card_types and "Basic" in card_types:
+            # We must initialize the Toplevel class to avoid recursion errors in Python,
+            # but we immediately hide and destroy it.
+            super().__init__(parent)
+            self.withdraw()
+            self.destroy()
+            return
+
         if CardToolTip._active_tooltip and CardToolTip._active_tooltip.winfo_exists():
             CardToolTip._active_tooltip.destroy()
         CardToolTip._active_tooltip = self
@@ -237,10 +248,27 @@ class CardToolTip(tkinter.Toplevel):
         ).pack(side="right")
         b = tkinter.Frame(self, bg=Theme.BG_PRIMARY, padx=12, pady=12)
         b.pack(fill="both", expand=True)
-        self.img_label = tkinter.Label(b, bg=Theme.BG_PRIMARY)
-        if images_enabled and urls:
-            self.img_label.pack(side="left", padx=(0, 15), anchor="n")
-            self._load_image_async(urls[0], scale)
+
+        # --- 2. Image Container ---
+        # Reserves space immediately so the tooltip doesn't expand/jump when the image loads
+        if images_enabled:
+            img_w = int(240 * scale)
+            img_h = int(335 * scale)
+
+            # Create a fixed-size container frame
+            self.img_frame = tkinter.Frame(
+                b, width=img_w, height=img_h, bg=Theme.BG_PRIMARY
+            )
+            # This is key: tell the frame NOT to shrink to fit its (currently empty) children
+            self.img_frame.pack_propagate(False)
+            self.img_frame.pack(side="left", padx=(0, 15), anchor="n")
+
+            self.img_label = tkinter.Label(self.img_frame, bg=Theme.BG_PRIMARY)
+            self.img_label.pack(fill="both", expand=True)
+
+            if urls:
+                self._load_image_async(urls[0], scale)
+
         sf = tkinter.Frame(b, bg=Theme.BG_PRIMARY)
         sf.pack(side="left", fill="both", expand=True, anchor="n")
         gs = stats.get("All Decks", {})
@@ -602,15 +630,17 @@ class DynamicTreeviewManager(ttk.Frame):
                 am.add_command(label=lb, command=lambda x=fi: self._add_column(x))
         from src.tier_list import TierList
 
-        tf = TierList.retrieve_files()
-        if tf:
+        latest_dataset = getattr(self.config.card_data, "latest_dataset", "")
+        set_code = latest_dataset.split("_")[0] if latest_dataset else ""
+
+        _, tier_options = TierList.retrieve_data(set_code)
+        if tier_options:
             am.add_separator()
-            for idx, (sc, lb, _, _) in enumerate(tf):
-                tn = f"TIER{idx}"
-                if tn not in self.active_fields:
+            for display_name, internal_id in tier_options.items():
+                if internal_id not in self.active_fields:
                     am.add_command(
-                        label=f"TIER: {lb} ({sc})",
-                        command=lambda x=tn: self._add_column(x),
+                        label=display_name,
+                        command=lambda x=internal_id: self._add_column(x),
                     )
         menu.add_separator()
         menu.add_command(label="Reset to Defaults", command=self._reset_defaults)
@@ -629,6 +659,20 @@ class DynamicTreeviewManager(ttk.Frame):
         for f, lb in COLUMN_FIELD_LABELS.items():
             if f not in self.active_fields:
                 menu.add_command(label=lb, command=lambda x=f: self._add_column(x))
+
+        from src.tier_list import TierList
+
+        tf = TierList.retrieve_files()
+        if tf:
+            menu.add_separator()
+            for idx, (sc, lb, _, _) in enumerate(tf):
+                tn = f"TIER{idx}"
+                if tn not in self.active_fields:
+                    menu.add_command(
+                        label=f"TIER: {lb} ({sc})",
+                        command=lambda x=tn: self._add_column(x),
+                    )
+
         menu.post(event.x_root, event.y_root)
 
     def _add_column(self, field):

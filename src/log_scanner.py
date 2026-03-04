@@ -362,55 +362,23 @@ class ArenaScanner:
         """Collect draft data from the log file"""
         update = False
 
-        # Safe OCR Entrypoint (Executes lock-free internally)
+        # If use_ocr is True, the workflow handles its own lock.
         if use_ocr:
             if self.run_ocr_workflow(save_screenshot, status_callback):
                 update = True
 
+        # Perform log parsing outside the lock to keep the UI snappy
+        # We only lock when we are ready to write to the state
+        changes = self.__perform_search_logic()
+
         with self.lock:
-            previous_pick = self.current_pick
-            previous_pack = self.current_pack
-            previous_picked = self.current_picked_pick
+            # AUTO-DISCOVERY: If we haven't found a draft type, re-run start search
+            if self.draft_type == constants.LIMITED_TYPE_UNKNOWN:
+                self.draft_start_search()
+            if changes:
+                update = True
 
-            if self.draft_type == constants.LIMITED_TYPE_DRAFT_PREMIER_V1:
-                self.__draft_pack_search_premier_p1p1()
-                self.__draft_pack_search_premier_v1()
-                self.__draft_picked_search_premier_v1()
-            elif self.draft_type in [
-                constants.LIMITED_TYPE_DRAFT_PREMIER_V2,
-                constants.LIMITED_TYPE_DRAFT_PICK_TWO,
-            ]:
-                self.__draft_pack_search_premier_p1p1()
-                self.__draft_pack_search_premier_v2()
-                self.__draft_picked_search_premier_v2()
-            elif self.draft_type in [
-                constants.LIMITED_TYPE_DRAFT_QUICK,
-                constants.LIMITED_TYPE_DRAFT_PICK_TWO_QUICK,
-            ]:
-                self.__draft_picked_search_quick()
-                self.__draft_pack_search_quick()
-            elif self.draft_type in [
-                constants.LIMITED_TYPE_DRAFT_TRADITIONAL,
-                constants.LIMITED_TYPE_DRAFT_PICK_TWO_TRAD,
-            ]:
-                self.__draft_pack_search_traditional_p1p1()
-                self.__draft_pack_search_traditional()
-                self.__draft_picked_search_traditional()
-            elif self.draft_type in [
-                constants.LIMITED_TYPE_SEALED,
-                constants.LIMITED_TYPE_SEALED_TRADITIONAL,
-            ]:
-                if self.__sealed_pack_search():
-                    update = True
-
-            if not update:
-                if (
-                    (previous_pack != self.current_pack)
-                    or (previous_pick != self.current_pick)
-                    or (previous_picked != self.current_picked_pick)
-                ):
-                    update = True
-            return update
+        return update
 
     def run_ocr_workflow(self, persist, status_callback=None):
         # 1. Guard against redundant calls if we already have P1P1 data
@@ -472,6 +440,60 @@ class ArenaScanner:
             time.sleep(1.5)
             return False
 
+    def __perform_search_logic(self):
+        """
+        Performs log parsing logic lock-free.
+        Returns True if new state was detected and needs to be committed.
+        """
+        # Snapshot current state to detect changes
+        with self.lock:
+            pk, pi = self.current_pack, self.current_pick
+            pp = self.current_picked_pick
+
+        explicit_update = False
+
+        # Dispatch to the correct private search method based on draft type
+        # Executing Picks before Packs ensures that P1P1 resets the board state
+        # correctly before the next chronological Pack is parsed.
+        if self.draft_type == constants.LIMITED_TYPE_DRAFT_PREMIER_V1:
+            self.__draft_picked_search_premier_v1()
+            self.__draft_pack_search_premier_p1p1()
+            self.__draft_pack_search_premier_v1()
+        elif self.draft_type in [
+            constants.LIMITED_TYPE_DRAFT_PREMIER_V2,
+            constants.LIMITED_TYPE_DRAFT_PICK_TWO,
+        ]:
+            self.__draft_picked_search_premier_v2()
+            self.__draft_pack_search_premier_p1p1()
+            self.__draft_pack_search_premier_v2()
+        elif self.draft_type in [
+            constants.LIMITED_TYPE_DRAFT_QUICK,
+            constants.LIMITED_TYPE_DRAFT_PICK_TWO_QUICK,
+        ]:
+            self.__draft_picked_search_quick()
+            self.__draft_pack_search_quick()
+        elif self.draft_type in [
+            constants.LIMITED_TYPE_DRAFT_TRADITIONAL,
+            constants.LIMITED_TYPE_DRAFT_PICK_TWO_TRAD,
+        ]:
+            self.__draft_picked_search_traditional()
+            self.__draft_pack_search_traditional_p1p1()
+            self.__draft_pack_search_traditional()
+        elif self.draft_type in [
+            constants.LIMITED_TYPE_SEALED,
+            constants.LIMITED_TYPE_SEALED_TRADITIONAL,
+        ]:
+            explicit_update = self.__sealed_pack_search()
+
+        with self.lock:
+            # Check if state changed
+            return (
+                (pk != self.current_pack)
+                or (pi != self.current_pick)
+                or (pp != self.current_picked_pick)
+                or explicit_update
+            )
+
     def __draft_pack_search_premier_p1p1(self):
         offset = self.pack_offset
         try:
@@ -498,17 +520,23 @@ class ArenaScanner:
                         pack = json_find("PackNumber", draft_data)
                         pick = json_find("PickNumber", draft_data)
 
+                        draft_id = (
+                            json_find("DraftId", draft_data)
+                            or json_find("draftId", draft_data)
+                            or ""
+                        )
+
                         if not pack or not pick:
                             continue
 
                         pack_index = (pick - 1) % self.number_of_players
 
                         # FALLBACK RESCUE LOGIC:
-                        # Process this log line if it's P1P1 OR if we missed the Draft.Notify for this pick!
+                        # Process this log line if it's P1P1 OR if we missed the Draft.Notify for this pick
                         if (pack == 1 and pick == 1) or len(
                             self.pack_cards[pack_index]
                         ) == 0:
-                            self._check_and_wipe_stale_pool(pack, pick)
+                            self._check_and_wipe_stale_pool(pack, pick, draft_id)
 
                             if self.current_pack != pack:
                                 self.initial_pack = [
@@ -549,6 +577,14 @@ class ArenaScanner:
                             pack_cards = [str(c) for c in cards]
                             pack = json_find("SelfPack", draft_data)
                             pick = json_find("SelfPick", draft_data)
+                            draft_id = (
+                                json_find("DraftId", draft_data)
+                                or json_find("draftId", draft_data)
+                                or ""
+                            )
+
+                            self._check_and_wipe_stale_pool(pack, pick, draft_id)
+
                             pack_index = (pick - 1) % self.number_of_players
                             if self.current_pack != pack:
                                 self.initial_pack = [
@@ -572,21 +608,44 @@ class ArenaScanner:
         except Exception as e:
             logger.error(f"V1 Pack Search Error: {e}")
 
-    def _check_and_wipe_stale_pool(self, pack, pick):
-        if pack == 1 and pick == 1:
-            if (
-                self.current_pack > 0
-                or self.current_pick > 0
-                or len(self.taken_cards) > 0
-            ):
-                logger.info("New Draft Start (P1P1) detected. Wiping stale card pool.")
-                self.taken_cards = []
-                self.picked_cards = [[] for _ in range(self.number_of_players)]
-                self.draft_history = []
-                self.sideboard = []
-                self.current_pack = 0
-                self.current_pick = 0
-                self.previous_picked_pack = 0
+    def _check_and_wipe_stale_pool(self, pack, pick, draft_id=None):
+        wipe = False
+
+        # 1. If the log explicitly gives us a draft_id, trust it to detect a new draft
+        if draft_id and self.current_draft_id and draft_id != self.current_draft_id:
+            wipe = True
+
+        # 2. Fallback for older formats or when draft_id is missing:
+        elif pack == 1 and pick == 1:
+            # We are on P1P1. Did we come from a previous finished draft?
+            if self.current_pack > 1 or self.current_pick > 1:
+                wipe = True
+            # Or did we come from a previous draft that was abandoned early?
+            elif len(self.taken_cards) > 0:
+                # If we have the SAME draft ID, do NOT wipe. We are just processing P1P1 Pack after P1P1 Pick.
+                if (
+                    draft_id
+                    and self.current_draft_id
+                    and draft_id == self.current_draft_id
+                ):
+                    wipe = False
+                else:
+                    wipe = True
+
+        if wipe:
+            logger.info("New Draft Start detected. Wiping stale card pool.")
+            self.taken_cards = []
+            self.picked_cards = [[] for _ in range(self.number_of_players)]
+            self.draft_history = []
+            self.sideboard = []
+            self.current_pack = 0
+            self.current_pick = 0
+            self.previous_picked_pack = 0
+            self.initial_pack = [[] for _ in range(self.number_of_players)]
+            self.pack_cards = [[] for _ in range(self.number_of_players)]
+
+        if draft_id and draft_id != self.current_draft_id:
+            self.current_draft_id = draft_id
 
     def __draft_picked_search_premier_v1(self):
         offset = self.pick_offset
@@ -617,7 +676,7 @@ class ArenaScanner:
                                 or json_find("draftId", draft_data)
                                 or ""
                             )
-                            self._check_and_wipe_stale_pool(pack, pick)
+                            self._check_and_wipe_stale_pool(pack, pick, draft_id)
                             pack_index = (pick - 1) % self.number_of_players
                             if self.previous_picked_pack != pack:
                                 self.picked_cards = [
@@ -669,17 +728,22 @@ class ArenaScanner:
                             pack_cards = str(cards_raw).split(",")
                             pack = json_find("SelfPack", draft_data)
                             pick = json_find("SelfPick", draft_data)
+                            draft_id = (
+                                json_find("DraftId", draft_data)
+                                or json_find("draftId", draft_data)
+                                or ""
+                            )
+
+                            self._check_and_wipe_stale_pool(pack, pick, draft_id)
 
                             pack_index = (pick - 1) % self.number_of_players
                             if self.current_pack != pack:
-                                # FIX: Safe list instantiation
                                 self.initial_pack = [
                                     [] for _ in range(self.number_of_players)
                                 ]
                             if len(self.initial_pack[pack_index]) == 0:
                                 self.initial_pack[pack_index] = pack_cards
 
-                            self._check_and_wipe_stale_pool(pack, pick)
                             self.pack_cards[pack_index] = pack_cards
 
                             if pack > self.current_pack or (
@@ -732,7 +796,11 @@ class ArenaScanner:
                                 or json_find("draftId", draft_data)
                                 or ""
                             )
-                            if grp_ids:
+                            if "GrpIds" in draft_data and isinstance(
+                                draft_data["GrpIds"], list
+                            ):
+                                cards = [str(x) for x in draft_data["GrpIds"]]
+                            elif grp_ids:
                                 cards = [str(x) for x in grp_ids]
                             else:
                                 grp_id = (
@@ -744,7 +812,7 @@ class ArenaScanner:
                                     cards = [str(grp_id)]
                             if not cards or not pack or not pick:
                                 continue
-                            self._check_and_wipe_stale_pool(pack, pick)
+                            self._check_and_wipe_stale_pool(pack, pick, draft_id)
                             pack_index = (pick - 1) % self.number_of_players
                             if self.previous_picked_pack != pack:
                                 self.picked_cards = [
@@ -799,7 +867,6 @@ class ArenaScanner:
                                 )
                                 pack_index = (pick - 1) % self.number_of_players
                                 if self.current_pack != pack:
-                                    # FIX: Safe list instantiation
                                     self.initial_pack = [
                                         [] for _ in range(self.number_of_players)
                                     ]
@@ -911,6 +978,12 @@ class ArenaScanner:
                                 "PickNumber", draft_data
                             )
 
+                            draft_id = (
+                                json_find("DraftId", draft_data)
+                                or json_find("draftId", draft_data)
+                                or ""
+                            )
+
                             if not pack or not pick:
                                 continue
 
@@ -920,7 +993,7 @@ class ArenaScanner:
                             if (pack == 1 and pick == 1) or len(
                                 self.pack_cards[pack_index]
                             ) == 0:
-                                self._check_and_wipe_stale_pool(pack, pick)
+                                self._check_and_wipe_stale_pool(pack, pick, draft_id)
 
                                 if self.current_pack != pack:
                                     self.initial_pack = [
@@ -970,6 +1043,13 @@ class ArenaScanner:
                             pack, pick = json_find("SelfPack", draft_data), json_find(
                                 "SelfPick", draft_data
                             )
+                            draft_id = (
+                                json_find("DraftId", draft_data)
+                                or json_find("draftId", draft_data)
+                                or ""
+                            )
+
+                            self._check_and_wipe_stale_pool(pack, pick, draft_id)
 
                             pack_index = (pick - 1) % self.number_of_players
                             if self.current_pack != pack:
@@ -980,7 +1060,6 @@ class ArenaScanner:
                             if len(self.initial_pack[pack_index]) == 0:
                                 self.initial_pack[pack_index] = pack_cards
 
-                            self._check_and_wipe_stale_pool(pack, pick)
                             self.pack_cards[pack_index] = pack_cards
 
                             if pack > self.current_pack or (
@@ -1041,7 +1120,7 @@ class ArenaScanner:
                                     cards = [str(grp_id)]
                             if not cards or not pack or not pick:
                                 continue
-                            self._check_and_wipe_stale_pool(pack, pick)
+                            self._check_and_wipe_stale_pool(pack, pick, draft_id)
                             pack_index = (pick - 1) % self.number_of_players
                             if self.previous_picked_pack != pack:
                                 self.picked_cards = [
@@ -1068,7 +1147,6 @@ class ArenaScanner:
 
     def __sealed_pack_search(self):
         offset = self.pack_offset
-        draft_string = f'"InternalEventName":"{self.event_string}"'
         update = False
         try:
             with open(self.arena_file, "r", encoding="utf-8", errors="replace") as log:
@@ -1077,39 +1155,40 @@ class ArenaScanner:
                     line = log.readline()
                     if not line:
                         break
-                    offset = log.tell()
-                    if (draft_string in line) and ("CardPool" in line):
+
+                    # Update offset as we go
+                    self.pack_offset = log.tell()
+
+                    if '"CardPool":[' in line:
                         try:
-                            self.pack_offset = offset
-                            self.draft_log.info(line)
-                            if "Courses" in line:
-                                start_offset = line.find('{"Courses"')
-                                course_data = json.loads(line[start_offset:])
-                                for course in course_data["Courses"]:
-                                    if course["InternalEventName"] == self.event_string:
-                                        card_pool = [str(x) for x in course["CardPool"]]
-                                        if self.__sealed_update(card_pool):
-                                            update = True
-                            elif "Course" in line:
-                                start_offset = line.find('{"Course"')
-                                if start_offset != -1:
-                                    try:
-                                        course_data = json.loads(line[start_offset:])
-                                    except:
-                                        course_data = process_json(line[start_offset:])
-                                    if isinstance(course_data, dict):
+                            # Extract JSON start (handles logs that don't have the Event prefix)
+                            json_start = line.find("{")
+                            if json_start != -1:
+                                data = process_json(line[json_start:])
+
+                                pool = []
+                                course = data.get("Course", data.get("Courses", {}))
+
+                                if isinstance(course, list):
+                                    for c in course:
                                         if (
-                                            course_data["Course"]["InternalEventName"]
+                                            not self.event_string
+                                            or c.get("InternalEventName")
                                             == self.event_string
                                         ):
-                                            card_pool = [
-                                                str(x)
-                                                for x in course_data["Course"][
-                                                    "CardPool"
-                                                ]
-                                            ]
-                                            if self.__sealed_update(card_pool):
-                                                update = True
+                                            pool.extend(c.get("CardPool", []))
+                                elif isinstance(course, dict):
+                                    if (
+                                        not self.event_string
+                                        or course.get("InternalEventName")
+                                        == self.event_string
+                                    ):
+                                        pool.extend(course.get("CardPool", []))
+
+                                if pool and self.__sealed_update(
+                                    [str(x) for x in pool]
+                                ):
+                                    update = True
                         except Exception as error:
                             logger.error(f"Sealed Search Error: {error}")
         except Exception as error:
@@ -1269,6 +1348,12 @@ class ArenaScanner:
             return (self.draft_sets[0] if self.draft_sets else ""), self.draft_label
 
     def _record_pack(self, pack, pick, card_ids):
+        if (
+            self.draft_history
+            and self.draft_history[-1]["Pack"] == pack
+            and self.draft_history[-1]["Pick"] == pick
+        ):
+            return
         if not self.draft_history or (
             self.draft_history[-1]["Pack"] != pack
             or self.draft_history[-1]["Pick"] != pick

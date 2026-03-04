@@ -215,8 +215,10 @@ class Theme:
     @classmethod
     def _force_recursive_update(cls, widget):
         try:
+            if not widget.winfo_exists():
+                return
+
             tk_class = widget.winfo_class()
-            # Standard widgets need manual background updates to match the theme
             if tk_class in ("Tk", "Toplevel", "Frame", "Canvas", "Label", "Labelframe"):
                 try:
                     widget.configure(bg=cls.BG_PRIMARY)

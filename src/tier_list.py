@@ -25,6 +25,8 @@ logger = create_logger()
 if not os.path.exists(TIER_FOLDER):
     os.makedirs(TIER_FOLDER)
 
+_TIER_CACHE = {"mtime": 0.0, "files": []}
+
 
 class Meta(BaseModel):
     """Metadata for a tier list."""
@@ -106,21 +108,23 @@ class TierList(BaseModel):
             logger.error("Failed to save tier list to %s: %s", file_path, e)
 
     @classmethod
-    def retrieve_files(cls, code: str = "") -> List[Tuple[str, str, str, str]]:
-        """
-        Retrieve local tier list files, optionally filtered by set_code.
-        Returns a list of tuples: (Set, Label, Date, Filename)
-        """
+    def _get_all_files(cls):
+        try:
+            mtime = os.path.getmtime(TIER_FOLDER)
+            file_names = sorted(os.listdir(TIER_FOLDER), reverse=True)
+        except OSError:
+            mtime = 0.0
+            file_names = []
+
+        if mtime != 0.0 and mtime == _TIER_CACHE["mtime"] and _TIER_CACHE["files"]:
+            return _TIER_CACHE["files"]
+
         file_list = []
-        for file in os.listdir(TIER_FOLDER):
+        for file in file_names:
             file_location = os.path.join(TIER_FOLDER, file)
             try:
                 name_segments = file.split("_")
-                if (
-                    len(name_segments) != 3
-                    or name_segments[0] != TIER_FILE_PREFIX
-                    or (code and code not in name_segments[1])
-                ):
+                if len(name_segments) != 3 or name_segments[0] != TIER_FILE_PREFIX:
                     continue
 
                 result = TierList.from_file(file_location)
@@ -134,31 +138,58 @@ class TierList(BaseModel):
                 except Exception:
                     pass
 
-                file_list.append((result.meta.set, result.meta.label, date_str, file))
+                file_list.append(
+                    (result.meta.set, result.meta.label, date_str, file, result)
+                )
             except Exception as error:
                 logger.error(f"Failed to process tier list file {file}: {error}")
+
+        _TIER_CACHE["mtime"] = mtime
+        _TIER_CACHE["files"] = file_list
         return file_list
 
     @classmethod
-    def retrieve_data(cls, code: str):
+    def retrieve_files(cls, code: str = "") -> List[Tuple[str, str, str, str]]:
+        """
+        Retrieve local tier list files, optionally filtered by set_code.
+        Returns a list of tuples: (Set, Label, Date, Filename)
+        """
+        all_files = cls._get_all_files()
+        filtered = []
+        for f_set, f_label, f_date, f_name, _ in all_files:
+            if code and code not in f_set:
+                continue
+            filtered.append((f_set, f_label, f_date, f_name))
+        return filtered
+
+    @classmethod
+    def delete_file(cls, filename: str):
+        """Deletes a tier list file and invalidates the cache."""
+        file_path = os.path.join(TIER_FOLDER, filename)
+        if os.path.exists(file_path):
+            os.remove(file_path)
+            _TIER_CACHE["mtime"] = 0.0
+
+    @classmethod
+    def retrieve_data(cls, code: str = ""):
         """
         Parse tier list files and return tier data and options dicts.
         Used by the main app to populate column options.
         """
-        if not code:
-            return {}, {}
         data = {}
         options = {}
         try:
-            files = cls.retrieve_files(code)
-            for idx, (_, _, _, filename) in enumerate(files):
-                tier = TierList.from_file(os.path.join(TIER_FOLDER, filename))
-                if not tier:
+            all_files = cls._get_all_files()
+            for idx, (f_set, _, _, _, f_tier) in enumerate(all_files):
+                # Filter by code AFTER getting the global index 'idx'
+                # so that the 'TIER{idx}' column label stays consistent everywhere
+                if code and code not in f_set:
                     continue
+
                 label = f"TIER{idx}"
-                key = f"{label}: {tier.meta.label}"
-                options[key] = label
-                data[label] = tier
+                display_name = f"TIER: {f_tier.meta.label} ({f_set})"
+                options[display_name] = label
+                data[label] = f_tier
         except Exception as error:
             logger.error(f"Error in retrieve_data: {error}")
         return data, options

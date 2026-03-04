@@ -27,6 +27,7 @@ class DownloadWindow(ttk.Frame):
     def __init__(self, parent, limited_sets, configuration, on_update_callback):
         super().__init__(parent)
         self.sets_data = limited_sets.data
+        self.latest_set_code = limited_sets.latest_set
         self.configuration = configuration
         self.on_update_callback = on_update_callback
         self.vars = {}
@@ -62,6 +63,18 @@ class DownloadWindow(ttk.Frame):
         form.columnconfigure(1, weight=1)
         form.columnconfigure(3, weight=1)
         set_options = list(self.sets_data.keys())
+
+        # Force the most recent 17Lands set to the top of the dropdown
+        latest_key = None
+        for k, v in self.sets_data.items():
+            if v.set_code == self.latest_set_code:
+                latest_key = k
+                break
+
+        if latest_key and latest_key in set_options:
+            set_options.remove(latest_key)
+            set_options.insert(0, latest_key)
+
         self.vars["set"] = tkinter.StringVar(
             value=set_options[0] if set_options else ""
         )
@@ -77,7 +90,10 @@ class DownloadWindow(ttk.Frame):
         self.vars["event"] = tkinter.StringVar(value="PremierDraft")
         ttk.Label(form, text="EVENT:").grid(row=0, column=2, sticky="e", padx=5)
         self.om_event = ttk.OptionMenu(
-            form, self.vars["event"], "PremierDraft", *constants.LIMITED_TYPE_LIST
+            form,
+            self.vars["event"],
+            "PremierDraft",
+            *sorted(constants.LIMITED_TYPE_LIST)
         )
         self.om_event.grid(row=0, column=3, sticky="ew", pady=2)
         self.vars["group"] = tkinter.StringVar(value="All")
@@ -112,6 +128,9 @@ class DownloadWindow(ttk.Frame):
         ).pack()
         self._update_table()
 
+        # Trigger an immediate synchronization so the dynamic dropdowns reflect the correct set's formats
+        self._on_set_change(self.vars["set"].get())
+
     def enter(self, args: DatasetArgs = None):
         if args:
             target_key = next(
@@ -143,12 +162,18 @@ class DownloadWindow(ttk.Frame):
             try:
                 menu = self.om_event["menu"]
                 menu.delete(0, "end")
-                for f in s_info.formats:
+
+                formats_to_show = (
+                    s_info.formats if s_info.formats else constants.LIMITED_TYPE_LIST
+                )
+                formats_to_show = sorted(formats_to_show)
+
+                for f in formats_to_show:
                     menu.add_command(
                         label=f, command=lambda v=f: self.vars["event"].set(v)
                     )
-                if s_info.formats:
-                    self.vars["event"].set(s_info.formats[0])
+                if formats_to_show:
+                    self.vars["event"].set(formats_to_show[0])
             except:
                 pass
 

@@ -516,7 +516,7 @@ def test_draft_history_recording(function_scanner):
     assert "90459" in history[0]["Cards"]  # Vadmir, New Blood
 
     # 3. Simulate P1P2 (Pack Data) - Note: Using the P1P2 entry that wasn't skipped
-    P1P2_VALID_ENTRY = r'[UnityCrossThreadLogger]Draft.Notify {"draftId":"87b408d1-43e0-4fb5-8c74-a1257fde017c","SelfPick":2,"SelfPack":1,"PackCards":"90701,90416,90606,90524,90481,90588,90440,90418,90353,90494,90360,90609,90548"}'
+    P1P2_VALID_ENTRY = r'[UnityCrossThreadLogger]Draft.Notify {"draftId":"87b408d1-43e0-4fb5-8c74-a1257fde087c","SelfPick":2,"SelfPack":1,"PackCards":"90701,90416,90606,90524,90481,90588,90440,90418,90353,90494,90360,90609,90548"}'
 
     with open(
         TEST_LOG_FILE_LOCATION, "a", encoding="utf-8", errors="replace"

@@ -183,6 +183,7 @@ class TakenCardsPanel(ttk.Frame):
             return
 
         metrics = self.draft.retrieve_set_metrics()
+        tier_data = self.draft.retrieve_tier_data()
         t.bind("<<TreeviewSelect>>", self._on_selection)
 
         for item in t.get_children():
@@ -207,6 +208,16 @@ class TakenCardsPanel(ttk.Frame):
                         row_values.append(" ".join(icons_only))
                     else:
                         row_values.append("-")
+                elif "TIER" in field:
+                    if tier_data and field in tier_data:
+                        tier_obj = tier_data[field]
+                        raw_name = card.get("name", "")
+                        if raw_name in tier_obj.ratings:
+                            row_values.append(tier_obj.ratings[raw_name].rating)
+                        else:
+                            row_values.append("NA")
+                    else:
+                        row_values.append("NA")
 
                 else:
                     val = (

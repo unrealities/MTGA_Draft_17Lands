@@ -105,7 +105,6 @@ class TestAppOrchestrator:
             app = DraftApp(root, mock_scanner, config)
             app._loading = False
 
-            # FIX: Ensure maps are populated before changing events
             app._update_data_sources()
             app._update_deck_filter_options()
 

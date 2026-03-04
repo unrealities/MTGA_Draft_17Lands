@@ -26,9 +26,35 @@ class TierListWindow(ttk.Frame):
     def _build_ui(self):
         container = ttk.Frame(self, padding=10)
         container.pack(fill="both", expand=True)
-        ttk.Label(container, text="IMPORTED TIER LISTS", style="Muted.TLabel").pack(
-            anchor="w", pady=(0, 5)
+
+        # --- 1. MANAGEMENT BAR ---
+        top_bar = ttk.Frame(container)
+        top_bar.pack(fill="x", pady=(0, 5))
+
+        ttk.Label(top_bar, text="IMPORTED TIER LISTS", style="Muted.TLabel").pack(
+            side="left"
         )
+
+        self.btn_delete = ttk.Button(
+            top_bar,
+            text="Delete Selected",
+            bootstyle="danger-outline",
+            command=self._delete_selected,
+        )
+        self.btn_delete.pack(side="right", padx=(5, 0))
+
+        self.var_filter = tkinter.StringVar(value="All Sets")
+        self.combo_filter = ttk.Combobox(
+            top_bar, textvariable=self.var_filter, state="readonly", width=12
+        )
+        self.combo_filter.pack(side="right")
+        self.combo_filter.bind("<<ComboboxSelected>>", lambda e: self.refresh())
+
+        ttk.Label(top_bar, text="Filter:", style="Muted.TLabel").pack(
+            side="right", padx=5
+        )
+
+        # --- 2. HISTORY TABLE ---
         self.table_manager = DynamicTreeviewManager(
             container,
             view_id="tier_list_history",
@@ -39,6 +65,8 @@ class TierListWindow(ttk.Frame):
         )
         self.table_manager.pack(fill="both", expand=True, pady=(0, 15))
         self.table = self.table_manager.tree
+
+        # --- 3. IMPORT FORM ---
         form_frame = ttk.Frame(container, style="Card.TFrame", padding=15)
         form_frame.pack(fill="x")
         ttk.Label(
@@ -73,11 +101,46 @@ class TierListWindow(ttk.Frame):
     def _update_history_table(self):
         for item in self.table.get_children():
             self.table.delete(item)
-        files = TierList.retrieve_files()
-        files.sort(key=lambda x: x[2], reverse=True)
-        for idx, f in enumerate(files):
+
+        # Get all files using the internal cache method to populate filter options
+        all_files = TierList._get_all_files()
+        sets = sorted(list(set([f[0] for f in all_files])))
+
+        current_filter = self.var_filter.get()
+        self.combo_filter["values"] = ["All Sets"] + sets
+        if current_filter not in ["All Sets"] + sets:
+            self.var_filter.set("All Sets")
+            current_filter = "All Sets"
+
+        filtered_files = []
+        for f_set, f_label, f_date, f_name, _ in all_files:
+            if current_filter != "All Sets" and f_set != current_filter:
+                continue
+            filtered_files.append((f_set, f_label, f_date, f_name))
+
+        filtered_files.sort(key=lambda x: x[2], reverse=True)
+
+        for idx, f in enumerate(filtered_files):
             tag = "bw_odd" if idx % 2 == 0 else "bw_even"
-            self.table.insert("", "end", values=(f[0], f[1], f[2]), tags=(tag,))
+            self.table.insert(
+                "", "end", iid=f[3], values=(f[0], f[1], f[2]), tags=(tag,)
+            )
+
+    def _delete_selected(self):
+        selection = self.table.selection()
+        if not selection:
+            return
+
+        if messagebox.askyesno(
+            "Confirm Delete",
+            "Are you sure you want to delete the selected tier list(s)?",
+        ):
+            for item_id in selection:
+                TierList.delete_file(item_id)
+
+            self.refresh()
+            if self.on_update_callback:
+                self.on_update_callback()
 
     def _start_import(self):
         url, label = self.vars["url"].get().strip(), self.vars["label"].get().strip()

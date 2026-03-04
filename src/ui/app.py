@@ -498,14 +498,15 @@ class DraftApp:
     def _refresh_ui_data(self):
         """
         Core UI Synchronization Logic (v4.06 Pro).
-        Uses non-blocking locks and defensive checks for Mock compatibility.
         """
         if not self._initialized or self._rebuilding_ui:
             return
 
-        # 1. TRY-LOCK: Prevent UI hang if scanner is busy
+        # 1. TRY-LOCK: If we can't get the lock, just schedule a retry 100ms later
+        # This prevents the UI from "freezing" while waiting for the scanner thread.
         lock_acquired = self.orchestrator.scanner.lock.acquire(blocking=False)
         if not lock_acquired:
+            self.root.after(100, self._refresh_ui_data)
             return
 
         try:
@@ -668,15 +669,18 @@ class DraftApp:
             )
 
             event_transitioned = False
+            current_draft_id = self.orchestrator.scanner.current_draft_id
             if (
                 current_set != self.active_event_set
                 or current_event_type != self.active_event_type
                 or self.orchestrator.new_event_detected
+                or (current_draft_id and current_draft_id != self.current_draft_id)
             ):
 
                 event_transitioned = True
                 self.active_event_set = current_set
                 self.active_event_type = current_event_type
+                self.current_draft_id = current_draft_id
                 self.orchestrator.new_event_detected = False
 
             if not current_set:
@@ -726,7 +730,7 @@ class DraftApp:
                     self.current_set_data_map[f_event] = {}
                 self.current_set_data_map[f_event][f_group] = f_path
 
-            available_events = list(self.current_set_data_map.keys())
+            available_events = sorted(list(self.current_set_data_map.keys()))
 
             # If no data is found for the event, clear dropdowns and alert the user
             if not available_events:
@@ -789,7 +793,7 @@ class DraftApp:
         evt = self.vars["selected_event"].get()
         if not evt or evt not in self.current_set_data_map:
             return
-        available_groups = list(self.current_set_data_map[evt].keys())
+        available_groups = sorted(list(self.current_set_data_map[evt].keys()))
         self._set_dropdown_options(
             self.om_group, self.vars["selected_group"], available_groups
         )
@@ -1031,7 +1035,17 @@ class DraftApp:
             messagebox.showinfo("Success", "Export Complete.")
 
     def _on_dataset_update(self):
+        # Force the scanner to load the newly downloaded file into memory immediately
+        latest_file = self.configuration.card_data.latest_dataset
+        if latest_file:
+            from src.constants import SETS_FOLDER
+
+            full_path = os.path.join(SETS_FOLDER, latest_file)
+            if os.path.exists(full_path):
+                self.orchestrator.scanner.retrieve_set_data(full_path)
+
         self._update_data_sources()
+        self._update_deck_filter_options()
         self.orchestrator.request_math_update()
         self._refresh_ui_data()
 

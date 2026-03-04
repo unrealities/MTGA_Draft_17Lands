@@ -59,11 +59,13 @@ class ScryfallTagger:
         cache_path = os.path.join(self.CACHE_DIR, f"{safe_set_code}_scryfall_tags.json")
 
         # 1. CHECK CACHE
-        if not is_cache_stale(cache_path, hours=24):
-            logger.info(f"Using cached Scryfall tags for {set_code}")
+        if not is_cache_stale(cache_path, hours=12):
             try:
                 with open(cache_path, "r", encoding="utf-8") as f:
-                    return json.load(f)
+                    cached_tags = json.load(f)
+                    if cached_tags and len(cached_tags) > 0:
+                        logger.info(f"Using cached Scryfall tags for {set_code}")
+                        return cached_tags
             except json.JSONDecodeError:
                 pass  # Cache corrupt, fallback to fetching
 
@@ -90,11 +92,12 @@ class ScryfallTagger:
             time.sleep(0.2)  # Respect Scryfall limits
 
         # 3. SAVE TO CACHE
-        try:
-            with open(cache_path, "w", encoding="utf-8") as f:
-                json.dump(card_tags, f, indent=4)
-        except Exception as e:
-            logger.error(f"Failed to write Scryfall tags cache: {e}")
+        if card_tags and len(card_tags) > 0:
+            try:
+                with open(cache_path, "w", encoding="utf-8") as f:
+                    json.dump(card_tags, f, indent=4)
+            except Exception as e:
+                logger.error(f"Failed to write Scryfall tags cache: {e}")
 
         return card_tags
 

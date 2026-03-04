@@ -6,9 +6,38 @@ Global pytest configuration and fixtures.
 import pytest
 import tkinter
 from src.ui.styles import Theme
+from unittest.mock import patch
+from ttkbootstrap.style import StyleBuilderTTK
+
 
 # Global singleton for Tkinter root
 _shared_root = None
+
+
+@pytest.fixture(autouse=True)
+def patch_ttkbootstrap_crash():
+    """
+    Prevents ttkbootstrap from crashing when it tries to re-style
+    widgets that are currently being destroyed by the test runner.
+    """
+    original_update = StyleBuilderTTK.update_combobox_popdown_style
+
+    def safe_update(self, widget):
+        try:
+            # Check if the widget is still a valid Tcl object
+            if widget.winfo_exists():
+                original_update(self, widget)
+        except (tkinter.TclError, Exception):
+            # Widget is destroyed or Tcl path is invalid; skip it
+            pass
+
+    # Use 'autospec=True' or ensure the signature matches (self, widget)
+    with patch.object(
+        StyleBuilderTTK, "update_combobox_popdown_style", autospec=True
+    ) as mock_method:
+        # We manually link the mock to our safe_update logic
+        mock_method.side_effect = safe_update
+        yield
 
 
 @pytest.fixture(scope="session", autouse=True)
