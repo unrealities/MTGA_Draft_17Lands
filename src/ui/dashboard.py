@@ -405,9 +405,14 @@ class DashboardFrame(ttk.Frame):
                 }
             )
 
-        processed_rows.sort(key=lambda x: x["sort_key"], reverse=True)
+        active_col = getattr(tree, "active_sort_col", None)
+        if not active_col:
+            processed_rows.sort(key=lambda x: x["sort_key"], reverse=True)
         for row in processed_rows:
             tree.insert("", "end", values=row["vals"], tags=(row["tag"],))
+
+        if active_col:
+            tree._apply_sort(active_col)
 
     def update_signals(self, scores: Dict[str, float]):
         if self.signal_meter:
