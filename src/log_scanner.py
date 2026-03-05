@@ -467,7 +467,7 @@ class ArenaScanner:
         self._check_and_wipe_stale_pool(pack, pick, draft_id)
 
         # 2. Handle Pack Transitions securely
-        # Important: Only clear if we are moving FORWARD to a new pack.
+        # Only clear if we are moving FORWARD to a new pack.
         # This prevents out-of-order catchup logs from corrupting internal state.
         if (
             pack > self.previous_scanned_pack
@@ -477,7 +477,7 @@ class ArenaScanner:
             self.pack_cards = [[] for _ in range(expected_players)]
             self.previous_scanned_pack = pack
         elif pack < self.previous_scanned_pack:
-            # Ignore severely delayed logs from a previous pack to prevent memory corruption
+            # Ignore severely delayed logs from a completely different pack to prevent memory corruption
             return False
 
         pack_index = (pick - 1) % expected_players
@@ -495,8 +495,9 @@ class ArenaScanner:
                 return False
 
         # 5. Commit Data safely
-        # We only set the initial_pack if it's currently empty, preserving memory for the wheel
-        if len(self.initial_pack[pack_index]) == 0:
+        # We ONLY set the initial_pack if it's currently empty AND we are in the first rotation of the pack.
+        # This correctly allows out-of-order pack parsing to rebuild memory safely.
+        if len(self.initial_pack[pack_index]) == 0 and pick <= expected_players:
             self.initial_pack[pack_index] = pack_cards
 
         self.pack_cards[pack_index] = pack_cards
@@ -564,22 +565,17 @@ class ArenaScanner:
     def _check_and_wipe_stale_pool(self, pack, pick, draft_id=None):
         wipe = False
 
-        # Trust the ID if present
-        if draft_id and self.current_draft_id and draft_id != self.current_draft_id:
-            wipe = True
+        if draft_id and self.current_draft_id:
+            if draft_id == self.current_draft_id:
+                return  # Safe, exactly the same draft. DO NOT WIPE.
+            else:
+                wipe = True  # IDs mismatched, definitely a new draft.
         # Fallback for old formats
         elif pack == 1 and pick == 1:
             if self.current_pack > 1 or self.current_pick > 1:
                 wipe = True
             elif len(self.taken_cards) > 0:
-                if (
-                    draft_id
-                    and self.current_draft_id
-                    and draft_id == self.current_draft_id
-                ):
-                    wipe = False
-                else:
-                    wipe = True
+                wipe = True
 
         if wipe:
             logger.info("New Draft Start detected. Wiping stale card pool.")
