@@ -19,6 +19,7 @@ This is a major performance and stability update focused on speed, responsivenes
 
 ## UI & Quality Improvements
 
+- Fixed a text clipping issue on Windows where the bottom tails of letters (like g, p, y) were cut off by dynamically calculating and scaling table row heights based on native OS font metrics
 - Redesigned the "Waiting for Draft" and "No Datasets" dashboard screens to perfectly center and include helpful tips for customizing Themes, Columns, and Preferences
 - Restored the "Win Rate Format" feature: the new data tables now correctly display Letter Grades (A+ to F) or 5-point Ratings if selected in Preferences
 - The Preferences window is now fully accessible directly from the Mini Mode gear menu
@@ -34,6 +35,8 @@ This is a major performance and stability update focused on speed, responsivenes
 
 ## Stability & Log Parsing Fixes
 
+- Completely rebuilt the core log parsing engine to be thread-safe and highly resilient to malformed JSON data, fixing multiple issues where the app would silently ignore draft events
+- Fixed an issue in Pick-Two Drafts where the Wheel Tracker (Seen Cards) would not appear. It now correctly triggers at Pick 5 (accounting for 4-player pods) instead of Pick 9
 - Fixed a critical log parsing bug where missing MTGA `Draft.Notify` lines (frequently occurring on P1P2) would cause the app to permanently fall "one pick behind" the active draft. The app now safely rescues missed packs using backup telemetry data
 - Fixed an internal list-referencing bug that was corrupting the Wheel Tracker (Seen Cards) across all draft formats
 - Fixed rare OCR scanning crash
@@ -42,7 +45,6 @@ This is a major performance and stability update focused on speed, responsivenes
 - Multiple threading, UI event-loop (re-entrancy), and race-condition fixes
 - Resolved a failure where the "Reload" button would leave the dashboard in an "Idle" state
 - Fixed an issue where the "Download" button would not download the dataset for the selected set
-
 ===================== RELEASE NOTES 4.04 =====================
 * unrealities: [Major Feature] Overhauled "Compact Overlay" into a significantly more powerful "Mini Mode." It now includes a built-in Advisor panel, Signal Meter, Mana Curve, and Deck Balance charts, allowing for a fully functional drafting experience in a small, always-on-top window.
 * unrealities: [Feature] Added a dedicated "Card Pool" tab to the Mini Mode, making it easier to track your current draft picks and collection progress without switching back to the main window.

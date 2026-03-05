@@ -359,7 +359,7 @@ class CompactOverlay(tb.Toplevel):
         self._force_stats_redraw()
 
         # Dynamic Grid Weights for Pack Tab (Wheel Tracker Logic)
-        if not missing_cards or pi < 9:
+        if not missing_cards:
             self.missing_frame.grid_remove()
             self.tab_pack.rowconfigure(0, weight=1)
             self.tab_pack.rowconfigure(1, weight=0)

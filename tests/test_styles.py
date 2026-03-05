@@ -101,21 +101,6 @@ class TestThemeEngine:
         # Our mock ensures we test that the CLASS VARIABLE updates from the STYLE object
         assert Theme.ACCENT == "#4dabff"
 
-    def test_widget_density_configuration(self, mock_root, mock_style):
-        """
-        Verify that critical layout settings (like rowheight) are
-        properly configured in the ttk.Style engine.
-        """
-        Theme.apply(mock_root, "Dark")
-        treeview_config_calls = [
-            call
-            for call in mock_style.configure.call_args_list
-            if call[0][0] == "Treeview"
-        ]
-        assert len(treeview_config_calls) > 0
-
-        assert treeview_config_calls[0][1]["rowheight"] == 28
-
     def test_live_update_trigger(self, mock_root, mock_style):
         """Verify that applying a theme triggers the virtual event for live updates."""
         Theme.apply(mock_root, "Forest")

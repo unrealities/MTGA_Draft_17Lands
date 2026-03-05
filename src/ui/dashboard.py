@@ -322,9 +322,9 @@ class DashboardFrame(ttk.Frame):
         else:
             self.content_frame.grid(row=0, column=0, sticky="nsew")
 
-    def _adjust_grid_weights(self, current_pick):
+    def _adjust_grid_weights(self):
         """Dynamically shifts vertical space based on wheel tracker visibility."""
-        if self._missing_count == 0 or current_pick < 9:
+        if self._missing_count == 0:
             self.missing_frame.grid_remove()
             self.f_left.rowconfigure(0, weight=1)
             self.f_left.rowconfigure(1, weight=0)
@@ -363,7 +363,7 @@ class DashboardFrame(ttk.Frame):
         else:
             self._missing_count = len(cards) if cards else 0
 
-        self._adjust_grid_weights(current_pick)
+        self._adjust_grid_weights()
         self._update_dashboard_state()
 
         if not cards:
