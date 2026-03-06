@@ -238,6 +238,12 @@ class LimitedSets:
                     else:
                         temp_dict.data[set_name] = self.sets_17lands.data[set_code]
                     set_codes_to_remove.append(set_code)
+                else:
+                    # Include Scryfall sets even if 17Lands doesn't have them yet
+                    # This allows users to download local Arena card data on Day 1
+                    # to view card text, tooltips, and sync Tier Lists!
+                    temp_dict.data[set_name] = set_fields
+
             for set_code, set_fields in self.sets_17lands.data.items():
                 if set_code not in set_codes_to_remove:
                     if re.match(r"^Y\d{2}[A-Za-z]{3}$", set_code):

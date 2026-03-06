@@ -74,17 +74,34 @@ class TestDownloadPanel:
             mock_err.assert_called_once()
             assert "numeric" in mock_err.call_args[0][1].lower()
 
+    @patch("src.ui.windows.download.threading.Thread")
     @patch("src.ui.windows.download.FileExtractor")
     def test_state_locking_during_download(
-        self, mock_ex_cls, root, mock_sets_data, config
+        self, mock_ex_cls, mock_thread, root, mock_sets_data, config
     ):
+        class MockSyncThread:
+            def __init__(self, target, args, daemon=True):
+                self.target = target
+                self.args = args
+
+            def start(self):
+                self.target(*self.args)
+
+            def is_alive(self):
+                return False
+
+        # Force background thread to execute inline synchronously
+        mock_thread.side_effect = MockSyncThread
+
         panel = DownloadWindow(root, mock_sets_data, config, MagicMock())
         mock_ex_cls.return_value.retrieve_17lands_color_ratings.return_value = (
             False,
             0,
         )
         panel._start_download()
-        assert str(panel.btn_dl["state"]) == "normal"
+        assert (
+            str(panel.btn_dl["state"]) == "normal"
+        )  # Download is so fast it's finished instantly
 
     def test_notification_enter_handshake(self, root, mock_sets_data, config):
         panel = DownloadWindow(root, mock_sets_data, config, MagicMock())

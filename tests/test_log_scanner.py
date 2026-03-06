@@ -20,8 +20,8 @@ from tests.test_log_scanner_data import (
     ARENA_OPEN_TEST_ENTRIES,
     DSK_SEALED_NAVIGATION_ENTRY,
     OM1_PICK_TWO_PREMIER_DRAFT_ENTRIES,
+    TMT_PICK_TWO_DRAFT_ENTRIES_2026_03_03,
     POWERED_CUBE_DRAFT_ENTRIES,
-    # ADDED MISSING IMPORTS BELOW
     OTJ_EVENT_ENTRY,
     OTJ_P1P1_ENTRY,
     OTJ_P1P1_CARD_NAMES,
@@ -329,6 +329,24 @@ def test_om1_pick_two_premier(session_scanner, entry_label, expected, entry_stri
 
 
 @pytest.mark.parametrize(
+    "entry_label, expected, entry_string", TMT_PICK_TWO_DRAFT_ENTRIES_2026_03_03
+)
+def test_tmt_pick_two_draft(session_scanner, entry_label, expected, entry_string):
+    with (
+        patch("src.log_scanner.OCR.get_pack") as mock_ocr,
+        patch("src.log_scanner.capture_screen_base64str"),
+    ):
+        event_test_cases(
+            session_scanner,
+            "TMT PickTwoDraft",
+            entry_label,
+            expected,
+            entry_string,
+            mock_ocr,
+        )
+
+
+@pytest.mark.parametrize(
     "entry_label, expected, entry_string", POWERED_CUBE_DRAFT_ENTRIES
 )
 def test_powered_cube_premier(session_scanner, entry_label, expected, entry_string):
@@ -516,7 +534,7 @@ def test_draft_history_recording(function_scanner):
     assert "90459" in history[0]["Cards"]  # Vadmir, New Blood
 
     # 3. Simulate P1P2 (Pack Data) - Note: Using the P1P2 entry that wasn't skipped
-    P1P2_VALID_ENTRY = r'[UnityCrossThreadLogger]Draft.Notify {"draftId":"87b408d1-43e0-4fb5-8c74-a1257fde017c","SelfPick":2,"SelfPack":1,"PackCards":"90701,90416,90606,90524,90481,90588,90440,90418,90353,90494,90360,90609,90548"}'
+    P1P2_VALID_ENTRY = r'[UnityCrossThreadLogger]Draft.Notify {"draftId":"87b408d1-43e0-4fb5-8c74-a1257fde087c","SelfPick":2,"SelfPack":1,"PackCards":"90701,90416,90606,90524,90481,90588,90440,90418,90353,90494,90360,90609,90548"}'
 
     with open(
         TEST_LOG_FILE_LOCATION, "a", encoding="utf-8", errors="replace"

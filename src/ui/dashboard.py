@@ -22,6 +22,7 @@ from src.ui.components import (
 )
 from src.advisor.schema import Recommendation
 from src.ui.advisor_view import AdvisorPanel
+from src.card_logic import format_win_rate
 
 
 class DashboardFrame(ttk.Frame):
@@ -61,24 +62,73 @@ class DashboardFrame(ttk.Frame):
 
         self._update_dashboard_state()
 
+    def _build_customization_tips(self, parent):
+        """Helper to build a unified tips section for both waiting screens."""
+        tips_frame = ttk.Frame(parent, style="Card.TFrame", padding=20)
+
+        ttk.Label(
+            tips_frame,
+            text="✨ Personalize Your Experience",
+            font=(Theme.FONT_FAMILY, 16, "bold"),
+            bootstyle="primary",
+        ).pack(anchor="w", pady=(0, 8))
+
+        tips = [
+            (
+                "🎨 Themes & Mana Flairs:",
+                "Use the 'Theme' menu at the very top of the window to select Magic-inspired color palettes.",
+            ),
+            (
+                "📊 Custom Columns:",
+                "Right-click any table header (like 'GIH WR' or 'NAME') to add, remove, or swap the stats. You can even display your downloaded Tier Lists!",
+            ),
+            (
+                "⚙️ Preferences:",
+                "Go to File -> Preferences... to change the UI Scale, switch to A-F letter grades, or enable colorful table rows based on mana cost.",
+            ),
+        ]
+
+        for title, desc in tips:
+            row = ttk.Frame(tips_frame, style="Card.TFrame")
+            row.pack(fill="x", pady=4)
+
+            ttk.Label(
+                row,
+                text=title,
+                font=(Theme.FONT_FAMILY, 12, "bold"),
+                bootstyle="primary",
+            ).pack(anchor="nw")
+
+            ttk.Label(
+                row,
+                text=desc,
+                font=(Theme.FONT_FAMILY, 11),
+                bootstyle="info",
+                wraplength=400,
+                justify="left",
+            ).pack(anchor="nw", pady=(2, 0))
+
+        return tips_frame
+
     def _build_no_data_state(self):
         """State 1: First time user, no data downloaded."""
         self.no_data_frame = ttk.Frame(self)
 
-        center_box = ttk.Frame(self.no_data_frame, style="Card.TFrame", padding=40)
-        center_box.place(relx=0.5, rely=0.45, anchor="center")
+        center_box = ttk.Frame(self.no_data_frame, style="Card.TFrame", padding=30)
+        center_box.pack(expand=True)
 
         ttk.Label(
             center_box,
             text="👋 Welcome to MTGA Draft Tool",
             font=(Theme.FONT_FAMILY, 16, "bold"),
-            foreground=Theme.ACCENT,
+            bootstyle="primary",
         ).pack(pady=(0, 10))
+
         ttk.Label(
             center_box,
             text="No 17Lands dataset is currently loaded. You need to download data before you can draft.",
-            font=(Theme.FONT_FAMILY, 11),
-        ).pack(pady=(0, 25))
+            font=(Theme.FONT_FAMILY, 12),
+        ).pack(pady=(0, 20))
 
         step_frame = ttk.Frame(center_box, style="Card.TFrame")
         step_frame.pack(fill="x")
@@ -92,49 +142,54 @@ class DashboardFrame(ttk.Frame):
             ttk.Label(
                 step_frame,
                 text=s,
-                font=(Theme.FONT_FAMILY, 11, "bold"),
-                foreground=Theme.TEXT_MAIN,
-            ).pack(anchor="w", pady=6)
+                font=(Theme.FONT_FAMILY, 12, "bold"),
+            ).pack(anchor="w", pady=4)
 
         expl_frame = ttk.Frame(center_box, style="Card.TFrame")
-        expl_frame.pack(fill="x", pady=(25, 0))
+        expl_frame.pack(fill="x", pady=(15, 0))
 
         ttk.Label(
             expl_frame,
             text="Dataset Options:",
-            font=(Theme.FONT_FAMILY, 10, "bold"),
-            foreground=Theme.WARNING,
+            font=(Theme.FONT_FAMILY, 11, "bold"),
+            bootstyle="warning",
         ).pack(anchor="w", pady=(0, 5))
         ttk.Label(
             expl_frame,
             text="• USERS: 'All' pulls data from everyone. 'Top' pulls data exclusively from top players.",
-            font=(Theme.FONT_FAMILY, 10),
+            font=(Theme.FONT_FAMILY, 11),
         ).pack(anchor="w", pady=2)
         ttk.Label(
             expl_frame,
             text="• MIN GAMES: The minimum amount of data required to show color-specific win rates.",
-            font=(Theme.FONT_FAMILY, 10),
+            font=(Theme.FONT_FAMILY, 11),
         ).pack(anchor="w", pady=2)
+
+        tips = self._build_customization_tips(center_box)
+        tips.pack(fill="x", pady=(20, 0))
 
     def _build_waiting_state(self):
         """State 2: Data downloaded, but no draft is active."""
         self.waiting_frame = ttk.Frame(self)
 
-        center_box = ttk.Frame(self.waiting_frame, padding=40)
-        center_box.place(relx=0.5, rely=0.45, anchor="center")
+        center_box = ttk.Frame(self.waiting_frame, padding=30)
+        center_box.pack(expand=True)
 
         ttk.Label(
             center_box,
             text="Waiting for draft to begin...",
-            font=(Theme.FONT_FAMILY, 15, "bold"),
-            foreground=Theme.ACCENT,
+            font=(Theme.FONT_FAMILY, 16, "bold"),
+            bootstyle="primary",
         ).pack(pady=(0, 10))
+
         ttk.Label(
             center_box,
             text="Ensure 'Detailed Logs (Plugin Support)' is checked in your MTGA Account Settings.",
-            font=(Theme.FONT_FAMILY, 10),
-            foreground=Theme.TEXT_MUTED,
-        ).pack()
+            font=(Theme.FONT_FAMILY, 11),
+        ).pack(pady=(0, 20))
+
+        tips = self._build_customization_tips(center_box)
+        tips.pack(fill="x")
 
     def _build_active_state(self):
         """State 3: Active drafting / deckbuilding."""
@@ -154,12 +209,12 @@ class DashboardFrame(ttk.Frame):
         self.pack_frame = ttk.Frame(self.f_left)
         self.pack_frame.grid(row=0, column=0, sticky="nsew")
 
-        ttk.Label(
+        self.lbl_pack_header = ttk.Label(
             self.pack_frame,
             text="LIVE PACK: TACTICAL EVALUATION",
             font=(Theme.FONT_FAMILY, 10, "bold"),
-            foreground=Theme.TEXT_MAIN,
-        ).pack(anchor="w", pady=(0, 5))
+        )
+        self.lbl_pack_header.pack(anchor="w", pady=(0, 5))
 
         self.pack_manager = DynamicTreeviewManager(
             self.pack_frame,
@@ -178,12 +233,12 @@ class DashboardFrame(ttk.Frame):
         # 2. Missing Table (Wheel Tracker)
         self.missing_frame = ttk.Frame(self.f_left)
 
-        ttk.Label(
+        self.lbl_missing_header = ttk.Label(
             self.missing_frame,
             text="SEEN CARDS (WHEEL TRACKER)",
             font=(Theme.FONT_FAMILY, 10, "bold"),
-            foreground=Theme.TEXT_MAIN,
-        ).pack(anchor="w", pady=(0, 5))
+        )
+        self.lbl_missing_header.pack(anchor="w", pady=(0, 5))
 
         self.missing_manager = DynamicTreeviewManager(
             self.missing_frame,
@@ -243,27 +298,33 @@ class DashboardFrame(ttk.Frame):
 
     def _update_dashboard_state(self):
         """Evaluates the application data and smoothly swaps the active frame."""
-        has_dataset = bool(self.configuration.card_data.latest_dataset)
+        import os
+
+        has_any_datasets = False
+        if os.path.exists(constants.SETS_FOLDER):
+            for f in os.listdir(constants.SETS_FOLDER):
+                if f.endswith(constants.SET_FILE_SUFFIX):
+                    has_any_datasets = True
+                    break
+
         has_draft_data = (
             self._pack_count > 0 or self._missing_count > 0 or self._taken_count > 0
         )
 
-        if not has_dataset:
-            self.content_frame.grid_remove()
-            self.waiting_frame.grid_remove()
+        self.content_frame.grid_remove()
+        self.waiting_frame.grid_remove()
+        self.no_data_frame.grid_remove()
+
+        if not has_any_datasets:
             self.no_data_frame.grid(row=0, column=0, sticky="nsew")
         elif not has_draft_data:
-            self.content_frame.grid_remove()
-            self.no_data_frame.grid_remove()
             self.waiting_frame.grid(row=0, column=0, sticky="nsew")
         else:
-            self.no_data_frame.grid_remove()
-            self.waiting_frame.grid_remove()
             self.content_frame.grid(row=0, column=0, sticky="nsew")
 
-    def _adjust_grid_weights(self, current_pick):
+    def _adjust_grid_weights(self):
         """Dynamically shifts vertical space based on wheel tracker visibility."""
-        if self._missing_count == 0 or current_pick < 9:
+        if self._missing_count == 0:
             self.missing_frame.grid_remove()
             self.f_left.rowconfigure(0, weight=1)
             self.f_left.rowconfigure(1, weight=0)
@@ -302,7 +363,7 @@ class DashboardFrame(ttk.Frame):
         else:
             self._missing_count = len(cards) if cards else 0
 
-        self._adjust_grid_weights(current_pick)
+        self._adjust_grid_weights()
         self._update_dashboard_state()
 
         if not cards:
@@ -352,8 +413,7 @@ class DashboardFrame(ttk.Frame):
                     if rec:
                         row_values.append(f"{rec.contextual_score:.0f}")
                     else:
-                        val = stats.get("gihwr", 0.0)
-                        row_values.append(f"{val:.0f}" if val != 0.0 else "-")
+                        row_values.append("-")
                 elif field == "colors":
                     row_values.append("".join(card.get("colors", [])))
                 elif field == "tags":
@@ -385,15 +445,15 @@ class DashboardFrame(ttk.Frame):
                         row_values.append("NA")
                 else:
                     val = stats.get(field, 0.0)
-                    if val == 0.0:
-                        row_values.append("-")
-                    else:
-                        row_values.append(
-                            f"{val:.1f}"
-                            if field
-                            in ["gihwr", "ohwr", "gpwr", "gnswr", "gdwr", "iwd"]
-                            else str(val)
+                    row_values.append(
+                        format_win_rate(
+                            val,
+                            active_filter,
+                            field,
+                            metrics,
+                            self.configuration.settings.result_format,
                         )
+                    )
 
             processed_rows.append(
                 {
@@ -405,14 +465,12 @@ class DashboardFrame(ttk.Frame):
                 }
             )
 
-        active_col = getattr(tree, "active_sort_col", None)
-        if not active_col:
-            processed_rows.sort(key=lambda x: x["sort_key"], reverse=True)
+        processed_rows.sort(key=lambda x: x["sort_key"], reverse=True)
         for row in processed_rows:
             tree.insert("", "end", values=row["vals"], tags=(row["tag"],))
 
-        if active_col:
-            tree._apply_sort(active_col)
+        if hasattr(tree, "reapply_sort"):
+            tree.reapply_sort()
 
     def update_signals(self, scores: Dict[str, float]):
         if self.signal_meter:

@@ -166,11 +166,16 @@ def detect_string(search_line: str, search_strings: List[str]) -> int:
     Robustly identifies the start of a JSON block in an Arena log line.
     Indifferent to underscores, spaces, or casing.
     """
+    # FAST PATH: If there's no JSON payload, immediately skip heavy string manipulation
+    json_start = search_line.find("{")
+    if json_start == -1:
+        return -1
+
     norm_line = search_line.upper().replace("_", "").replace(" ", "")
     for pattern in search_strings:
         norm_pattern = pattern.upper().replace("_", "").replace(" ", "")
         if norm_pattern in norm_line:
-            return search_line.find("{")
+            return json_start
     return -1
 
 

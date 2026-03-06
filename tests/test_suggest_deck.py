@@ -46,8 +46,8 @@ class TestSuggestDeckPanel:
             "src.ui.windows.suggest_deck.suggest_deck", return_value=mock_variants
         ):
             panel = SuggestDeckPanel(root, mock_draft, Configuration())
+            panel.refresh()
 
-            # Check dropdown values
             menu = panel.om_archetype["menu"]
             last = menu.index("end")
             labels = [menu.entrycget(i, "label") for i in range(last + 1)]
@@ -60,6 +60,7 @@ class TestSuggestDeckPanel:
             "src.ui.windows.suggest_deck.suggest_deck", return_value=mock_variants
         ):
             panel = SuggestDeckPanel(root, mock_draft, Configuration())
+            panel.refresh()
 
             # Select the Splash deck
             splash_label = [k for k in panel.suggestions.keys() if "Splash" in k][0]

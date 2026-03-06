@@ -89,11 +89,16 @@ class Seventeenlands:
         cache_name = f"{set_code}_{draft_format}_{color}_{ug_label}.json".lower()
         cache_path = os.path.join(self.CACHE_DIR, cache_name)
 
-        if not is_cache_stale(cache_path, hours=24):
-            logger.info(f"Using cached 17Lands data for {set_code}/{color}/{ug_label}")
+        if not is_cache_stale(cache_path, hours=12):
             try:
                 with open(cache_path, "r") as f:
-                    return json.load(f), True
+                    cached_data = json.load(f)
+                    # Do not use cache if it's an empty array (meaning 17Lands had no data yesterday)
+                    if cached_data and len(cached_data) > 0:
+                        logger.info(
+                            f"Using cached 17Lands data for {set_code}/{color}/{ug_label}"
+                        )
+                        return cached_data, True
             except json.JSONDecodeError:
                 pass  # Cache corrupt, fetch new
 
@@ -111,9 +116,14 @@ class Seventeenlands:
         response.raise_for_status()
         data = response.json()
 
-        # Save to cache
-        with open(cache_path, "w") as f:
-            json.dump(data, f)
+        # Only save to cache if we actually received data
+        if data and len(data) > 0:
+            import tempfile
+
+            fd, temp_path = tempfile.mkstemp(dir=self.CACHE_DIR)
+            with os.fdopen(fd, "w") as f:
+                json.dump(data, f)
+            os.replace(temp_path, cache_path)
 
         return data, False
 

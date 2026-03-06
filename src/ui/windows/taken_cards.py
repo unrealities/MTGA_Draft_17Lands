@@ -17,6 +17,7 @@ from src.ui.components import (
     ScrolledFrame,
     CardPile,
 )
+from src.card_logic import format_win_rate
 
 
 class TakenCardsPanel(ttk.Frame):
@@ -33,18 +34,15 @@ class TakenCardsPanel(ttk.Frame):
         self.vars = {}
 
         self._build_ui()
-        # Trigger first load manually
-        self.refresh()
 
     @property
     def table(self) -> ttk.Treeview:
         return self.table_manager.tree if hasattr(self, "table_manager") else None
 
     def refresh(self):
-        # 1. Get Data
         raw_pool = self.draft.retrieve_taken_cards()
         if not raw_pool:
-            self.current_display_list = []
+            self.current_display_list = []  # Ensure it's an empty list, not None
             self.active_color = "All Decks"
         else:
             from src.card_logic import filter_options
@@ -91,11 +89,11 @@ class TakenCardsPanel(ttk.Frame):
 
             self.current_display_list = stack_cards(filtered)
 
-        # 3. Render based on mode
-        if self.view_mode == "list":
+        (
             self._update_table_view()
-        else:
-            self._render_visual_view()
+            if self.view_mode == "list"
+            else self._render_visual_view()
+        )
 
     def _build_ui(self):
         # --- Control Bar ---
@@ -105,12 +103,14 @@ class TakenCardsPanel(ttk.Frame):
         type_grp = ttk.Frame(self.filter_frame, style="Card.TFrame")
         type_grp.pack(side="left", padx=5)
 
-        ttk.Label(
+        self.lbl_filter = ttk.Label(
             type_grp,
             text="FILTER:",
             font=(Theme.FONT_FAMILY, 8, "bold"),
-            foreground=Theme.ACCENT,
-        ).pack(side="left", padx=5)
+            bootstyle="primary",
+        )
+        self.lbl_filter.pack(side="left", padx=5)
+        self.bind_all("<<ThemeChanged>>", self._on_theme_change, add="+")
 
         self.vars = {}
         for lbl, key in [
@@ -159,6 +159,9 @@ class TakenCardsPanel(ttk.Frame):
         self.visual_scroller = ScrolledFrame(self.content_area)
         # We don't pack it yet
 
+    def _on_theme_change(self, event=None):
+        pass
+
     def _toggle_view(self):
         if self.view_mode == "list":
             self.view_mode = "visual"
@@ -178,6 +181,8 @@ class TakenCardsPanel(ttk.Frame):
         if t is None:
             return
 
+        metrics = self.draft.retrieve_set_metrics()
+        tier_data = self.draft.retrieve_tier_data()
         t.bind("<<TreeviewSelect>>", self._on_selection)
 
         for item in t.get_children():
@@ -202,25 +207,41 @@ class TakenCardsPanel(ttk.Frame):
                         row_values.append(" ".join(icons_only))
                     else:
                         row_values.append("-")
+                elif "TIER" in field:
+                    if tier_data and field in tier_data:
+                        tier_obj = tier_data[field]
+                        raw_name = card.get("name", "")
+                        if raw_name in tier_obj.ratings:
+                            row_values.append(tier_obj.ratings[raw_name].rating)
+                        else:
+                            row_values.append("NA")
+                    else:
+                        row_values.append("NA")
+
                 else:
                     val = (
                         card.get("deck_colors", {})
                         .get(self.active_color, {})
                         .get(field, 0.0)
                     )
-
-                    if val == 0.0 or val == "-":
-                        row_values.append("-")
-                    else:
-                        row_values.append(
-                            f"{val:.1f}" if isinstance(val, float) else str(val)
+                    row_values.append(
+                        format_win_rate(
+                            val,
+                            self.active_color,
+                            field,
+                            metrics,
+                            self.configuration.settings.result_format,
                         )
+                    )
 
             tag = "bw_odd" if idx % 2 == 0 else "bw_even"
             if int(self.configuration.settings.card_colors_enabled):
                 tag = row_color_tag(card.get(constants.DATA_FIELD_MANA_COST, ""))
 
             t.insert("", "end", values=row_values, tags=(tag,))
+
+        if hasattr(t, "reapply_sort"):
+            t.reapply_sort()
 
     def _render_visual_view(self):
         # Clear existing piles

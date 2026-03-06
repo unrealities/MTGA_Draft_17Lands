@@ -18,6 +18,7 @@ from src.ui.components import (
 )
 from src.ui.advisor_view import AdvisorPanel
 from src.configuration import write_configuration
+from src.card_logic import format_win_rate
 
 
 class CompactOverlay(tb.Toplevel):
@@ -41,7 +42,6 @@ class CompactOverlay(tb.Toplevel):
         self.overrideredirect(True)
         geom = getattr(self.configuration.settings, "overlay_geometry", "380x600+50+50")
         self.geometry(geom)
-        self.configure(bg=Theme.BG_PRIMARY)
 
         try:
             self.attributes("-alpha", 0.92)
@@ -178,8 +178,8 @@ class CompactOverlay(tb.Toplevel):
         tb.Label(
             self.missing_frame,
             text="SEEN CARDS (WHEEL)",
-            font=(Theme.FONT_FAMILY, 9, "bold"),
-            foreground=Theme.ACCENT,
+            foreground=None,
+            bootstyle="primary",
         ).pack(anchor="w", pady=(4, 2), padx=2)
         self.missing_manager = DynamicTreeviewManager(
             self.missing_frame,
@@ -203,7 +203,7 @@ class CompactOverlay(tb.Toplevel):
 
         # 3. Advisor Tab
         self.advisor_panel = AdvisorPanel(
-            self.tab_advisor, self.configuration, collapsible=False
+            self.tab_advisor, self.configuration, collapsible=False, mini_mode=True
         )
         self.advisor_panel.pack(fill=BOTH, expand=True, anchor="n", side="top")
 
@@ -212,7 +212,7 @@ class CompactOverlay(tb.Toplevel):
             self.tab_stats,
             text="OPEN LANES",
             font=(Theme.FONT_FAMILY, 10, "bold"),
-            foreground=Theme.ACCENT,
+            bootstyle="primary",
         ).pack(anchor="w", pady=(0, 5))
         self.signal_meter = SignalMeter(self.tab_stats)
         self.signal_meter.pack(fill=X, pady=(0, 15))
@@ -221,7 +221,7 @@ class CompactOverlay(tb.Toplevel):
             self.tab_stats,
             text="MANA CURVE",
             font=(Theme.FONT_FAMILY, 10, "bold"),
-            foreground=Theme.ACCENT,
+            bootstyle="primary",
         ).pack(anchor="w", pady=(0, 5))
         self.curve_plot = ManaCurvePlot(
             self.tab_stats,
@@ -233,7 +233,7 @@ class CompactOverlay(tb.Toplevel):
             self.tab_stats,
             text="POOL BALANCE",
             font=(Theme.FONT_FAMILY, 10, "bold"),
-            foreground=Theme.ACCENT,
+            bootstyle="primary",
         ).pack(anchor="w", pady=(0, 5))
         self.type_chart = TypePieChart(self.tab_stats)
         self.type_chart.pack(fill=X, pady=(0, 15))
@@ -242,6 +242,16 @@ class CompactOverlay(tb.Toplevel):
 
     def _on_tab_changed(self, event):
         """Forces Tkinter to redraw the contents of the newly selected tab."""
+        self.update_idletasks()
+        if hasattr(self, "signal_meter"):
+            self.signal_meter.redraw()
+        if hasattr(self, "curve_plot"):
+            self.curve_plot.redraw()
+        if hasattr(self, "type_chart"):
+            self.type_chart.redraw()
+
+    def _force_stats_redraw(self):
+        """Deep redraw to ensure canvases appear even if the tab was hidden."""
         self.update_idletasks()
         if hasattr(self, "signal_meter"):
             self.signal_meter.redraw()
@@ -279,6 +289,11 @@ class CompactOverlay(tb.Toplevel):
                     ),
                 )
         menu.add_cascade(label="User Group", menu=group_menu)
+        menu.add_separator()
+        menu.add_command(
+            label="Preferences...", command=self.app_context._open_settings
+        )
+
         menu.post(
             self.btn_settings.winfo_rootx(),
             self.btn_settings.winfo_rooty() + self.btn_settings.winfo_height(),
@@ -289,11 +304,8 @@ class CompactOverlay(tb.Toplevel):
             self.orchestrator.refresh_callback()
 
     def _manual_scan(self):
-        save_img = self.configuration.settings.save_screenshot_enabled
-        if self.orchestrator.scanner.draft_data_search(True, save_img) and hasattr(
-            self.orchestrator, "refresh_callback"
-        ):
-            self.orchestrator.refresh_callback()
+        # Offload to async thread in the main app to prevent UI freezing
+        self.app_context._manual_refresh(use_ocr=True)
 
     def update_data(
         self, pack_cards, colors, metrics, tier_data, current_pick, recommendations=None
@@ -301,6 +313,14 @@ class CompactOverlay(tb.Toplevel):
         evt = self.app_context.vars["selected_event"].get()
         grp = self.app_context.vars["selected_group"].get()
         filt = self.app_context.vars["deck_filter"].get()
+
+        # Graceful fallback if no data is loaded
+        if not evt:
+            _, evt = (
+                self.app_context.orchestrator.scanner.retrieve_current_limited_event()
+            )
+            grp = "No Data"
+
         self.lbl_info.config(text=f"{evt} ({grp}) | {filt}")
 
         self.current_pack_cards = pack_cards or []
@@ -336,8 +356,10 @@ class CompactOverlay(tb.Toplevel):
             self.curve_plot.update_curve([0] * 8)
             self.type_chart.update_counts(0, 0, 0)
 
+        self._force_stats_redraw()
+
         # Dynamic Grid Weights for Pack Tab (Wheel Tracker Logic)
-        if not missing_cards or pi < 9:
+        if not missing_cards:
             self.missing_frame.grid_remove()
             self.tab_pack.rowconfigure(0, weight=1)
             self.tab_pack.rowconfigure(1, weight=0)
@@ -394,7 +416,10 @@ class CompactOverlay(tb.Toplevel):
                     elif field == "count":
                         row_values.append(str(card.get("count", 1) if is_pool else "-"))
                     elif field == "value":
-                        row_values.append(f"{rec.contextual_score:.0f}" if rec else "-")
+                        if rec:
+                            row_values.append(f"{rec.contextual_score:.0f}")
+                        else:
+                            row_values.append("-")
                     elif field == "colors":
                         row_values.append("".join(card.get("colors", [])))
                     elif field == "tags":
@@ -421,12 +446,15 @@ class CompactOverlay(tb.Toplevel):
                             row_values.append("NA")
                     else:
                         val = stats.get(field, 0.0)
-                        if val == 0.0:
-                            row_values.append("-")
-                        else:
-                            row_values.append(
-                                f"{val:.1f}" if isinstance(val, float) else str(val)
+                        row_values.append(
+                            format_win_rate(
+                                val,
+                                active_filter,
+                                field,
+                                metrics,
+                                self.configuration.settings.result_format,
                             )
+                        )
 
                 sort_val = rec.contextual_score if rec else stats.get("gihwr", 0.0)
                 processed_rows.append(
@@ -444,6 +472,9 @@ class CompactOverlay(tb.Toplevel):
                 ):
                     row["tag"] = "bw_odd" if i % 2 == 0 else "bw_even"
                 tree.insert("", "end", values=row["vals"], tags=(row["tag"],))
+
+            if hasattr(tree, "reapply_sort"):
+                tree.reapply_sort()
 
         self.tree = self.table_manager.tree
         self.tree.bind(

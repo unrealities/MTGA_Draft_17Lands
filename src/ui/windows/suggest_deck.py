@@ -25,7 +25,6 @@ class SuggestDeckPanel(ttk.Frame):
         self.current_archetype_key: str = ""
 
         self._build_ui()
-        self.refresh()
 
     @property
     def table(self) -> ttk.Treeview:
@@ -37,16 +36,17 @@ class SuggestDeckPanel(ttk.Frame):
         self._calculate_suggestions()
 
     def _build_ui(self):
-        """Constructs the deck selection header and the static data table."""
         self.header = ttk.Frame(self, style="Card.TFrame", padding=5)
         self.header.pack(fill="x", pady=(0, 5))
 
-        ttk.Label(
+        self.lbl_archetype = ttk.Label(
             self.header,
             text="ARCHETYPE:",
             font=(Theme.FONT_FAMILY, 8, "bold"),
-            foreground=Theme.ACCENT,
-        ).pack(side="left", padx=5)
+            bootstyle="primary",
+        )
+        self.lbl_archetype.pack(side="left", padx=5)
+        self.bind_all("<<ThemeChanged>>", self._on_theme_change, add="+")
 
         self.var_archetype = tkinter.StringVar()
         self.om_archetype = ttk.OptionMenu(
@@ -63,7 +63,7 @@ class SuggestDeckPanel(ttk.Frame):
         )
         self.btn_copy.pack(side="right", padx=5)
 
-        cols = ["Card", "#", "Cost", "Type", "Colors", "GIH WR"]
+        cols = ["name", "count", "cmc", "types", "colors", "gihwr"]
         self.table_manager = DynamicTreeviewManager(
             self,
             view_id="deck_builder",
@@ -73,6 +73,9 @@ class SuggestDeckPanel(ttk.Frame):
         )
         self.table_manager.pack(fill="both", expand=True)
         self.table.bind("<<TreeviewSelect>>", self._on_selection)
+
+    def _on_theme_change(self, event=None):
+        pass
 
     def _calculate_suggestions(self):
         """Invokes the card_logic to build decks based on current pool."""
@@ -97,7 +100,7 @@ class SuggestDeckPanel(ttk.Frame):
             )
 
             if not raw_results:
-                msg = "Waiting for more picks..."
+                msg = "Not enough data to suggest a deck"
                 self.suggestions = {}
                 self._update_dropdown_options([msg])
                 self.var_archetype.set(msg)
@@ -215,6 +218,9 @@ class SuggestDeckPanel(ttk.Frame):
                     values=(name, count, cmc, types, card_colors, gihwr_str),
                     tags=(tag,),
                 )
+
+        if self.table and hasattr(self.table, "reapply_sort"):
+            self.table.reapply_sort()
 
     def _copy_to_clipboard(self):
         selection = self.var_archetype.get()

@@ -8,6 +8,7 @@ from tkinter import ttk
 from src import constants
 from src.ui.styles import Theme
 from src.ui.components import DynamicTreeviewManager, AutocompleteEntry, CardToolTip
+from src.card_logic import format_win_rate
 
 
 class ComparePanel(ttk.Frame):
@@ -38,6 +39,7 @@ class ComparePanel(ttk.Frame):
             bar,
             text="SEARCH:",
             font=(Theme.FONT_FAMILY, 8, "bold"),
+            bootstyle="primary",
         ).pack(side="left", padx=5)
         self.entry_card = AutocompleteEntry(bar, completion_list=[], width=40)
         self.entry_card.pack(side="left", fill="x", expand=True, padx=5)
@@ -87,6 +89,7 @@ class ComparePanel(ttk.Frame):
 
         raw_pool = self.draft.retrieve_taken_cards()
         metrics = self.draft.retrieve_set_metrics()
+        tier_data = self.draft.retrieve_tier_data()
         colors = filter_options(
             raw_pool,
             self.configuration.settings.deck_filter,
@@ -99,12 +102,12 @@ class ComparePanel(ttk.Frame):
             t.delete(item)
 
         for idx, card in enumerate(self.compare_list):
-            row = []
+            row_values = []
             for field in self.table_manager.active_fields:
                 if field == "name":
-                    row.append(card.get("name", ""))
+                    row_values.append(card.get("name", ""))
                 elif field == "colors":
-                    row.append("".join(card.get("colors", [])))
+                    row_values.append("".join(card.get("colors", [])))
                 elif field == "tags":
                     raw_tags = card.get("tags", [])
                     if raw_tags:
@@ -112,24 +115,44 @@ class ComparePanel(ttk.Frame):
                             constants.TAG_VISUALS.get(t, t).split(" ")[0]
                             for t in raw_tags
                         ]
-                        row.append(" ".join(icons_only))
+                        row_values.append(" ".join(icons_only))
                     else:
-                        row.append("-")
+                        row_values.append("-")
+                elif "TIER" in field:
+                    if tier_data and field in tier_data:
+                        tier_obj = tier_data[field]
+                        raw_name = card.get("name", "")
+                        if raw_name in tier_obj.ratings:
+                            row_values.append(tier_obj.ratings[raw_name].rating)
+                        else:
+                            row_values.append("NA")
+                    else:
+                        row_values.append("NA")
                 else:
                     val = (
                         card.get("deck_colors", {})
                         .get(active_color, {})
                         .get(field, 0.0)
                     )
-
-                    if val == 0.0 or val == "-":
-                        row.append("-")
-                    else:
-                        row.append(f"{val:.1f}" if isinstance(val, float) else str(val))
+                    row_values.append(
+                        format_win_rate(
+                            val,
+                            active_color,
+                            field,
+                            metrics,
+                            self.configuration.settings.result_format,
+                        )
+                    )
 
             t.insert(
-                "", "end", values=row, tags=("bw_odd" if idx % 2 == 0 else "bw_even",)
+                "",
+                "end",
+                values=row_values,
+                tags=("bw_odd" if idx % 2 == 0 else "bw_even",),
             )
+
+        if hasattr(t, "reapply_sort"):
+            t.reapply_sort()
 
     def _on_selection(self, event):
         sel = self.table.selection()

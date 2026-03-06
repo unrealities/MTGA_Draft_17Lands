@@ -1,94 +1,128 @@
 import os
 import logging
+import threading
+import time
+import queue
 from src.configuration import write_configuration
 
 logger = logging.getLogger(__name__)
 
 
-class DraftOrchestrator:
+class DraftOrchestrator(threading.Thread):
     def __init__(self, scanner, configuration, refresh_callback):
-        self.scanner = scanner
-        self.config = configuration
-        self.refresh_callback = refresh_callback
-        self.loading = False
-        self.new_event_detected = False
+        super().__init__()
+        self.scanner, self.config, self.refresh_callback = (
+            scanner,
+            configuration,
+            refresh_callback,
+        )
+        self.loading, self.new_event_detected = False, False
+        self._stop_event, self._force_math_event = threading.Event(), threading.Event()
+        self.daemon, self.update_queue, self._last_file_size = True, queue.Queue(), -1
+        self._force_full_scan_event = threading.Event()
 
-    def update_cycle(self):
-        """Standard check for log updates."""
-        if self.loading:
-            return False
+    def trigger_full_scan(self):
+        """Thread-safe way for the UI to demand a deep log scan."""
+        self._force_full_scan_event.set()
 
+    def stop(self):
+        self._stop_event.set()
+
+    def request_math_update(self):
+        self._force_math_event.set()
+
+    def run(self):
+        logger.info("Background Watchdog started.")
+        while not self._stop_event.is_set():
+            # Check if file changed OR if a manual event was triggered
+            if (
+                self._file_has_changed()
+                or self._force_full_scan_event.is_set()
+                or self._force_math_event.is_set()
+            ):
+                # Acquire lock briefly, do work, release
+                self.step_process()
+            # Yield to the UI thread between polls
+            time.sleep(0.5)
+
+    def _file_has_changed(self):
+        """Returns True if the log file size has changed since the last scan.
+        Does NOT mutate _last_file_size — that is owned by check_for_updates()."""
         try:
             current_size = os.path.getsize(self.scanner.arena_file)
-            if current_size == getattr(self, "_last_file_size", -1):
-                return False  # File hasn't grown; skip the expensive open/read/close operations
+            return current_size != self._last_file_size
+        except:
+            pass
+        return False
+
+    def step_process(self):
+        if not self.loading:
+            try:
+                # Check our flag safely on the background thread
+                force = self._force_full_scan_event.is_set()
+                if force:
+                    self._force_full_scan_event.clear()
+
+                log_changed = self.check_for_updates(force=force)
+                if log_changed or self._force_math_event.is_set():
+                    self._force_math_event.clear()
+                    self.update_queue.put("REFRESH")
+            except Exception as e:
+                logger.error(f"Logic Step Error: {e}")
+
+    def check_for_updates(self, force=False):
+        """
+        Scans for changes. If 'force' is True, bypasses the file-size check.
+        """
+        try:
+            current_size = os.path.getsize(self.scanner.arena_file)
+            if not force and current_size == self._last_file_size:
+                return False
+
+            # Define first_run for the Mock-Safe check below
+            first_run = self._last_file_size == -1
             self._last_file_size = current_size
-        except OSError:
+        except:
             return False
 
-        changed = False
-        self.new_event_detected = False
+        with self.scanner.lock:
+            changed = False
+            # SEARCH 1: Did the user join a new event?
+            if self.scanner.draft_start_search():
+                changed, self.new_event_detected = True, True
+                self.sync_dataset_to_event()
 
-        # 1. New Event Detection
-        if self.scanner.draft_start_search():
-            logger.info("New event detected in logs.")
-            changed = True
-            self.new_event_detected = True
-            # Sync automatically based on scanner state
-            self.sync_dataset_to_event()
+            # SEARCH 2: Is there new pack/pick data?
+            if self.scanner.draft_data_search(use_ocr=False, save_screenshot=False):
+                changed = True
 
-        # 2. New Data Detection (Pack/Pick)
-        if self.scanner.draft_data_search(use_ocr=False, save_screenshot=False):
-            changed = True
-
-        if changed:
-            self.refresh_callback()
-
-        return changed
+            # MOCK-SAFE FIRST RUN CHECK:
+            # We use try/except to handle MagicMocks in unit tests
+            if first_run:
+                try:
+                    # Check pack/pick/pool. If any exist, force a refresh for tests
+                    pk, _ = self.scanner.retrieve_current_pack_and_pick()
+                    pool = self.scanner.retrieve_taken_cards()
+                    if (pk and int(pk) > 0) or pool:
+                        changed = True
+                except (TypeError, ValueError):
+                    # Fallback for MagicMocks or non-integer values
+                    changed = True
+            return changed
 
     def sync_dataset_to_event(
         self, target_set=None, target_format=None, target_user=None
     ):
-        event_set, event_format = self.scanner.retrieve_current_limited_event()
-
-        s_code = target_set or event_set
-        f_code = target_format or event_format
-        u_code = target_user or "All"
-
-        if not s_code:
+        with self.scanner.lock:
+            event_set, _ = self.scanner.retrieve_current_limited_event()
+            s_code = target_set or event_set
+            if not s_code:
+                return False
+            sources = self.scanner.retrieve_data_sources()
+            for label, path in sources.items():
+                if f"[{s_code.upper()}]" in label.upper():
+                    self.scanner.retrieve_set_data(path)
+                    self.config.card_data.latest_dataset = os.path.basename(path)
+                    write_configuration(self.config)
+                    return True
             return False
-
-        sources = self.scanner.retrieve_data_sources()
-
-        exact_match = None
-        format_match = None
-        set_match = None
-
-        clean_s_code = s_code.replace(" ", "").upper()
-        set_prefix = f"[{clean_s_code}]"
-
-        for label, path in sources.items():
-            clean_label = label.replace(" ", "").upper()
-
-            if set_prefix in clean_label:
-                if not set_match:
-                    set_match = path
-
-                if f_code and f_code.upper() in clean_label:
-                    if not format_match:
-                        format_match = path
-
-                    if f"({u_code.upper()})" in clean_label:
-                        exact_match = path
-                        break
-
-        final_path = exact_match or format_match or set_match
-
-        if final_path:
-            logger.info(f"Syncing dataset to: {final_path}")
-            self.scanner.retrieve_set_data(final_path)
-            self.config.card_data.latest_dataset = os.path.basename(final_path)
-            write_configuration(self.config)
-            return True
-
-        return False

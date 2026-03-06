@@ -45,21 +45,16 @@ def initialize_card_data(card_data):
 
 def check_set_data(set_data, ratings_data):
     """Run through 17Lands card list and determine if there are any cards missing from the assembled set file"""
-    for rated_card in ratings_data:
-        try:
-            card_found = False
-            for card_id in set_data:
-                card_name = set_data[card_id][constants.DATA_FIELD_NAME].replace(
-                    "///", "//"
-                )
-                if rated_card == card_name:
-                    card_found = True
-                    break
-            if not card_found:
-                logger.error("Card %s Missing", rated_card)
+    try:
+        local_names = {
+            v[constants.DATA_FIELD_NAME].replace("///", "//") for v in set_data.values()
+        }
 
-        except Exception as error:
-            logger.error(error)
+        for rated_card in ratings_data:
+            if rated_card not in local_names:
+                logger.error("Card %s Missing", rated_card)
+    except Exception as error:
+        logger.error(error)
 
 
 def decode_mana_cost(encoded_cost):
@@ -367,7 +362,13 @@ class FileExtractor(UIProgress):
                 progress_callback=update_ui,
             )
         except Exception as e:
-            return False, f"Network Error: {str(e)}", 0
+            if "404" in str(e) or "400" in str(e):
+                logger.warning(
+                    f"17Lands API returned {e}. Proceeding with local card data only."
+                )
+                deep_ratings = {}
+            else:
+                return False, f"Network Error: {str(e)}", 0
 
         # 3. Assemble the final dataset
         self._assemble_deep_set(deep_ratings)
@@ -398,11 +399,18 @@ class FileExtractor(UIProgress):
 
         if filename:
             if not self.combined_data.get("color_ratings"):
-                return (
-                    True,
-                    "Cards Downloaded, but no color archetypes met your 'Min Games' threshold.",
-                    temp_size,
-                )
+                if self.combined_data["meta"].get("game_count", 0) == 0:
+                    return (
+                        True,
+                        "Local Cards Downloaded. 17Lands data not yet available for this set.",
+                        temp_size,
+                    )
+                else:
+                    return (
+                        True,
+                        "Cards Downloaded, but no color archetypes met your 'Min Games' threshold.",
+                        temp_size,
+                    )
             return True, "Download Successful", temp_size
         else:
             return False, "Dataset Validation Failed", 0
@@ -410,12 +418,53 @@ class FileExtractor(UIProgress):
     def _assemble_deep_set(self, deep_ratings: Dict):
         """Combines 17Lands intelligence with local Arena IDs."""
         self.combined_data["card_ratings"] = {}
+
+        matching_only = constants.SET_SELECTION_ALL in self.selected_sets.arena
+        target_set = (
+            self.selected_sets.set_code.upper()
+            if hasattr(self.selected_sets, "set_code")
+            else ""
+        )
+
+        # Basic lands that Arena frequently injects into packs from random historical sets
+        safelist_names = {
+            "Plains",
+            "Island",
+            "Swamp",
+            "Mountain",
+            "Forest",
+            "Wastes",
+            "Snow-Covered Plains",
+            "Snow-Covered Island",
+            "Snow-Covered Swamp",
+            "Snow-Covered Mountain",
+            "Snow-Covered Forest",
+        }
+
         for arena_id, local_card in self.card_dict.items():
-            name = local_card["name"].replace("///", "//")
+            name = local_card.get("name", "").replace("///", "//")
+            card_set = local_card.get("set", "").upper()
+
             if name in deep_ratings:
                 # Inject the deep performance data into the card object
                 local_card["deck_colors"] = deep_ratings[name]["deck_colors"]
                 local_card["image"] = deep_ratings[name]["image"]
+                self.combined_data["card_ratings"][arena_id] = local_card
+
+            elif target_set and target_set in card_set:
+                # Day 1 Fallback OR set-specific unrated cards
+                initialize_card_data(local_card)
+                self.combined_data["card_ratings"][arena_id] = local_card
+
+            elif name in safelist_names:
+                # Always include fundamental basic lands. Prevents ID numbers showing in the UI
+                # because Arena often uses old basic land IDs in new drafts.
+                initialize_card_data(local_card)
+                self.combined_data["card_ratings"][arena_id] = local_card
+
+            elif not matching_only:
+                # We specifically asked for a narrow Arena set (no "ALL" flag) -> include it
+                initialize_card_data(local_card)
                 self.combined_data["card_ratings"][arena_id] = local_card
 
     def _download_expansion(self, database_size):
@@ -982,15 +1031,19 @@ class FileExtractor(UIProgress):
                 json_data = json.loads(json_file)
 
             if constants.SET_SELECTION_ALL in set_list:
-                for card_data in json_data.values():
-                    self.card_dict.update(card_data.copy())
+                for card_set_name, card_data in json_data.items():
+                    for card_id, card_info in card_data.items():
+                        card_info["set"] = card_set_name
+                        self.card_dict[card_id] = card_info
             else:
                 for search_set in set_list:
                     matching_sets = list(
                         filter(lambda x, ss=search_set: ss in x, json_data)
                     )
                     for match in matching_sets:
-                        self.card_dict.update(json_data[match].copy())
+                        for card_id, card_info in json_data[match].items():
+                            card_info["set"] = match
+                            self.card_dict[card_id] = card_info
 
             if self.card_dict:
                 result = True
@@ -1107,6 +1160,15 @@ class FileExtractor(UIProgress):
 
                 # If we are hard-blocked by 17Lands, do not hammer the server with retries
                 if "429" in str(error) or "403" in str(error):
+                    break
+
+                # If 17Lands returns a 404 or 400, it means the set data doesn't exist yet (e.g. Day 1 release)
+                # We should NOT fail. We should proceed to build the local MTGA card data so the App
+                # can still function with Tier Lists and card tooltips!
+                if "404" in str(error) or "400" in str(error):
+                    self.combined_data["color_ratings"] = {}
+                    self.set_game_count(0)
+                    result = True
                     break
 
                 retry -= 1

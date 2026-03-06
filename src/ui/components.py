@@ -1,61 +1,43 @@
 """
 src/ui/components.py
 Atomic UI Widgets for the MTGA Draft Tool.
+Restored full parameter names for keyword argument compatibility.
 """
 
 import tkinter
 from tkinter import ttk, messagebox
 import ttkbootstrap as tb
 from ttkbootstrap.constants import *
-import requests
-import io
-import math
-import re
+import requests, io, math, re, threading, hashlib, os
 from typing import List, Dict, Any, Tuple, Optional
 from PIL import Image, ImageTk
-import threading
-import hashlib
-import os
-
+from concurrent.futures import ThreadPoolExecutor
 from src import constants
 from src.card_logic import field_process_sort
 from src.ui.styles import Theme
 
 
-def identify_safe_coordinates(
-    root: tkinter.Tk | tkinter.Toplevel,
-    window_width: int,
-    window_height: int,
-    offset_x: int,
-    offset_y: int,
-) -> Tuple[int, int]:
-    """Calculates x, y coordinates ensuring popups stay within screen bounds."""
+def identify_safe_coordinates(root, window_width, window_height, offset_x, offset_y):
     try:
-        pointer_x = root.winfo_pointerx()
-        pointer_y = root.winfo_pointery()
-        screen_width = root.winfo_screenwidth()
-        screen_height = root.winfo_screenheight()
-
+        pointer_x, pointer_y = root.winfo_pointerx(), root.winfo_pointery()
+        screen_width, screen_height = (
+            root.winfo_screenwidth(),
+            root.winfo_screenheight(),
+        )
         if pointer_x + offset_x + window_width > screen_width:
             location_x = max(pointer_x - offset_x - window_width - 10, 0)
         else:
             location_x = max(pointer_x + offset_x, 0)
-
         if pointer_y + offset_y + window_height > screen_height:
             location_y = max(pointer_y - offset_y - window_height - 10, 0)
         else:
             location_y = max(pointer_y + offset_y, 0)
-    except Exception:
-        location_x, location_y = offset_x, offset_y
-
-    return location_x, location_y
+        return location_x, location_y
+    except:
+        return offset_x, offset_y
 
 
 class CollapsibleFrame(ttk.Frame):
-    """
-    A custom frame that allows its contents to be collapsed and expanded vertically.
-    """
-
     def __init__(
         self,
         parent,
@@ -66,59 +48,55 @@ class CollapsibleFrame(ttk.Frame):
         **kwargs,
     ):
         super().__init__(parent, **kwargs)
-        self.configuration = configuration
-        self.setting_key = setting_key
-
-        # Check config for state if a setting_key was provided
+        self.configuration, self.setting_key = configuration, setting_key
         if self.configuration and self.setting_key:
             self.expanded = self.configuration.settings.collapsible_states.get(
                 self.setting_key, expanded
             )
         else:
             self.expanded = expanded
-
-        # Header container
         self.header_frame = ttk.Frame(self)
         self.header_frame.pack(fill="x", expand=False)
-
-        # Toggle Icon
         self.toggle_label = ttk.Label(
             self.header_frame,
             text="▼" if self.expanded else "▶",
             width=2,
             font=(Theme.FONT_FAMILY, 10),
-            foreground=Theme.ACCENT,
+            bootstyle="primary",
             cursor="hand2",
         )
         self.toggle_label.pack(side="left", padx=(5, 5), pady=(5, 5))
-
-        # Title Label
         self.title_label = ttk.Label(
             self.header_frame,
             text=title.upper(),
             cursor="hand2",
             font=(Theme.FONT_FAMILY, 10, "bold"),
-            foreground=Theme.TEXT_MAIN,
         )
         self.title_label.pack(side="left", pady=(5, 5))
-
         self.content_frame = ttk.Frame(self)
         if self.expanded:
             self.content_frame.pack(fill="both", expand=True, pady=(5, 0))
-
+        self._apply_bindings()
         self.bind_all("<<ThemeChanged>>", self._on_theme_change, add="+")
 
-    def _on_theme_change(self, event=None):
-        if self.winfo_exists():
-            self.toggle_label.configure(foreground=Theme.ACCENT)
-            self.title_label.configure(foreground=Theme.TEXT_MAIN)
+    def _apply_bindings(self):
+        try:
+            if self.winfo_exists():
+                for w in [self.header_frame, self.toggle_label, self.title_label]:
+                    w.bind("<Button-1>", self.toggle)
+        except:
+            pass
 
-        # Bind clicks to the toggle method
-        self.header_frame.bind("<Button-1>", self.toggle)
-        self.toggle_label.bind("<Button-1>", self.toggle)
-        self.title_label.bind("<Button-1>", self.toggle)
+    def _on_theme_change(self, event=None):
+        try:
+            if self.winfo_exists():
+                self._apply_bindings()
+        except:
+            pass
 
     def toggle(self, event=None):
+        if not self.winfo_exists():
+            return
         self.expanded = not self.expanded
         if self.expanded:
             self.toggle_label.config(text="▼")
@@ -126,8 +104,6 @@ class CollapsibleFrame(ttk.Frame):
         else:
             self.toggle_label.config(text="▶")
             self.content_frame.pack_forget()
-
-        # Save state when toggled
         if self.configuration and self.setting_key:
             self.configuration.settings.collapsible_states[self.setting_key] = (
                 self.expanded
@@ -137,30 +113,16 @@ class CollapsibleFrame(ttk.Frame):
             write_configuration(self.configuration)
 
 
-class AutocompleteEntry(tkinter.Entry):
-    """Entry widget with IDE-style inline suggestions."""
-
-    def __init__(self, master, completion_list: List[str], **kwargs):
+class AutocompleteEntry(tb.Entry):
+    def __init__(self, master, completion_list, **kwargs):
         super().__init__(master, **kwargs)
         self.completion_list = sorted(completion_list)
-        self.hits = []
-        self.hit_index = 0
-
-        self.configure(
-            bg=Theme.BG_TERTIARY,
-            fg=Theme.TEXT_MAIN,
-            insertbackground=Theme.TEXT_MAIN,
-            relief="flat",
-            borderwidth=1,
-            highlightthickness=1,
-            highlightbackground=Theme.BG_SECONDARY,
-            highlightcolor=Theme.ACCENT,
-        )
-
+        self.hits, self.hit_index = [], 0
+        self.configure(bootstyle="primary")
         self.bind("<KeyRelease>", self._on_key_release)
         self.bind("<FocusOut>", lambda e: self.selection_clear())
 
-    def set_completion_list(self, new_list: List[str]):
+    def set_completion_list(self, new_list):
         self.completion_list = sorted(new_list)
 
     def _on_key_release(self, event):
@@ -173,27 +135,25 @@ class AutocompleteEntry(tkinter.Entry):
         if event.keysym in ("Up", "Down"):
             if not self.hits:
                 return
-            direction = 1 if event.keysym == "Down" else -1
-            self.hit_index = (self.hit_index + direction) % len(self.hits)
+            self.hit_index = (
+                self.hit_index + (1 if event.keysym == "Down" else -1)
+            ) % len(self.hits)
             self._display_suggestion()
             return "break"
-
-        typed_text = self.get()
-        if self.selection_present():
-            typed_text = self.get()[0 : self.index(tkinter.SEL_FIRST)]
-
-        if not typed_text:
+        typed = (
+            self.get()[0 : self.index(tkinter.SEL_FIRST)]
+            if self.selection_present()
+            else self.get()
+        )
+        if not typed:
             self.hits = []
             return
-
         self.hits = [
-            item
-            for item in self.completion_list
-            if item.lower().startswith(typed_text.lower())
+            i for i in self.completion_list if i.lower().startswith(typed.lower())
         ]
         if self.hits:
             self.hit_index = 0
-            self._display_suggestion(typed_text)
+            self._display_suggestion(typed)
 
     def _display_suggestion(self, typed_prefix=None):
         if not self.hits:
@@ -212,397 +172,454 @@ class AutocompleteEntry(tkinter.Entry):
 
 
 class CardToolTip(tkinter.Toplevel):
-    """Data-dense, professional popup for MTG cards with async, cached image loading."""
-
     IMAGE_CACHE_DIR = os.path.join(os.getcwd(), "Temp", "Images")
     _active_tooltip = None
+    _image_executor = ThreadPoolExecutor(max_workers=4)
 
-    def __init__(self, parent_widget, card: Dict, images_enabled: bool, scale: float):
+    def __init__(self, parent, card, images_enabled, scale):
+        # --- 1. Basic Land Filter ---
+        # Prevent tooltips from appearing for Basic Lands to reduce clutter
+        card_types = card.get("types", [])
+        if "Land" in card_types and "Basic" in card_types:
+            # We must initialize the Toplevel class to avoid recursion errors in Python,
+            # but we immediately hide and destroy it.
+            super().__init__(parent)
+            self.withdraw()
+            self.destroy()
+            return
+
         if CardToolTip._active_tooltip and CardToolTip._active_tooltip.winfo_exists():
             CardToolTip._active_tooltip.destroy()
         CardToolTip._active_tooltip = self
-
-        super().__init__(parent_widget)
+        super().__init__(parent)
         self.wm_overrideredirect(True)
         self.attributes("-topmost", True)
         self.configure(
             bg=Theme.BG_PRIMARY, highlightthickness=1, highlightbackground=Theme.ACCENT
         )
-
         if not os.path.exists(self.IMAGE_CACHE_DIR):
             os.makedirs(self.IMAGE_CACHE_DIR)
-
-        # Extract Card Data
-        card_name = card.get(constants.DATA_FIELD_NAME, "Unknown")
-        stats = card.get(constants.DATA_FIELD_DECK_COLORS, {})
-        image_urls = card.get(constants.DATA_SECTION_IMAGES, [])
-        tags = card.get("tags", [])
-        rarity = card.get(constants.DATA_FIELD_RARITY, "Common").capitalize()
-
-        # Dynamic Fonts
-        title_font = (Theme.FONT_FAMILY, int(13 * scale), "bold")
-        header_font = (Theme.FONT_FAMILY, int(10 * scale), "bold")
-        label_font = (Theme.FONT_FAMILY, int(9 * scale))
-        value_font = (Theme.FONT_FAMILY, int(9 * scale), "bold")
-
-        # --- Top Header ---
-        header = tkinter.Frame(self, bg=Theme.BG_SECONDARY)
-        header.pack(fill="x")
-
-        tkinter.Label(
-            header,
-            text=card_name,
-            bg=Theme.BG_SECONDARY,
-            fg=Theme.TEXT_MAIN,
-            font=title_font,
-            padx=10,
-            pady=6,
+        name, stats, urls, tags, rarity = (
+            card.get("name", "Unknown"),
+            card.get("deck_colors", {}),
+            card.get("image", []),
+            card.get("tags", []),
+            card.get("rarity", "common").capitalize(),
+        )
+        h = tb.Frame(self, bootstyle="secondary")
+        h.pack(fill="x")
+        rc = (
+            "#f97316"
+            if rarity == "Mythic"
+            else (
+                "#eab308"
+                if rarity == "Rare"
+                else "#94a3b8" if rarity == "Uncommon" else None
+            )
+        )
+        tb.Label(
+            h,
+            text=name,
+            bootstyle="inverse-secondary",
+            font=(Theme.FONT_FAMILY, int(13 * scale), "bold"),
+            padding=(10, 6),
         ).pack(side="left")
 
-        # Rarity Color Coding
-        rarity_color = Theme.TEXT_MAIN
-        if rarity == "Mythic":
-            rarity_color = "#f97316"  # Orange
-        elif rarity == "Rare":
-            rarity_color = "#eab308"  # Gold
-        elif rarity == "Uncommon":
-            rarity_color = "#94a3b8"  # Silver
-
-        tkinter.Label(
-            header,
+        lbl_rarity = tb.Label(
+            h,
             text=rarity,
-            bg=Theme.BG_SECONDARY,
-            fg=rarity_color,
-            font=header_font,
-            padx=10,
-        ).pack(side="right")
+            bootstyle="inverse-secondary",
+            font=(Theme.FONT_FAMILY, int(10 * scale), "bold"),
+            padding=(10, 0),
+        )
+        if rc:
+            lbl_rarity.configure(foreground=rc)
+        lbl_rarity.pack(side="right")
 
-        # --- Main Body Container ---
-        body = tkinter.Frame(self, bg=Theme.BG_PRIMARY, padx=12, pady=12)
-        body.pack(fill="both", expand=True)
+        b = tb.Frame(self, padding=12)
+        b.pack(fill="both", expand=True)
 
-        # --- Left: Card Image ---
-        self.img_label = tkinter.Label(body, bg=Theme.BG_PRIMARY)
-        if images_enabled and image_urls:
-            self.img_label.pack(side="left", padx=(0, 15), anchor="n")
-            self._load_image_async(image_urls[0], scale)
+        # --- 2. Image Container ---
+        # Reserves space immediately so the tooltip doesn't expand/jump when the image loads
+        if images_enabled:
+            img_w = int(240 * scale)
+            img_h = int(335 * scale)
 
-        # --- Right: Data Metrics ---
-        stats_f = tkinter.Frame(body, bg=Theme.BG_PRIMARY)
-        stats_f.pack(side="left", fill="both", expand=True, anchor="n")
+            # Create a fixed-size container frame
+            self.img_frame = tb.Frame(b, width=img_w, height=img_h)
+            # This is key: tell the frame NOT to shrink to fit its (currently empty) children
+            self.img_frame.pack_propagate(False)
+            self.img_frame.pack(side="left", padx=(0, 15), anchor="n")
 
-        global_stats = stats.get("All Decks", {})
-        gihwr = global_stats.get(constants.DATA_FIELD_GIHWR, 0.0)
-        iwd = global_stats.get(constants.DATA_FIELD_IWD, 0.0)
-        ohwr = global_stats.get(constants.DATA_FIELD_OHWR, 0.0)
-        gpwr = global_stats.get(constants.DATA_FIELD_GPWR, 0.0)
-        alsa = global_stats.get(constants.DATA_FIELD_ALSA, 0.0)
-        ata = global_stats.get(constants.DATA_FIELD_ATA, 0.0)
-        samples = global_stats.get("samples", 0)
+            self.img_label = tb.Label(self.img_frame)
+            self.img_label.pack(fill="both", expand=True)
 
-        # 1. GLOBAL PERFORMANCE GRID
-        tkinter.Label(
-            stats_f,
+            if urls:
+                self._load_image_async(urls[0], scale)
+
+        sf = tb.Frame(b)
+        sf.pack(side="left", fill="both", expand=True, anchor="n")
+        gs = stats.get("All Decks", {})
+        wr, iwd, smp = gs.get("gihwr", 0.0), gs.get("iwd", 0.0), gs.get("samples", 0)
+        tb.Label(
+            sf,
             text="GLOBAL PERFORMANCE",
-            fg=Theme.ACCENT,
-            bg=Theme.BG_PRIMARY,
-            font=header_font,
+            bootstyle="primary",
+            font=(Theme.FONT_FAMILY, int(10 * scale), "bold"),
         ).pack(anchor="w")
+        gf = tb.Frame(sf)
+        gf.pack(anchor="w", fill="x", pady=(4, 12))
 
-        grid_f = tkinter.Frame(stats_f, bg=Theme.BG_PRIMARY)
-        grid_f.pack(anchor="w", fill="x", pady=(4, 12))
+        def fp(v, i=False):
+            return "-" if not v else (f"{v:+.1f}%" if i else f"{v:.1f}%")
 
-        def fmt_pct(v, is_iwd=False):
-            if not v:
-                return "-"
-            return f"{v:+.1f}%" if is_iwd else f"{v:.1f}%"
+        def fn(v):
+            return "-" if not v else (f"{v:.2f}" if isinstance(v, float) else f"{v:,}")
 
-        def fmt_num(v):
-            if not v:
-                return "-"
-            return f"{v:.2f}" if isinstance(v, float) else f"{v:,}"
-
-        # Add Statistical Confidence Context
-        conf_text = ""
-        if samples > 0:
-            if samples < 300:
-                conf_text = " (Low Sample)"
-            elif samples > 1500:
-                conf_text = " (High Confidence)"
-
-        metrics = [
+        mt = [
             [
-                (
-                    "GIH WR:",
-                    fmt_pct(gihwr),
-                    Theme.SUCCESS if gihwr >= 55.0 else Theme.TEXT_MAIN,
-                ),
+                ("GIH WR:", fp(wr), Theme.SUCCESS if wr >= 55.0 else Theme.TEXT_MAIN),
                 (
                     "IWD:",
-                    fmt_pct(iwd, True),
+                    fp(iwd, True),
                     Theme.ACCENT if iwd >= 3.0 else Theme.TEXT_MAIN,
                 ),
             ],
             [
-                ("OH WR:", fmt_pct(ohwr), Theme.TEXT_MAIN),
-                ("GP WR:", fmt_pct(gpwr), Theme.TEXT_MAIN),
+                ("ALSA:", fn(gs.get("alsa", 0.0)), Theme.TEXT_MAIN),
+                ("ATA:", fn(gs.get("ata", 0.0)), Theme.TEXT_MAIN),
             ],
-            [
-                ("ALSA:", fmt_num(alsa), Theme.TEXT_MAIN),
-                ("ATA:", fmt_num(ata), Theme.TEXT_MAIN),
-            ],
-            [
-                ("Games:", f"{fmt_num(samples)}{conf_text}", Theme.TEXT_MUTED),
-                ("", "", Theme.TEXT_MAIN),
-            ],
+            [("Games:", f"{fn(smp)}", Theme.TEXT_MAIN), ("", "", "")],
         ]
-
-        for r_idx, row in enumerate(metrics):
-            for c_idx, (lbl, val, col) in enumerate(row):
+        for ri, row in enumerate(mt):
+            for ci, (lbl, val, col) in enumerate(row):
                 if not lbl:
                     continue
-                tkinter.Label(
-                    grid_f,
+                tb.Label(
+                    gf,
                     text=lbl,
-                    fg=Theme.TEXT_MUTED,
-                    bg=Theme.BG_PRIMARY,
-                    font=label_font,
-                ).grid(row=r_idx, column=c_idx * 2, sticky="w", padx=(0, 6))
-                tkinter.Label(
-                    grid_f, text=val, fg=col, bg=Theme.BG_PRIMARY, font=value_font
-                ).grid(row=r_idx, column=c_idx * 2 + 1, sticky="w", padx=(0, 20))
-
-        # 2. TOP ARCHETYPES (% OF PLAYS)
-        tkinter.Label(
-            stats_f,
-            text="ARCHETYPE PLAY SHARE",
-            fg=Theme.SUCCESS,
-            bg=Theme.BG_PRIMARY,
-            font=header_font,
-        ).pack(anchor="w")
-
-        valid_archs = [
-            k
-            for k in stats.keys()
-            if k != "All Decks" and stats[k].get(constants.DATA_FIELD_GIHWR, 0) > 0
-        ]
-        valid_archs.sort(key=lambda k: stats[k].get("samples", 0), reverse=True)
-
-        if not valid_archs:
-            tkinter.Label(
-                stats_f,
-                text="Not enough archetype data.",
-                fg=Theme.TEXT_MUTED,
-                bg=Theme.BG_PRIMARY,
-                font=label_font,
-            ).pack(anchor="w", pady=(2, 0))
-        else:
-            for k in valid_archs[:10]:
-                data = stats.get(k, {})
-                wr = data.get(constants.DATA_FIELD_GIHWR, 0.0)
-                count = data.get("samples", 0)
-                arch_name = constants.COLOR_NAMES_DICT.get(k, k)
-
-                # Contextual Percentage Math
-                pct_share = (count / samples * 100) if samples > 0 else 0
-
-                row_frame = tkinter.Frame(stats_f, bg=Theme.BG_PRIMARY)
-                row_frame.pack(anchor="w", fill="x", pady=(2, 0))
-
-                tkinter.Label(
-                    row_frame,
-                    text=f"• {arch_name} ({k}):",
-                    fg=Theme.TEXT_MUTED,
-                    bg=Theme.BG_PRIMARY,
-                    font=label_font,
+                    font=(Theme.FONT_FAMILY, int(9 * scale)),
+                ).grid(row=ri, column=ci * 2, sticky="w", padx=(0, 6))
+                tb.Label(
+                    gf,
+                    text=val,
+                    foreground=col,
+                    font=(Theme.FONT_FAMILY, int(9 * scale), "bold"),
+                ).grid(row=ri, column=ci * 2 + 1, sticky="w", padx=(0, 20))
+        va = sorted(
+            [
+                k
+                for k in stats.keys()
+                if k != "All Decks" and stats[k].get("gihwr", 0) > 0
+            ],
+            key=lambda k: stats[k].get("samples", 0),
+            reverse=True,
+        )
+        if va:
+            tb.Label(
+                sf,
+                text="ARCHETYPE PLAY SHARE",
+                bootstyle="success",
+                font=(Theme.FONT_FAMILY, int(10 * scale), "bold"),
+            ).pack(anchor="w")
+            for k in va[:10]:
+                rf = tb.Frame(sf)
+                rf.pack(anchor="w", fill="x", pady=(2, 0))
+                tb.Label(
+                    rf,
+                    text=f"• {constants.COLOR_NAMES_DICT.get(k, k)} ({k}):",
+                    font=(Theme.FONT_FAMILY, int(9 * scale)),
                 ).pack(side="left")
-                tkinter.Label(
-                    row_frame,
-                    text=f" {wr:.1f}% WR",
-                    fg=Theme.TEXT_MAIN if wr < 55.0 else Theme.SUCCESS,
-                    bg=Theme.BG_PRIMARY,
-                    font=value_font,
+                tb.Label(
+                    rf,
+                    text=f" {stats[k].get('gihwr', 0.0):.1f}% WR",
+                    foreground=(
+                        None if stats[k].get("gihwr", 0.0) < 55.0 else Theme.SUCCESS
+                    ),
+                    font=(Theme.FONT_FAMILY, int(9 * scale), "bold"),
                 ).pack(side="left")
-                tkinter.Label(
-                    row_frame,
-                    text=f"  |  {pct_share:.0f}% of Plays",
-                    fg=Theme.TEXT_MUTED,
-                    bg=Theme.BG_PRIMARY,
-                    font=label_font,
-                ).pack(side="left")
-
-        # 3. CARD ROLES (Tags)
         if tags:
-            tkinter.Label(
-                stats_f,
+            tb.Label(
+                sf,
                 text="CARD ROLES",
-                fg=Theme.WARNING,
-                bg=Theme.BG_PRIMARY,
-                font=header_font,
+                bootstyle="warning",
+                font=(Theme.FONT_FAMILY, int(10 * scale), "bold"),
             ).pack(anchor="w", pady=(12, 4))
-            tag_strings = [constants.TAG_VISUALS.get(t, t.capitalize()) for t in tags]
-            tkinter.Label(
-                stats_f,
-                text="   ".join(tag_strings),
-                fg=Theme.TEXT_MAIN,
-                bg=Theme.BG_PRIMARY,
-                font=value_font,
+            tb.Label(
+                sf,
+                text="   ".join(
+                    [constants.TAG_VISUALS.get(t, t.capitalize()) for t in tags]
+                ),
+                font=(Theme.FONT_FAMILY, int(9 * scale), "bold"),
                 wraplength=int(280 * scale),
                 justify="left",
             ).pack(anchor="w")
+        # Anchor to the mouse position AT THE TIME OF CREATION
+        self._mouse_x = parent.winfo_pointerx()
+        self._mouse_y = parent.winfo_pointery()
+        self._reposition()
 
-        self.update_idletasks()
-        tx, ty = identify_safe_coordinates(
-            parent_widget, self.winfo_width(), self.winfo_height(), 25, 25
+        parent.bind(
+            "<Leave>",
+            lambda e: self.destroy() if self.winfo_exists() else None,
+            add="+",
         )
-        self.geometry(f"+{tx}+{ty}")
-        parent_widget.bind("<Leave>", lambda e: self.destroy(), add="+")
         self.bind("<Button-1>", lambda e: self.destroy())
 
-    def _load_image_async(self, url: str, scale: float):
-        def fetch_and_resize():
-            import hashlib, requests, io
-            from PIL import Image, ImageTk
+    def _reposition(self):
+        """Calculates bounds using the static initial mouse position so the tooltip doesn't teleport."""
+        if not hasattr(self, "winfo_exists") or not self.winfo_exists():
+            return
 
-            try:
-                safe_name = hashlib.md5(url.encode("utf-8")).hexdigest() + ".jpg"
-                cache_path = os.path.join(self.IMAGE_CACHE_DIR, safe_name)
-                if os.path.exists(cache_path):
-                    with open(cache_path, "rb") as f:
-                        raw = f.read()
-                else:
-                    raw = requests.get(url, timeout=2).content
-                    with open(cache_path, "wb") as f:
-                        f.write(raw)
-                img = Image.open(io.BytesIO(raw))
-                img.thumbnail(
-                    (int(240 * scale), int(335 * scale)), Image.Resampling.LANCZOS
-                )
-                self.after(0, lambda: self._apply_image(img))
-            except Exception as e:
-                pass
+        self.update_idletasks()
+        ww = self.winfo_width()
+        wh = self.winfo_height()
 
-        import threading
+        sw = self.winfo_screenwidth()
+        sh = self.winfo_screenheight()
+        offset_x, offset_y = 25, 25
 
-        threading.Thread(target=fetch_and_resize, daemon=True).start()
+        if self._mouse_x + offset_x + ww > sw:
+            tx = max(self._mouse_x - offset_x - ww - 10, 0)
+        else:
+            tx = max(self._mouse_x + offset_x, 0)
 
-    def _apply_image(self, img):
-        from PIL import ImageTk
+        if self._mouse_y + offset_y + wh > sh:
+            ty = max(self._mouse_y - offset_y - wh - 10, 0)
+        else:
+            ty = max(self._mouse_y + offset_y, 0)
 
-        if self.winfo_exists():
-            self.tk_img = ImageTk.PhotoImage(img)
+        self.geometry(f"+{tx}+{ty}")
+
+    def _load_image_async(self, u, s):
+        if "scryfall" in u:
+            u = u.replace("/small/", "/large/").replace("/normal/", "/large/")
+
+        self._image_executor.submit(self._fetch_and_apply_image, u, s)
+
+    def _fetch_and_apply_image(self, u, s):
+        """Moved the core logic into a clean worker method"""
+        try:
+            sn = hashlib.md5(u.encode("utf-8")).hexdigest() + ".jpg"
+            cp = os.path.join(self.IMAGE_CACHE_DIR, sn)
+            if os.path.exists(cp):
+                with open(cp, "rb") as fi:
+                    r = fi.read()
+            else:
+                r = requests.get(u, timeout=5).content
+                with open(cp, "wb") as fi:
+                    fi.write(r)
+
+            im = Image.open(io.BytesIO(r))
+            im.thumbnail((int(240 * s), int(335 * s)), Image.Resampling.LANCZOS)
+
+            # Safely route back to Tkinter Main Thread
+            if hasattr(self, "winfo_exists"):
+                try:
+                    self.after(
+                        0,
+                        lambda: self._apply_image(im) if self.winfo_exists() else None,
+                    )
+                except RuntimeError:
+                    pass
+        except Exception:
+            pass
+
+    def _apply_image(self, im):
+        if hasattr(self, "winfo_exists") and self.winfo_exists():
+            self.tk_img = ImageTk.PhotoImage(im)
             self.img_label.configure(image=self.tk_img)
+            # The window height just expanded; recalculate safe bounds to flip it upward if needed
+            self._reposition()
 
 
 class ModernTreeview(ttk.Treeview):
-    """A high-density Treeview with built-in sorting logic."""
-
-    def __init__(self, parent, columns, **kwargs):
+    def __init__(self, parent, columns, view_id=None, config=None, **kwargs):
         super().__init__(
             parent, columns=columns, show="headings", style="Treeview", **kwargs
         )
-        self.column_sort_state = {col: False for col in columns}
-        self.active_sort_col = None  # Tracks the currently sorted column
-        self.active_fields = []  # Injected by Manager
-        self.base_labels = {}  # Store original names for arrows
+        self.view_id = view_id
+        self.config = config
+        self.sort_group = self._get_sort_group(view_id)
+
+        self.active_fields = []
+        self.base_labels = {}
+        self.column_sort_state = {i: False for i in columns}
+        self.active_sort_column = None
+
+        # Load saved sort state from the global configuration
+        if self.config and self.view_id:
+            if not hasattr(self.config.settings, "table_sort_states"):
+                setattr(self.config.settings, "table_sort_states", {})
+
+            saved_state = self.config.settings.table_sort_states.get(
+                self.sort_group, {}
+            )
+            if saved_state:
+                self.active_sort_column = saved_state.get("column")
+                # Dynamic index handling means we just map the name ("gihwr"), regardless of where it is
+                if self.active_sort_column in self.column_sort_state:
+                    self.column_sort_state[self.active_sort_column] = saved_state.get(
+                        "reverse", False
+                    )
+                else:
+                    self.active_sort_column = None
+
         self._setup_headers(columns)
         self._setup_row_colors()
+
+    def _get_sort_group(self, view_id):
+        """Links shared tables (e.g. Main Pack and Mini Pack) so they inherit sorting from each other."""
+        if not view_id:
+            return "default"
+        if view_id in ["pack_table", "overlay_table"]:
+            return "pack"
+        if view_id in ["taken_table", "overlay_pool_table"]:
+            return "pool"
+        return view_id
 
     def _setup_headers(self, columns):
         from src.constants import COLUMN_FIELD_LABELS
 
-        for col in columns:
-            if col == "add_btn":
-                self.heading(col, text="+")
+        for i in columns:
+            if i == "add_btn":
+                self.heading(i, text="+")
                 self.column(
-                    col, width=20, minwidth=20, stretch=False, anchor=tkinter.CENTER
+                    i, width=20, minwidth=20, stretch=False, anchor=tkinter.CENTER
                 )
                 continue
+            l = (
+                i
+                if "TIER" in i
+                else COLUMN_FIELD_LABELS.get(i, str(i).upper()).split(":")[0]
+            )
+            self.base_labels[i] = l
 
-            if "TIER" in col:
-                label = col
+            # Immediately draw the sort indicator (arrow) if a sort state was inherited
+            if i == self.active_sort_column:
+                rev = self.column_sort_state.get(i, False)
+                display_text = f"{l} {'▼' if rev else '▲'}"
             else:
-                label = COLUMN_FIELD_LABELS.get(col, str(col).upper()).split(":")[0]
+                display_text = l
 
-            self.base_labels[col] = label
-
-            width = 140 if col == "name" else 50
-            minwidth = 70 if col == "name" else 30
-
-            self.heading(col, text=label, command=lambda c=col: self._handle_sort(c))
+            self.heading(i, text=display_text, command=lambda x=i: self._handle_sort(x))
             self.column(
-                col,
-                width=width,
-                minwidth=minwidth,
+                i,
+                width=140 if i == "name" else 50,
+                minwidth=70 if i == "name" else 30,
                 stretch=True,
-                anchor=tkinter.W if col == "name" else tkinter.CENTER,
+                anchor=tkinter.W if i == "name" else tkinter.CENTER,
             )
 
     def _setup_row_colors(self):
-        """Premium tailored row tags for the tables."""
-        self.tag_configure("white_card", background="#f4f4f5", foreground="#18181b")
-        self.tag_configure("blue_card", background="#e0f2fe", foreground="#0c4a6e")
-        self.tag_configure("black_card", background="#d1d5db", foreground="#111827")
-        self.tag_configure("red_card", background="#fee2e2", foreground="#7f1d1d")
-        self.tag_configure("green_card", background="#dcfce7", foreground="#14532d")
-        self.tag_configure("gold_card", background="#fef3c7", foreground="#78350f")
-        self.tag_configure("colorless_card", background="#e4e4e7", foreground="#27272a")
+        for t, b, f in [
+            ("white", "#f8fafc", "#0f172a"),
+            ("blue", "#e0f2fe", "#0369a1"),
+            ("black", "#334155", "#f8fafc"),
+            ("red", "#fee2e2", "#991b1b"),
+            ("green", "#dcfce7", "#166534"),
+            ("gold", "#fef3c7", "#92400e"),
+            ("colorless", "#e2e8f0", "#1e293b"),
+            ("elite_bomb", "#78350f", "#fde047"),
+            ("high_fit", "#0c4a6e", "#e0f2fe"),
+        ]:
+            self.tag_configure(
+                f"{t}_card" if "elite" not in t and "high" not in t else t,
+                background=b,
+                foreground=f,
+            )
 
-        # Elite tags
-        self.tag_configure("elite_bomb", background="#78350f", foreground="#fde047")
-        self.tag_configure("high_fit", background="#0c4a6e", foreground="#7dd3fc")
-
-    def _handle_sort(self, col):
-        self.column_sort_state[col] = not self.column_sort_state[col]
-        self.active_sort_col = col
-        self._apply_sort(col)
-
-    def _apply_sort(self, col):
+    def _handle_sort(self, column, force_reverse=None):
         from src.card_logic import field_process_sort
 
-        rev = self.column_sort_state.get(col, False)
+        if force_reverse is not None:
+            self.column_sort_state[column] = force_reverse
+        else:
+            self.column_sort_state[column] = not self.column_sort_state.get(
+                column, False
+            )
 
-        # Apply the visual arrow to the active column, reset the others
-        for c in self["columns"]:
-            if c in self.base_labels:
-                if c == col:
-                    arrow = "▼" if rev else "▲"
-                    self.heading(c, text=f"{self.base_labels[c]} {arrow}")
-                else:
-                    self.heading(c, text=self.base_labels[c])
+        rev = self.column_sort_state[column]
+        self.active_sort_column = column
 
-        items = [(self.item(k)["values"], k) for k in self.get_children("")]
+        # Persist the sort state centrally so it survives windows swaps
+        if self.config and self.view_id:
+            if not hasattr(self.config.settings, "table_sort_states"):
+                self.config.settings.table_sort_states = {}
 
+            self.config.settings.table_sort_states[self.sort_group] = {
+                "column": column,
+                "reverse": rev,
+            }
+            # Commit to disk (safely handles atomic locking behind the scenes)
+            from src.configuration import write_configuration
+
+            write_configuration(self.config)
+
+        for i in self["columns"]:
+            if i in self.base_labels:
+                self.heading(
+                    i,
+                    text=(
+                        f"{self.base_labels[i]} {'▼' if rev else '▲'}"
+                        if i == column
+                        else self.base_labels[i]
+                    ),
+                )
+
+        it = [(self.item(k)["values"], k) for k in self.get_children("")]
         try:
-            col_idx = list(self["columns"]).index(col)
+            # Sort relies entirely on the physical index to be agnostic of column order!
+            ci = list(self["columns"]).index(column)
         except ValueError:
             return
 
-        def _key(t):
-            p = field_process_sort(t[0][col_idx])
-            if isinstance(p, tuple):
-                return (p[0], p[1], str(t[0][0]).lower())
+        def _k(t):
+            p = field_process_sort(t[0][ci])
+            return (
+                (p[0], p[1], str(t[0][0]).lower())
+                if isinstance(p, tuple)
+                else (
+                    (1, float(p), str(t[0][0]).lower())
+                    if str(p).replace(".", "").isdigit()
+                    else (0, str(p), str(t[0][0]).lower())
+                )
+            )
 
-            try:
-                return (1, float(p), str(t[0][0]).lower())
-            except:
-                return (0, str(p), str(t[0][0]).lower())
-
-        # Sort the items and re-insert them with fresh zebra striping
-        items.sort(key=_key, reverse=rev)
-        for i, (v, k) in enumerate(items):
+        it.sort(key=_k, reverse=rev)
+        for i, (v, k) in enumerate(it):
             self.move(k, "", i)
-            tags = [t for t in self.item(k, "tags") if t not in ("bw_odd", "bw_even")]
-            tags.append("bw_odd" if i % 2 == 0 else "bw_even")
-            self.item(k, tags=tuple(tags))
+            ts = [t for t in self.item(k, "tags") if t not in ("bw_odd", "bw_even")]
+            ts.append("bw_odd" if i % 2 == 0 else "bw_even")
+            self.item(k, tags=tuple(ts))
+
+    def reapply_sort(self):
+        """Forces the tree to re-apply the user's active sort settings after external data injection."""
+        # Always pull the freshest state from config in case another window modified it!
+        if self.config and self.view_id:
+            saved_state = self.config.settings.table_sort_states.get(
+                self.sort_group, {}
+            )
+            if saved_state:
+                saved_col = saved_state.get("column")
+                saved_rev = saved_state.get("reverse", False)
+                # Ensure the inherited sort actually exists in this specific table's columns
+                if saved_col in self["columns"]:
+                    self.active_sort_column = saved_col
+                    self.column_sort_state[saved_col] = saved_rev
+
+        if self.active_sort_column and self.active_sort_column in self["columns"]:
+            self._handle_sort(
+                self.active_sort_column,
+                force_reverse=self.column_sort_state.get(
+                    self.active_sort_column, False
+                ),
+            )
+            return True
+        return False
 
 
 class DynamicTreeviewManager(ttk.Frame):
-    """
-    Wrapper that manages a ModernTreeview.
-    Handles column persistence and dynamic reconfiguration.
-    """
-
     def __init__(
         self,
         parent,
@@ -613,40 +630,42 @@ class DynamicTreeviewManager(ttk.Frame):
         **kwargs,
     ):
         super().__init__(parent)
-        self.view_id = view_id
-        self.config = configuration
-        self.on_update = on_update_callback
-        self.static_columns = static_columns
+        self.view_id, self.config, self.on_update, self.static_columns, self.kwargs = (
+            view_id,
+            configuration,
+            on_update_callback,
+            static_columns,
+            kwargs,
+        )
         self.tree = None
-        self.kwargs = kwargs
-
-        self.rebuild(trigger_callback=False)
+        self.rebuild(False)
 
     def rebuild(self, trigger_callback=True):
         if self.tree:
             self.tree.destroy()
 
-        if self.static_columns:
-            self.active_fields = list(self.static_columns)
-        else:
-            self.active_fields = self.config.settings.column_configs.get(
+        self.active_fields = (
+            list(self.static_columns)
+            if self.static_columns
+            else self.config.settings.column_configs.get(
                 self.view_id, ["name", "value", "gihwr"]
             )
-
-        display_cols = (
-            self.active_fields
-            if self.static_columns
-            else self.active_fields + ["add_btn"]
         )
-
-        self.tree = ModernTreeview(self, columns=display_cols, **self.kwargs)
-        self.tree.active_fields = (
-            self.active_fields
-        )  # Inject into widget for dashboard access
+        self.tree = ModernTreeview(
+            self,
+            (
+                self.active_fields
+                if self.static_columns
+                else self.active_fields + ["add_btn"]
+            ),
+            view_id=self.view_id,
+            config=self.config,
+            **self.kwargs,
+        )
+        self.tree.active_fields = self.active_fields
         self.tree.pack(fill="both", expand=True)
 
         if not self.static_columns:
-            # Bind both standard right-click and Mac Ctrl-click
             self.tree.bind("<Button-3>", self._show_context_menu)
             self.tree.bind("<Control-Button-1>", self._show_context_menu)
             self.tree.bind("<Button-1>", self._handle_click)
@@ -655,165 +674,111 @@ class DynamicTreeviewManager(ttk.Frame):
             self.on_update()
 
     def _show_context_menu(self, event):
-        """Header context menu for removing or adding columns."""
         region = self.tree.identify_region(event.x, event.y)
         if region != "heading":
             return
-
-        col_id = self.tree.identify_column(event.x)
         try:
-            idx = int(col_id.replace("#", "")) - 1
+            i = int(self.tree.identify_column(event.x).replace("#", "")) - 1
         except:
             return
-
-        if idx >= len(self.active_fields):
+        if i >= len(self.active_fields):
             return
-
-        field = self.active_fields[idx]
-        menu = tkinter.Menu(self, tearoff=0)
-
-        # 1. Removal Logic
+        field, menu = self.active_fields[i], tkinter.Menu(self, tearoff=0)
         if field != "name":
             menu.add_command(
                 label=f"Remove '{field.upper()}'",
-                command=lambda i=idx: self._remove_column(i),
+                command=lambda x=i: self._remove_column(x),
             )
             menu.add_separator()
-
-        # 2. Add Column Submenu
-        add_m = tkinter.Menu(menu, tearoff=0)
-        menu.add_cascade(label="Add Column", menu=add_m)
+        am = tkinter.Menu(menu, tearoff=0)
+        menu.add_cascade(label="Add Column", menu=am)
         from src.constants import COLUMN_FIELD_LABELS
 
-        for f, label in COLUMN_FIELD_LABELS.items():
-            if f not in self.active_fields:
-                add_m.add_command(
-                    label=label, command=lambda new_f=f: self._add_column(new_f)
-                )
-
-        # Tier lists
+        for fi, lb in COLUMN_FIELD_LABELS.items():
+            if fi not in self.active_fields:
+                am.add_command(label=lb, command=lambda x=fi: self._add_column(x))
         from src.tier_list import TierList
 
-        tier_files = TierList.retrieve_files()
-        if tier_files:
-            add_m.add_separator()
-            for idx, (set_code, lbl, _, _) in enumerate(tier_files):
-                f = f"TIER{idx}"
-                if f not in self.active_fields:
-                    label = f"TIER: {lbl} ({set_code})"
-                    add_m.add_command(
-                        label=label, command=lambda new_f=f: self._add_column(new_f)
-                    )
+        latest_dataset = getattr(self.config.card_data, "latest_dataset", "")
+        set_code = latest_dataset.split("_")[0] if latest_dataset else ""
 
-        # 3. Utility Options
+        _, tier_options = TierList.retrieve_data(set_code)
+        if tier_options:
+            am.add_separator()
+            for display_name, internal_id in tier_options.items():
+                if internal_id not in self.active_fields:
+                    am.add_command(
+                        label=display_name,
+                        command=lambda x=internal_id: self._add_column(x),
+                    )
         menu.add_separator()
         menu.add_command(label="Reset to Defaults", command=self._reset_defaults)
-
         menu.post(event.x_root, event.y_root)
 
     def _handle_click(self, event):
-        """Handles the '+' button left-click."""
-        region = self.tree.identify_region(event.x, event.y)
-        if region != "heading":
-            return
-        col_id = self.tree.identify_column(event.x)
-        try:
-            idx = int(col_id.replace("#", "")) - 1
-        except:
-            return
-        if idx == len(self.active_fields):
+        if self.tree.identify_region(event.x, event.y) == "heading" and int(
+            self.tree.identify_column(event.x).replace("#", "")
+        ) - 1 == len(self.active_fields):
             self._show_add_menu(event)
 
     def _show_add_menu(self, event):
         menu = tkinter.Menu(self, tearoff=0)
         from src.constants import COLUMN_FIELD_LABELS
 
-        added = False
-        for f, label in COLUMN_FIELD_LABELS.items():
+        for f, lb in COLUMN_FIELD_LABELS.items():
             if f not in self.active_fields:
-                menu.add_command(
-                    label=label, command=lambda new_f=f: self._add_column(new_f)
-                )
-                added = True
+                menu.add_command(label=lb, command=lambda x=f: self._add_column(x))
 
-        # Tier lists
         from src.tier_list import TierList
 
-        tier_files = TierList.retrieve_files()
-        if tier_files:
+        tf = TierList.retrieve_files()
+        if tf:
             menu.add_separator()
-            for idx, (set_code, lbl, _, _) in enumerate(tier_files):
-                f = f"TIER{idx}"
-                if f not in self.active_fields:
-                    label = f"TIER: {lbl} ({set_code})"
+            for idx, (sc, lb, _, _) in enumerate(tf):
+                tn = f"TIER{idx}"
+                if tn not in self.active_fields:
                     menu.add_command(
-                        label=label, command=lambda new_f=f: self._add_column(new_f)
+                        label=f"TIER: {lb} ({sc})",
+                        command=lambda x=tn: self._add_column(x),
                     )
-                    added = True
 
-        if added:
-            menu.post(event.x_root, event.y_root)
+        menu.post(event.x_root, event.y_root)
 
     def _add_column(self, field):
         if len(self.active_fields) >= 15:
             return
-
         self.active_fields.append(field)
-
-        # Dynamically snap the window wider if it's too narrow for the new column
         try:
-            top = self.winfo_toplevel()
-            current_width = top.winfo_width()
-
-            # Calculate an estimated required width (Name column + Number of extra columns)
-            # Assuming Name=140px, each extra stat=60px, padding=40px
-            required_width = 140 + (len(self.active_fields) * 40) + 40
-
-            if current_width < required_width:
-                # Keep the same height, just push the width out
-                current_height = top.winfo_height()
-                top.geometry(f"{required_width}x{current_height}")
-
-                # If this is the Mini Mode, force it to instantly save its new size
-                if hasattr(top, "_save_geometry"):
-                    top._save_geometry()
-        except Exception:
+            t = self.winfo_toplevel()
+            cw = t.winfo_width()
+            rw = 140 + (len(self.active_fields) * 40) + 40
+            if cw < rw:
+                t.geometry(f"{rw}x{t.winfo_height()}")
+        except:
             pass
-
         self._persist()
 
-    def _remove_column(self, idx):
-        if len(self.active_fields) <= 1:
-            return  # Must keep one column
-        self.active_fields.pop(idx)
-        self._persist()
+    def _remove_column(self, index):
+        if len(self.active_fields) > 1:
+            self.active_fields.pop(index)
+            self._persist()
 
     def _reset_defaults(self):
-        """Restores the standard pro-level column set."""
         self.active_fields = ["name", "value", "gihwr"]
         self._persist()
 
     def _persist(self):
-        """Saves configuration and triggers a visual rebuild."""
         from src.configuration import write_configuration
 
         self.config.settings.column_configs[self.view_id] = self.active_fields
         write_configuration(self.config)
-        self.rebuild(trigger_callback=True)
+        self.rebuild(True)
 
 
 class SignalMeter(tb.Frame):
-    """
-    Compact Signal Visualizer.
-    """
-
     def __init__(self, parent, **kwargs):
         super().__init__(parent, **kwargs)
-        self.canvas_height = 80
-        self.bar_width = 20
-        self.gap = 4
-        self.scores = {}
-
+        self.canvas_height, self.bar_width, self.gap, self.scores = 80, 20, 4, {}
         self.canvas = tb.Canvas(
             self, height=self.canvas_height, bg=Theme.BG_PRIMARY, highlightthickness=0
         )
@@ -822,27 +787,11 @@ class SignalMeter(tb.Frame):
         self.bind_all("<<ThemeChanged>>", self._on_theme_change, add="+")
 
     def _on_theme_change(self, event=None):
-        if not self.winfo_exists():
-            return
-        self.canvas.configure(bg=Theme.BG_PRIMARY)
-        self.color_map = {
-            "W": (Theme.WARNING, "White"),
-            "U": (Theme.ACCENT, "Blue"),
-            "B": (Theme.BG_TERTIARY, "Black"),
-            "R": (Theme.ERROR, "Red"),
-            "G": (Theme.SUCCESS, "Green"),
-        }
-        self.redraw()
+        if self.winfo_exists():
+            self.canvas.configure(bg=Theme.BG_PRIMARY)
+            self.redraw()
 
-        self.color_map = {
-            "W": (Theme.WARNING, "White"),
-            "U": (Theme.ACCENT, "Blue"),
-            "B": (Theme.BG_TERTIARY, "Black"),
-            "R": (Theme.ERROR, "Red"),
-            "G": (Theme.SUCCESS, "Green"),
-        }
-
-    def update_values(self, scores: Dict[str, float]):
+    def update_values(self, scores):
         self.scores = scores
         self.redraw()
 
@@ -851,56 +800,41 @@ class SignalMeter(tb.Frame):
         w = self.canvas.winfo_width()
         if w < 10:
             return
-
-        colors = ["W", "U", "B", "R", "G"]
-        total_content_width = (len(colors) * self.bar_width) + (
-            (len(colors) - 1) * self.gap
+        cl, cm = ["W", "U", "B", "R", "G"], {
+            "W": Theme.WARNING,
+            "U": Theme.ACCENT,
+            "B": "#555555",
+            "R": Theme.ERROR,
+            "G": Theme.SUCCESS,
+        }
+        tw = (len(cl) * self.bar_width) + ((len(cl) - 1) * self.gap)
+        sx, sc = (w - tw) / 2, (self.canvas_height - 18) / max(
+            max(self.scores.values(), default=1), 20
         )
-        start_x = (w - total_content_width) / 2
-
-        max_val = max(max(self.scores.values(), default=1), 20)
-        scale = (self.canvas_height - 18) / max_val
-
-        for i, code in enumerate(colors):
-            val = self.scores.get(code, 0.0)
-            x = start_x + (i * (self.bar_width + self.gap))
-            bar_h = val * scale
-
-            color = self.color_map[code][0]
-            if code == "B" and color == Theme.BG_TERTIARY:
-                color = "#555555"
-
-            # Draw Bar
+        for i, c in enumerate(cl):
+            v = self.scores.get(c, 0.0)
+            x, bh = sx + (i * (self.bar_width + self.gap)), v * sc
             self.canvas.create_rectangle(
                 x,
-                self.canvas_height - bar_h - 12,
+                self.canvas_height - bh - 12,
                 x + self.bar_width,
                 self.canvas_height - 12,
-                fill=color,
+                fill=cm[c],
                 outline="",
             )
-
-            # Label below
             self.canvas.create_text(
                 x + self.bar_width / 2,
                 self.canvas_height - 5,
-                text=code,
-                fill=Theme.TEXT_MUTED,
+                text=c,
+                fill=Theme.TEXT_MAIN,
                 font=(Theme.FONT_FAMILY, 9, "bold"),
             )
 
 
 class ManaCurvePlot(tb.Frame):
-    """
-    Compact Curve Plot.
-    """
-
-    def __init__(self, parent, ideal_distribution: List[int], **kwargs):
+    def __init__(self, parent, ideal_distribution, **kwargs):
         super().__init__(parent, **kwargs)
-        self.ideal = ideal_distribution
-        self.current = [0] * 7
-
-        self.canvas_height = 80
+        self.ideal, self.current, self.canvas_height = ideal_distribution, [0] * 7, 80
         self.canvas = tb.Canvas(
             self, height=self.canvas_height, bg=Theme.BG_PRIMARY, highlightthickness=0
         )
@@ -909,19 +843,12 @@ class ManaCurvePlot(tb.Frame):
         self.bind_all("<<ThemeChanged>>", self._on_theme_change, add="+")
 
     def _on_theme_change(self, event=None):
-        if not self.winfo_exists():
-            return
-        self.canvas.configure(bg=Theme.BG_PRIMARY)
-        self.redraw()
+        if self.winfo_exists():
+            self.canvas.configure(bg=Theme.BG_PRIMARY)
+            self.redraw()
 
-        self.bar_width = 14
-        self.gap = 2
-
-    def update_curve(self, current_distribution: List[int]):
-        if len(current_distribution) > 6:
-            self.current = current_distribution[:6] + [sum(current_distribution[6:])]
-        else:
-            self.current = current_distribution
+    def update_curve(self, counts):
+        self.current = counts[:6] + [sum(counts[6:])] if len(counts) > 6 else counts
         self.redraw()
 
     def redraw(self):
@@ -929,80 +856,65 @@ class ManaCurvePlot(tb.Frame):
         w = self.canvas.winfo_width()
         if w < 10:
             return
-
-        total_bars = len(self.current)
-        total_content_width = (total_bars * self.bar_width) + (
-            (total_bars - 1) * self.gap
+        bw, gp = 14, 2
+        tw = (len(self.current) * bw) + ((len(self.current) - 1) * gp)
+        sx, sc = (w - tw) / 2, (self.canvas_height - 25) / max(
+            max(self.current), max(self.ideal), 5
         )
-        start_x = (w - total_content_width) / 2
-
-        max_val = max(max(self.current), max(self.ideal), 5)
-        scale = (self.canvas_height - 25) / max_val
-
-        for i, count in enumerate(self.current):
-            x = start_x + (i * (self.bar_width + self.gap))
-
-            # Ideal (Ghost)
-            target = self.ideal[i] if i < len(self.ideal) else 0
-            if target > 0:
-                t_h = target * scale
+        for i, c in enumerate(self.current):
+            x, t = sx + (i * (bw + gp)), self.ideal[i] if i < len(self.ideal) else 0
+            if t > 0:
                 self.canvas.create_rectangle(
                     x,
-                    self.canvas_height - t_h - 10,
-                    x + self.bar_width,
+                    self.canvas_height - (t * sc) - 10,
+                    x + bw,
                     self.canvas_height - 10,
-                    outline=Theme.TEXT_MUTED,
+                    outline=Theme.TEXT_MAIN,
                     width=1,
                     dash=(2, 2),
                 )
-
-            # Actual
-            bar_h = count * scale
-            color = Theme.ACCENT
-            if count > target + 1:
-                color = Theme.ERROR
-            elif count < target and target > 0:
-                color = Theme.WARNING
-            elif count >= target:
-                color = Theme.SUCCESS
-
+            cl = (
+                Theme.ERROR
+                if c > t + 1
+                else (
+                    Theme.WARNING
+                    if c < t and t > 0
+                    else Theme.SUCCESS if c >= t else Theme.ACCENT
+                )
+            )
             self.canvas.create_rectangle(
                 x,
-                self.canvas_height - bar_h - 10,
-                x + self.bar_width,
+                self.canvas_height - (c * sc) - 10,
+                x + bw,
                 self.canvas_height - 10,
-                fill=color,
+                fill=cl,
                 outline="",
             )
-
-            if count > 0:
+            if c > 0:
                 self.canvas.create_text(
-                    x + self.bar_width / 2,
-                    self.canvas_height - bar_h - 17,
-                    text=str(count),
+                    x + bw / 2,
+                    self.canvas_height - (c * sc) - 17,
+                    text=str(c),
                     fill=Theme.TEXT_MAIN,
                     font=(Theme.FONT_FAMILY, 9, "bold"),
                 )
-
-            # Axis Label
-            lbl = str(i) if i < 6 else "6+"
             self.canvas.create_text(
-                x + self.bar_width / 2,
+                x + bw / 2,
                 self.canvas_height - 4,
-                text=lbl,
-                fill=Theme.TEXT_MUTED,
+                text=str(i) if i < 6 else "6+",
+                fill=Theme.TEXT_MAIN,
                 font=(Theme.FONT_FAMILY, 8),
             )
 
 
 class TypePieChart(tb.Frame):
-    """
-    Compact Donut chart.
-    """
-
     def __init__(self, parent, **kwargs):
         super().__init__(parent, **kwargs)
-        self.canvas_size = 80
+        self.canvas_size, self.counts = 80, {
+            "Creatures": 0,
+            "Non-Creatures": 0,
+            "Lands": 0,
+        }
         self.canvas = tb.Canvas(
             self,
             height=self.canvas_size,
@@ -1013,149 +925,111 @@ class TypePieChart(tb.Frame):
         self.canvas.pack(side=LEFT, padx=10)
         self.legend_frame = tb.Frame(self)
         self.legend_frame.pack(side=LEFT, fill=Y, padx=5)
-
-        self.counts = {"Creatures": 0, "Non-Creatures": 0, "Lands": 0}
         self.bind_all("<<ThemeChanged>>", self._on_theme_change, add="+")
 
     def _on_theme_change(self, event=None):
-        if not self.winfo_exists():
-            return
-        self.canvas.configure(bg=Theme.BG_PRIMARY)
-        self.color_map = {
-            "W": ("#e2e8f0", "White"),  # Silver/Off-White
-            "U": ("#3b82f6", "Blue"),  # Classic Blue
-            "B": ("#3f3f46", "Black"),  # Dark Gray
-            "R": ("#ef4444", "Red"),  # Classic Red
-            "G": ("#10b981", "Green"),  # Classic Green
-        }
-        self.redraw()
+        if self.winfo_exists():
+            self.canvas.configure(bg=Theme.BG_PRIMARY)
+            self.redraw()
 
-    def update_counts(self, creatures, non_creatures, lands):
-        self.counts["Creatures"] = creatures
-        self.counts["Non-Creatures"] = non_creatures
-        self.counts["Lands"] = lands
+    def update_counts(self, c, n, l):
+        self.counts["Creatures"], self.counts["Non-Creatures"], self.counts["Lands"] = (
+            c,
+            n,
+            l,
+        )
         self.redraw()
 
     def redraw(self):
         self.canvas.delete("all")
-        # Update Legend
-        for w in self.legend_frame.winfo_children():
-            w.destroy()
-
-        # Legend Logic
+        [w.destroy() for w in self.legend_frame.winfo_children()]
         items = [
             ("Crea", self.counts["Creatures"], Theme.SUCCESS),
             ("Spell", self.counts["Non-Creatures"], Theme.ACCENT),
             ("Land", self.counts["Lands"], Theme.BG_TERTIARY),
         ]
-
-        for lbl, count, col in items:
-            row = tb.Frame(self.legend_frame)
-            row.pack(anchor="w")
-            tb.Label(row, text="●", foreground=col, font=(None, 6)).pack(side=LEFT)
-            tb.Label(row, text=f"{lbl}: {count}", font=(Theme.FONT_FAMILY, 10)).pack(
+        for lb, c, cl in items:
+            rf = tb.Frame(self.legend_frame)
+            rf.pack(anchor="w")
+            tb.Label(rf, text="●", foreground=cl, font=(None, 6)).pack(side=LEFT)
+            tb.Label(rf, text=f"{lb}: {c}", font=(Theme.FONT_FAMILY, 10)).pack(
                 side=LEFT, padx=2
             )
-
-        # Chart Logic
-        total = sum(self.counts.values())
-        if total == 0:
+        tl = sum(self.counts.values())
+        if tl == 0:
             return
-
-        cx, cy = self.canvas_size / 2, self.canvas_size / 2
-        radius = (self.canvas_size / 2) - 2
-        current_angle = 90
-
-        data = [
+        cx, cy, r, a = (
+            self.canvas_size / 2,
+            self.canvas_size / 2,
+            (self.canvas_size / 2) - 2,
+            90,
+        )
+        for c, cl in [
             (self.counts["Creatures"], Theme.SUCCESS),
             (self.counts["Non-Creatures"], Theme.ACCENT),
             (self.counts["Lands"], Theme.BG_TERTIARY),
-        ]
-
-        for count, color in data:
-            if count == 0:
+        ]:
+            if c == 0:
                 continue
-            extent = (count / total) * 360
+            ex = (c / tl) * 360
             self.canvas.create_arc(
-                cx - radius,
-                cy - radius,
-                cx + radius,
-                cy + radius,
-                start=current_angle,
-                extent=-extent,
-                fill=color,
+                cx - r,
+                cy - r,
+                cx + r,
+                cy + r,
+                start=a,
+                extent=-ex,
+                fill=cl,
                 outline="",
                 style="pieslice",
             )
-            current_angle -= extent
-
+            a -= ex
         self.canvas.create_oval(
-            cx - radius / 2,
-            cy - radius / 2,
-            cx + radius / 2,
-            cy + radius / 2,
+            cx - r / 2,
+            cy - r / 2,
+            cx + r / 2,
+            cy + r / 2,
             fill=Theme.BG_PRIMARY,
             outline="",
         )
         self.canvas.create_text(
             cx,
             cy,
-            text=str(total),
+            text=str(tl),
             fill=Theme.TEXT_MAIN,
             font=(Theme.FONT_FAMILY, 9, "bold"),
         )
 
 
 class ScrolledFrame(tb.Frame):
-    """
-    A horizontally scrollable container.
-    """
-
     def __init__(self, parent, **kwargs):
         super().__init__(parent, **kwargs)
-
-        # 1. Scrollbar at bottom
         self.scrollbar = tb.Scrollbar(
             self, orient="horizontal", bootstyle="secondary-round"
         )
         self.scrollbar.pack(side="bottom", fill="x")
-
-        # 2. Canvas
         self.canvas = tb.Canvas(self, bg=Theme.BG_PRIMARY, highlightthickness=0)
         self.canvas.pack(side="top", fill="both", expand=True)
-
-        # 3. Link Scrollbar
         self.canvas.configure(xscrollcommand=self.scrollbar.set)
         self.scrollbar.configure(command=self.canvas.xview)
-
-        # 4. The Inner Frame (Holds the content)
         self.scrollable_frame = tb.Frame(self.canvas)
-
-        # 5. Create Window in Canvas
         self.window_id = self.canvas.create_window(
             (0, 0), window=self.scrollable_frame, anchor="nw"
         )
-
-        # 6. Bind Events
-        self.scrollable_frame.bind("<Configure>", self._on_frame_configure)
-        self.canvas.bind("<Configure>", self._on_canvas_configure)
-
-    def _on_frame_configure(self, event):
-        self.canvas.configure(scrollregion=self.canvas.bbox("all"))
-
-    def _on_canvas_configure(self, event):
-        self.canvas.itemconfig(self.window_id, height=event.height)
+        self.scrollable_frame.bind(
+            "<Configure>",
+            lambda e: self.canvas.configure(scrollregion=self.canvas.bbox("all")),
+        )
+        self.canvas.bind(
+            "<Configure>",
+            lambda e: self.canvas.itemconfig(self.window_id, height=e.height),
+        )
 
 
 class CardPile(tb.Frame):
-    """
-    Vertical column for cards.
-    """
-
     def __init__(self, parent, title, app_instance, **kwargs):
         super().__init__(parent, **kwargs)
         self.app = app_instance
-
         tb.Label(
             self,
             text=title,
@@ -1164,128 +1038,100 @@ class CardPile(tb.Frame):
             anchor="center",
             padding=5,
         ).pack(fill=X, pady=(0, 2))
-
         self.container = tb.Frame(self)
         self.container.pack(fill=BOTH, expand=True)
 
     def add_card(self, card_data):
-        name = card_data[constants.DATA_FIELD_NAME]
-        mana_cost = card_data.get(constants.DATA_FIELD_MANA_COST, "")
-        count = card_data.get(constants.DATA_FIELD_COUNT, 1)
-
-        found_colors = set(re.findall(r"[WUBRG]", mana_cost or ""))
-
-        pip_order = ["W", "U", "B", "R", "G"]
-        sorted_colors = sorted(
-            list(found_colors),
-            key=lambda x: pip_order.index(x) if x in pip_order else 99,
+        nm, ct, cn = (
+            card_data["name"],
+            card_data.get("mana_cost", ""),
+            card_data.get("count", 1),
         )
-
-        is_gold = len(sorted_colors) > 1
-        is_colorless = len(sorted_colors) == 0
-
-        hex_map = {
-            "W": "#f8f6f1",
-            "U": "#3498db",
-            "B": "#2c3e50",
-            "R": "#e74c3c",
-            "G": "#00bc8c",
-        }
-        style_map = {
-            "W": "warning",
-            "U": "info",
-            "B": "dark",
-            "R": "danger",
-            "G": "success",
-        }
-
-        chip_frame = tb.Frame(self.container)
-        chip_frame.pack(fill=X, pady=1, padx=2)
-
-        display_text = f"{count}x {name}" if count > 1 else name
-
-        if is_gold:
-            gold_bg = "#d4af37"
-
-            lbl = tb.Label(
-                chip_frame,
-                text=display_text,
+        cl = sorted(
+            list(set(re.findall(r"[WUBRG]", ct or ""))),
+            key=lambda x: ["W", "U", "B", "R", "G"].index(x) if x in "WUBRG" else 99,
+        )
+        ch = tb.Frame(self.container)
+        ch.pack(fill=X, pady=1, padx=2)
+        tx = f"{cn}x {nm}" if cn > 1 else nm
+        if len(cl) > 1:
+            lb = tb.Label(
+                ch,
+                text=tx,
                 font=(Theme.FONT_FAMILY, 10),
                 foreground="#000000",
-                background=gold_bg,
+                background="#d4af37",
                 anchor="w",
                 padding=(5, 2),
             )
-            lbl.pack(side=LEFT, fill=BOTH, expand=True)
-
-            cv = tb.Canvas(
-                chip_frame, width=12, height=20, bg=gold_bg, highlightthickness=0
-            )
+            lb.pack(side=LEFT, fill=BOTH, expand=True)
+            cv = tb.Canvas(ch, width=12, height=20, bg="#d4af37", highlightthickness=0)
             cv.pack(side=RIGHT, fill=Y)
-
-            num_colors = len(sorted_colors)
-            if num_colors > 0:
-                stripe_h = 20 / num_colors
-                for i, code in enumerate(sorted_colors):
-                    fill_col = hex_map.get(code, "#000")
-                    cv.create_rectangle(
-                        0,
-                        i * stripe_h,
-                        12,
-                        (i + 1) * stripe_h,
-                        fill=fill_col,
-                        outline="",
+            h = 20 / len(cl)
+            for i, c in enumerate(cl):
+                cv.create_rectangle(
+                    0,
+                    i * h,
+                    12,
+                    (i + 1) * h,
+                    fill={
+                        "W": "#f8f6f1",
+                        "U": "#3498db",
+                        "B": "#2c3e50",
+                        "R": "#e74c3c",
+                        "G": "#00bc8c",
+                    }.get(c, "#000"),
+                    outline="",
+                )
+            lb.bind(
+                "<Enter>",
+                lambda e: CardToolTip(
+                    lb,
+                    card_data,
+                    self.app.configuration.features.images_enabled,
+                    constants.UI_SIZE_DICT.get(
+                        self.app.configuration.settings.ui_size, 1.0
+                    ),
+                ),
+            )
+        else:
+            c = cl[0] if cl else "NC"
+            s = {
+                "W": "warning",
+                "U": "info",
+                "B": "dark",
+                "R": "danger",
+                "G": "success",
+            }.get(c, "secondary")
+            lb = tb.Label(
+                ch,
+                text=tx,
+                bootstyle=(
+                    "info"
+                    if c == "U"
+                    else (
+                        "success"
+                        if c == "G"
+                        else (
+                            "danger"
+                            if c == "R"
+                            else ("dark" if c == "B" else "secondary")
+                        )
                     )
-
-            self._bind_tooltip(lbl, card_data)
-            self._bind_tooltip(cv, card_data)
-
-        elif is_colorless:
-            lbl = tb.Label(
-                chip_frame,
-                text=display_text,
-                bootstyle="inverse-secondary",
+                ),
                 font=(Theme.FONT_FAMILY, 10),
                 anchor="w",
                 padding=(5, 2),
             )
-            lbl.pack(fill=X)
-            self._bind_tooltip(lbl, card_data)
-
-        else:
-            c = sorted_colors[0]
-            s = style_map.get(c, "secondary")
-
-            if c == "W":
-                lbl = tb.Label(
-                    chip_frame,
-                    text=display_text,
-                    foreground="#000000",
-                    background="#f0f0f0",
-                    font=(Theme.FONT_FAMILY, 10),
-                    anchor="w",
-                    padding=(5, 2),
-                )
-            else:
-                lbl = tb.Label(
-                    chip_frame,
-                    text=display_text,
-                    bootstyle=f"inverse-{s}",
-                    font=(Theme.FONT_FAMILY, 10),
-                    anchor="w",
-                    padding=(5, 2),
-                )
-            lbl.pack(fill=X)
-            self._bind_tooltip(lbl, card_data)
-
-    def _bind_tooltip(self, widget, card_data):
-        widget.bind("<Enter>", lambda e: self._show_tooltip(widget, card_data))
-
-    def _show_tooltip(self, widget, card_data):
-        stats = card_data.get(constants.DATA_FIELD_DECK_COLORS, {})
-        CardToolTip(
-            widget,
-            card_data,
-            self.app.configuration.features.images_enabled,
-            constants.UI_SIZE_DICT.get(self.app.configuration.settings.ui_size, 1.0),
-        )
+            lb.pack(fill=X)
+            lb.bind(
+                "<Enter>",
+                lambda e: CardToolTip(
+                    lb,
+                    card_data,
+                    self.app.configuration.features.images_enabled,
+                    constants.UI_SIZE_DICT.get(
+                        self.app.configuration.settings.ui_size, 1.0
+                    ),
+                ),
+            )

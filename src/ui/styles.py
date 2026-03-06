@@ -12,6 +12,7 @@ import sys
 import os
 import re
 import logging
+from tkinter import font as tkfont
 
 logger = logging.getLogger(__name__)
 
@@ -37,12 +38,12 @@ class Theme:
     # Mapping Palette Names -> ttkbootstrap Themes OR 'native'
     THEME_MAPPING = {
         "System": "native",
-        "Neutral": "darkly",
-        "Dark": "darkly",
+        "Neutral": "superhero",
+        "Dark": "cyborg",
         "Light": "flatly",
         "Forest": "solar",
-        "Island": "superhero",
-        "Swamp": "cyborg",
+        "Island": "morph",
+        "Swamp": "darkly",
         "Mountain": "united",
         "Plains": "sandstone",
         "Wastes": "vapor",
@@ -117,9 +118,10 @@ class Theme:
             cls.SUCCESS = "#00bc8c"
             cls.ERROR = "#e74c3c"
             cls.WARNING = "#f39c12"
+            cls.INFO = "#3b82f6"
 
         else:
-            target_theme = cls.THEME_MAPPING.get(palette, "darkly")
+            target_theme = cls.THEME_MAPPING.get(palette, "cyborg")
 
             if target_theme == "native":
                 # NATIVE MODE
@@ -151,13 +153,14 @@ class Theme:
                 cls.SUCCESS = "#008000"
                 cls.ERROR = "#ff0000"
                 cls.WARNING = "#ffcc00"
+                cls.INFO = "#3b82f6"
 
             else:
                 # BOOTSTRAP MODE
                 try:
                     style.theme_use(target_theme)
                 except:
-                    style.theme_use("darkly")
+                    style.theme_use("cyborg")
 
                 colors = style.colors
                 cls.BG_PRIMARY = colors.bg
@@ -171,9 +174,29 @@ class Theme:
                 cls.SUCCESS = colors.success
                 cls.ERROR = colors.danger
                 cls.WARNING = colors.warning
+                cls.INFO = colors.info
 
         # 3. Global Configuration (Applies regardless of theme engine)
-        row_height = max(28, int(28 * scale))
+        main_font_size = max(8, int(cls.FONT_SIZE_MAIN * scale))
+
+        try:
+            # Dynamically ask the OS for the exact bounding box height of the font
+            test_font = tkfont.Font(
+                root=root, family=cls.FONT_FAMILY, size=main_font_size
+            )
+            linespace = test_font.metrics("linespace")
+
+            # Windows needs more padding to prevent "g/y/p" descender clipping due to Segoe UI rendering.
+            # Mac needs tighter padding to look correct for Helvetica.
+            padding = 8 if sys.platform == "darwin" else 14
+
+            row_height = linespace + int(padding * scale)
+        except Exception as e:
+            logger.warning(f"Dynamic font measurement failed: {e}")
+            # Fallback if font isn't loaded by the OS yet
+            base_row_height = 26 if sys.platform == "darwin" else 32
+            row_height = max(base_row_height, int(base_row_height * scale))
+
         style.configure("Treeview", rowheight=row_height)
         style.configure("TNotebook", borderwidth=0)
 
@@ -198,28 +221,12 @@ class Theme:
 
         # Only override the header font if the custom theme didn't explicitly set one
         if not is_custom_loaded:
-            main_font_size = max(8, int(cls.FONT_SIZE_MAIN * scale))
             style.configure(".", font=(cls.FONT_FAMILY, main_font_size))
             style.configure(
                 "Treeview.Heading", font=(cls.FONT_FAMILY, main_font_size, "bold")
             )
 
-        # 4. Patch Standard Native OS Widgets to match the theme colors
-        cls._force_recursive_update(root)
-
+        # Let ttkbootstrap handle standard widget styles
+        # Only perform specific repairs for internal elements that are hard to style via bootstyle
+        root.configure(bg=cls.BG_PRIMARY)
         root.event_generate("<<ThemeChanged>>")
-
-    @classmethod
-    def _force_recursive_update(cls, widget):
-        try:
-            tk_class = widget.winfo_class()
-            # Standard widgets need manual background updates to match the theme
-            if tk_class in ("Tk", "Toplevel", "Frame", "Canvas", "Label", "Labelframe"):
-                try:
-                    widget.configure(bg=cls.BG_PRIMARY)
-                except:
-                    pass
-            for child in widget.winfo_children():
-                cls._force_recursive_update(child)
-        except Exception:
-            pass
