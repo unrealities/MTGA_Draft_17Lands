@@ -1115,7 +1115,15 @@ class ArenaScanner:
                     # A pack from slot i wheels back at pick (i+1) + rotation_size
                     return_pick = (i + 1) + rotation_size
                     if return_pick > self.current_pick:
-                        for name in self.set_data.get_names_by_id(slot_ids):
+                        picked_from_slot = set(
+                            self.picked_cards[i]
+                            if i < len(self.picked_cards)
+                            else []
+                        )
+                        remaining_ids = [
+                            cid for cid in slot_ids if cid not in picked_from_slot
+                        ]
+                        for name in self.set_data.get_names_by_id(remaining_ids):
                             returnable_picks_by_name.setdefault(name, []).append(
                                 return_pick
                             )
