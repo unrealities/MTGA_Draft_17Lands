@@ -240,6 +240,9 @@ class TakenCardsPanel(ttk.Frame):
 
             t.insert("", "end", values=row_values, tags=(tag,))
 
+        if hasattr(t, "reapply_sort"):
+            t.reapply_sort()
+
     def _render_visual_view(self):
         # Clear existing piles
         for widget in self.visual_scroller.scrollable_frame.winfo_children():

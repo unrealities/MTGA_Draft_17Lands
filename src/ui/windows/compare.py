@@ -102,12 +102,12 @@ class ComparePanel(ttk.Frame):
             t.delete(item)
 
         for idx, card in enumerate(self.compare_list):
-            row = []
+            row_values = []
             for field in self.table_manager.active_fields:
                 if field == "name":
-                    row.append(card.get("name", ""))
+                    row_values.append(card.get("name", ""))
                 elif field == "colors":
-                    row.append("".join(card.get("colors", [])))
+                    row_values.append("".join(card.get("colors", [])))
                 elif field == "tags":
                     raw_tags = card.get("tags", [])
                     if raw_tags:
@@ -134,7 +134,7 @@ class ComparePanel(ttk.Frame):
                         .get(active_color, {})
                         .get(field, 0.0)
                     )
-                    row.append(
+                    row_values.append(
                         format_win_rate(
                             val,
                             active_color,
@@ -145,8 +145,14 @@ class ComparePanel(ttk.Frame):
                     )
 
             t.insert(
-                "", "end", values=row, tags=("bw_odd" if idx % 2 == 0 else "bw_even",)
+                "",
+                "end",
+                values=row_values,
+                tags=("bw_odd" if idx % 2 == 0 else "bw_even",),
             )
+
+        if hasattr(t, "reapply_sort"):
+            t.reapply_sort()
 
     def _on_selection(self, event):
         sel = self.table.selection()

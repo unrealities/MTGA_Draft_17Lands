@@ -63,7 +63,7 @@ class SuggestDeckPanel(ttk.Frame):
         )
         self.btn_copy.pack(side="right", padx=5)
 
-        cols = ["Card", "#", "Cost", "Type", "Colors", "GIH WR"]
+        cols = ["name", "count", "cmc", "types", "colors", "gihwr"]
         self.table_manager = DynamicTreeviewManager(
             self,
             view_id="deck_builder",
@@ -218,6 +218,9 @@ class SuggestDeckPanel(ttk.Frame):
                     values=(name, count, cmc, types, card_colors, gihwr_str),
                     tags=(tag,),
                 )
+
+        if self.table and hasattr(self.table, "reapply_sort"):
+            self.table.reapply_sort()
 
     def _copy_to_clipboard(self):
         selection = self.var_archetype.get()

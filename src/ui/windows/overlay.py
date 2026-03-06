@@ -473,6 +473,9 @@ class CompactOverlay(tb.Toplevel):
                     row["tag"] = "bw_odd" if i % 2 == 0 else "bw_even"
                 tree.insert("", "end", values=row["vals"], tags=(row["tag"],))
 
+            if hasattr(tree, "reapply_sort"):
+                tree.reapply_sort()
+
         self.tree = self.table_manager.tree
         self.tree.bind(
             "<<TreeviewSelect>>",

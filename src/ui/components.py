@@ -434,17 +434,49 @@ class CardToolTip(tkinter.Toplevel):
 
 
 class ModernTreeview(ttk.Treeview):
-    def __init__(self, parent, columns, **kwargs):
+    def __init__(self, parent, columns, view_id=None, config=None, **kwargs):
         super().__init__(
             parent, columns=columns, show="headings", style="Treeview", **kwargs
         )
-        self.column_sort_state, self.active_fields, self.base_labels = (
-            {i: False for i in columns},
-            [],
-            {},
-        )
+        self.view_id = view_id
+        self.config = config
+        self.sort_group = self._get_sort_group(view_id)
+
+        self.active_fields = []
+        self.base_labels = {}
+        self.column_sort_state = {i: False for i in columns}
+        self.active_sort_column = None
+
+        # Load saved sort state from the global configuration
+        if self.config and self.view_id:
+            if not hasattr(self.config.settings, "table_sort_states"):
+                setattr(self.config.settings, "table_sort_states", {})
+
+            saved_state = self.config.settings.table_sort_states.get(
+                self.sort_group, {}
+            )
+            if saved_state:
+                self.active_sort_column = saved_state.get("column")
+                # Dynamic index handling means we just map the name ("gihwr"), regardless of where it is
+                if self.active_sort_column in self.column_sort_state:
+                    self.column_sort_state[self.active_sort_column] = saved_state.get(
+                        "reverse", False
+                    )
+                else:
+                    self.active_sort_column = None
+
         self._setup_headers(columns)
         self._setup_row_colors()
+
+    def _get_sort_group(self, view_id):
+        """Links shared tables (e.g. Main Pack and Mini Pack) so they inherit sorting from each other."""
+        if not view_id:
+            return "default"
+        if view_id in ["pack_table", "overlay_table"]:
+            return "pack"
+        if view_id in ["taken_table", "overlay_pool_table"]:
+            return "pool"
+        return view_id
 
     def _setup_headers(self, columns):
         from src.constants import COLUMN_FIELD_LABELS
@@ -462,7 +494,15 @@ class ModernTreeview(ttk.Treeview):
                 else COLUMN_FIELD_LABELS.get(i, str(i).upper()).split(":")[0]
             )
             self.base_labels[i] = l
-            self.heading(i, text=l, command=lambda x=i: self._handle_sort(x))
+
+            # Immediately draw the sort indicator (arrow) if a sort state was inherited
+            if i == self.active_sort_column:
+                rev = self.column_sort_state.get(i, False)
+                display_text = f"{l} {'▼' if rev else '▲'}"
+            else:
+                display_text = l
+
+            self.heading(i, text=display_text, command=lambda x=i: self._handle_sort(x))
             self.column(
                 i,
                 width=140 if i == "name" else 50,
@@ -472,8 +512,6 @@ class ModernTreeview(ttk.Treeview):
             )
 
     def _setup_row_colors(self):
-        # We use dynamic theme colors for row highlighting to ensure text is always readable.
-        # These will be updated in _on_theme_change if we want to be fully dynamic.
         for t, b, f in [
             ("white", "#f8fafc", "#0f172a"),
             ("blue", "#e0f2fe", "#0369a1"),
@@ -491,11 +529,33 @@ class ModernTreeview(ttk.Treeview):
                 foreground=f,
             )
 
-    def _handle_sort(self, column):
+    def _handle_sort(self, column, force_reverse=None):
         from src.card_logic import field_process_sort
 
-        self.column_sort_state[column] = not self.column_sort_state[column]
+        if force_reverse is not None:
+            self.column_sort_state[column] = force_reverse
+        else:
+            self.column_sort_state[column] = not self.column_sort_state.get(
+                column, False
+            )
+
         rev = self.column_sort_state[column]
+        self.active_sort_column = column
+
+        # Persist the sort state centrally so it survives windows swaps
+        if self.config and self.view_id:
+            if not hasattr(self.config.settings, "table_sort_states"):
+                self.config.settings.table_sort_states = {}
+
+            self.config.settings.table_sort_states[self.sort_group] = {
+                "column": column,
+                "reverse": rev,
+            }
+            # Commit to disk (safely handles atomic locking behind the scenes)
+            from src.configuration import write_configuration
+
+            write_configuration(self.config)
+
         for i in self["columns"]:
             if i in self.base_labels:
                 self.heading(
@@ -506,10 +566,12 @@ class ModernTreeview(ttk.Treeview):
                         else self.base_labels[i]
                     ),
                 )
+
         it = [(self.item(k)["values"], k) for k in self.get_children("")]
         try:
+            # Sort relies entirely on the physical index to be agnostic of column order!
             ci = list(self["columns"]).index(column)
-        except:
+        except ValueError:
             return
 
         def _k(t):
@@ -530,6 +592,31 @@ class ModernTreeview(ttk.Treeview):
             ts = [t for t in self.item(k, "tags") if t not in ("bw_odd", "bw_even")]
             ts.append("bw_odd" if i % 2 == 0 else "bw_even")
             self.item(k, tags=tuple(ts))
+
+    def reapply_sort(self):
+        """Forces the tree to re-apply the user's active sort settings after external data injection."""
+        # Always pull the freshest state from config in case another window modified it!
+        if self.config and self.view_id:
+            saved_state = self.config.settings.table_sort_states.get(
+                self.sort_group, {}
+            )
+            if saved_state:
+                saved_col = saved_state.get("column")
+                saved_rev = saved_state.get("reverse", False)
+                # Ensure the inherited sort actually exists in this specific table's columns
+                if saved_col in self["columns"]:
+                    self.active_sort_column = saved_col
+                    self.column_sort_state[saved_col] = saved_rev
+
+        if self.active_sort_column and self.active_sort_column in self["columns"]:
+            self._handle_sort(
+                self.active_sort_column,
+                force_reverse=self.column_sort_state.get(
+                    self.active_sort_column, False
+                ),
+            )
+            return True
+        return False
 
 
 class DynamicTreeviewManager(ttk.Frame):
@@ -556,6 +643,7 @@ class DynamicTreeviewManager(ttk.Frame):
     def rebuild(self, trigger_callback=True):
         if self.tree:
             self.tree.destroy()
+
         self.active_fields = (
             list(self.static_columns)
             if self.static_columns
@@ -570,14 +658,18 @@ class DynamicTreeviewManager(ttk.Frame):
                 if self.static_columns
                 else self.active_fields + ["add_btn"]
             ),
+            view_id=self.view_id,
+            config=self.config,
             **self.kwargs,
         )
         self.tree.active_fields = self.active_fields
         self.tree.pack(fill="both", expand=True)
+
         if not self.static_columns:
             self.tree.bind("<Button-3>", self._show_context_menu)
             self.tree.bind("<Control-Button-1>", self._show_context_menu)
             self.tree.bind("<Button-1>", self._handle_click)
+
         if trigger_callback:
             self.on_update()
 

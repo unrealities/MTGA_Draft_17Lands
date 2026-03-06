@@ -469,6 +469,9 @@ class DashboardFrame(ttk.Frame):
         for row in processed_rows:
             tree.insert("", "end", values=row["vals"], tags=(row["tag"],))
 
+        if hasattr(tree, "reapply_sort"):
+            tree.reapply_sort()
+
     def update_signals(self, scores: Dict[str, float]):
         if self.signal_meter:
             self.signal_meter.update_values(scores)

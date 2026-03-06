@@ -71,6 +71,8 @@ class Settings(BaseModel):
             "overlay_pool_table": ["name", "count", "gihwr"],
         }
     )
+
+    table_sort_states: Dict[str, dict] = Field(default_factory=dict)
     deck_filter: str = constants.DECK_FILTER_DEFAULT
     filter_format: str = constants.DECK_FILTER_FORMAT_COLORS
     result_format: str = constants.RESULT_FORMAT_WIN_RATE
