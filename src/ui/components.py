@@ -502,6 +502,7 @@ class ModernTreeview(ttk.Treeview):
             parent, columns=columns, show="headings", style="Treeview", **kwargs
         )
         self.column_sort_state = {col: False for col in columns}
+        self.active_sort_col = None  # Tracks the currently sorted column
         self.active_fields = []  # Injected by Manager
         self.base_labels = {}  # Store original names for arrows
         self._setup_headers(columns)
@@ -552,10 +553,14 @@ class ModernTreeview(ttk.Treeview):
         self.tag_configure("high_fit", background="#0c4a6e", foreground="#7dd3fc")
 
     def _handle_sort(self, col):
+        self.column_sort_state[col] = not self.column_sort_state[col]
+        self.active_sort_col = col
+        self._apply_sort(col)
+
+    def _apply_sort(self, col):
         from src.card_logic import field_process_sort
 
-        self.column_sort_state[col] = not self.column_sort_state[col]
-        rev = self.column_sort_state[col]
+        rev = self.column_sort_state.get(col, False)
 
         # Apply the visual arrow to the active column, reset the others
         for c in self["columns"]:
