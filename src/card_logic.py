@@ -340,6 +340,7 @@ def suggest_deck(taken_cards, metrics, configuration, event_type="PremierDraft")
     try:
         color_options = identify_top_pairs(taken_cards, metrics)
         all_variants = []
+        incomplete_variants = []
 
         for main_colors in color_options:
             # 1. Variant: Consistency (Strictly 2 colors)
@@ -348,20 +349,20 @@ def suggest_deck(taken_cards, metrics, configuration, event_type="PremierDraft")
                 score, breakdown = calculate_holistic_score(
                     con_deck, main_colors, pool_size, metrics
                 )
-                # THE EXECUTIONER: Do not display incomplete decks
+                variant_data = {
+                    "label_prefix": "Consistent",
+                    "type": "Midrange / Standard",
+                    "rating": score,
+                    "record": estimate_record(score, is_bo3),
+                    "deck_cards": con_deck,
+                    "sideboard_cards": [],
+                    "colors": main_colors,
+                    "breakdown": breakdown,
+                }
                 if "Incomplete Deck" not in breakdown:
-                    all_variants.append(
-                        {
-                            "label_prefix": "Consistent",
-                            "type": "Midrange / Standard",
-                            "rating": score,
-                            "record": estimate_record(score, is_bo3),
-                            "deck_cards": con_deck,
-                            "sideboard_cards": [],
-                            "colors": main_colors,
-                            "breakdown": breakdown,
-                        }
-                    )
+                    all_variants.append(variant_data)
+                else:
+                    incomplete_variants.append(variant_data)
 
             # 2. Variant: Greedy (Splash bombs/synergy)
             greedy_deck, splash_color = build_variant_greedy(
@@ -372,19 +373,20 @@ def suggest_deck(taken_cards, metrics, configuration, event_type="PremierDraft")
                 score, breakdown = calculate_holistic_score(
                     greedy_deck, target_colors, pool_size, metrics
                 )
+                variant_data = {
+                    "label_prefix": f"Splash {splash_color}",
+                    "type": "Power / Domain",
+                    "rating": score,
+                    "record": estimate_record(score, is_bo3),
+                    "deck_cards": greedy_deck,
+                    "sideboard_cards": [],
+                    "colors": target_colors,
+                    "breakdown": breakdown,
+                }
                 if "Incomplete Deck" not in breakdown:
-                    all_variants.append(
-                        {
-                            "label_prefix": f"Splash {splash_color}",
-                            "type": "Power / Domain",
-                            "rating": score,
-                            "record": estimate_record(score, is_bo3),
-                            "deck_cards": greedy_deck,
-                            "sideboard_cards": [],
-                            "colors": target_colors,
-                            "breakdown": breakdown,
-                        }
-                    )
+                    all_variants.append(variant_data)
+                else:
+                    incomplete_variants.append(variant_data)
 
             # 3. Variant: Tempo (Low curve, aggro)
             tempo_deck = build_variant_curve(taken_cards, main_colors, metrics)
@@ -392,19 +394,46 @@ def suggest_deck(taken_cards, metrics, configuration, event_type="PremierDraft")
                 score, breakdown = calculate_holistic_score(
                     tempo_deck, main_colors, pool_size, metrics
                 )
+                variant_data = {
+                    "label_prefix": "Tempo",
+                    "type": "Aggro",
+                    "rating": score,
+                    "record": estimate_record(score, is_bo3),
+                    "deck_cards": tempo_deck,
+                    "sideboard_cards": [],
+                    "colors": main_colors,
+                    "breakdown": breakdown,
+                }
                 if "Incomplete Deck" not in breakdown:
-                    all_variants.append(
-                        {
-                            "label_prefix": "Tempo",
-                            "type": "Aggro",
-                            "rating": score,
-                            "record": estimate_record(score, is_bo3),
-                            "deck_cards": tempo_deck,
-                            "sideboard_cards": [],
-                            "colors": main_colors,
-                            "breakdown": breakdown,
-                        }
-                    )
+                    all_variants.append(variant_data)
+                else:
+                    incomplete_variants.append(variant_data)
+
+        # 4. Variant: Good Stuff Soup (Fallback for disjointed drafts)
+        soup_deck, soup_colors = build_variant_soup(taken_cards, metrics)
+        if soup_deck:
+            score, breakdown = calculate_holistic_score(
+                soup_deck, soup_colors, pool_size, metrics
+            )
+            variant_data = {
+                "label_prefix": "Good Stuff (Soup)",
+                "type": "Domain / 4+ Colors",
+                "rating": score,
+                "record": estimate_record(score, is_bo3),
+                "deck_cards": soup_deck,
+                "sideboard_cards": [],
+                "colors": soup_colors[:3] if soup_colors else ["All Decks"],
+                "breakdown": breakdown,
+            }
+            if "Incomplete Deck" not in breakdown:
+                all_variants.append(variant_data)
+            else:
+                incomplete_variants.append(variant_data)
+
+        # If the pool is too spread out to form ANY complete 23-card decks,
+        # fall back to the incomplete variants so the UI doesn't look broken.
+        if not all_variants and incomplete_variants:
+            all_variants = incomplete_variants
 
         # Sort all generated variants by their holistic score
         all_variants.sort(key=lambda x: x["rating"], reverse=True)
@@ -425,12 +454,13 @@ def suggest_deck(taken_cards, metrics, configuration, event_type="PremierDraft")
                 continue
             seen_signatures.add(sig)
 
-            pair_key = "".join(sorted(variant["colors"][:2]))
+            # Map the key dynamically (handles 2 colors for standard, 3 colors for soup)
+            pair_key = "".join(sorted(variant["colors"]))
             label = f"{pair_key} {variant['label_prefix']}"
             sorted_decks[label] = variant
 
             # Limit to top 10 unique options so we don't overwhelm the UI
-            if len(sorted_decks) >= 10:
+            if len(sorted_decks) >= 10: 
                 break
 
     except Exception as e:
@@ -750,6 +780,37 @@ def build_variant_curve(pool, colors, metrics):
     basics = calculate_dynamic_mana_base(spells, colors, forced_count=needed_basics)
 
     return stack_cards(spells + non_basic_lands + basics)
+
+
+def build_variant_soup(pool, metrics):
+    """Builds a 'Good Stuff' deck strictly prioritizing global power, ignoring color constraints."""
+    candidates = [c for c in pool if "Land" not in c.get("types", [])]
+
+    # Sort entirely by Global Rating (All Decks)
+    candidates.sort(
+        key=lambda x: get_card_rating(x, ["All Decks"], metrics), reverse=True
+    )
+    spells = candidates[:23]
+
+    if not spells:
+        return None, []
+
+    used_colors = set()
+    for c in spells:
+        for color in c.get("colors", []):
+            used_colors.add(color)
+    soup_colors = list(used_colors)
+
+    non_basic_lands = select_useful_lands(pool, soup_colors)
+
+    # Fill exactly to 40
+    total_lands_needed = 40 - len(spells)
+    needed_basics = max(0, total_lands_needed - len(non_basic_lands))
+    basics = calculate_dynamic_mana_base(
+        spells, soup_colors, forced_count=needed_basics
+    )
+
+    return stack_cards(spells + non_basic_lands + basics), soup_colors
 
 
 # --- UTILITIES ---

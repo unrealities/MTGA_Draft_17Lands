@@ -1,3 +1,14 @@
+===================== RELEASE NOTES 4.06 =====================
+* unrealities: [UX/UI] Reduced the default size of welcome messages and improved text wrapping when the window is resized.
+* unrealities: [UX/UI] Added smaller UI scale options down to 40% in Preferences for users on smaller displays.
+* unrealities: [UX/UI] Adjusted default button paddings to make them less bulky on Windows.
+* unrealities: [Feature] The Dataset Download process now displays a detailed summary messagebox when completed. This summary reports the exact 17Lands Card Coverage matching percentage, making it immediately obvious if 17Lands or MTGA data is missing or out-of-sync. It also reports why Scryfall tags may be missing.
+* unrealities: [Bug] Fixed an issue where Scryfall tags were missing for newly released sets. Scryfall delays adding the 'is:booster' attribute to new cards, which was previously filtering them out of our queries.
+* unrealities: [Bug] Fixed a crash unpacking cached Scryfall tag tuples that would break the download process if a cache hit occurred.
+* unrealities: [Bug] Fixed an issue where the application would not work with consecutive drafts.
+* unrealities: [Feature] Added "Good Stuff (Soup)" as a fallback option for disjointed drafts.
+* adverseselection: [Bug] Suppress returnable indicator for user-picked cards
+
 ===================== RELEASE NOTES 4.05 =====================
 This is a major performance and stability update focused on speed, responsiveness, and smarter draft advice.
 

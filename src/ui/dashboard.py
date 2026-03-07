@@ -52,6 +52,7 @@ class DashboardFrame(ttk.Frame):
         return self.missing_manager.tree if self.missing_manager else None
 
     def _build_layout(self):
+        self._dynamic_wrap_labels = []
         # Base grid for the Dashboard to hold the State Frames
         self.columnconfigure(0, weight=1)
         self.rowconfigure(0, weight=1)
@@ -61,15 +62,24 @@ class DashboardFrame(ttk.Frame):
         self._build_active_state()
 
         self._update_dashboard_state()
+        self.bind("<Configure>", self._on_resize)
+
+    def _on_resize(self, event):
+        if event.widget == self:
+            if event.width > 100:
+                wrap_len = min(550, max(300, event.width - 60))
+                for lbl in self._dynamic_wrap_labels:
+                    if lbl.winfo_exists():
+                        lbl.configure(wraplength=wrap_len)
 
     def _build_customization_tips(self, parent):
         """Helper to build a unified tips section for both waiting screens."""
-        tips_frame = ttk.Frame(parent, style="Card.TFrame", padding=20)
+        tips_frame = ttk.Frame(parent)
 
         ttk.Label(
             tips_frame,
             text="✨ Personalize Your Experience",
-            font=(Theme.FONT_FAMILY, 16, "bold"),
+            font=(Theme.FONT_FAMILY, 11, "bold"),
             bootstyle="primary",
         ).pack(anchor="w", pady=(0, 8))
 
@@ -89,24 +99,25 @@ class DashboardFrame(ttk.Frame):
         ]
 
         for title, desc in tips:
-            row = ttk.Frame(tips_frame, style="Card.TFrame")
-            row.pack(fill="x", pady=4)
+            row = ttk.Frame(tips_frame)
+            row.pack(fill="x", pady=3)
 
             ttk.Label(
                 row,
                 text=title,
-                font=(Theme.FONT_FAMILY, 12, "bold"),
+                font=(Theme.FONT_FAMILY, 9, "bold"),
                 bootstyle="primary",
             ).pack(anchor="nw")
 
-            ttk.Label(
+            lbl = ttk.Label(
                 row,
                 text=desc,
-                font=(Theme.FONT_FAMILY, 11),
+                font=(Theme.FONT_FAMILY, 9),
                 bootstyle="info",
-                wraplength=400,
                 justify="left",
-            ).pack(anchor="nw", pady=(2, 0))
+            )
+            lbl.pack(anchor="nw", fill="x", expand=True)
+            self._dynamic_wrap_labels.append(lbl)
 
         return tips_frame
 
@@ -114,24 +125,28 @@ class DashboardFrame(ttk.Frame):
         """State 1: First time user, no data downloaded."""
         self.no_data_frame = ttk.Frame(self)
 
-        center_box = ttk.Frame(self.no_data_frame, style="Card.TFrame", padding=30)
+        center_box = ttk.Frame(self.no_data_frame)
         center_box.pack(expand=True)
 
         ttk.Label(
             center_box,
             text="👋 Welcome to MTGA Draft Tool",
-            font=(Theme.FONT_FAMILY, 16, "bold"),
+            font=(Theme.FONT_FAMILY, 13, "bold"),
             bootstyle="primary",
-        ).pack(pady=(0, 10))
+            justify="center",
+        ).pack(pady=(0, 10), anchor="center")
 
-        ttk.Label(
+        desc1 = ttk.Label(
             center_box,
             text="No 17Lands dataset is currently loaded. You need to download data before you can draft.",
-            font=(Theme.FONT_FAMILY, 12),
-        ).pack(pady=(0, 20))
+            font=(Theme.FONT_FAMILY, 9),
+            justify="center",
+        )
+        desc1.pack(pady=(0, 15), anchor="center")
+        self._dynamic_wrap_labels.append(desc1)
 
-        step_frame = ttk.Frame(center_box, style="Card.TFrame")
-        step_frame.pack(fill="x")
+        step_frame = ttk.Frame(center_box)
+        step_frame.pack(anchor="center")
 
         steps = [
             "1. Click the 'Datasets' tab below.",
@@ -142,65 +157,78 @@ class DashboardFrame(ttk.Frame):
             ttk.Label(
                 step_frame,
                 text=s,
-                font=(Theme.FONT_FAMILY, 12, "bold"),
-            ).pack(anchor="w", pady=4)
+                font=(Theme.FONT_FAMILY, 9, "bold"),
+            ).pack(anchor="w", pady=2)
 
-        expl_frame = ttk.Frame(center_box, style="Card.TFrame")
-        expl_frame.pack(fill="x", pady=(15, 0))
+        expl_frame = ttk.Frame(center_box)
+        expl_frame.pack(pady=(15, 0), anchor="center")
 
         ttk.Label(
             expl_frame,
             text="Dataset Options:",
-            font=(Theme.FONT_FAMILY, 11, "bold"),
+            font=(Theme.FONT_FAMILY, 9, "bold"),
             bootstyle="warning",
         ).pack(anchor="w", pady=(0, 5))
-        ttk.Label(
+
+        lbl_ug = ttk.Label(
             expl_frame,
             text="• USERS: 'All' pulls data from everyone. 'Top' pulls data exclusively from top players.",
-            font=(Theme.FONT_FAMILY, 11),
-        ).pack(anchor="w", pady=2)
-        ttk.Label(
+            font=(Theme.FONT_FAMILY, 9),
+            justify="left",
+        )
+        lbl_ug.pack(anchor="w", pady=2)
+        self._dynamic_wrap_labels.append(lbl_ug)
+
+        lbl_mg = ttk.Label(
             expl_frame,
             text="• MIN GAMES: The minimum amount of data required to show color-specific win rates.",
-            font=(Theme.FONT_FAMILY, 11),
-        ).pack(anchor="w", pady=2)
+            font=(Theme.FONT_FAMILY, 9),
+            justify="left",
+        )
+        lbl_mg.pack(anchor="w", pady=2)
+        self._dynamic_wrap_labels.append(lbl_mg)
 
         tips = self._build_customization_tips(center_box)
-        tips.pack(fill="x", pady=(20, 0))
+        tips.pack(pady=(20, 0), anchor="center")
 
     def _build_waiting_state(self):
         """State 2: Data downloaded, but no draft is active."""
         self.waiting_frame = ttk.Frame(self)
 
-        center_box = ttk.Frame(self.waiting_frame, padding=30)
+        center_box = ttk.Frame(self.waiting_frame)
         center_box.pack(expand=True)
 
         ttk.Label(
             center_box,
             text="Waiting for draft to begin...",
-            font=(Theme.FONT_FAMILY, 16, "bold"),
+            font=(Theme.FONT_FAMILY, 13, "bold"),
             bootstyle="primary",
-        ).pack(pady=(0, 10))
+            justify="center",
+        ).pack(pady=(0, 10), anchor="center")
 
-        ttk.Label(
+        wait_lbl = ttk.Label(
             center_box,
             text="Ensure 'Detailed Logs (Plugin Support)' is checked in your MTGA Account Settings.",
-            font=(Theme.FONT_FAMILY, 11),
-        ).pack(pady=(0, 20))
+            font=(Theme.FONT_FAMILY, 9),
+            justify="center",
+        )
+        wait_lbl.pack(pady=(0, 20), anchor="center")
+        self._dynamic_wrap_labels.append(wait_lbl)
 
         tips = self._build_customization_tips(center_box)
-        tips.pack(fill="x")
+        tips.pack(anchor="center")
 
     def _build_active_state(self):
         """State 3: Active drafting / deckbuilding."""
         self.content_frame = ttk.Frame(self)
-        self.content_frame.columnconfigure(0, weight=4)
-        self.content_frame.columnconfigure(1, weight=1)
+        self.content_frame.columnconfigure(0, weight=1)
+        self.content_frame.columnconfigure(1, weight=0)
+        self.content_frame.columnconfigure(2, weight=0)
         self.content_frame.rowconfigure(0, weight=1)
 
         # --- LEFT: Tables ---
         self.f_left = ttk.Frame(self.content_frame)
-        self.f_left.grid(row=0, column=0, sticky="nsew", padx=(10, 15), pady=10)
+        self.f_left.grid(row=0, column=0, sticky="nsew", padx=(10, 5), pady=10)
         self.f_left.columnconfigure(0, weight=1)
         self.f_left.rowconfigure(0, weight=1)
         self.f_left.rowconfigure(1, weight=0)
@@ -255,10 +283,28 @@ class DashboardFrame(ttk.Frame):
 
         self.missing_frame.grid_remove()
 
+        # --- MIDDLE: Thin Rail ---
+        self.sidebar_visible = self.configuration.settings.collapsible_states.get(
+            "sidebar_panel", True
+        )
+
+        self.rail_btn = ttk.Button(
+            self.content_frame,
+            text="◀" if self.sidebar_visible else "▶",
+            command=self._toggle_sidebar,
+            bootstyle="outline-secondary",
+            width=1,
+        )
+        self.rail_btn.grid(row=0, column=1, sticky="ns", pady=5, padx=(0, 5))
+
         # --- RIGHT: Sidebar ---
         self.sidebar_frame = ttk.Frame(self.content_frame, width=250)
-        self.sidebar_frame.grid(row=0, column=1, sticky="nsew", padx=(5, 10), pady=10)
         self.sidebar_frame.pack_propagate(False)
+
+        if self.sidebar_visible:
+            self.sidebar_frame.grid(
+                row=0, column=2, sticky="nsew", padx=(0, 10), pady=10
+            )
 
         self.advisor_panel = AdvisorPanel(self.sidebar_frame, self.configuration)
         self.advisor_panel.pack(fill="x", pady=(0, 15))
@@ -503,9 +549,21 @@ class DashboardFrame(ttk.Frame):
         if hasattr(self, "advisor_panel"):
             self.advisor_panel.update_recommendations(recs)
 
-    def set_sidebar_visible(self, visible: bool):
-        """Dynamically grid or hide the sidebar to reclaim table width."""
-        if visible:
-            self.sidebar_frame.grid()
+    def _toggle_sidebar(self):
+        """Dynamically grid or hide the sidebar via the rail button."""
+        self.sidebar_visible = not self.sidebar_visible
+        self.rail_btn.config(text="◀" if self.sidebar_visible else "▶")
+
+        if self.sidebar_visible:
+            self.sidebar_frame.grid(
+                row=0, column=2, sticky="nsew", padx=(0, 10), pady=10
+            )
         else:
             self.sidebar_frame.grid_remove()
+
+        self.configuration.settings.collapsible_states["sidebar_panel"] = (
+            self.sidebar_visible
+        )
+        from src.configuration import write_configuration
+
+        write_configuration(self.configuration)

@@ -94,6 +94,7 @@ class ArenaScanner:
 
         self.data_source = "None"
         self.event_string = ""
+        self.current_transaction_id = ""
         self.draft_label = ""
         self.draft_history = []
         self.current_draft_id = ""
@@ -147,6 +148,7 @@ class ArenaScanner:
                 self.search_offset = 0
                 self.draft_start_offset = 0
                 self.file_size = 0
+                self.current_transaction_id = ""
             self.set_data.clear()
             self.draft_type = constants.LIMITED_TYPE_UNKNOWN
             self.pick_offset = 0
@@ -269,7 +271,10 @@ class ArenaScanner:
             event_name = json_find("EventName", event_data)
 
             if self.event_string == event_name:
-                return update, event_type, draft_id
+                if getattr(self, "current_transaction_id", "") == draft_id:
+                    return update, event_type, draft_id
+                if json_find("EntryCurrencyType", event_data) is None:
+                    return update, event_type, draft_id
 
             logger.info("Event found %s", event_name)
             event_match, event_type, event_label, event_set, number_of_players = (
@@ -286,6 +291,7 @@ class ArenaScanner:
                 self.draft_sets = event_set
                 self.draft_label = event_label
                 self.event_string = event_name
+                self.current_transaction_id = draft_id
                 self.number_of_players = number_of_players
                 update = True
 
@@ -1116,9 +1122,7 @@ class ArenaScanner:
                     return_pick = (i + 1) + rotation_size
                     if return_pick > self.current_pick:
                         picked_from_slot = set(
-                            self.picked_cards[i]
-                            if i < len(self.picked_cards)
-                            else []
+                            self.picked_cards[i] if i < len(self.picked_cards) else []
                         )
                         remaining_ids = [
                             cid for cid in slot_ids if cid not in picked_from_slot

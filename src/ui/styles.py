@@ -18,7 +18,11 @@ logger = logging.getLogger(__name__)
 
 
 class Theme:
-    FONT_FAMILY = "Helvetica Neue" if sys.platform == "darwin" else "Segoe UI"
+    FONT_FAMILY = (
+        "Helvetica Neue"
+        if sys.platform == "darwin"
+        else ("Ubuntu" if sys.platform == "linux" else "Segoe UI")
+    )
     FONT_SIZE_MAIN = 10
     FONT_SIZE_SMALL = 9
 
@@ -146,7 +150,7 @@ class Theme:
 
                 cls.BG_PRIMARY = sys_bg
                 cls.BG_SECONDARY = sys_bg
-                cls.BG_TERTIARY = "#ffffff"
+                cls.BG_TERTIARY = "#cccccc"
                 cls.TEXT_MAIN = sys_fg
                 cls.TEXT_MUTED = "gray"
                 cls.ACCENT = sys_select_bg
@@ -177,7 +181,7 @@ class Theme:
                 cls.INFO = colors.info
 
         # 3. Global Configuration (Applies regardless of theme engine)
-        main_font_size = max(8, int(cls.FONT_SIZE_MAIN * scale))
+        main_font_size = max(5, int(cls.FONT_SIZE_MAIN * scale))
 
         try:
             # Dynamically ask the OS for the exact bounding box height of the font
@@ -195,10 +199,16 @@ class Theme:
             logger.warning(f"Dynamic font measurement failed: {e}")
             # Fallback if font isn't loaded by the OS yet
             base_row_height = 26 if sys.platform == "darwin" else 32
-            row_height = max(base_row_height, int(base_row_height * scale))
+            row_height = max(10, int(base_row_height * scale))
 
         style.configure("Treeview", rowheight=row_height)
         style.configure("TNotebook", borderwidth=0)
+
+        # Make buttons slightly less bulky, especially on Windows
+        try:
+            style.configure("TButton", padding=(6, 3))
+        except Exception:
+            pass
 
         # Increase PanedWindow Sash (Draggable Splitter) visibility and grab area globally
         # We use direct tk calls to bypass ttkbootstrap's Style parsing bug for internal elements
@@ -225,6 +235,11 @@ class Theme:
             style.configure(
                 "Treeview.Heading", font=(cls.FONT_FAMILY, main_font_size, "bold")
             )
+
+        # Configure Card.TFrame to be flat
+        style.configure(
+            "Card.TFrame", background=cls.BG_PRIMARY, relief="flat", borderwidth=0
+        )
 
         # Let ttkbootstrap handle standard widget styles
         # Only perform specific repairs for internal elements that are hard to style via bootstyle
