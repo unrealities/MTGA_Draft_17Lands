@@ -177,7 +177,7 @@ class Theme:
                 cls.INFO = colors.info
 
         # 3. Global Configuration (Applies regardless of theme engine)
-        main_font_size = max(8, int(cls.FONT_SIZE_MAIN * scale))
+        main_font_size = max(5, int(cls.FONT_SIZE_MAIN * scale))
 
         try:
             # Dynamically ask the OS for the exact bounding box height of the font
@@ -195,10 +195,16 @@ class Theme:
             logger.warning(f"Dynamic font measurement failed: {e}")
             # Fallback if font isn't loaded by the OS yet
             base_row_height = 26 if sys.platform == "darwin" else 32
-            row_height = max(base_row_height, int(base_row_height * scale))
+            row_height = max(10, int(base_row_height * scale))
 
         style.configure("Treeview", rowheight=row_height)
         style.configure("TNotebook", borderwidth=0)
+
+        # Make buttons slightly less bulky, especially on Windows
+        try:
+            style.configure("TButton", padding=(6, 3))
+        except Exception:
+            pass
 
         # Increase PanedWindow Sash (Draggable Splitter) visibility and grab area globally
         # We use direct tk calls to bypass ttkbootstrap's Style parsing bug for internal elements

@@ -52,6 +52,7 @@ class DashboardFrame(ttk.Frame):
         return self.missing_manager.tree if self.missing_manager else None
 
     def _build_layout(self):
+        self._dynamic_wrap_labels = []
         # Base grid for the Dashboard to hold the State Frames
         self.columnconfigure(0, weight=1)
         self.rowconfigure(0, weight=1)
@@ -61,15 +62,24 @@ class DashboardFrame(ttk.Frame):
         self._build_active_state()
 
         self._update_dashboard_state()
+        self.bind("<Configure>", self._on_resize)
+
+    def _on_resize(self, event):
+        # Dynamically shrink/grow word wrap relative to the active window space
+        if event.width > 50:
+            wrap_len = max(200, event.width - 60)
+            for lbl in self._dynamic_wrap_labels:
+                if lbl.winfo_exists():
+                    lbl.configure(wraplength=wrap_len)
 
     def _build_customization_tips(self, parent):
         """Helper to build a unified tips section for both waiting screens."""
-        tips_frame = ttk.Frame(parent, style="Card.TFrame", padding=20)
+        tips_frame = ttk.Frame(parent, style="Card.TFrame", padding=15)
 
         ttk.Label(
             tips_frame,
             text="✨ Personalize Your Experience",
-            font=(Theme.FONT_FAMILY, 16, "bold"),
+            font=(Theme.FONT_FAMILY, 11, "bold"),
             bootstyle="primary",
         ).pack(anchor="w", pady=(0, 8))
 
@@ -90,23 +100,24 @@ class DashboardFrame(ttk.Frame):
 
         for title, desc in tips:
             row = ttk.Frame(tips_frame, style="Card.TFrame")
-            row.pack(fill="x", pady=4)
+            row.pack(fill="x", pady=2)
 
             ttk.Label(
                 row,
                 text=title,
-                font=(Theme.FONT_FAMILY, 12, "bold"),
+                font=(Theme.FONT_FAMILY, 9, "bold"),
                 bootstyle="primary",
             ).pack(anchor="nw")
 
-            ttk.Label(
+            lbl = ttk.Label(
                 row,
                 text=desc,
-                font=(Theme.FONT_FAMILY, 11),
+                font=(Theme.FONT_FAMILY, 9),
                 bootstyle="info",
-                wraplength=400,
                 justify="left",
-            ).pack(anchor="nw", pady=(2, 0))
+            )
+            lbl.pack(anchor="nw", fill="x", expand=True)
+            self._dynamic_wrap_labels.append(lbl)
 
         return tips_frame
 
@@ -114,21 +125,24 @@ class DashboardFrame(ttk.Frame):
         """State 1: First time user, no data downloaded."""
         self.no_data_frame = ttk.Frame(self)
 
-        center_box = ttk.Frame(self.no_data_frame, style="Card.TFrame", padding=30)
-        center_box.pack(expand=True)
+        center_box = ttk.Frame(self.no_data_frame, style="Card.TFrame", padding=20)
+        center_box.pack(expand=True, fill="x", padx=20)
 
         ttk.Label(
             center_box,
             text="👋 Welcome to MTGA Draft Tool",
-            font=(Theme.FONT_FAMILY, 16, "bold"),
+            font=(Theme.FONT_FAMILY, 13, "bold"),
             bootstyle="primary",
         ).pack(pady=(0, 10))
 
-        ttk.Label(
+        desc1 = ttk.Label(
             center_box,
             text="No 17Lands dataset is currently loaded. You need to download data before you can draft.",
-            font=(Theme.FONT_FAMILY, 12),
-        ).pack(pady=(0, 20))
+            font=(Theme.FONT_FAMILY, 9),
+            justify="center",
+        )
+        desc1.pack(fill="x", pady=(0, 15))
+        self._dynamic_wrap_labels.append(desc1)
 
         step_frame = ttk.Frame(center_box, style="Card.TFrame")
         step_frame.pack(fill="x")
@@ -142,51 +156,62 @@ class DashboardFrame(ttk.Frame):
             ttk.Label(
                 step_frame,
                 text=s,
-                font=(Theme.FONT_FAMILY, 12, "bold"),
-            ).pack(anchor="w", pady=4)
+                font=(Theme.FONT_FAMILY, 9, "bold"),
+            ).pack(anchor="w", pady=2)
 
         expl_frame = ttk.Frame(center_box, style="Card.TFrame")
-        expl_frame.pack(fill="x", pady=(15, 0))
+        expl_frame.pack(fill="x", pady=(10, 0))
 
         ttk.Label(
             expl_frame,
             text="Dataset Options:",
-            font=(Theme.FONT_FAMILY, 11, "bold"),
+            font=(Theme.FONT_FAMILY, 9, "bold"),
             bootstyle="warning",
         ).pack(anchor="w", pady=(0, 5))
-        ttk.Label(
+
+        lbl_ug = ttk.Label(
             expl_frame,
             text="• USERS: 'All' pulls data from everyone. 'Top' pulls data exclusively from top players.",
-            font=(Theme.FONT_FAMILY, 11),
-        ).pack(anchor="w", pady=2)
-        ttk.Label(
+            font=(Theme.FONT_FAMILY, 9),
+            justify="left",
+        )
+        lbl_ug.pack(anchor="w", fill="x", expand=True, pady=2)
+        self._dynamic_wrap_labels.append(lbl_ug)
+
+        lbl_mg = ttk.Label(
             expl_frame,
             text="• MIN GAMES: The minimum amount of data required to show color-specific win rates.",
-            font=(Theme.FONT_FAMILY, 11),
-        ).pack(anchor="w", pady=2)
+            font=(Theme.FONT_FAMILY, 9),
+            justify="left",
+        )
+        lbl_mg.pack(anchor="w", fill="x", expand=True, pady=2)
+        self._dynamic_wrap_labels.append(lbl_mg)
 
         tips = self._build_customization_tips(center_box)
-        tips.pack(fill="x", pady=(20, 0))
+        tips.pack(fill="x", pady=(15, 0))
 
     def _build_waiting_state(self):
         """State 2: Data downloaded, but no draft is active."""
         self.waiting_frame = ttk.Frame(self)
 
-        center_box = ttk.Frame(self.waiting_frame, padding=30)
-        center_box.pack(expand=True)
+        center_box = ttk.Frame(self.waiting_frame, padding=20)
+        center_box.pack(expand=True, fill="x", padx=20)
 
         ttk.Label(
             center_box,
             text="Waiting for draft to begin...",
-            font=(Theme.FONT_FAMILY, 16, "bold"),
+            font=(Theme.FONT_FAMILY, 13, "bold"),
             bootstyle="primary",
         ).pack(pady=(0, 10))
 
-        ttk.Label(
+        wait_lbl = ttk.Label(
             center_box,
             text="Ensure 'Detailed Logs (Plugin Support)' is checked in your MTGA Account Settings.",
-            font=(Theme.FONT_FAMILY, 11),
-        ).pack(pady=(0, 20))
+            font=(Theme.FONT_FAMILY, 9),
+            justify="center",
+        )
+        wait_lbl.pack(fill="x", expand=True, pady=(0, 20))
+        self._dynamic_wrap_labels.append(wait_lbl)
 
         tips = self._build_customization_tips(center_box)
         tips.pack(fill="x")

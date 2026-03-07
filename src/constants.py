@@ -1,9 +1,9 @@
 import os
 import getpass
 
-APPLICATION_VERSION = 4.05
+APPLICATION_VERSION = 4.06
 OLD_APPLICATION_VERSION = "3.2"
-PREVIOUS_APPLICATION_VERSION = "0404"
+PREVIOUS_APPLICATION_VERSION = "0405"
 
 FONT_SANS_SERIF = "Arial"
 FONT_MONO_SPACE = "Courier"
@@ -762,6 +762,10 @@ CARD_RARITY_DICT = {
 }
 
 UI_SIZE_DICT = {
+    "40%": 0.4,
+    "50%": 0.5,
+    "60%": 0.6,
+    "70%": 0.7,
     "80%": 0.8,
     "90%": 0.9,
     "100%": 1.0,
