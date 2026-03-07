@@ -18,7 +18,11 @@ logger = logging.getLogger(__name__)
 
 
 class Theme:
-    FONT_FAMILY = "Helvetica Neue" if sys.platform == "darwin" else "Segoe UI"
+    FONT_FAMILY = (
+        "Helvetica Neue"
+        if sys.platform == "darwin"
+        else ("Ubuntu" if sys.platform == "linux" else "Segoe UI")
+    )
     FONT_SIZE_MAIN = 10
     FONT_SIZE_SMALL = 9
 
@@ -146,7 +150,7 @@ class Theme:
 
                 cls.BG_PRIMARY = sys_bg
                 cls.BG_SECONDARY = sys_bg
-                cls.BG_TERTIARY = "#ffffff"
+                cls.BG_TERTIARY = "#cccccc"
                 cls.TEXT_MAIN = sys_fg
                 cls.TEXT_MUTED = "gray"
                 cls.ACCENT = sys_select_bg
@@ -231,6 +235,15 @@ class Theme:
             style.configure(
                 "Treeview.Heading", font=(cls.FONT_FAMILY, main_font_size, "bold")
             )
+
+        # Configure Card.TFrame for all themes to ensure panels have distinct visual boundaries
+        style.configure(
+            "Card.TFrame",
+            background=cls.BG_PRIMARY,
+            relief="solid",
+            borderwidth=1,
+            bordercolor=cls.BG_TERTIARY if cls.BG_TERTIARY != "#ffffff" else "#cccccc",
+        )
 
         # Let ttkbootstrap handle standard widget styles
         # Only perform specific repairs for internal elements that are hard to style via bootstyle

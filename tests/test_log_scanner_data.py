@@ -1094,12 +1094,45 @@ DSK_SEALED_NAVIGATION_ENTRY = [
     (
         "Navigation Event (Duplicate)",
         EventResults(
-            new_event=False,
+            new_event=True,
             data_update=False,
             current_set="DSK",
             current_event="Sealed",
         ),
         r'[UnityCrossThreadLogger]==> Event_Join {"id":"duplicate-id-1234","request":"{\"EventName\":\"Sealed_DSK_20240924\",\"EntryCurrencyType\":\"Gem\",\"EntryCurrencyPaid\":2000,\"CustomTokenId\":null}"}',
+    ),
+]
+
+CONSECUTIVE_DRAFT_ENTRIES = [
+    (
+        "First Draft Start",
+        EventResults(new_event=True, current_set="OTJ", current_event="PremierDraft"),
+        r'[UnityCrossThreadLogger]==> Event_Join {"id":"draft-1-id","request":"{\"EventName\":\"PremierDraft_OTJ_20240416\",\"EntryCurrencyType\":\"Gem\",\"EntryCurrencyPaid\":1500,\"CustomTokenId\":null}"}',
+    ),
+    (
+        "Navigation Event (Same ID)",
+        EventResults(
+            new_event=False,
+            data_update=False,
+            current_set="OTJ",
+            current_event="PremierDraft",
+        ),
+        r'[UnityCrossThreadLogger]==> Event_Join {"id":"draft-1-id","request":"{\"EventName\":\"PremierDraft_OTJ_20240416\",\"EntryCurrencyType\":\"Gem\",\"EntryCurrencyPaid\":1500,\"CustomTokenId\":null}"}',
+    ),
+    (
+        "Navigation Event (No Fee)",
+        EventResults(
+            new_event=False,
+            data_update=False,
+            current_set="OTJ",
+            current_event="PremierDraft",
+        ),
+        r'[UnityCrossThreadLogger]==> Event_Join {"id":"draft-temp-id","request":"{\"EventName\":\"PremierDraft_OTJ_20240416\"}"}',
+    ),
+    (
+        "Second Draft Start",
+        EventResults(new_event=True, current_set="OTJ", current_event="PremierDraft"),
+        r'[UnityCrossThreadLogger]==> Event_Join {"id":"draft-2-id","request":"{\"EventName\":\"PremierDraft_OTJ_20240416\",\"EntryCurrencyType\":\"Gold\",\"EntryCurrencyPaid\":10000,\"CustomTokenId\":null}"}',
     ),
 ]
 

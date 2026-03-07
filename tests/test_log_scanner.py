@@ -19,6 +19,7 @@ from tests.test_log_scanner_data import (
     DSK_SEALED_ENTRIES_2024_9_24,
     ARENA_OPEN_TEST_ENTRIES,
     DSK_SEALED_NAVIGATION_ENTRY,
+    CONSECUTIVE_DRAFT_ENTRIES,
     OM1_PICK_TWO_PREMIER_DRAFT_ENTRIES,
     TMT_PICK_TWO_DRAFT_ENTRIES_2026_03_03,
     POWERED_CUBE_DRAFT_ENTRIES,
@@ -308,6 +309,27 @@ def test_dsk_sealed_navigation(function_scanner, entry_label, expected, entry_st
             entry_string,
             mock_ocr,
         )
+
+
+def test_consecutive_drafts_reset(function_scanner):
+    """
+    Verify that consecutive drafts of the exact same set and format are detected
+    as new events due to different transaction IDs and fee payment. This test
+    does not use parametrize to ensure the state accumulates sequentially.
+    """
+    with (
+        patch("src.log_scanner.OCR.get_pack") as mock_ocr,
+        patch("src.log_scanner.capture_screen_base64str"),
+    ):
+        for entry_label, expected, entry_string in CONSECUTIVE_DRAFT_ENTRIES:
+            event_test_cases(
+                function_scanner,
+                "Consecutive Drafts",
+                entry_label,
+                expected,
+                entry_string,
+                mock_ocr,
+            )
 
 
 @pytest.mark.parametrize(

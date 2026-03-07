@@ -5,6 +5,7 @@
 * unrealities: [Feature] The Dataset Download process now displays a detailed summary messagebox when completed. This summary reports the exact 17Lands Card Coverage matching percentage, making it immediately obvious if 17Lands or MTGA data is missing or out-of-sync. It also reports why Scryfall tags may be missing.
 * unrealities: [Bug] Fixed an issue where Scryfall tags were missing for newly released sets. Scryfall delays adding the 'is:booster' attribute to new cards, which was previously filtering them out of our queries.
 * unrealities: [Bug] Fixed a crash unpacking cached Scryfall tag tuples that would break the download process if a cache hit occurred.
+* unrealities: [Bug] Fixed an issue where the application would not work with consecutive drafts.
 * adverseselection: [Bug] Suppress returnable indicator for user-picked cards
 
 ===================== RELEASE NOTES 4.05 =====================

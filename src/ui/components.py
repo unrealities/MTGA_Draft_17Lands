@@ -214,7 +214,7 @@ class CardToolTip(tkinter.Toplevel):
             else (
                 "#eab308"
                 if rarity == "Rare"
-                else "#94a3b8" if rarity == "Uncommon" else None
+                else "#38bdf8" if rarity == "Uncommon" else None
             )
         )
         tb.Label(
@@ -512,10 +512,28 @@ class ModernTreeview(ttk.Treeview):
             )
 
     def _setup_row_colors(self):
+        # Bind theme updates so zebra striping changes seamlessly
+        self.bind(
+            "<<ThemeChanged>>", lambda e: self._apply_dynamic_row_colors(), add="+"
+        )
+        self._apply_dynamic_row_colors()
+
+    def _apply_dynamic_row_colors(self):
+        from src.ui.styles import Theme
+
+        # Standard Zebra Striping
+        self.tag_configure(
+            "bw_even", background=Theme.BG_SECONDARY, foreground=Theme.TEXT_MAIN
+        )
+        self.tag_configure(
+            "bw_odd", background=Theme.BG_PRIMARY, foreground=Theme.TEXT_MAIN
+        )
+
+        # Colored Highlights (Preserved for "Highlight Row by Mana Cost" setting)
         for t, b, f in [
             ("white", "#f8fafc", "#0f172a"),
             ("blue", "#e0f2fe", "#0369a1"),
-            ("black", "#334155", "#f8fafc"),
+            ("black", "#cbd5e1", "#0f172a"),
             ("red", "#fee2e2", "#991b1b"),
             ("green", "#dcfce7", "#166534"),
             ("gold", "#fef3c7", "#92400e"),
