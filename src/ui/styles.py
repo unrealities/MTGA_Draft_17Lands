@@ -236,13 +236,9 @@ class Theme:
                 "Treeview.Heading", font=(cls.FONT_FAMILY, main_font_size, "bold")
             )
 
-        # Configure Card.TFrame for all themes to ensure panels have distinct visual boundaries
+        # Configure Card.TFrame to be flat
         style.configure(
-            "Card.TFrame",
-            background=cls.BG_PRIMARY,
-            relief="solid",
-            borderwidth=1,
-            bordercolor=cls.BG_TERTIARY if cls.BG_TERTIARY != "#ffffff" else "#cccccc",
+            "Card.TFrame", background=cls.BG_PRIMARY, relief="flat", borderwidth=0
         )
 
         # Let ttkbootstrap handle standard widget styles

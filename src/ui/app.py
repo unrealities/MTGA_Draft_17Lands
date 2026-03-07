@@ -267,11 +267,11 @@ class DraftApp:
         self.main_container.pack(fill="both", expand=True)
 
         # --- HEADER CONTAINER ---
-        header_frame = ttk.Frame(self.main_container, style="Card.TFrame", padding=5)
+        header_frame = ttk.Frame(self.main_container, padding=5)
         header_frame.pack(fill="x", pady=(0, 10))
 
         # ROW 1: Status & Overlay
-        row1 = ttk.Frame(header_frame, style="Card.TFrame")
+        row1 = ttk.Frame(header_frame)
         row1.pack(fill="x", pady=(0, 5))
 
         self.status_dot = ttk.Label(row1, text="●", bootstyle="secondary")
@@ -294,29 +294,8 @@ class DraftApp:
             width=12,
         ).pack(side="right", padx=5)
 
-        self.btn_toggle_tabs = ttk.Button(
-            row1,
-            text="▼ Hide Tabs",
-            bootstyle="secondary-outline",
-            command=self._toggle_tabs,
-            width=10,
-        )
-        self.btn_toggle_tabs.pack(side="right", padx=5)
-
-        self.sidebar_visible = self.configuration.settings.collapsible_states.get(
-            "sidebar_panel", True
-        )
-        self.btn_toggle_sidebar = ttk.Button(
-            row1,
-            text="◀ Hide Sidebar" if self.sidebar_visible else "▶ Show Sidebar",
-            bootstyle="secondary-outline",
-            command=self._toggle_sidebar,
-            width=13,
-        )
-        self.btn_toggle_sidebar.pack(side="right", padx=5)
-
         # ROW 2: Controls
-        row2 = ttk.Frame(header_frame, style="Card.TFrame")
+        row2 = ttk.Frame(header_frame)
         row2.pack(fill="x")
 
         # Controls (Left)
@@ -329,27 +308,40 @@ class DraftApp:
             row2, text="P1P1", command=lambda: self._manual_refresh(True), width=6
         )
 
+        # Container for right-side controls (hidden when no draft is active)
+        self.dataset_controls_frame = ttk.Frame(row2)
+        self.dataset_controls_frame.pack(side="right")
+
         # Filter (Right)
         self.om_filter = ttk.OptionMenu(
-            row2, self.vars["deck_filter"], "", style="TMenubutton"
+            self.dataset_controls_frame,
+            self.vars["deck_filter"],
+            "",
+            style="TMenubutton",
         )
         self.om_filter.pack(side="right", padx=2)
 
         # Group (Right)
         self.om_group = ttk.OptionMenu(
-            row2, self.vars["selected_group"], "", style="TMenubutton"
+            self.dataset_controls_frame,
+            self.vars["selected_group"],
+            "",
+            style="TMenubutton",
         )
         self.om_group.pack(side="right", padx=2)
 
         # Event (Right)
         self.om_event = ttk.OptionMenu(
-            row2, self.vars["selected_event"], "", style="TMenubutton"
+            self.dataset_controls_frame,
+            self.vars["selected_event"],
+            "",
+            style="TMenubutton",
         )
         self.om_event.pack(side="right", padx=2)
 
         # Set Label (Right)
         self.lbl_set_code = ttk.Label(
-            row2,
+            self.dataset_controls_frame,
             textvariable=self.vars["set_label"],
             font=(Theme.FONT_FAMILY, 9, "bold"),
             bootstyle="primary",
@@ -361,16 +353,34 @@ class DraftApp:
         self.splitter = ttk.PanedWindow(self.main_container, orient=tkinter.VERTICAL)
         self.splitter.pack(fill="both", expand=True)
 
+        self.top_pane = ttk.Frame(self.splitter)
+        self.splitter.add(self.top_pane, weight=4)
+
         self.dashboard = DashboardFrame(
-            self.splitter,
+            self.top_pane,
             self.configuration,
             self._on_card_select,
             self._refresh_ui_data,
         )
-        self.splitter.add(self.dashboard, weight=4)
 
-        self.notebook = ttk.Notebook(self.splitter)
-        self.splitter.add(self.notebook, weight=2)
+        self.tab_controls = ttk.Frame(self.top_pane)
+        self.tab_controls.pack(side="bottom", fill="x")
+
+        self.dashboard.pack(side="top", fill="both", expand=True)
+
+        self.btn_toggle_tabs = ttk.Button(
+            self.tab_controls,
+            text="▼ Hide Tabs",
+            bootstyle="secondary",
+            command=self._toggle_tabs,
+        )
+        self.btn_toggle_tabs.pack(side="right", padx=10, pady=5)
+
+        self.bottom_pane = ttk.Frame(self.splitter)
+        self.splitter.add(self.bottom_pane, weight=2)
+
+        self.notebook = ttk.Notebook(self.bottom_pane)
+        self.notebook.pack(fill="both", expand=True)
 
         self.panel_taken = TakenCardsPanel(
             self.notebook, self.orchestrator.scanner, self.configuration
@@ -399,24 +409,13 @@ class DraftApp:
 
     def _toggle_tabs(self):
         if self.tabs_visible:
-            self.splitter.forget(self.notebook)
+            self.splitter.forget(self.bottom_pane)
             self.btn_toggle_tabs.config(text="▲ Show Tabs")
             self.tabs_visible = False
         else:
-            self.splitter.add(self.notebook, weight=2)
+            self.splitter.add(self.bottom_pane, weight=2)
             self.btn_toggle_tabs.config(text="▼ Hide Tabs")
             self.tabs_visible = True
-
-    def _toggle_sidebar(self):
-        self.sidebar_visible = not self.sidebar_visible
-        self.dashboard.set_sidebar_visible(self.sidebar_visible)
-        self.btn_toggle_sidebar.config(
-            text="◀ Hide Sidebar" if self.sidebar_visible else "▶ Show Sidebar"
-        )
-        self.configuration.settings.collapsible_states["sidebar_panel"] = (
-            self.sidebar_visible
-        )
-        write_configuration(self.configuration)
 
     def _ensure_tabs_visible(self):
         if not self.tabs_visible:
@@ -687,6 +686,7 @@ class DraftApp:
                 self.orchestrator.new_event_detected = False
 
             if not current_set:
+                self.dataset_controls_frame.pack_forget()
                 self.vars["set_label"].set("NO SET")
                 self._set_dropdown_options(
                     self.om_event, self.vars["selected_event"], []
@@ -695,6 +695,8 @@ class DraftApp:
                     self.om_group, self.vars["selected_group"], []
                 )
                 return
+            else:
+                self.dataset_controls_frame.pack(side="right")
 
             # Map the raw Set Code to the Human-Readable Set Name
             full_set_name = current_set
@@ -737,6 +739,7 @@ class DraftApp:
 
             # If no data is found for the event, clear dropdowns and alert the user
             if not available_events:
+                self.dataset_controls_frame.pack(side="right")
                 self.vars["set_label"].set(f"SET: {display_name} (No Data)")
                 self._set_dropdown_options(
                     self.om_event, self.vars["selected_event"], []
