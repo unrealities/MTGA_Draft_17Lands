@@ -100,7 +100,7 @@ class SuggestDeckPanel(ttk.Frame):
             )
 
             if not raw_results:
-                msg = "Not enough data to suggest a deck"
+                msg = "Not enough data or playables to suggest a deck"
                 self.suggestions = {}
                 self._update_dropdown_options([msg])
                 self.var_archetype.set(msg)

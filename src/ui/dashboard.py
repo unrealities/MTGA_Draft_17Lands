@@ -292,10 +292,10 @@ class DashboardFrame(ttk.Frame):
             self.content_frame,
             text="◀" if self.sidebar_visible else "▶",
             command=self._toggle_sidebar,
-            bootstyle="secondary",
+            bootstyle="outline-secondary",
             width=1,
         )
-        self.rail_btn.grid(row=0, column=1, sticky="ns", pady=10, padx=(0, 5))
+        self.rail_btn.grid(row=0, column=1, sticky="ns", pady=5, padx=(0, 5))
 
         # --- RIGHT: Sidebar ---
         self.sidebar_frame = ttk.Frame(self.content_frame, width=250)
