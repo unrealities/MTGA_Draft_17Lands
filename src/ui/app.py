@@ -245,7 +245,7 @@ class DraftApp:
         self.vars["deck_filter"] = tkinter.StringVar(
             value=self.configuration.settings.deck_filter
         )
-        self.vars["set_label"] = tkinter.StringVar(value="NO SET")
+        self.vars["set_label"] = tkinter.StringVar(value="")
         self.vars["selected_event"] = tkinter.StringVar(value="")
         self.vars["selected_group"] = tkinter.StringVar(value="")
         self.vars["status_text"] = tkinter.StringVar(value="Ready")
@@ -291,8 +291,17 @@ class DraftApp:
             text="Mini Mode",
             bootstyle="info-outline",
             command=self._enable_overlay,
-            width=12,
+            width=-10,
         ).pack(side="right", padx=5)
+
+        self.lbl_set_code = ttk.Label(
+            row1,
+            textvariable=self.vars["set_label"],
+            font=(Theme.FONT_FAMILY, 9, "bold"),
+            bootstyle="primary",
+            padding=(5, 2),
+        )
+        self.lbl_set_code.pack(side="right", padx=10)
 
         # ROW 2: Controls
         row2 = ttk.Frame(header_frame)
@@ -305,7 +314,10 @@ class DraftApp:
         self.btn_reload.pack(side="left", padx=2)
 
         self.btn_p1p1 = ttk.Button(
-            row2, text="P1P1", command=lambda: self._manual_refresh(True), width=6
+            row2,
+            text="SCAN P1P1",
+            command=lambda: self._manual_refresh(True),
+            width=-10,
         )
 
         # Container for right-side controls (hidden when no draft is active)
@@ -338,16 +350,6 @@ class DraftApp:
             style="TMenubutton",
         )
         self.om_event.pack(side="right", padx=2)
-
-        # Set Label (Right)
-        self.lbl_set_code = ttk.Label(
-            self.dataset_controls_frame,
-            textvariable=self.vars["set_label"],
-            font=(Theme.FONT_FAMILY, 9, "bold"),
-            bootstyle="primary",
-            padding=(5, 2),
-        )
-        self.lbl_set_code.pack(side="right", padx=5)
 
         # --- BODY ---
         self.splitter = ttk.PanedWindow(self.main_container, orient=tkinter.VERTICAL)
@@ -687,7 +689,7 @@ class DraftApp:
 
             if not current_set:
                 self.dataset_controls_frame.pack_forget()
-                self.vars["set_label"].set("NO SET")
+                self.vars["set_label"].set("")
                 self._set_dropdown_options(
                     self.om_event, self.vars["selected_event"], []
                 )
@@ -710,11 +712,7 @@ class DraftApp:
                         break
 
             self.detected_set_code = current_set
-            display_name = (
-                full_set_name
-                if len(full_set_name) <= 25
-                else full_set_name[:22] + "..."
-            )
+            display_name = full_set_name
 
             all_files, _ = retrieve_local_set_list()
             self.current_set_data_map = {}
@@ -740,7 +738,7 @@ class DraftApp:
             # If no data is found for the event, clear dropdowns and alert the user
             if not available_events:
                 self.dataset_controls_frame.pack(side="right")
-                self.vars["set_label"].set(f"SET: {display_name} (No Data)")
+                self.vars["set_label"].set(f"{display_name} (No Data)")
                 self._set_dropdown_options(
                     self.om_event, self.vars["selected_event"], []
                 )
@@ -749,7 +747,7 @@ class DraftApp:
                 )
                 return
 
-            self.vars["set_label"].set(f"SET: {display_name}")
+            self.vars["set_label"].set(display_name)
             self._set_dropdown_options(
                 self.om_event, self.vars["selected_event"], available_events
             )
@@ -919,7 +917,7 @@ class DraftApp:
 
     def _on_scan_complete(self, data_found):
         if self.btn_p1p1.winfo_exists():
-            self.btn_p1p1.config(text="P1P1", state="normal")
+            self.btn_p1p1.config(text="SCAN P1P1", state="normal")
         if (
             self.overlay_window
             and hasattr(self.overlay_window, "btn_scan")

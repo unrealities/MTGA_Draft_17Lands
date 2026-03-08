@@ -298,7 +298,7 @@ class DashboardFrame(ttk.Frame):
         self.rail_btn.grid(row=0, column=1, sticky="ns", pady=5, padx=(0, 5))
 
         # --- RIGHT: Sidebar ---
-        self.sidebar_frame = ttk.Frame(self.content_frame, width=250)
+        self.sidebar_frame = ttk.Frame(self.content_frame, width=200)
         self.sidebar_frame.pack_propagate(False)
 
         if self.sidebar_visible:
