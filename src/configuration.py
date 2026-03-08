@@ -58,6 +58,7 @@ class Settings(BaseModel):
 
     main_window_geometry: str = "600x1080"
     paned_window_sash: int = 550
+    dashboard_sash: int = 800
 
     collapsible_states: Dict[str, bool] = Field(default_factory=dict)
 

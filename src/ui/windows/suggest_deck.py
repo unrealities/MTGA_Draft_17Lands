@@ -233,8 +233,11 @@ class SuggestDeckPanel(ttk.Frame):
             self.clipboard_append(export_text)
 
             # Visual Feedback
-            self.btn_copy.config(text="Copied! ✔")
-            self.after(2000, lambda: self.btn_copy.config(text="Copy Deck"))
+            self.btn_copy.config(text="Copied! ✔", bootstyle="success")
+            self.after(
+                2000,
+                lambda: self.btn_copy.config(text="Copy Deck", bootstyle="primary"),
+            )
 
     def _on_selection(self, event):
         selection = self.table.selection()

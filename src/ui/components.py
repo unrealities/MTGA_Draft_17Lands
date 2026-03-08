@@ -928,21 +928,15 @@ class ManaCurvePlot(tb.Frame):
 class TypePieChart(tb.Frame):
     def __init__(self, parent, **kwargs):
         super().__init__(parent, **kwargs)
-        self.canvas_size, self.counts = 80, {
-            "Creatures": 0,
-            "Non-Creatures": 0,
-            "Lands": 0,
-        }
+        self.counts = {"Creatures": 0, "Non-Creatures": 0, "Lands": 0}
+        self.canvas_height = 80
+        self.pie_size = 76  # Slightly smaller to fit bounds cleanly
+
         self.canvas = tb.Canvas(
-            self,
-            height=self.canvas_size,
-            width=self.canvas_size,
-            bg=Theme.BG_PRIMARY,
-            highlightthickness=0,
+            self, height=self.canvas_height, bg=Theme.BG_PRIMARY, highlightthickness=0
         )
-        self.canvas.pack(side=LEFT, padx=10)
-        self.legend_frame = tb.Frame(self)
-        self.legend_frame.pack(side=LEFT, fill=Y, padx=5)
+        self.canvas.pack(fill=BOTH, expand=True)
+        self.canvas.bind("<Configure>", lambda e: self.redraw())
         self.bind_all("<<ThemeChanged>>", self._on_theme_change, add="+")
 
     def _on_theme_change(self, event=None):
@@ -951,50 +945,81 @@ class TypePieChart(tb.Frame):
             self.redraw()
 
     def update_counts(self, c, n, l):
-        self.counts["Creatures"], self.counts["Non-Creatures"], self.counts["Lands"] = (
-            c,
-            n,
-            l,
-        )
+        self.counts["Creatures"] = c
+        self.counts["Non-Creatures"] = n
+        self.counts["Lands"] = l
         self.redraw()
 
     def redraw(self):
         self.canvas.delete("all")
-        [w.destroy() for w in self.legend_frame.winfo_children()]
-        items = [
-            ("Crea", self.counts["Creatures"], Theme.SUCCESS),
-            ("Spell", self.counts["Non-Creatures"], Theme.ACCENT),
-            ("Land", self.counts["Lands"], Theme.BG_TERTIARY),
-        ]
-        for lb, c, cl in items:
-            rf = tb.Frame(self.legend_frame)
-            rf.pack(anchor="w")
-            tb.Label(rf, text="●", foreground=cl, font=(None, 6)).pack(side=LEFT)
-            tb.Label(rf, text=f"{lb}: {c}", font=(Theme.FONT_FAMILY, 10)).pack(
-                side=LEFT, padx=2
-            )
-        tl = sum(self.counts.values())
-        if tl == 0:
+        w = self.canvas.winfo_width()
+        if w < 10:
             return
-        cx, cy, r, a = (
-            self.canvas_size / 2,
-            self.canvas_size / 2,
-            (self.canvas_size / 2) - 2,
-            90,
-        )
+
+        c_col = Theme.SUCCESS
+        n_col = Theme.ACCENT
+        l_col = Theme.BG_TERTIARY
+
+        items = [
+            ("Crea", self.counts["Creatures"], c_col),
+            ("Spell", self.counts["Non-Creatures"], n_col),
+            ("Land", self.counts["Lands"], l_col),
+        ]
+
+        # Geometry Math to center both elements dynamically
+        legend_w = 60
+        gap = 20
+        pie_r = self.pie_size / 2
+        total_w = legend_w + gap + self.pie_size
+
+        sx = max(0, (w - total_w) / 2)
+
+        # 1. Draw Legend on the Left
+        ly = (self.canvas_height - (3 * 18)) / 2 + 9
+        for lb, count, cl in items:
+            self.canvas.create_text(
+                sx, ly, text="●", fill=cl, font=(None, 10), anchor="w"
+            )
+            self.canvas.create_text(
+                sx + 12,
+                ly,
+                text=f"{lb}: {count}",
+                fill=Theme.TEXT_MAIN,
+                font=(Theme.FONT_FAMILY, 10),
+                anchor="w",
+            )
+            ly += 18
+
+        # 2. Draw Pie Chart on the Right
+        cx = sx + legend_w + gap + pie_r
+        cy = self.canvas_height / 2
+        tl = sum(self.counts.values())
+
+        if tl == 0:
+            self.canvas.create_oval(
+                cx - pie_r,
+                cy - pie_r,
+                cx + pie_r,
+                cy + pie_r,
+                fill=Theme.BG_SECONDARY,
+                outline="",
+            )
+            return
+
+        a = 90
         for c, cl in [
-            (self.counts["Creatures"], Theme.SUCCESS),
-            (self.counts["Non-Creatures"], Theme.ACCENT),
-            (self.counts["Lands"], Theme.BG_TERTIARY),
+            (self.counts["Creatures"], c_col),
+            (self.counts["Non-Creatures"], n_col),
+            (self.counts["Lands"], l_col),
         ]:
             if c == 0:
                 continue
             ex = (c / tl) * 360
             self.canvas.create_arc(
-                cx - r,
-                cy - r,
-                cx + r,
-                cy + r,
+                cx - pie_r,
+                cy - pie_r,
+                cx + pie_r,
+                cy + pie_r,
                 start=a,
                 extent=-ex,
                 fill=cl,
@@ -1002,14 +1027,19 @@ class TypePieChart(tb.Frame):
                 style="pieslice",
             )
             a -= ex
+
+        # Donut Hole
+        inner_r = pie_r - 12
         self.canvas.create_oval(
-            cx - r / 2,
-            cy - r / 2,
-            cx + r / 2,
-            cy + r / 2,
+            cx - inner_r,
+            cy - inner_r,
+            cx + inner_r,
+            cy + inner_r,
             fill=Theme.BG_PRIMARY,
             outline="",
         )
+
+        # Total text in center
         self.canvas.create_text(
             cx,
             cy,

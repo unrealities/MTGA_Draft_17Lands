@@ -131,6 +131,10 @@ class DraftApp:
                 sash_pos = self.configuration.settings.paned_window_sash
                 if sash_pos > 50:
                     self.splitter.sashpos(0, sash_pos)
+
+                dash_sash = getattr(self.configuration.settings, "dashboard_sash", 800)
+                if dash_sash > 50 and hasattr(self.dashboard, "h_splitter"):
+                    self.dashboard.h_splitter.sashpos(0, dash_sash)
             except Exception as e:
                 import logging
 
@@ -227,6 +231,12 @@ class DraftApp:
             # Save the current divider position
             try:
                 self.configuration.settings.paned_window_sash = self.splitter.sashpos(0)
+
+                if hasattr(self, "dashboard") and hasattr(self.dashboard, "h_splitter"):
+                    if self.dashboard.sidebar_visible:
+                        self.configuration.settings.dashboard_sash = (
+                            self.dashboard.h_splitter.sashpos(0)
+                        )
             except:
                 pass
 
@@ -249,7 +259,6 @@ class DraftApp:
         self.vars["selected_event"] = tkinter.StringVar(value="")
         self.vars["selected_group"] = tkinter.StringVar(value="")
         self.vars["status_text"] = tkinter.StringVar(value="Ready")
-        self.vars["event_info"] = tkinter.StringVar(value="Scan logs...")
         self.vars["deck_filter"].trace_add(
             "write", lambda *a: self._on_filter_ui_change()
         )
@@ -274,17 +283,18 @@ class DraftApp:
         row1 = ttk.Frame(header_frame)
         row1.pack(fill="x", pady=(0, 5))
 
-        self.status_dot = ttk.Label(row1, text="●", bootstyle="secondary")
+        self.status_dot = ttk.Label(
+            row1, text="●", font=(Theme.FONT_FAMILY, 16), bootstyle="secondary"
+        )
         self.status_dot.pack(side="left", padx=5)
 
-        ttk.Label(
+        self.lbl_status = ttk.Label(
             row1,
-            textvariable=self.vars["event_info"],
-            font=(Theme.FONT_FAMILY, 9, "bold"),
-        ).pack(side="left")
-
-        ttk.Label(row1, text=" | ").pack(side="left")
-        ttk.Label(row1, textvariable=self.vars["status_text"]).pack(side="left")
+            textvariable=self.vars["status_text"],
+            font=(Theme.FONT_FAMILY, 11, "bold"),
+            bootstyle="primary",
+        )
+        self.lbl_status.pack(side="left", padx=(0, 10))
 
         ttk.Button(
             row1,
@@ -297,7 +307,7 @@ class DraftApp:
         self.lbl_set_code = ttk.Label(
             row1,
             textvariable=self.vars["set_label"],
-            font=(Theme.FONT_FAMILY, 9, "bold"),
+            font=(Theme.FONT_FAMILY, 10, "bold"),
             bootstyle="primary",
             padding=(5, 2),
         )
@@ -309,7 +319,11 @@ class DraftApp:
 
         # Controls (Left)
         self.btn_reload = ttk.Button(
-            row2, text="Reload", command=self._force_reload, width=7
+            row2,
+            text="Reload",
+            command=self._force_reload,
+            width=7,
+            bootstyle="secondary-outline",
         )
         self.btn_reload.pack(side="left", padx=2)
 
@@ -318,6 +332,7 @@ class DraftApp:
             text="SCAN P1P1",
             command=lambda: self._manual_refresh(True),
             width=-10,
+            bootstyle="success",
         )
 
         # Container for right-side controls (hidden when no draft is active)
@@ -540,8 +555,14 @@ class DraftApp:
                 scores[c] += v
 
         # 3. DRAW BASIC UI ELEMENTS
-        self.vars["event_info"].set(f"{es} {et}" if es else "Waiting for draft...")
-        self.vars["status_text"].set(f"Pack {pk} Pick {pi}" if pk > 0 else "Idle")
+        if pk > 0:
+            self.vars["status_text"].set(f"Pack {pk} Pick {pi}")
+            if hasattr(self, "lbl_status"):
+                self.lbl_status.configure(bootstyle="success")
+        else:
+            self.vars["status_text"].set("Waiting for draft...")
+            if hasattr(self, "lbl_status"):
+                self.lbl_status.configure(bootstyle="secondary")
 
         if self.configuration.settings.p1p1_ocr_enabled and pk <= 1 and pi <= 1:
             self.btn_p1p1.pack(side="left", padx=2, after=self.btn_reload)

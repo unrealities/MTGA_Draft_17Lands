@@ -201,47 +201,52 @@ class Theme:
             base_row_height = 26 if sys.platform == "darwin" else 32
             row_height = max(10, int(base_row_height * scale))
 
-        style.configure("Treeview", rowheight=row_height)
+        style.configure("Treeview", rowheight=row_height, borderwidth=0, relief="flat")
         style.configure("TNotebook", borderwidth=0)
 
-        # Make buttons slightly less bulky, especially on Windows
+        # Make splitters invisible but thick enough to grab easily
         try:
-            style.configure("TButton", padding=(6, 3))
-        except Exception:
-            pass
+            import tkinter.ttk as tk_ttk
 
-        # Increase PanedWindow Sash (Draggable Splitter) visibility and grab area globally
-        # We use direct tk calls to bypass ttkbootstrap's Style parsing bug for internal elements
-        try:
-            root.tk.call(
-                "ttk::style",
-                "configure",
-                "Sash",
-                "-sashthickness",
-                8,
-                "-relief",
-                "flat",
-            )
+            safe_style = tk_ttk.Style(root)
+
             if not is_custom_loaded:
-                root.tk.call(
-                    "ttk::style", "configure", "Sash", "-background", cls.BG_TERTIARY
+                # Fix for macOS 'aqua' theme stubbornly drawing a 3D grey sash.
+                if sys.platform == "darwin":
+                    try:
+                        safe_style.element_create("Sash", "from", "default")
+                    except Exception:
+                        pass
+
+                # TPanedwindow controls the background of the container
+                safe_style.configure("TPanedwindow", background=cls.BG_PRIMARY)
+
+                # Sash controls the actual draggable splitter bar.
+                safe_style.configure(
+                    "Sash",
+                    sashthickness=10,
+                    sashrelief="flat",
+                    background=cls.BG_PRIMARY,
+                    bordercolor=cls.BG_PRIMARY,
+                    lightcolor=cls.BG_PRIMARY,
+                    darkcolor=cls.BG_PRIMARY,
                 )
+
+                safe_style.map(
+                    "Sash", background=[], bordercolor=[], lightcolor=[], darkcolor=[]
+                )
+
         except Exception as e:
             logger.error(f"Failed to configure sash: {e}")
 
-        # Only override the header font if the custom theme didn't explicitly set one
         if not is_custom_loaded:
             style.configure(".", font=(cls.FONT_FAMILY, main_font_size))
             style.configure(
                 "Treeview.Heading", font=(cls.FONT_FAMILY, main_font_size, "bold")
             )
 
-        # Configure Card.TFrame to be flat
         style.configure(
             "Card.TFrame", background=cls.BG_PRIMARY, relief="flat", borderwidth=0
         )
-
-        # Let ttkbootstrap handle standard widget styles
-        # Only perform specific repairs for internal elements that are hard to style via bootstyle
         root.configure(bg=cls.BG_PRIMARY)
         root.event_generate("<<ThemeChanged>>")

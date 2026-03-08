@@ -111,9 +111,15 @@ if {[lsearch [ttk::style theme names] mythic_gold] == -1} {
         ttk::style configure TScrollbar -background $fieldbg -troughcolor $bg -arrowcolor $selectbg -relief flat
         ttk::style map TScrollbar -background [list active $selectbg]
 
-        # Panedwindow (The Draggable splitters between dashboard panels)
+       # Panedwindow (The Draggable splitters between dashboard panels)
         ttk::style configure TPanedwindow -background $bg
-        ttk::style configure Sash -background $fieldbg -bordercolor $bordercol -sashthickness 4
+        ttk::style configure Sash \
+            -background $bg \
+            -bordercolor $bg \
+            -lightcolor $bg \
+            -darkcolor $bg \
+            -sashthickness 10 \
+            -sashrelief flat
     }
 }
 

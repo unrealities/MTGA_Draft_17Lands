@@ -222,27 +222,26 @@ class DashboardFrame(ttk.Frame):
         """State 3: Active drafting / deckbuilding."""
         self.content_frame = ttk.Frame(self)
         self.content_frame.columnconfigure(0, weight=1)
-        self.content_frame.columnconfigure(1, weight=0)
-        self.content_frame.columnconfigure(2, weight=0)
         self.content_frame.rowconfigure(0, weight=1)
 
+        # The Horizontal Slider replacing the rigid grid layout
+        self.h_splitter = ttk.PanedWindow(self.content_frame, orient=tkinter.HORIZONTAL)
+        self.h_splitter.grid(row=0, column=0, sticky="nsew")
+
         # --- LEFT: Tables ---
-        self.f_left = ttk.Frame(self.content_frame)
-        self.f_left.grid(row=0, column=0, sticky="nsew", padx=(10, 5), pady=10)
+        self.f_left = ttk.Frame(self.h_splitter)
+        self.h_splitter.add(self.f_left, weight=1)
+
         self.f_left.columnconfigure(0, weight=1)
+        self.f_left.columnconfigure(1, weight=0)  # Button column
         self.f_left.rowconfigure(0, weight=1)
         self.f_left.rowconfigure(1, weight=0)
 
         # 1. Pack Table
-        self.pack_frame = ttk.Frame(self.f_left)
-        self.pack_frame.grid(row=0, column=0, sticky="nsew")
-
-        self.lbl_pack_header = ttk.Label(
-            self.pack_frame,
-            text="LIVE PACK: TACTICAL EVALUATION",
-            font=(Theme.FONT_FAMILY, 10, "bold"),
+        self.pack_frame = ttk.Labelframe(
+            self.f_left, text=" LIVE PACK: TACTICAL EVALUATION ", padding=5
         )
-        self.lbl_pack_header.pack(anchor="w", pady=(0, 5))
+        self.pack_frame.grid(row=0, column=0, sticky="nsew", padx=(10, 0), pady=(10, 0))
 
         self.pack_manager = DynamicTreeviewManager(
             self.pack_frame,
@@ -259,14 +258,9 @@ class DashboardFrame(ttk.Frame):
         )
 
         # 2. Missing Table (Wheel Tracker)
-        self.missing_frame = ttk.Frame(self.f_left)
-
-        self.lbl_missing_header = ttk.Label(
-            self.missing_frame,
-            text="SEEN CARDS (WHEEL TRACKER)",
-            font=(Theme.FONT_FAMILY, 10, "bold"),
+        self.missing_frame = ttk.Labelframe(
+            self.f_left, text=" SEEN CARDS (WHEEL TRACKER) ", padding=5
         )
-        self.lbl_missing_header.pack(anchor="w", pady=(0, 5))
 
         self.missing_manager = DynamicTreeviewManager(
             self.missing_frame,
@@ -283,34 +277,37 @@ class DashboardFrame(ttk.Frame):
 
         self.missing_frame.grid_remove()
 
-        # --- MIDDLE: Thin Rail ---
+        # --- MIDDLE: Thin Rail Button ---
         self.sidebar_visible = self.configuration.settings.collapsible_states.get(
             "sidebar_panel", True
         )
 
         self.rail_btn = ttk.Button(
-            self.content_frame,
+            self.f_left,
             text="◀" if self.sidebar_visible else "▶",
             command=self._toggle_sidebar,
-            bootstyle="outline-secondary",
+            bootstyle="secondary-link",
+            cursor="hand2",
+            takefocus=False,
             width=1,
+            padding=0,
         )
-        self.rail_btn.grid(row=0, column=1, sticky="ns", pady=5, padx=(0, 5))
+        self.rail_btn.grid(row=0, column=1, rowspan=2, sticky="", padx=(2, 2))
 
         # --- RIGHT: Sidebar ---
-        self.sidebar_frame = ttk.Frame(self.content_frame, width=200)
-        self.sidebar_frame.pack_propagate(False)
-
+        self.sidebar_frame = ttk.Frame(self.h_splitter, width=280)
+        self.sidebar_container = ttk.Frame(self.sidebar_frame)
+        self.sidebar_container.pack(
+            fill="both", expand=True, padx=(0, 10), pady=(10, 10)
+        )
         if self.sidebar_visible:
-            self.sidebar_frame.grid(
-                row=0, column=2, sticky="nsew", padx=(0, 10), pady=10
-            )
+            self.h_splitter.add(self.sidebar_frame, weight=0)
 
-        self.advisor_panel = AdvisorPanel(self.sidebar_frame, self.configuration)
+        self.advisor_panel = AdvisorPanel(self.sidebar_container, self.configuration)
         self.advisor_panel.pack(fill="x", pady=(0, 15))
 
         self.signal_container = CollapsibleFrame(
-            self.sidebar_frame,
+            self.sidebar_container,
             title="OPEN LANES",
             configuration=self.configuration,
             setting_key="open_lanes_panel",
@@ -320,7 +317,7 @@ class DashboardFrame(ttk.Frame):
         self.signal_meter.pack(fill="x")
 
         self.curve_container = CollapsibleFrame(
-            self.sidebar_frame,
+            self.sidebar_container,
             title="MANA CURVE",
             configuration=self.configuration,
             setting_key="mana_curve_panel",
@@ -333,7 +330,7 @@ class DashboardFrame(ttk.Frame):
         self.curve_plot.pack(fill="x")
 
         self.pool_container = CollapsibleFrame(
-            self.sidebar_frame,
+            self.sidebar_container,
             title="POOL BALANCE",
             configuration=self.configuration,
             setting_key="pool_balance_panel",
@@ -372,14 +369,18 @@ class DashboardFrame(ttk.Frame):
         """Dynamically shifts vertical space based on wheel tracker visibility."""
         if self._missing_count == 0:
             self.missing_frame.grid_remove()
-            self.f_left.rowconfigure(0, weight=1)
-            self.f_left.rowconfigure(1, weight=0)
+            self.f_left.rowconfigure(0, weight=1, uniform="pack_group")
+            self.f_left.rowconfigure(1, weight=0, uniform="")
         else:
-            self.missing_frame.grid(row=1, column=0, sticky="nsew", pady=(15, 0))
-            pack_w = max(1, self._pack_count)
-            miss_w = max(1, self._missing_count)
-            self.f_left.rowconfigure(0, weight=pack_w)
-            self.f_left.rowconfigure(1, weight=miss_w)
+            self.missing_frame.grid(
+                row=1, column=0, sticky="nsew", padx=(10, 0), pady=(15, 10)
+            )
+
+            pack_w = self._pack_count + 3
+            miss_w = self._missing_count + 3
+
+            self.f_left.rowconfigure(0, weight=pack_w, uniform="pack_group")
+            self.f_left.rowconfigure(1, weight=miss_w, uniform="pack_group")
 
     def update_pack_data(
         self,
@@ -555,11 +556,26 @@ class DashboardFrame(ttk.Frame):
         self.rail_btn.config(text="◀" if self.sidebar_visible else "▶")
 
         if self.sidebar_visible:
-            self.sidebar_frame.grid(
-                row=0, column=2, sticky="nsew", padx=(0, 10), pady=10
+            self.h_splitter.add(self.sidebar_frame, weight=0)
+
+            self.update_idletasks()
+
+            current_width = self.winfo_width()
+            default_sash = max(50, current_width - 280) if current_width > 280 else 800
+
+            dash_sash = getattr(
+                self.configuration.settings, "dashboard_sash", default_sash
             )
+            if dash_sash < 50 or dash_sash >= current_width - 20:
+                dash_sash = default_sash
+
+            self.h_splitter.sashpos(0, dash_sash)
         else:
-            self.sidebar_frame.grid_remove()
+            try:
+                self.configuration.settings.dashboard_sash = self.h_splitter.sashpos(0)
+            except:
+                pass
+            self.h_splitter.forget(self.sidebar_frame)
 
         self.configuration.settings.collapsible_states["sidebar_panel"] = (
             self.sidebar_visible
