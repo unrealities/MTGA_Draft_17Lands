@@ -8,7 +8,7 @@ from tkinter import ttk
 from src import constants
 from src.ui.styles import Theme
 from src.ui.components import DynamicTreeviewManager, AutocompleteEntry, CardToolTip
-from src.card_logic import format_win_rate
+from src.card_logic import format_win_rate, row_color_tag
 
 
 class ComparePanel(ttk.Frame):
@@ -103,6 +103,12 @@ class ComparePanel(ttk.Frame):
 
         for idx, card in enumerate(self.compare_list):
             row_values = []
+
+            # Apply row color tag if enabled, otherwise fallback to zebra index
+            tag = "bw_odd" if idx % 2 == 0 else "bw_even"
+            if self.configuration.settings.card_colors_enabled:
+                tag = row_color_tag(card.get(constants.DATA_FIELD_MANA_COST, ""))
+
             for field in self.table_manager.active_fields:
                 if field == "name":
                     row_values.append(card.get("name", ""))
@@ -148,7 +154,7 @@ class ComparePanel(ttk.Frame):
                 "",
                 "end",
                 values=row_values,
-                tags=("bw_odd" if idx % 2 == 0 else "bw_even",),
+                tags=(tag,),
             )
 
         if hasattr(t, "reapply_sort"):

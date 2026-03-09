@@ -608,7 +608,12 @@ class ModernTreeview(ttk.Treeview):
         for i, (v, k) in enumerate(it):
             self.move(k, "", i)
             ts = [t for t in self.item(k, "tags") if t not in ("bw_odd", "bw_even")]
-            ts.append("bw_odd" if i % 2 == 0 else "bw_even")
+            has_special = any(
+                t in ("elite_bomb", "high_fit") or str(t).endswith("_card") for t in ts
+            )
+            if not has_special:
+                ts.append("bw_odd" if i % 2 == 0 else "bw_even")
+
             self.item(k, tags=tuple(ts))
 
     def reapply_sort(self):
