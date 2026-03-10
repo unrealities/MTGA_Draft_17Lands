@@ -8,6 +8,7 @@
 * unrealities: [Bug] Fixed an issue where the application would not work with consecutive drafts.
 * unrealities: [Feature] Added "Good Stuff (Soup)" as a fallback option for disjointed drafts.
 * adverseselection: [Bug] Suppress returnable indicator for user-picked cards
+* unrealities: [Feature] Handle draft state persistence better
 
 ===================== RELEASE NOTES 4.05 =====================
 This is a major performance and stability update focused on speed, responsiveness, and smarter draft advice.

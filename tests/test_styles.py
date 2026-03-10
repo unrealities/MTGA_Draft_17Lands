@@ -25,11 +25,9 @@ class TestThemeEngine:
         """Patches ttk.Style so it doesn't attempt to contact a real Tcl interpreter."""
         with patch("src.ui.styles.ttk.Style") as mock:
             style_instance = mock.return_value
-            # Configure colors to behave like an object with attributes
-            # We mock the .colors attribute to return a Namespace-like mock
-            # that returns specific values for .bg, .primary, etc.
             colors_mock = MagicMock()
             style_instance.colors = colors_mock
+            style_instance.lookup.return_value = ""
 
             # Setup default behavior for colors
             colors_mock.bg = "#1e1e1e"  # Default Dark

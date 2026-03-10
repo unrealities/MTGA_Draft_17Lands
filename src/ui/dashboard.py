@@ -43,6 +43,11 @@ class DashboardFrame(ttk.Frame):
         self._pack_count = 0
         self._missing_count = 0
         self._taken_count = 0
+        self._current_event_type = ""
+        self._current_event_set = ""
+        self._current_pack = 0
+        self._current_pick = 0
+        self.on_p1p1_scan = None
 
         self._build_layout()
 
@@ -53,12 +58,13 @@ class DashboardFrame(ttk.Frame):
 
     def _build_layout(self):
         self._dynamic_wrap_labels = []
-        # Base grid for the Dashboard to hold the State Frames
         self.columnconfigure(0, weight=1)
         self.rowconfigure(0, weight=1)
 
         self._build_no_data_state()
         self._build_waiting_state()
+        self._build_p1p1_state()
+        self._build_deck_recovery_state()
         self._build_active_state()
 
         self._update_dashboard_state()
@@ -198,25 +204,104 @@ class DashboardFrame(ttk.Frame):
         center_box = ttk.Frame(self.waiting_frame)
         center_box.pack(expand=True)
 
-        ttk.Label(
+        self.lbl_waiting_title = ttk.Label(
             center_box,
             text="Waiting for draft to begin...",
             font=(Theme.FONT_FAMILY, 13, "bold"),
             bootstyle="primary",
             justify="center",
-        ).pack(pady=(0, 10), anchor="center")
+        )
+        self.lbl_waiting_title.pack(pady=(0, 10), anchor="center")
 
-        wait_lbl = ttk.Label(
+        self.lbl_waiting_desc = ttk.Label(
             center_box,
             text="Ensure 'Detailed Logs (Plugin Support)' is checked in your MTGA Account Settings.",
             font=(Theme.FONT_FAMILY, 9),
             justify="center",
         )
-        wait_lbl.pack(pady=(0, 20), anchor="center")
-        self._dynamic_wrap_labels.append(wait_lbl)
+        self.lbl_waiting_desc.pack(pady=(0, 20), anchor="center")
+        self._dynamic_wrap_labels.append(self.lbl_waiting_desc)
 
         tips = self._build_customization_tips(center_box)
         tips.pack(anchor="center")
+
+    def _build_p1p1_state(self):
+        """State 2B: Draft active, but Pack 1 is hidden by MTGA logs."""
+        self.p1p1_frame = ttk.Frame(self)
+
+        center_box = ttk.Frame(self.p1p1_frame)
+        center_box.pack(expand=True)
+
+        ttk.Label(
+            center_box,
+            text="Draft Started: The P1P1 Gap",
+            font=(Theme.FONT_FAMILY, 14, "bold"),
+            bootstyle="warning",
+            justify="center",
+        ).pack(pady=(0, 10), anchor="center")
+
+        desc1 = ttk.Label(
+            center_box,
+            text="MTG Arena delays writing the first pack to the log file in Human Drafts.\nTo see your options before picking, we must use Screen Capture (OCR).",
+            font=(Theme.FONT_FAMILY, 10),
+            justify="center",
+        )
+        desc1.pack(pady=(0, 20), anchor="center")
+        self._dynamic_wrap_labels.append(desc1)
+
+        self.btn_dashboard_scan = ttk.Button(
+            center_box,
+            text="SCAN P1P1 (Take Screenshot)",
+            bootstyle="success",
+            command=lambda: self.on_p1p1_scan() if self.on_p1p1_scan else None,
+            padding=(20, 10),
+        )
+        self.btn_dashboard_scan.pack(pady=(0, 20))
+
+        desc2 = ttk.Label(
+            center_box,
+            text="Note: You can disable this feature or choose to save the screenshots locally via File -> Preferences.",
+            font=(Theme.FONT_FAMILY, 9),
+            bootstyle="secondary",
+            justify="center",
+        )
+        desc2.pack(pady=(0, 0), anchor="center")
+        self._dynamic_wrap_labels.append(desc2)
+
+    def _build_deck_recovery_state(self):
+        """State 2C: Draft recovered from logs, but no active pack data available."""
+        self.recovery_frame = ttk.Frame(self)
+
+        center_box = ttk.Frame(self.recovery_frame)
+        center_box.pack(expand=True)
+
+        self.lbl_recovery_title = ttk.Label(
+            center_box,
+            text="Draft Recovered",
+            font=(Theme.FONT_FAMILY, 14, "bold"),
+            bootstyle="info",
+            justify="center",
+        )
+        self.lbl_recovery_title.pack(pady=(0, 10), anchor="center")
+
+        desc1 = ttk.Label(
+            center_box,
+            text="We successfully recovered your drafted cards from the MTGA logs.\nYour pool is available in the 'Card Pool' and 'Deck Builder' tabs below.",
+            font=(Theme.FONT_FAMILY, 10),
+            justify="center",
+        )
+        desc1.pack(pady=(0, 20), anchor="center")
+        self._dynamic_wrap_labels.append(desc1)
+
+        desc2 = ttk.Label(
+            center_box,
+            text="Waiting for a new draft to begin...",
+            font=(Theme.FONT_FAMILY, 9),
+            bootstyle="secondary",
+            justify="center",
+        )
+        desc2.pack(pady=(0, 0), anchor="center")
+        self._dynamic_wrap_labels.append(desc2)
 
     def _build_active_state(self):
         """State 3: Active drafting / deckbuilding."""
@@ -298,11 +383,13 @@ class DashboardFrame(ttk.Frame):
         self.sidebar_frame = ttk.Frame(self.h_splitter, width=280)
         self.sidebar_container = ttk.Frame(self.sidebar_frame)
         self.sidebar_container.pack(
-            fill="both", expand=True, padx=(0, 10), pady=(10, 10)
+            side="right", fill="y", expand=False, padx=(0, 10), pady=(10, 10)
         )
+
         if self.sidebar_visible:
             self.h_splitter.add(self.sidebar_frame, weight=0)
 
+        # --- Advisor Panel ---
         self.advisor_panel = AdvisorPanel(self.sidebar_container, self.configuration)
         self.advisor_panel.pack(fill="x", pady=(0, 15))
 
@@ -354,33 +441,86 @@ class DashboardFrame(ttk.Frame):
             self._pack_count > 0 or self._missing_count > 0 or self._taken_count > 0
         )
 
+        is_human = self._current_event_type in [
+            constants.LIMITED_TYPE_STRING_DRAFT_PREMIER,
+            constants.LIMITED_TYPE_STRING_DRAFT_TRAD,
+            constants.LIMITED_TYPE_STRING_DRAFT_PICK_TWO,
+            constants.LIMITED_TYPE_STRING_DRAFT_PICK_TWO_TRAD,
+        ]
+
+        # Determine if we should show the explicit P1P1 OCR frame
+        show_p1p1 = (
+            self._current_event_set
+            and is_human
+            and self._current_pack <= 1
+            and self._current_pick <= 1
+            and self._pack_count == 0
+            and self.configuration.settings.p1p1_ocr_enabled
+        )
+
+        # Determine if we recovered a deck but have no active packs.
+        # Only show this static screen if the draft is fully COMPLETED (>= 40 cards).
+        # Otherwise, they are mid-draft and just waiting for the next pack to appear!
+        show_recovery = (
+            self._taken_count >= 40
+            and self._pack_count == 0
+            and self._missing_count == 0
+        )
+
         self.content_frame.grid_remove()
         self.waiting_frame.grid_remove()
         self.no_data_frame.grid_remove()
+        if hasattr(self, "p1p1_frame"):
+            self.p1p1_frame.grid_remove()
+        if hasattr(self, "recovery_frame"):
+            self.recovery_frame.grid_remove()
 
         if not has_any_datasets:
             self.no_data_frame.grid(row=0, column=0, sticky="nsew")
-        elif not has_draft_data:
-            self.waiting_frame.grid(row=0, column=0, sticky="nsew")
-        else:
+        elif show_p1p1:
+            self.p1p1_frame.grid(row=0, column=0, sticky="nsew")
+        elif show_recovery:
+            if self._current_event_set:
+                self.lbl_recovery_title.config(
+                    text=f"Draft Recovered: {self._current_event_set} {self._current_event_type}"
+                )
+            self.recovery_frame.grid(row=0, column=0, sticky="nsew")
+        elif has_draft_data:
             self.content_frame.grid(row=0, column=0, sticky="nsew")
+        else:
+            if self._current_event_set:
+                self.lbl_waiting_title.config(
+                    text=f"Draft Started: {self._current_event_set} {self._current_event_type}"
+                )
+                self.lbl_waiting_desc.config(
+                    text="Waiting for pack data to appear in the log..."
+                )
+            else:
+                self.lbl_waiting_title.config(text="Waiting for draft to begin...")
+                self.lbl_waiting_desc.config(
+                    text="Ensure 'Detailed Logs (Plugin Support)' is checked in your MTGA Account Settings."
+                )
+
+            self.waiting_frame.grid(row=0, column=0, sticky="nsew")
 
     def _adjust_grid_weights(self):
         """Dynamically shifts vertical space based on wheel tracker visibility."""
         if self._missing_count == 0:
             self.missing_frame.grid_remove()
-            self.f_left.rowconfigure(0, weight=1, uniform="pack_group")
-            self.f_left.rowconfigure(1, weight=0, uniform="")
+            self.f_left.rowconfigure(0, weight=1, minsize=0)
+            self.f_left.rowconfigure(1, weight=0, minsize=0)
         else:
             self.missing_frame.grid(
                 row=1, column=0, sticky="nsew", padx=(10, 0), pady=(15, 10)
             )
 
-            pack_w = self._pack_count + 3
-            miss_w = self._missing_count + 3
+            pack_w = max(1, self._pack_count)
+            miss_w = max(1, self._missing_count)
 
-            self.f_left.rowconfigure(0, weight=pack_w, uniform="pack_group")
-            self.f_left.rowconfigure(1, weight=miss_w, uniform="pack_group")
+            # minsize guarantees that even if a table only has 1 card, Tkinter will refuse
+            # to crush it smaller than 140 pixels, ensuring it remains fully readable!
+            self.f_left.rowconfigure(0, weight=pack_w, minsize=140)
+            self.f_left.rowconfigure(1, weight=miss_w, minsize=140)
 
     def update_pack_data(
         self,
@@ -414,7 +554,18 @@ class DashboardFrame(ttk.Frame):
         self._update_dashboard_state()
 
         if not cards:
+            if source_type == "pack":
+                self.lbl_empty_pack = ttk.Label(
+                    self.pack_frame,
+                    text="Waiting for next pack...",
+                    font=(Theme.FONT_FAMILY, 10, "italic"),
+                    bootstyle="secondary",
+                )
+                self.lbl_empty_pack.place(relx=0.5, rely=0.5, anchor="center")
             return
+        else:
+            if hasattr(self, "lbl_empty_pack") and self.lbl_empty_pack.winfo_exists():
+                self.lbl_empty_pack.destroy()
 
         rec_map = {r.card_name: r for r in (recommendations or [])}
         active_filter = colors[0] if colors else "All Decks"
@@ -513,7 +664,15 @@ class DashboardFrame(ttk.Frame):
             )
 
         processed_rows.sort(key=lambda x: x["sort_key"], reverse=True)
-        for row in processed_rows:
+
+        # Apply zebra striping AFTER sorting so the alternating pattern is correct on load
+        for i, row in enumerate(processed_rows):
+            if not self.configuration.settings.card_colors_enabled and row["tag"] in [
+                "bw_odd",
+                "bw_even",
+            ]:
+                row["tag"] = "bw_odd" if i % 2 == 0 else "bw_even"
+
             tree.insert("", "end", values=row["vals"], tags=(row["tag"],))
 
         if hasattr(tree, "reapply_sort"):

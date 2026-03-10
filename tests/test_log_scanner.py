@@ -573,3 +573,46 @@ def test_draft_history_recording(function_scanner):
     # 4. Verify Clear Draft resets history
     function_scanner.clear_draft(True)
     assert len(function_scanner.retrieve_draft_history()) == 0
+
+
+def test_draft_state_recovery(function_scanner):
+    """
+    Verify that draft state is successfully saved and recovered across scanner instances
+    (Simulating an app crash or restart mid-draft).
+    """
+    import src.constants as constants
+
+    # 1. Start a draft
+    with open(
+        TEST_LOG_FILE_LOCATION, "a", encoding="utf-8", errors="replace"
+    ) as log_file:
+        log_file.write(f"{OTJ_EVENT_ENTRY}\n")
+    function_scanner.draft_start_search()
+
+    # 2. See P1P1
+    with open(
+        TEST_LOG_FILE_LOCATION, "a", encoding="utf-8", errors="replace"
+    ) as log_file:
+        log_file.write(f"{OTJ_P1P1_ENTRY}\n")
+    function_scanner.draft_data_search(False, False)
+
+    # Verify state is in memory
+    assert function_scanner.current_pack == 1
+    assert function_scanner.current_pick == 1
+    assert len(function_scanner.pack_cards[0]) > 0
+
+    # 3. Create a NEW scanner instance, simulating an app restart.
+    # It should automatically call _load_state() in __init__
+    new_scanner = ArenaScanner(
+        TEST_LOG_FILE_LOCATION,
+        TEST_SETS,
+        sets_location=TEST_SETS_DIRECTORY,
+        retrieve_unknown=True,
+    )
+
+    # 4. Verify the new scanner perfectly recovered the state from disk!
+    assert new_scanner.draft_type == constants.LIMITED_TYPES_DICT["PremierDraft"]
+    assert new_scanner.current_pack == 1
+    assert new_scanner.current_pick == 1
+    assert new_scanner.current_draft_id == "87b408d1-43e0-4fb5-8c74-a1257fde087c"
+    assert len(new_scanner.pack_cards[0]) == len(function_scanner.pack_cards[0])

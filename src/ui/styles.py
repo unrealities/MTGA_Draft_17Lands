@@ -128,7 +128,7 @@ class Theme:
             target_theme = cls.THEME_MAPPING.get(palette, "cyborg")
 
             if target_theme == "native":
-                # NATIVE MODE
+                # --- NATIVE OS MODE ---
                 native_engine = (
                     "aqua"
                     if sys.platform == "darwin"
@@ -142,32 +142,48 @@ class Theme:
                     except:
                         pass
 
-                sys_bg = style.lookup("TFrame", "background") or "#f0f0f0"
-                sys_fg = style.lookup("TLabel", "foreground") or "#000000"
-                sys_select_bg = (
-                    style.lookup("Treeview", "background", ["selected"]) or "#0078d7"
-                )
+                # Extract True Native Colors (Dynamic Light/Dark mode support)
+                if sys.platform == "darwin":
+                    cls.BG_PRIMARY = "systemWindowBackgroundColor"
+                    cls.BG_SECONDARY = "systemWindowBackgroundColor"
+                    cls.BG_TERTIARY = "systemTextBackgroundColor"
+                    cls.TEXT_MAIN = "systemTextColor"
+                    cls.TEXT_MUTED = "systemPlaceholderTextColor"
+                    cls.ACCENT = "systemControlAccentColor"
+                elif sys.platform == "win32":
+                    cls.BG_PRIMARY = "SystemButtonFace"
+                    cls.BG_SECONDARY = "SystemWindow"
+                    cls.BG_TERTIARY = "SystemWindow"
+                    cls.TEXT_MAIN = "SystemWindowText"
+                    cls.TEXT_MUTED = "SystemGrayText"
+                    cls.ACCENT = "SystemHighlight"
+                else:
+                    cls.BG_PRIMARY = style.lookup("TFrame", "background") or "#f0f0f0"
+                    cls.BG_SECONDARY = cls.BG_PRIMARY
+                    cls.BG_TERTIARY = "#ffffff"
+                    cls.TEXT_MAIN = style.lookup("TLabel", "foreground") or "#000000"
+                    cls.TEXT_MUTED = "gray"
+                    cls.ACCENT = (
+                        style.lookup("Treeview", "background", ["selected"])
+                        or "#0078d7"
+                    )
 
-                cls.BG_PRIMARY = sys_bg
-                cls.BG_SECONDARY = sys_bg
-                cls.BG_TERTIARY = "#cccccc"
-                cls.TEXT_MAIN = sys_fg
-                cls.TEXT_MUTED = "gray"
-                cls.ACCENT = sys_select_bg
-                cls.SUCCESS = "#008000"
-                cls.ERROR = "#ff0000"
-                cls.WARNING = "#ffcc00"
+                cls.SUCCESS = "#10b981"
+                cls.ERROR = "#ef4444"
+                cls.WARNING = "#f59e0b"
                 cls.INFO = "#3b82f6"
 
             else:
-                # BOOTSTRAP MODE
+                # --- BOOTSTRAP MODE ---
                 try:
                     style.theme_use(target_theme)
                 except:
                     style.theme_use("cyborg")
 
+                sys_bg = style.lookup("TFrame", "background")
                 colors = style.colors
-                cls.BG_PRIMARY = colors.bg
+
+                cls.BG_PRIMARY = sys_bg if sys_bg else colors.bg
                 cls.BG_SECONDARY = colors.secondary
                 cls.BG_TERTIARY = colors.inputbg
 
@@ -211,30 +227,53 @@ class Theme:
             safe_style = tk_ttk.Style(root)
 
             if not is_custom_loaded:
+                # TPanedwindow controls the background of the container
+                safe_style.configure(
+                    "TPanedwindow", background=cls.BG_PRIMARY, borderwidth=0
+                )
+
                 # Fix for macOS 'aqua' theme stubbornly drawing a 3D grey sash.
-                if sys.platform == "darwin":
+                if sys.platform == "darwin" and target_theme == "native":
                     try:
                         safe_style.element_create("Sash", "from", "default")
                     except Exception:
                         pass
 
-                # TPanedwindow controls the background of the container
-                safe_style.configure("TPanedwindow", background=cls.BG_PRIMARY)
+                # THE ULTIMATE SASH FIX FOR TTKBOOTSTRAP THEMES:
+                # Neutral/Light themes use hardcoded image files for their splitters.
+                # We command Tcl to overwrite those images with primitive flat rectangles.
+                if target_theme != "native":
+                    try:
+                        safe_style.element_create(
+                            "Horizontal.Sash.hsash", "from", "clam"
+                        )
+                        safe_style.element_create("Vertical.Sash.vsash", "from", "clam")
+                    except Exception:
+                        pass
 
-                # Sash controls the actual draggable splitter bar.
-                safe_style.configure(
-                    "Sash",
-                    sashthickness=10,
-                    sashrelief="flat",
-                    background=cls.BG_PRIMARY,
-                    bordercolor=cls.BG_PRIMARY,
-                    lightcolor=cls.BG_PRIMARY,
-                    darkcolor=cls.BG_PRIMARY,
-                )
+                # Color the primitive rectangles perfectly flat against the background
+                for sash in ["Sash", "Horizontal.Sash", "Vertical.Sash"]:
+                    safe_style.configure(
+                        sash,
+                        sashthickness=8,
+                        sashrelief="flat",
+                        gripcount=0,
+                        borderwidth=0,
+                        background=cls.BG_PRIMARY,
+                        bordercolor=cls.BG_PRIMARY,
+                        lightcolor=cls.BG_PRIMARY,
+                        darkcolor=cls.BG_PRIMARY,
+                    )
+                    safe_style.map(
+                        sash,
+                        background=[("active", cls.ACCENT)],
+                        bordercolor=[("active", cls.ACCENT)],
+                        lightcolor=[("active", cls.ACCENT)],
+                        darkcolor=[("active", cls.ACCENT)],
+                    )
 
-                safe_style.map(
-                    "Sash", background=[], bordercolor=[], lightcolor=[], darkcolor=[]
-                )
+                # Erase static separator line above the tabs so it doesn't look like a stuck rail
+                safe_style.configure("TSeparator", background=cls.BG_PRIMARY)
 
         except Exception as e:
             logger.error(f"Failed to configure sash: {e}")
@@ -243,6 +282,18 @@ class Theme:
             style.configure(".", font=(cls.FONT_FAMILY, main_font_size))
             style.configure(
                 "Treeview.Heading", font=(cls.FONT_FAMILY, main_font_size, "bold")
+            )
+
+            # --- UNIFIED NOTEBOOK TAB STYLING ---
+            style.configure(
+                "TNotebook.Tab",
+                padding=[12, 6],
+                font=(cls.FONT_FAMILY, main_font_size, "bold"),
+            )
+            style.map(
+                "TNotebook.Tab",
+                foreground=[("selected", cls.ACCENT), ("!selected", cls.TEXT_MAIN)],
+                background=[("selected", cls.BG_PRIMARY)],
             )
 
         style.configure(

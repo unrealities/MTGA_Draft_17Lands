@@ -3,14 +3,18 @@ src/ui/app.py
 Main UI Orchestrator. Updated for Async Background Updates.
 """
 
+import queue
+import logging
+from typing import Dict, List, Any, Optional
+
+from src import constants
+
+logger = logging.getLogger(__name__)
 import tkinter
 from tkinter import ttk, filedialog, messagebox
 import os
 import sys
-import queue
-from typing import Dict, List, Any, Optional
 
-from src import constants
 from src.configuration import write_configuration
 from src.card_logic import filter_options, get_deck_metrics
 from src.utils import retrieve_local_set_list
@@ -118,7 +122,6 @@ class DraftApp:
         try:
             self.vars["status_text"].set("Syncing with Arena...")
 
-            # 1. APPLY GEOMETRY
             try:
                 geom = self.configuration.settings.main_window_geometry
                 if geom and "x" in geom and not geom.startswith("1x1"):
@@ -128,13 +131,24 @@ class DraftApp:
 
                 self.root.update_idletasks()
 
-                sash_pos = self.configuration.settings.paned_window_sash
-                if sash_pos > 50:
-                    self.splitter.sashpos(0, sash_pos)
+                # Defer setting sash positions until the OS window manager has fully applied geometry.
+                # If applied too early, the PanedWindow clamps the sash to its un-rendered height.
+                def apply_sashes():
+                    try:
+                        sash_pos = self.configuration.settings.paned_window_sash
+                        if sash_pos > 50 and self.tabs_visible:
+                            self.splitter.sashpos(0, sash_pos)
 
-                dash_sash = getattr(self.configuration.settings, "dashboard_sash", 800)
-                if dash_sash > 50 and hasattr(self.dashboard, "h_splitter"):
-                    self.dashboard.h_splitter.sashpos(0, dash_sash)
+                        dash_sash = getattr(
+                            self.configuration.settings, "dashboard_sash", 800
+                        )
+                        if dash_sash > 50 and hasattr(self.dashboard, "h_splitter"):
+                            self.dashboard.h_splitter.sashpos(0, dash_sash)
+                    except Exception:
+                        pass
+
+                self.root.after(100, apply_sashes)
+
             except Exception as e:
                 import logging
 
@@ -229,8 +243,12 @@ class DraftApp:
                 self.configuration.settings.main_window_geometry = self.root.geometry()
 
             # Save the current divider position
+
             try:
-                self.configuration.settings.paned_window_sash = self.splitter.sashpos(0)
+                if self.tabs_visible:
+                    self.configuration.settings.paned_window_sash = (
+                        self.splitter.sashpos(0)
+                    )
 
                 if hasattr(self, "dashboard") and hasattr(self.dashboard, "h_splitter"):
                     if self.dashboard.sidebar_visible:
@@ -380,21 +398,33 @@ class DraftApp:
             self._refresh_ui_data,
         )
 
-        self.tab_controls = ttk.Frame(self.top_pane)
+        self.bottom_pane = ttk.Frame(self.splitter)
+        self.splitter.add(self.bottom_pane, weight=2)
+
+        self.tab_controls = ttk.Frame(self.top_pane, padding=(10, 5, 10, 5))
         self.tab_controls.pack(side="bottom", fill="x")
+
+        self.footer_separator = ttk.Separator(self.top_pane, orient="horizontal")
+        self.footer_separator.pack(side="bottom", fill="x")
 
         self.dashboard.pack(side="top", fill="both", expand=True)
 
         self.btn_toggle_tabs = ttk.Button(
             self.tab_controls,
             text="▼ Hide Tabs",
-            bootstyle="secondary",
+            bootstyle="secondary-outline",
             command=self._toggle_tabs,
+            cursor="hand2",
         )
-        self.btn_toggle_tabs.pack(side="right", padx=10, pady=5)
+        self.btn_toggle_tabs.pack(side="right", padx=5)
 
-        self.bottom_pane = ttk.Frame(self.splitter)
-        self.splitter.add(self.bottom_pane, weight=2)
+        self.lbl_session_info = ttk.Label(
+            self.tab_controls,
+            font=(Theme.FONT_FAMILY, 9),
+            bootstyle="secondary",
+            anchor="w",
+        )
+        self.lbl_session_info.pack(side="left", fill="x", expand=True, padx=5)
 
         self.notebook = ttk.Notebook(self.bottom_pane)
         self.notebook.pack(fill="both", expand=True)
@@ -423,6 +453,21 @@ class DraftApp:
         self.notebook.add(self.panel_suggest, text=" Deck Builder ")
         self.notebook.add(self.panel_compare, text=" Comparisons ")
         self.notebook.add(self.panel_tiers, text=" Tier Lists ")
+
+    def update_session_info(self, event_name, draft_id, start_time):
+        """Updates the muted technical metadata in the footer."""
+        if not hasattr(self, "lbl_session_info"):
+            return
+
+        parts = []
+        if event_name:
+            parts.append(str(event_name))
+        if draft_id:
+            parts.append(str(draft_id))
+        if start_time:
+            parts.append(str(start_time))
+
+        self.lbl_session_info.config(text=" | ".join(parts))
 
     def _toggle_tabs(self):
         if self.tabs_visible:
@@ -535,6 +580,9 @@ class DraftApp:
             pack_cards = self.orchestrator.scanner.retrieve_current_pack_cards()
             missing_cards = self.orchestrator.scanner.retrieve_current_missing_cards()
             history = self.orchestrator.scanner.retrieve_draft_history()
+            draft_id = self.orchestrator.scanner.current_draft_id
+            start_time = self.orchestrator.scanner.draft_start_time
+            event_string = self.orchestrator.scanner.event_string
         finally:
             self.orchestrator.scanner.lock.release()
 
@@ -577,6 +625,13 @@ class DraftApp:
             self.configuration,
         )
 
+        self.dashboard._current_event_set = es
+        self.dashboard._current_event_type = et
+        self.dashboard._current_pack = pk
+        self.dashboard._current_pick = pi
+        self.dashboard.on_p1p1_scan = lambda: self._manual_refresh(True)
+
+        self.update_session_info(event_string, draft_id, start_time)
         self.dashboard.update_recommendations(recommendations)
         self.dashboard.update_signals(scores)
         self.dashboard.update_pack_data(
@@ -903,6 +958,11 @@ class DraftApp:
             self.btn_p1p1.config(state="disabled")
             if self.overlay_window and hasattr(self.overlay_window, "btn_scan"):
                 self.overlay_window.btn_scan.config(state="disabled")
+            if (
+                hasattr(self.dashboard, "btn_dashboard_scan")
+                and self.dashboard.btn_dashboard_scan.winfo_exists()
+            ):
+                self.dashboard.btn_dashboard_scan.config(state="disabled")
 
             def update_btn_text(msg):
                 def _update():
@@ -914,6 +974,11 @@ class DraftApp:
                         and self.overlay_window.btn_scan.winfo_exists()
                     ):
                         self.overlay_window.btn_scan.config(text=msg)
+                    if (
+                        hasattr(self.dashboard, "btn_dashboard_scan")
+                        and self.dashboard.btn_dashboard_scan.winfo_exists()
+                    ):
+                        self.dashboard.btn_dashboard_scan.config(text=msg)
 
                 try:
                     self.root.after(0, _update)
@@ -945,6 +1010,13 @@ class DraftApp:
             and self.overlay_window.btn_scan.winfo_exists()
         ):
             self.overlay_window.btn_scan.config(text="SCAN P1P1", state="normal")
+        if (
+            hasattr(self.dashboard, "btn_dashboard_scan")
+            and self.dashboard.btn_dashboard_scan.winfo_exists()
+        ):
+            self.dashboard.btn_dashboard_scan.config(
+                text="SCAN P1P1 (Take Screenshot)", state="normal"
+            )
 
         if data_found:
             self.orchestrator.request_math_update()
@@ -1088,4 +1160,15 @@ class DraftApp:
             self.overlay_window.destroy()
             self.overlay_window = None
         self.root.deiconify()
+        current_scale = constants.UI_SIZE_DICT.get(
+            self.configuration.settings.ui_size, 1.0
+        )
+        Theme.apply(
+            self.root,
+            palette=self.configuration.settings.theme,
+            engine=getattr(self.configuration.settings, "theme_base", "clam"),
+            custom_path=self.configuration.settings.theme_custom_path,
+            scale=current_scale,
+        )
+
         self._refresh_ui_data()

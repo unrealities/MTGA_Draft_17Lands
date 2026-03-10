@@ -118,8 +118,11 @@ if {[lsearch [ttk::style theme names] mythic_gold] == -1} {
             -bordercolor $bg \
             -lightcolor $bg \
             -darkcolor $bg \
-            -sashthickness 10 \
+            -sashthickness 8 \
             -sashrelief flat
+            
+        ttk::style map Sash \
+            -background [list active $selectbg]
     }
 }
 

@@ -62,54 +62,72 @@ class AdvisorPanel(tb.Frame):
 
         for i, rec in enumerate(recs[:limit]):
             item_frame = tb.Frame(self.container)
-            item_frame.pack(fill="x", side="top", anchor="nw", pady=(0, 12))
-
-            # --- Header: Score Badge + Card Name ---
-            header_frame = tb.Frame(item_frame)
-            header_frame.pack(fill="x", anchor="w")
+            item_frame.pack(fill="x", side="top", anchor="nw", padx=20, pady=(0, 12))
 
             is_elite = rec.is_elite
             badge_bg = Theme.SUCCESS if is_elite else Theme.ACCENT
 
-            # 1. The Score Badge
-            badge = tb.Canvas(
+            # 1. Left Accent Line (Using tk.Frame for a guaranteed solid color block across all OSs)
+            accent = tkinter.Frame(item_frame, width=4)
+            try:
+                accent.configure(bg=badge_bg)
+            except tkinter.TclError:
+                # Safe fallback if native semantic colors fail in older Tkinter versions
+                accent.configure(bg="#10b981" if is_elite else "#3b82f6")
+            accent.pack(side="left", fill="y", padx=(2, 8))
+
+            # 2. Content Body
+            content_frame = tb.Frame(item_frame)
+            content_frame.pack(side="left", fill="both", expand=True)
+
+            header_frame = tb.Frame(content_frame)
+            header_frame.pack(fill="x", anchor="w")
+
+            # 3. The Score (Bold, Colored)
+            score_prefix = "★ " if is_elite else ""
+            lbl_score = tb.Label(
                 header_frame,
-                width=badge_size,
-                height=badge_size,
-                bg=Theme.BG_PRIMARY,
-                highlightthickness=0,
+                text=f"{score_prefix}{rec.contextual_score:.0f}",
+                font=(Theme.FONT_FAMILY, name_font_size + 2, "bold"),
             )
-            badge.pack(side="left", pady=1, padx=(0, 8), anchor="nw")
+            try:
+                lbl_score.configure(foreground=badge_bg)
+            except tkinter.TclError:
+                lbl_score.configure(foreground="#10b981" if is_elite else "#3b82f6")
+            lbl_score.pack(side="left", anchor="nw")
 
-            badge.create_oval(
-                2, 2, badge_size - 2, badge_size - 2, fill=badge_bg, outline=badge_bg
+            # Separator
+            lbl_sep = tb.Label(
+                header_frame,
+                text=" | ",
+                font=(Theme.FONT_FAMILY, name_font_size, "bold"),
             )
-            badge.create_text(
-                badge_size // 2,
-                badge_size // 2,
-                text=f"{rec.contextual_score:.0f}",
-                fill="#ffffff",
-                font=(Theme.FONT_FAMILY, name_font_size - 3, "bold"),
-            )
+            try:
+                lbl_sep.configure(foreground=Theme.TEXT_MUTED)
+            except tkinter.TclError:
+                pass
+            lbl_sep.pack(side="left", anchor="nw", padx=4, pady=1)
 
-            # 2. The Card Name
-            name_color = Theme.ACCENT if is_elite else Theme.TEXT_MAIN
+            # 4. The Card Name
             font_weight = "bold" if is_elite else "normal"
-
             lbl_name = tb.Label(
                 header_frame,
                 text=rec.card_name.upper(),
-                bootstyle="primary" if is_elite else None,
                 font=(Theme.FONT_FAMILY, name_font_size, font_weight),
-                wraplength=200 if self.mini_mode else 180,
+                wraplength=180 if self.mini_mode else 160,
                 justify="left",
             )
-            lbl_name.pack(side="left", anchor="nw", pady=(2, 0))
+            if is_elite:
+                try:
+                    lbl_name.configure(foreground=Theme.SUCCESS)
+                except tkinter.TclError:
+                    lbl_name.configure(foreground="#10b981")
+            lbl_name.pack(side="left", anchor="nw", pady=2)
 
             # --- Body: Reasoning Description & Tags ---
             reason_text = ""
             if is_elite:
-                reason_text += f"⭐ ELITE PICK (+{rec.z_score}σ)"
+                reason_text += f"ELITE PICK (+{rec.z_score}σ)"
                 if rec.reasoning:
                     reason_text += f" | {' | '.join(rec.reasoning)}"
             elif rec.reasoning:
@@ -119,16 +137,16 @@ class AdvisorPanel(tb.Frame):
 
             if rec.tags:
                 tag_strings = [TAG_VISUALS.get(t, t.capitalize()) for t in rec.tags]
-                reason_text += f"\nRoles: {', '.join(tag_strings)}"
+                reason_text += f"\n{', '.join(tag_strings)}"
 
             lbl_reason = tb.Label(
-                item_frame,
+                content_frame,
                 text=reason_text,
                 font=(Theme.FONT_FAMILY, reason_font_size),
-                wraplength=260 if self.mini_mode else 230,
+                wraplength=250 if self.mini_mode else 220,
                 justify="left",
             )
-            lbl_reason.pack(anchor="nw", pady=(4, 0))
+            lbl_reason.pack(anchor="nw", pady=(2, 0))
 
     def _on_theme_change(self, event=None):
         if self.winfo_exists():
