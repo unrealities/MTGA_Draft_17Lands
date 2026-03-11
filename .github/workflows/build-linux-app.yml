@@ -34,13 +34,17 @@ jobs:
       - name: Build executable
         run: python -m PyInstaller main.spec --clean
 
-      - name: Package to Tarball
+      - name: Package to Tarball and Checksum
         run: |
           cd dist
           tar -czvf ../MTGA_Draft_Tool_Linux.tar.gz MTGA_Draft_Tool
+          cd ..
+          sha256sum MTGA_Draft_Tool_Linux.tar.gz > MTGA_Draft_Tool_Linux.tar.gz.sha256
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
           name: MTGA_Draft_Tool_Linux
-          path: MTGA_Draft_Tool_Linux.tar.gz
+          path: |
+            MTGA_Draft_Tool_Linux.tar.gz
+            MTGA_Draft_Tool_Linux.tar.gz.sha256

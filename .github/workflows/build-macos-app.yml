@@ -28,13 +28,17 @@ jobs:
       - name: Build executable and App Bundle
         run: python -m PyInstaller main.spec --clean
 
-      - name: Package to ZIP
+      - name: Package to ZIP and Checksum
         run: |
           cd dist
           zip -r ../MTGA_Draft_Tool_macOS.zip MTGA_Draft_Tool.app
+          cd ..
+          shasum -a 256 MTGA_Draft_Tool_macOS.zip > MTGA_Draft_Tool_macOS.zip.sha256
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
           name: MTGA_Draft_Tool_macOS
-          path: MTGA_Draft_Tool_macOS.zip
+          path: |
+            MTGA_Draft_Tool_macOS.zip
+            MTGA_Draft_Tool_macOS.zip.sha256

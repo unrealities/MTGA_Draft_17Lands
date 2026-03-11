@@ -8,7 +8,7 @@ Magic: The Gathering Arena draft tool that utilizes 17Lands data.
 
 ## Table of Contents
 
-- [MTGA\_Draft\_17Lands](#mtga_draft_17lands)
+- [MTGA_Draft_17Lands](#mtga_draft_17lands)
   - [Table of Contents](#table-of-contents)
   - [Run Steps: Windows Executable (Windows Only)](#run-steps-windows-executable-windows-only)
   - [Run Steps: Python (Windows/Mac/Linux)](#run-steps-python-windowsmaclinux)
@@ -35,19 +35,36 @@ Magic: The Gathering Arena draft tool that utilizes 17Lands data.
     - [Version Management](#version-management)
     - [Building the Executable](#building-the-executable)
 
+## Security, Verification & macOS Gatekeeper
+
+Because this is a free, open-source community project, the application is not signed with a paid Apple Developer Certificate ($100/year). As a result, macOS and Windows SmartScreen will flag the application as an "Unidentified Developer."
+
+To guarantee the integrity of your download, our GitHub Actions pipeline automatically generates a **SHA-256 Checksum** for every release. You can compare the hash of your downloaded file against the `.sha256` file listed on the [Releases page](https://github.com/unrealities/MTGA_Draft_17Lands/releases) to verify it has not been modified.
+
+**Mac Users: Bypassing the "App is Damaged" or "Malware" prompt**
+macOS actively quarantines unsigned apps downloaded from the internet. To run the app safely:
+
+1. Open **Terminal** (Command + Space -> "Terminal").
+2. Type `xattr -cr ` (make sure to include the space at the end!).
+3. Drag and drop the `MTGA_Draft_Tool.app` from your Applications folder directly into the Terminal window.
+4. Press **Enter**. You can now double-click the app to open it normally.
+
+---
+
 ## Run Steps: Standalone App (Windows / macOS / Linux)
 
 - **Step 1:** Download the latest release for your operating system from the [releases page](https://github.com/unrealities/MTGA_Draft_17Lands/releases).
+
 - **Step 2:** Install/Extract the application:
-  - **Windows:** Unzip and double-click the installer executable. *(Run as administrator if installing to restricted folders like Program Files).*
-  - **macOS:** Unzip the downloaded file and drag `MTGA_Draft_Tool.app` to your Applications folder.
+  - **Windows:** Unzip and double-click the installer executable. _(Run as administrator if installing to restricted folders like Program Files)._
+  - **macOS:** Unzip the downloaded file and drag `MTGA_Draft_Tool.app` to your Applications folder. _(See the Security section above if macOS blocks the app from running)_
   - **Linux:** Extract the `.tar.gz` file and run the executable.
 - **Step 3:** In Arena, go to Adjust Options, Account, and check the Detailed Logs (Plugin Support) check box.
 - **Step 4:** Launch the `MTGA_Draft_Tool` application.
 - **Step 5:** Click the **Datasets** tab to download the 17Lands data for the sets you plan to play.
 - **Step 6:** Configure the tool through `File -> Preferences...`.
 - **Step 7:** Start the draft in Arena.
-  - *Note: MTG Arena doesn't list the very first pack (P1P1) in the log for human drafts. Clicking the `SCAN P1P1` button in the app will use OCR to instantly identify the cards on your screen.*
+  - _Note: MTG Arena doesn't list the very first pack (P1P1) in the log for human drafts. Clicking the `SCAN P1P1` button in the app will use OCR to instantly identify the cards on your screen._
 
 ## Run Steps: Python (Windows/Mac/Linux)
 
@@ -168,7 +185,8 @@ The application includes notifications to ensure datasets are always up-to-date.
 - **Missing cards after restarting Arena:** Arena creates a new log after every restart. The application cannot track cards picked prior to an Arena restart.
 
 ### Desyncs & Missed Picks
-The application features robust crash-recovery and state persistence. If you close the app mid-draft (or MTG Arena crashes), simply reopening the app will instantly resume your draft exactly where you left off. 
+
+The application features robust crash-recovery and state persistence. If you close the app mid-draft (or MTG Arena crashes), simply reopening the app will instantly resume your draft exactly where you left off.
 
 If the log file ever severely desyncs, click the **Reload** button in the main dashboard. This will wipe the application's current memory, rapidly re-read the entire log file from the beginning, and cleanly reconstruct your draft state.
 
@@ -193,6 +211,7 @@ For developers looking to contribute, fork, or understand the architecture of th
 
    ```bash
    pip install -r requirements.txt
+   ```
 
 ### Running Tests
 
@@ -202,24 +221,23 @@ This project uses `pytest` for unit testing.
 python -m pytest tests/
 ```
 
-### Version Management
+### Automated Releases & Version Management
 
-To automate updating the version number across `src/constants.py`, `builder/Installer.iss`, and creating a new entry in `release_notes.txt`, use the included script:
+This project uses a fully automated CI/CD pipeline via GitHub Actions. Releasing a new version to the public is as simple as running a single script.
 
-- **Patch Bump (+0.01):** `python bump_version.py`
-- **Major Bump (+1.0):** `python bump_version.py major`
-- **Manual Set:** `python bump_version.py --set 3.50`
+To bump the version, update all config files, generate the macOS/Linux/Windows executables, calculate their SHA-256 security hashes, and publish them to the GitHub Releases page:
 
-### Building the Executable
+1. Run the bump script:
+   - **Patch Bump (+0.01):** `python bump_version.py`
+   - **Major Bump (+1.0):** `python bump_version.py major`
+   - **Manual Set:** `python bump_version.py --set 4.50`
+2. The script will ask: `Would you like to automatically commit and push the tag to trigger a GitHub Release? (y/N)`
+3. Type `y` and press **Enter**.
+4. GitHub Actions will take over, build all 3 operating systems in parallel, and publish the final `.zip`, `.tar.gz`, and `.exe` files directly to your Releases page!
 
-This project uses a [GitHub Action](https://github.com/unrealities/MTGA_Draft_17Lands/actions/workflows/build-windows-exe.yml) for official builds. To build locally on Windows:
+### Building Locally
 
-1. **Build EXE:**
+If you need to test builds locally on your own machine instead of using GitHub Actions:
 
-   ```bash
-   python -m PyInstaller main.spec --clean
-   ```
-
-2. **Build Installer:**
-   - [Download Inno Setup](https://jrsoftware.org/isdl.php#stable).
-   - Open `builder/Installer.iss` with Inno Setup and click **Build -> Compile**.
+- **macOS/Linux:** `python -m PyInstaller main.spec --clean`
+- **Windows:** Compile `main.spec` with PyInstaller, then open `builder/Installer.iss` with [Inno Setup](https://jrsoftware.org/isdl.php#stable) and click **Build -> Compile**.

@@ -146,6 +146,23 @@ def main():
 
         print(f"\nSUCCESS! Version bumped: {current_ver} -> {new_ver}")
 
+        # 5. Git Automation
+        response = input(
+            f"\nWould you like to automatically commit and push the v{new_ver} tag to trigger a GitHub Release? (y/N): "
+        )
+        if response.strip().lower() == "y":
+            import subprocess
+
+            subprocess.run(["git", "add", "."])
+            subprocess.run(["git", "commit", "-m", f"Bump version to v{new_ver}"])
+            subprocess.run(["git", "tag", f"v{new_ver}"])
+            subprocess.run(["git", "push", "origin", "main", "--tags"])
+            print(f"\n🚀 Tag v{new_ver} pushed successfully!")
+            print(
+                "GitHub Actions is now automatically building the macOS, Linux, and Windows apps."
+            )
+            print("Check your repository's 'Actions' tab to watch the progress.")
+
     except Exception as e:
         print(f"Error: {e}")
 

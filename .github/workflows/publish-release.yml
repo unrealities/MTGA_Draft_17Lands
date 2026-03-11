@@ -1,0 +1,122 @@
+name: Build & Publish Release
+
+on:
+  push:
+    tags:
+      - "v*" # Triggers automatically when a version tag (e.g., v4.06) is pushed
+  workflow_dispatch: # Still allows manual testing from the Actions tab
+
+permissions:
+  contents: write # Required for the action to create the GitHub Release
+
+jobs:
+  build-macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pyinstaller==6.7.0 jaraco.text platformdirs importlib-metadata zipp
+      - name: Build executable and App Bundle
+        run: python -m PyInstaller main.spec --clean
+      - name: Package to ZIP and Checksum
+        run: |
+          # Use the tag name (v4.06) or fallback to 'dev' if triggered manually
+          VERSION=${{ github.ref_type == 'tag' && github.ref_name || 'dev' }}
+          cd dist
+          zip -r ../MTGA_Draft_Tool_macOS_$VERSION.zip MTGA_Draft_Tool.app
+          cd ..
+          shasum -a 256 MTGA_Draft_Tool_macOS_$VERSION.zip > MTGA_Draft_Tool_macOS_$VERSION.zip.sha256
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: macOS-Build
+          path: |
+            MTGA_Draft_Tool_macOS_*.zip
+            MTGA_Draft_Tool_macOS_*.zip.sha256
+      - name: Add to GitHub Release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+          files: |
+            MTGA_Draft_Tool_macOS_*.zip
+            MTGA_Draft_Tool_macOS_*.zip.sha256
+
+  build-linux:
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install System Dependencies (Tkinter)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y python3-tk
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pyinstaller==6.7.0 jaraco.text platformdirs importlib-metadata zipp
+      - name: Build executable
+        run: python -m PyInstaller main.spec --clean
+      - name: Package to Tarball and Checksum
+        run: |
+          VERSION=${{ github.ref_type == 'tag' && github.ref_name || 'dev' }}
+          cd dist
+          tar -czvf ../MTGA_Draft_Tool_Linux_$VERSION.tar.gz MTGA_Draft_Tool
+          cd ..
+          sha256sum MTGA_Draft_Tool_Linux_$VERSION.tar.gz > MTGA_Draft_Tool_Linux_$VERSION.tar.gz.sha256
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: Linux-Build
+          path: |
+            MTGA_Draft_Tool_Linux_*.tar.gz
+            MTGA_Draft_Tool_Linux_*.tar.gz.sha256
+      - name: Add to GitHub Release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            MTGA_Draft_Tool_Linux_*.tar.gz
+            MTGA_Draft_Tool_Linux_*.tar.gz.sha256
+
+  build-windows:
+    runs-on: windows-2022
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pywin32==306 pyinstaller==6.7.0 jaraco.text platformdirs importlib-metadata zipp
+      - name: Build executable
+        run: python -m PyInstaller main.spec --clean
+      - name: Build installer
+        run: iscc ./builder/Installer.iss
+      - name: Calculate installer hash
+        run: |
+          Get-ChildItem -Path "./builder/{app}" -Filter *.exe | ForEach-Object {
+              $hash = (Get-FileHash $_.FullName -Algorithm SHA256).Hash
+              [IO.File]::WriteAllText("$($_.FullName).sha256.txt", $hash)
+          }
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: Windows-Build
+          path: ./builder/{app}/*
+      - name: Add to GitHub Release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ./builder/{app}/*
