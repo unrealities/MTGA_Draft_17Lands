@@ -14,7 +14,7 @@ from typing import Dict, List, Tuple
 from pydantic import BaseModel, Field
 from src import constants
 from src.logger import create_logger
-from src.constants import APPLICATION_VERSION
+from src.constants import APPLICATION_VERSION, BASE_DIR
 
 logger = create_logger()
 
@@ -23,9 +23,12 @@ TOTAL_SCRYFALL_SETS = 50
 DATE_SHIFT_OFFSET_DAYS = -30
 CACHE_DURATION_SECONDS = 86400
 
-TEMP_FOLDER = os.path.join(os.getcwd(), "Temp")
+TEMP_FOLDER = os.path.join(BASE_DIR, "Temp")
 if not os.path.exists(TEMP_FOLDER):
-    os.makedirs(TEMP_FOLDER)
+    try:
+        os.makedirs(TEMP_FOLDER)
+    except Exception:
+        pass
 TEMP_LIMITED_SETS = os.path.join(TEMP_FOLDER, "temp_set_list.json")
 
 REPLACE_PHRASE_LATEST = "{LATEST}"

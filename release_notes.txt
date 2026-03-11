@@ -1,3 +1,6 @@
+===================== RELEASE NOTES 4.07 =====================
+* [TODO]: Add release notes here
+
 ===================== RELEASE NOTES 4.06 =====================
 * unrealities: [Major Feature] Official Standalone Support for macOS and Linux. The application is now distributed as native, pre-compiled binaries for Mac (.app) and Linux (.tar.gz), removing the need to install Python manually. The auto-updater fully supports these new platforms.
 * unrealities: [UX/UI] Added Right-Click Context Menus to the data tables. You can now right-click any card to instantly send it to the Comparisons tab, copy its name, or look it up on Scryfall.

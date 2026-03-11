@@ -13,6 +13,7 @@ import os
 import re
 import logging
 from tkinter import font as tkfont
+from src.constants import RESOURCE_DIR
 
 logger = logging.getLogger(__name__)
 
@@ -63,7 +64,7 @@ class Theme:
     @classmethod
     def discover_custom_themes(cls):
         custom_themes = {}
-        theme_dir = os.path.join(os.getcwd(), "themes")
+        theme_dir = os.path.join(RESOURCE_DIR, "themes")
         if os.path.exists(theme_dir):
             for f in os.listdir(theme_dir):
                 if f.endswith(".tcl"):

@@ -8,10 +8,11 @@ import shutil
 import zipfile
 from typing import Tuple
 from src.logger import create_logger
+from src.constants import BASE_DIR
 
 logger = create_logger()
 
-DOWNLOADS_FOLDER = os.path.join(os.getcwd(), "Downloads")
+DOWNLOADS_FOLDER = os.path.join(BASE_DIR, "Downloads")
 
 UPDATE_LATEST_URL = (
     "https://api.github.com/repos/unrealities/MTGA_Draft_17Lands/releases/latest"

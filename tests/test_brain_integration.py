@@ -17,6 +17,7 @@ from src.configuration import Configuration
 from src.limited_sets import SetDictionary, SetInfo
 from src import constants
 from src.utils import Result
+from src.constants import BASE_DIR
 
 
 # --- MOCK DATA GENERATOR ---

@@ -8,6 +8,7 @@ from tkinter import ttk
 from unittest.mock import MagicMock, patch
 from src.ui.app import DraftApp
 from src.configuration import Configuration, Settings
+from src.constants import BASE_DIR
 
 
 class TestColorPercentagesUI:

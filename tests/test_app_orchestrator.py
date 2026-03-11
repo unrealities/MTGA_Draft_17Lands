@@ -5,6 +5,7 @@ from unittest.mock import MagicMock, patch
 from src.ui.app import DraftApp
 from src.configuration import Configuration, Settings
 from src.ui.styles import Theme
+from src.constants import BASE_DIR
 
 
 class MockWidget(ttk.Frame):
