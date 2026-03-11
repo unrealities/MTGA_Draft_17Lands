@@ -26,11 +26,21 @@ from src.card_logic import format_win_rate
 
 
 class DashboardFrame(ttk.Frame):
-    def __init__(self, parent, configuration, on_card_select, on_reconfigure_ui):
+    def __init__(
+        self,
+        parent,
+        configuration,
+        on_card_select,
+        on_reconfigure_ui,
+        on_advisor_click=None,
+        on_context_menu=None,
+    ):
         super().__init__(parent)
         self.configuration = configuration
         self.on_card_select = on_card_select
         self.on_reconfigure_ui = on_reconfigure_ui
+        self.on_advisor_click = on_advisor_click
+        self.on_context_menu = on_context_menu
 
         self.pack_manager: Optional[DynamicTreeviewManager] = None
         self.missing_manager: Optional[DynamicTreeviewManager] = None
@@ -342,6 +352,17 @@ class DashboardFrame(ttk.Frame):
             lambda e: self.on_card_select(e, self.pack_manager.tree, "pack"),
         )
 
+        for event_type in ["<Button-3>", "<Control-Button-1>"]:
+            self.pack_manager.tree.bind(
+                event_type,
+                lambda e: (
+                    self.on_context_menu(e, self.pack_manager.tree, "pack")
+                    if self.on_context_menu
+                    else None
+                ),
+                add="+",
+            )
+
         # 2. Missing Table (Wheel Tracker)
         self.missing_frame = ttk.Labelframe(
             self.f_left, text=" SEEN CARDS (WHEEL TRACKER) ", padding=5
@@ -359,6 +380,17 @@ class DashboardFrame(ttk.Frame):
             "<<TreeviewSelect>>",
             lambda e: self.on_card_select(e, self.missing_manager.tree, "missing"),
         )
+
+        for event_type in ["<Button-3>", "<Control-Button-1>"]:
+            self.missing_manager.tree.bind(
+                event_type,
+                lambda e: (
+                    self.on_context_menu(e, self.missing_manager.tree, "missing")
+                    if self.on_context_menu
+                    else None
+                ),
+                add="+",
+            )
 
         self.missing_frame.grid_remove()
 
@@ -390,7 +422,11 @@ class DashboardFrame(ttk.Frame):
             self.h_splitter.add(self.sidebar_frame, weight=0)
 
         # --- Advisor Panel ---
-        self.advisor_panel = AdvisorPanel(self.sidebar_container, self.configuration)
+        self.advisor_panel = AdvisorPanel(
+            self.sidebar_container,
+            self.configuration,
+            on_click_callback=self.on_advisor_click,
+        )
         self.advisor_panel.pack(fill="x", pady=(0, 15))
 
         self.signal_container = CollapsibleFrame(
@@ -486,7 +522,25 @@ class DashboardFrame(ttk.Frame):
                 )
             self.recovery_frame.grid(row=0, column=0, sticky="nsew")
         elif has_draft_data:
+            was_hidden = not self.content_frame.winfo_viewable()
             self.content_frame.grid(row=0, column=0, sticky="nsew")
+
+            if was_hidden and self.sidebar_visible:
+
+                def fix_sash():
+                    try:
+                        curr_w = self.winfo_width()
+                        if curr_w > 200:
+                            dash_sash = getattr(
+                                self.configuration.settings, "dashboard_sash", 800
+                            )
+                            safe_sash = min(dash_sash, curr_w - 280)
+                            if safe_sash > 50:
+                                self.h_splitter.sashpos(0, safe_sash)
+                    except Exception:
+                        pass
+
+                self.after(50, fix_sash)
         else:
             if self._current_event_set:
                 self.lbl_waiting_title.config(
@@ -531,6 +585,7 @@ class DashboardFrame(ttk.Frame):
         current_pick,
         source_type="pack",
         recommendations=None,
+        picked_cards=None,
     ):
         tree = self.get_treeview(source_type)
         if not tree or not hasattr(tree, "active_fields"):
@@ -554,18 +609,7 @@ class DashboardFrame(ttk.Frame):
         self._update_dashboard_state()
 
         if not cards:
-            if source_type == "pack":
-                self.lbl_empty_pack = ttk.Label(
-                    self.pack_frame,
-                    text="Waiting for next pack...",
-                    font=(Theme.FONT_FAMILY, 10, "italic"),
-                    bootstyle="secondary",
-                )
-                self.lbl_empty_pack.place(relx=0.5, rely=0.5, anchor="center")
             return
-        else:
-            if hasattr(self, "lbl_empty_pack") and self.lbl_empty_pack.winfo_exists():
-                self.lbl_empty_pack.destroy()
 
         rec_map = {r.card_name: r for r in (recommendations or [])}
         active_filter = colors[0] if colors else "All Decks"
@@ -581,6 +625,11 @@ class DashboardFrame(ttk.Frame):
                 from src.card_logic import row_color_tag
 
                 row_tag = row_color_tag(card.get(constants.DATA_FIELD_MANA_COST, ""))
+
+            is_picked = False
+            if picked_cards and source_type == "pack":
+                if any(c.get(constants.DATA_FIELD_NAME) == name for c in picked_cards):
+                    is_picked = True
 
             display_name = name
             if rec:
@@ -598,6 +647,9 @@ class DashboardFrame(ttk.Frame):
                         if not self.configuration.settings.card_colors_enabled
                         else row_tag
                     )
+
+            if is_picked:
+                row_tag = "picked_card"
 
             returnable_at = card.get("returnable_at", [])
             if returnable_at:

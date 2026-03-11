@@ -180,7 +180,10 @@ class CardToolTip(tkinter.Toplevel):
         # --- 1. Basic Land Filter ---
         # Prevent tooltips from appearing for Basic Lands to reduce clutter
         card_types = card.get("types", [])
-        if "Land" in card_types and "Basic" in card_types:
+        card_name = card.get("name", "")
+        if (
+            "Land" in card_types and "Basic" in card_types
+        ) or card_name in constants.BASIC_LANDS:
             # We must initialize the Toplevel class to avoid recursion errors in Python,
             # but we immediately hide and destroy it.
             super().__init__(parent)
@@ -540,9 +543,14 @@ class ModernTreeview(ttk.Treeview):
             ("colorless", "#e2e8f0", "#1e293b"),
             ("elite_bomb", "#78350f", "#fde047"),
             ("high_fit", "#0c4a6e", "#e0f2fe"),
+            ("picked", "#15803d", "#ffffff"),
         ]:
             self.tag_configure(
-                f"{t}_card" if "elite" not in t and "high" not in t else t,
+                (
+                    f"{t}_card"
+                    if "elite" not in t and "high" not in t and "picked" not in t
+                    else t
+                ),
                 background=b,
                 foreground=f,
             )

@@ -154,10 +154,9 @@ class ArenaScanner:
                     state = json.load(f)
 
                 # If an ID is provided, strictly match it.
-                if (
-                    target_draft_id is not None
-                    and state.get("current_draft_id") != target_draft_id
-                ):
+                if target_draft_id is not None and str(
+                    state.get("current_draft_id", "")
+                ) != str(target_draft_id):
                     return False
 
                 self.draft_type = state.get(
@@ -364,11 +363,12 @@ class ArenaScanner:
         event_type = ""
         draft_id = ""
         try:
-            draft_id = json_find("id", event_data)
+            raw_id = json_find("id", event_data)
+            draft_id = str(raw_id) if raw_id is not None else ""
             event_name = json_find("EventName", event_data)
 
             if self.event_string == event_name:
-                if getattr(self, "current_transaction_id", "") == draft_id:
+                if str(getattr(self, "current_transaction_id", "")) == draft_id:
                     return update, event_type, draft_id
                 if json_find("EntryCurrencyType", event_data) is None:
                     return update, event_type, draft_id
@@ -677,18 +677,26 @@ class ArenaScanner:
     def _check_and_wipe_stale_pool(self, pack, pick, draft_id=None):
         wipe = False
 
-        if draft_id and self.current_draft_id:
-            if draft_id == self.current_draft_id:
-                return  # Safe, exactly the same draft. DO NOT WIPE.
-            else:
-                wipe = True  # IDs mismatched, definitely a new draft.
-        elif draft_id and not self.current_draft_id:
-            # We have a draft_id but app just started up. Try to recover state.
-            if self._load_state(draft_id):
-                self.current_draft_id = draft_id
+        str_draft_id = str(draft_id) if draft_id else ""
+        str_current_id = str(self.current_draft_id) if self.current_draft_id else ""
+
+        if str_draft_id and str_current_id:
+            if str_draft_id == str_current_id:
                 return
             else:
                 wipe = True
+        elif str_draft_id and not str_current_id:
+            if self._load_state(str_draft_id):
+                self.current_draft_id = str_draft_id
+                return
+            else:
+                # Don't wipe if we are freshly starting a draft in memory (e.g. OCR just ran)
+                if (
+                    self.current_pack > 1
+                    or self.current_pick > 1
+                    or len(self.taken_cards) > 0
+                ):
+                    wipe = True
         # Fallback for old formats without draft_id
         elif pack == 1 and pick == 1:
             if self.current_pack > 1 or self.current_pick > 1:
@@ -710,8 +718,8 @@ class ArenaScanner:
             self.pack_cards = [[] for _ in range(self.number_of_players)]
             self._save_state()
 
-        if draft_id and draft_id != self.current_draft_id:
-            self.current_draft_id = draft_id
+        if str_draft_id and str_draft_id != str_current_id:
+            self.current_draft_id = str_draft_id
             self._save_state()
 
     # =========================================================================

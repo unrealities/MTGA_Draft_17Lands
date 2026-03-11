@@ -8,7 +8,19 @@ PREVIOUS_APPLICATION_VERSION = "0405"
 FONT_SANS_SERIF = "Arial"
 FONT_MONO_SPACE = "Courier"
 
-BASIC_LANDS = ["Island", "Mountain", "Swamp", "Plains", "Forest"]
+BASIC_LANDS = [
+    "Island",
+    "Mountain",
+    "Swamp",
+    "Plains",
+    "Forest",
+    "Snow-Covered Island",
+    "Snow-Covered Mountain",
+    "Snow-Covered Swamp",
+    "Snow-Covered Plains",
+    "Snow-Covered Forest",
+    "Wastes",
+]
 
 CARD_COLOR_SYMBOL_WHITE = "W"
 CARD_COLOR_SYMBOL_BLACK = "B"

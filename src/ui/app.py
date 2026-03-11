@@ -143,11 +143,16 @@ class DraftApp:
                             self.configuration.settings, "dashboard_sash", 800
                         )
                         if dash_sash > 50 and hasattr(self.dashboard, "h_splitter"):
-                            self.dashboard.h_splitter.sashpos(0, dash_sash)
+                            curr_w = self.dashboard.winfo_width()
+                            if curr_w > 200:
+                                safe_sash = min(dash_sash, curr_w - 280)
+                                if safe_sash > 50:
+                                    self.dashboard.h_splitter.sashpos(0, safe_sash)
                     except Exception:
                         pass
 
                 self.root.after(100, apply_sashes)
+                self.root.after(500, apply_sashes)
 
             except Exception as e:
                 import logging
@@ -396,6 +401,8 @@ class DraftApp:
             self.configuration,
             self._on_card_select,
             self._refresh_ui_data,
+            on_advisor_click=self._show_tooltip_from_advisor,
+            on_context_menu=self._on_card_context_menu,
         )
 
         self.bottom_pane = ttk.Frame(self.splitter)
@@ -579,6 +586,9 @@ class DraftApp:
             taken_cards = self.orchestrator.scanner.retrieve_taken_cards()
             pack_cards = self.orchestrator.scanner.retrieve_current_pack_cards()
             missing_cards = self.orchestrator.scanner.retrieve_current_missing_cards()
+            current_picked_cards = (
+                self.orchestrator.scanner.retrieve_current_picked_cards()
+            )
             history = self.orchestrator.scanner.retrieve_draft_history()
             draft_id = self.orchestrator.scanner.current_draft_id
             start_time = self.orchestrator.scanner.draft_start_time
@@ -635,7 +645,14 @@ class DraftApp:
         self.dashboard.update_recommendations(recommendations)
         self.dashboard.update_signals(scores)
         self.dashboard.update_pack_data(
-            pack_cards, colors, metrics, tier_data, pi, "pack", recommendations
+            pack_cards,
+            colors,
+            metrics,
+            tier_data,
+            pi,
+            "pack",
+            recommendations,
+            current_picked_cards,
         )
         self.dashboard.update_pack_data(
             missing_cards, colors, metrics, tier_data, pi, "missing"
@@ -647,7 +664,13 @@ class DraftApp:
 
         if self.overlay_window:
             self.overlay_window.update_data(
-                pack_cards, colors, metrics, tier_data, pi, recommendations
+                pack_cards,
+                colors,
+                metrics,
+                tier_data,
+                pi,
+                recommendations,
+                current_picked_cards,
             )
 
         # 5. DEFENSIVE TAB REFRESH (Fixed for Pytest)
@@ -1040,6 +1063,14 @@ class DraftApp:
             )
         except ValueError:
             return
+        self._show_tooltip(card_name, table, data_list)
+
+    def _show_tooltip_from_advisor(self, card_name, widget):
+        self._show_tooltip(
+            card_name, widget, self.current_pack_data + self.current_missing_data
+        )
+
+    def _show_tooltip(self, card_name, widget, data_list):
         found = next(
             (c for c in data_list if c[constants.DATA_FIELD_NAME] == card_name), None
         )
@@ -1048,8 +1079,75 @@ class DraftApp:
                 self.configuration.settings.ui_size, 1.0
             )
             CardToolTip(
-                table, found, self.configuration.features.images_enabled, current_scale
+                widget, found, self.configuration.features.images_enabled, current_scale
             )
+
+    def _on_card_context_menu(self, event, table, source_type):
+        """Spawns a right-click context menu on a specific card in the data tables."""
+        region = table.identify_region(event.x, event.y)
+        if region == "heading":
+            return
+
+        selection = table.identify_row(event.y)
+        if not selection:
+            return
+
+        table.selection_set(selection)
+
+        data_list = (
+            self.current_pack_data
+            if source_type == "pack"
+            else self.current_missing_data
+        )
+        item_vals = table.item(selection)["values"]
+
+        try:
+            name_idx = table.active_fields.index("name")
+            raw_name = str(item_vals[name_idx])
+            card_name = (
+                raw_name.replace("⭐ ", "").replace("[+] ", "").replace("*", "").strip()
+            )
+        except ValueError:
+            return
+
+        found = next(
+            (c for c in data_list if c[constants.DATA_FIELD_NAME] == card_name), None
+        )
+        if not found:
+            return
+
+        menu = tkinter.Menu(self.root, tearoff=0)
+        menu.add_command(
+            label=f"🔍 Compare '{card_name}'",
+            command=lambda: self._send_to_compare(found),
+        )
+        menu.add_command(
+            label="📋 Copy Name",
+            command=lambda: self._copy_text_to_clipboard(card_name),
+        )
+        menu.add_separator()
+        menu.add_command(
+            label="🌐 View on Scryfall", command=lambda: self._open_scryfall(card_name)
+        )
+
+        menu.post(event.x_root, event.y_root)
+
+    def _send_to_compare(self, card_data):
+        if hasattr(self, "panel_compare"):
+            self.panel_compare.add_external_card(card_data)
+            self.notebook.select(self.panel_compare)
+            self._ensure_tabs_visible()
+
+    def _copy_text_to_clipboard(self, text):
+        self.root.clipboard_clear()
+        self.root.clipboard_append(text)
+
+    def _open_scryfall(self, card_name):
+        import urllib.parse
+        from src.utils import open_file
+
+        url = f"https://scryfall.com/search?q={urllib.parse.quote(card_name)}"
+        open_file(url)
 
     def notify_app_update(self, new_version):
         self.root.title(

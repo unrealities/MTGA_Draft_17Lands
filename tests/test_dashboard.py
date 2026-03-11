@@ -39,7 +39,7 @@ class TestDashboardFrame:
         Verify that the dashboard builds its tables with the specific
         columns requested in the Configuration.
         """
-        dashboard = DashboardFrame(root, mock_config, MagicMock(), MagicMock())
+        dashboard = DashboardFrame(root, mock_config, MagicMock(), MagicMock(), MagicMock())
 
         # Access the underlying Treeview of the Pack table via its manager
         # DashboardFrame -> DynamicTreeviewManager -> ModernTreeview
@@ -54,7 +54,7 @@ class TestDashboardFrame:
 
     def test_update_pack_data_rendering(self, root, mock_config):
         """Verify data injection into the Treeview."""
-        dashboard = DashboardFrame(root, mock_config, MagicMock(), MagicMock())
+        dashboard = DashboardFrame(root, mock_config, MagicMock(), MagicMock(), MagicMock())
         pack_tree = dashboard.pack_manager.tree
 
         # Results match the 3 active columns (Name, GIHWR, ALSA)
@@ -89,6 +89,7 @@ class TestDashboardFrame:
             metrics=MagicMock(),
             tier_data={},
             current_pick=1,
+            picked_cards=[],
         )
 
         rows = pack_tree.get_children()
@@ -99,7 +100,7 @@ class TestDashboardFrame:
     def test_zebra_striping_logic(self, root, mock_config):
         """Verify alternating bw_odd/bw_even tags."""
         mock_config.settings.card_colors_enabled = False
-        dashboard = DashboardFrame(root, mock_config, MagicMock(), MagicMock())
+        dashboard = DashboardFrame(root, mock_config, MagicMock(), MagicMock(), MagicMock())
         pack_tree = dashboard.pack_manager.tree
 
         cards = [
@@ -108,7 +109,7 @@ class TestDashboardFrame:
             {constants.DATA_FIELD_NAME: "C3"},
         ]
 
-        dashboard.update_pack_data(cards, [], None, {}, 1)
+        dashboard.update_pack_data(cards, [], None, {}, 1, picked_cards=[])
 
         rows = pack_tree.get_children()
         # Row 1 (Index 0) is Odd
@@ -119,7 +120,7 @@ class TestDashboardFrame:
     def test_card_color_highlighting(self, root, mock_config):
         """Verify color tags (red_card, etc.) work correctly."""
         mock_config.settings.card_colors_enabled = True
-        dashboard = DashboardFrame(root, mock_config, MagicMock(), MagicMock())
+        dashboard = DashboardFrame(root, mock_config, MagicMock(), MagicMock(), MagicMock())
         pack_tree = dashboard.pack_manager.tree
 
         cards = [
@@ -129,14 +130,14 @@ class TestDashboardFrame:
             }
         ]
 
-        dashboard.update_pack_data(cards, [], None, {}, 1)
+        dashboard.update_pack_data(cards, [], None, {}, 1, picked_cards=[])
 
         rows = pack_tree.get_children()
         tags = pack_tree.item(rows[0], "tags")
         assert "red_card" in tags
 
     def test_signals_table_population(self, root, mock_config):
-        dashboard = DashboardFrame(root, mock_config, MagicMock(), MagicMock())
+        dashboard = DashboardFrame(root, mock_config, MagicMock(), MagicMock(), MagicMock())
         mock_scores = {"W": 10.5, "U": 25.0, "B": 5.0}
         dashboard.update_signals(mock_scores)
 
@@ -145,7 +146,7 @@ class TestDashboardFrame:
         assert dashboard.signal_meter.scores["W"] == 10.5
 
     def test_stats_curve_population(self, root, mock_config):
-        dashboard = DashboardFrame(root, mock_config, MagicMock(), MagicMock())
+        dashboard = DashboardFrame(root, mock_config, MagicMock(), MagicMock(), MagicMock())
         mock_distribution = [2, 5, 10, 3, 1, 0, 0]
         dashboard.update_stats(mock_distribution)
 
@@ -166,9 +167,9 @@ class TestDashboardFrame:
 
     def test_empty_data_resilience(self, root, mock_config):
         """Verify dashboard doesn't crash when passed empty card lists."""
-        dashboard = DashboardFrame(root, mock_config, MagicMock(), MagicMock())
+        dashboard = DashboardFrame(root, mock_config, MagicMock(), MagicMock(), MagicMock())
         try:
-            dashboard.update_pack_data([], [], None, {}, 1)
+            dashboard.update_pack_data([], [], None, {}, 1, picked_cards=[])
             dashboard.update_signals({})
             dashboard.update_stats([])
         except Exception as e:

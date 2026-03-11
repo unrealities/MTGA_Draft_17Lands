@@ -174,7 +174,19 @@ class DraftAdvisor:
                     * role_mult
                     * wheel_mult
                 )
-                if iwd_mult > 1.0:
+
+                is_basic_land = name in constants.BASIC_LANDS or (
+                    "Basic" in card.get("types", []) and "Land" in card.get("types", [])
+                )
+
+                if is_basic_land:
+                    final_score = 0.0
+                    if len(pack_cards) == 1:
+                        reasons = ["This is the only available option."]
+                    else:
+                        reasons = ["Basic Land (Skip)"]
+
+                if iwd_mult > 1.0 and final_score > 0:
                     reasons.insert(0, "TRUE BOMB (High IWD)")
 
                 recommendations.append(
@@ -187,7 +199,11 @@ class DraftAdvisor:
                         wheel_chance=wheel_pct,
                         functional_cmc=self._get_functional_cmc(card),
                         reasoning=reasons,
-                        is_elite=(z_score >= self.BOMB_Z_SCORE and cast_mult > 0.4),
+                        is_elite=(
+                            (z_score >= self.BOMB_Z_SCORE and cast_mult > 0.4)
+                            if not is_basic_land
+                            else False
+                        ),
                         archetype_fit=(
                             self.main_archetype if is_on_lane else "Splash/Speculative"
                         ),

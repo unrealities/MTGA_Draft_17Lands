@@ -14,11 +14,19 @@ from src.ui.components import CollapsibleFrame
 
 
 class AdvisorPanel(tb.Frame):
-    def __init__(self, parent, configuration, collapsible=True, mini_mode=False):
+    def __init__(
+        self,
+        parent,
+        configuration,
+        collapsible=True,
+        mini_mode=False,
+        on_click_callback=None,
+    ):
         super().__init__(parent)
         self.configuration = configuration
         self.is_collapsible = collapsible
         self.mini_mode = mini_mode
+        self.on_click_callback = on_click_callback
         self.last_recs = []
         self._build_ui()
         self.bind_all("<<ThemeChanged>>", self._on_theme_change, add="+")
@@ -147,6 +155,24 @@ class AdvisorPanel(tb.Frame):
                 justify="left",
             )
             lbl_reason.pack(anchor="nw", pady=(2, 0))
+
+            if self.on_click_callback:
+                for w in [
+                    item_frame,
+                    content_frame,
+                    header_frame,
+                    lbl_score,
+                    lbl_sep,
+                    lbl_name,
+                    lbl_reason,
+                ]:
+                    w.configure(cursor="hand2")
+                    w.bind(
+                        "<Button-1>",
+                        lambda e, n=rec.card_name, wdg=item_frame: self.on_click_callback(
+                            n, wdg
+                        ),
+                    )
 
     def _on_theme_change(self, event=None):
         if self.winfo_exists():

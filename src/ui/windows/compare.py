@@ -74,6 +74,12 @@ class ComparePanel(ttk.Frame):
             self._update_content()
             self.entry_card.delete(0, tkinter.END)
 
+    def add_external_card(self, card_data):
+        """Allows external tabs (like the Dashboard) to quickly push a card here for comparison."""
+        if card_data not in self.compare_list:
+            self.compare_list.append(card_data)
+            self._update_content()
+
     def _clear_list(self):
         self.compare_list.clear()
         self._update_content()
