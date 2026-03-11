@@ -1,4 +1,5 @@
 ===================== RELEASE NOTES 4.06 =====================
+* unrealities: [Major Feature] Official Standalone Support for macOS and Linux. The application is now distributed as native, pre-compiled binaries for Mac (.app) and Linux (.tar.gz), removing the need to install Python manually. The auto-updater fully supports these new platforms.
 * unrealities: [UX/UI] Added Right-Click Context Menus to the data tables. You can now right-click any card to instantly send it to the Comparisons tab, copy its name, or look it up on Scryfall.
 * unrealities: [UX/UI] You can now click on card names directly inside the Advisor Recommendations panel to instantly view their detailed tooltips.
 * unrealities: [UX/UI] The Live Pack table now highlights the specific card you picked in green, providing instant visual confirmation of your selection.
@@ -7,15 +8,18 @@
 * unrealities: [UX/UI] Reduced the default size of welcome messages and improved text wrapping when the window is resized.
 * unrealities: [UX/UI] Added smaller UI scale options down to 40% in Preferences for users on smaller displays.
 * unrealities: [UX/UI] Adjusted default button paddings to make them less bulky on Windows.
+* unrealities: [UX/UI] Fixed a visual bug where the Pool Balance pie chart was improperly aligned.
 * unrealities: [Feature] The Dataset Download process now displays a detailed summary messagebox when completed. This summary reports the exact 17Lands Card Coverage matching percentage, making it immediately obvious if 17Lands or MTGA data is missing or out-of-sync. It also reports why Scryfall tags may be missing.
+* unrealities: [Feature] Added "Good Stuff (Soup)" to the Deck Builder as a fallback generation option for disjointed drafts with heavy fixing.
+* unrealities: [Feature] The Splash screen now explicitly notifies you if it is resuming a "Recovered Session" from a previous app closure.
+* unrealities: [Feature] Deeply integrated draft state persistence so closing the app or crashing guarantees exact draft position recovery.
 * unrealities: [Bug] Fixed a critical log parsing issue where MTGA's numeric draft IDs were causing the application to incorrectly wipe the draft memory and wheel tracker mid-draft.
+* unrealities: [Bug] Fixed a bug where MTG Arena occasionally writes broken, unescaped JSON to the log file, which was causing the app to silently miss pack data.
 * unrealities: [Bug] Fixed a UI layout bug where the main data tables would sometimes get crushed to zero width when starting a new draft.
 * unrealities: [Bug] Fixed an issue where Scryfall tags were missing for newly released sets. Scryfall delays adding the 'is:booster' attribute to new cards, which was previously filtering them out of our queries.
 * unrealities: [Bug] Fixed a crash unpacking cached Scryfall tag tuples that would break the download process if a cache hit occurred.
-* unrealities: [Bug] Fixed an issue where the application would not work with consecutive drafts.
-* unrealities: [Feature] Added "Good Stuff (Soup)" as a fallback option for disjointed drafts.
-* adverseselection: [Bug] Suppress returnable indicator for user-picked cards
-* unrealities: [Feature] Handle draft state persistence better
+* unrealities: [Bug] Fixed an issue where the application would not correctly separate and track consecutive drafts of the exact same event type.
+* adverseselection: [Bug] Suppress returnable indicator for user-picked cards.
 
 ===================== RELEASE NOTES 4.05 =====================
 This is a major performance and stability update focused on speed, responsiveness, and smarter draft advice.
