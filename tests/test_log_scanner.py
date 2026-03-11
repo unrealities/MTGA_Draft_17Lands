@@ -19,6 +19,7 @@ from tests.test_log_scanner_data import (
     DSK_SEALED_ENTRIES_2024_9_24,
     ARENA_OPEN_TEST_ENTRIES,
     DSK_SEALED_NAVIGATION_ENTRY,
+    CONSECUTIVE_DRAFT_ENTRIES,
     OM1_PICK_TWO_PREMIER_DRAFT_ENTRIES,
     TMT_PICK_TWO_DRAFT_ENTRIES_2026_03_03,
     POWERED_CUBE_DRAFT_ENTRIES,
@@ -310,6 +311,27 @@ def test_dsk_sealed_navigation(function_scanner, entry_label, expected, entry_st
         )
 
 
+def test_consecutive_drafts_reset(function_scanner):
+    """
+    Verify that consecutive drafts of the exact same set and format are detected
+    as new events due to different transaction IDs and fee payment. This test
+    does not use parametrize to ensure the state accumulates sequentially.
+    """
+    with (
+        patch("src.log_scanner.OCR.get_pack") as mock_ocr,
+        patch("src.log_scanner.capture_screen_base64str"),
+    ):
+        for entry_label, expected, entry_string in CONSECUTIVE_DRAFT_ENTRIES:
+            event_test_cases(
+                function_scanner,
+                "Consecutive Drafts",
+                entry_label,
+                expected,
+                entry_string,
+                mock_ocr,
+            )
+
+
 @pytest.mark.parametrize(
     "entry_label, expected, entry_string", OM1_PICK_TWO_PREMIER_DRAFT_ENTRIES
 )
@@ -551,3 +573,46 @@ def test_draft_history_recording(function_scanner):
     # 4. Verify Clear Draft resets history
     function_scanner.clear_draft(True)
     assert len(function_scanner.retrieve_draft_history()) == 0
+
+
+def test_draft_state_recovery(function_scanner):
+    """
+    Verify that draft state is successfully saved and recovered across scanner instances
+    (Simulating an app crash or restart mid-draft).
+    """
+    import src.constants as constants
+
+    # 1. Start a draft
+    with open(
+        TEST_LOG_FILE_LOCATION, "a", encoding="utf-8", errors="replace"
+    ) as log_file:
+        log_file.write(f"{OTJ_EVENT_ENTRY}\n")
+    function_scanner.draft_start_search()
+
+    # 2. See P1P1
+    with open(
+        TEST_LOG_FILE_LOCATION, "a", encoding="utf-8", errors="replace"
+    ) as log_file:
+        log_file.write(f"{OTJ_P1P1_ENTRY}\n")
+    function_scanner.draft_data_search(False, False)
+
+    # Verify state is in memory
+    assert function_scanner.current_pack == 1
+    assert function_scanner.current_pick == 1
+    assert len(function_scanner.pack_cards[0]) > 0
+
+    # 3. Create a NEW scanner instance, simulating an app restart.
+    # It should automatically call _load_state() in __init__
+    new_scanner = ArenaScanner(
+        TEST_LOG_FILE_LOCATION,
+        TEST_SETS,
+        sets_location=TEST_SETS_DIRECTORY,
+        retrieve_unknown=True,
+    )
+
+    # 4. Verify the new scanner perfectly recovered the state from disk!
+    assert new_scanner.draft_type == constants.LIMITED_TYPES_DICT["PremierDraft"]
+    assert new_scanner.current_pack == 1
+    assert new_scanner.current_pick == 1
+    assert new_scanner.current_draft_id == "87b408d1-43e0-4fb5-8c74-a1257fde087c"
+    assert len(new_scanner.pack_cards[0]) == len(function_scanner.pack_cards[0])

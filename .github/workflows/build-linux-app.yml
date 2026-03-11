@@ -1,0 +1,46 @@
+name: Build Linux App
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    # Use an older Ubuntu to ensure maximum glibc compatibility across distros
+    runs-on: ubuntu-20.04
+    strategy:
+      matrix:
+        python-version: ["3.12"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install System Dependencies (Tkinter)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y python3-tk
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pyinstaller==6.7.0
+          pip install jaraco.text platformdirs importlib-metadata zipp
+
+      - name: Build executable
+        run: python -m PyInstaller main.spec --clean
+
+      - name: Package to Tarball
+        run: |
+          cd dist
+          tar -czvf ../MTGA_Draft_Tool_Linux.tar.gz MTGA_Draft_Tool
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: MTGA_Draft_Tool_Linux
+          path: MTGA_Draft_Tool_Linux.tar.gz

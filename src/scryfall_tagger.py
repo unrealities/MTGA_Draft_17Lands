@@ -65,7 +65,7 @@ class ScryfallTagger:
                     cached_tags = json.load(f)
                     if cached_tags and len(cached_tags) > 0:
                         logger.info(f"Using cached Scryfall tags for {set_code}")
-                        return cached_tags
+                        return cached_tags, []
             except json.JSONDecodeError:
                 pass  # Cache corrupt, fallback to fetching
 
@@ -74,6 +74,7 @@ class ScryfallTagger:
         card_tags = {}
         total_tags = len(self.TAG_QUERIES)
 
+        error_msgs = []
         for i, (tag_name, query_string) in enumerate(self.TAG_QUERIES.items()):
             # Update UI with live progress
             if progress_callback:
@@ -81,10 +82,13 @@ class ScryfallTagger:
                     f"Harvesting Tags: '{tag_name}' ({i+1}/{total_tags})", 100
                 )
 
-            q = f"set:{set_code} is:booster ({query_string})"
+            q = f"set:{set_code} ({query_string})"
+            logger.info(f"Querying Scryfall: {q}")
+
             try:
                 self._fetch_and_map_tags(q, tag_name, card_tags)
             except Exception as e:
+                error_msgs.append(str(e))
                 logger.error(
                     f"Failed to harvest Scryfall tag '{tag_name}' for {set_code}: {e}"
                 )
@@ -99,7 +103,7 @@ class ScryfallTagger:
             except Exception as e:
                 logger.error(f"Failed to write Scryfall tags cache: {e}")
 
-        return card_tags
+        return card_tags, error_msgs
 
     def _fetch_and_map_tags(
         self, query: str, tag_name: str, card_tags: Dict[str, List[str]]
@@ -125,6 +129,7 @@ class ScryfallTagger:
 
             if response.status_code == 404:
                 # 404 means no cards matched the tag in this chunk
+                logger.info(f"Scryfall returned 0 results (404) for query: {query}")
                 break
             response.raise_for_status()
 

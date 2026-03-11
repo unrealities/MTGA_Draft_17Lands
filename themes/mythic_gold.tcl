@@ -41,7 +41,7 @@ if {[lsearch [ttk::style theme names] mythic_gold] == -1} {
             -selectforeground $selectfg \
             -insertcolor $fg \
             -font MythicStandardFont \
-            -borderwidth 1 \
+            -borderwidth 0 \
             -bordercolor $bordercol
             
         ttk::style map . \
@@ -52,7 +52,7 @@ if {[lsearch [ttk::style theme names] mythic_gold] == -1} {
         
         # Frames (Layouts & Panels)
         ttk::style configure TFrame -background $bg
-        ttk::style configure Card.TFrame -background $fieldbg -relief solid -borderwidth 1 -bordercolor $bordercol
+        ttk::style configure Card.TFrame -background $fieldbg -relief flat -borderwidth 0
         
         # Labels (Text)
         ttk::style configure TLabel -background $bg -foreground $fg
@@ -72,7 +72,7 @@ if {[lsearch [ttk::style theme names] mythic_gold] == -1} {
             -foreground [list active $selectbg]
 
         # Menubuttons (The Dropdowns used for Deck Filter, Events, etc.)
-        ttk::style configure TMenubutton -background $fieldbg -foreground $fg -padding {5 2} -relief solid -bordercolor $bordercol
+        ttk::style configure TMenubutton -background $fieldbg -foreground $fg -padding {5 2} -relief flat
         ttk::style map TMenubutton \
             -background [list active $selectbg disabled $disabledbg] \
             -foreground [list active $selectfg disabled $disabledfg]
@@ -111,9 +111,18 @@ if {[lsearch [ttk::style theme names] mythic_gold] == -1} {
         ttk::style configure TScrollbar -background $fieldbg -troughcolor $bg -arrowcolor $selectbg -relief flat
         ttk::style map TScrollbar -background [list active $selectbg]
 
-        # Panedwindow (The Draggable splitters between dashboard panels)
+       # Panedwindow (The Draggable splitters between dashboard panels)
         ttk::style configure TPanedwindow -background $bg
-        ttk::style configure Sash -background $fieldbg -bordercolor $bordercol -sashthickness 4
+        ttk::style configure Sash \
+            -background $bg \
+            -bordercolor $bg \
+            -lightcolor $bg \
+            -darkcolor $bg \
+            -sashthickness 8 \
+            -sashrelief flat
+            
+        ttk::style map Sash \
+            -background [list active $selectbg]
     }
 }
 

@@ -203,7 +203,11 @@ class CompactOverlay(tb.Toplevel):
 
         # 3. Advisor Tab
         self.advisor_panel = AdvisorPanel(
-            self.tab_advisor, self.configuration, collapsible=False, mini_mode=True
+            self.tab_advisor,
+            self.configuration,
+            collapsible=False,
+            mini_mode=True,
+            on_click_callback=self.app_context._show_tooltip_from_advisor,
         )
         self.advisor_panel.pack(fill=BOTH, expand=True, anchor="n", side="top")
 
@@ -308,7 +312,14 @@ class CompactOverlay(tb.Toplevel):
         self.app_context._manual_refresh(use_ocr=True)
 
     def update_data(
-        self, pack_cards, colors, metrics, tier_data, current_pick, recommendations=None
+        self,
+        pack_cards,
+        colors,
+        metrics,
+        tier_data,
+        current_pick,
+        recommendations=None,
+        picked_cards=None,
     ):
         evt = self.app_context.vars["selected_event"].get()
         grp = self.app_context.vars["selected_group"].get()
@@ -375,7 +386,9 @@ class CompactOverlay(tb.Toplevel):
         active_filter = colors[0] if colors else "All Decks"
         rec_map = {r.card_name: r for r in (recommendations or [])}
 
-        def _populate_tree(tree, manager, card_list, show_recs=False, is_pool=False):
+        def _populate_tree(
+            tree, manager, card_list, show_recs=False, is_pool=False, picked_cards=None
+        ):
             for item in tree.get_children():
                 tree.delete(item)
             if not card_list:
@@ -393,6 +406,13 @@ class CompactOverlay(tb.Toplevel):
                         card.get(constants.DATA_FIELD_MANA_COST, "")
                     )
 
+                is_picked = False
+                if picked_cards and show_recs:
+                    if any(
+                        c.get(constants.DATA_FIELD_NAME) == name for c in picked_cards
+                    ):
+                        is_picked = True
+
                 display_name = name
                 if rec:
                     if rec.is_elite:
@@ -403,6 +423,9 @@ class CompactOverlay(tb.Toplevel):
                         display_name = f"[+] {name}"
                         if not self.configuration.settings.card_colors_enabled:
                             row_tag = "high_fit"
+
+                if is_picked:
+                    row_tag = "picked"
 
                 row_values = []
                 for field in manager.active_fields:
@@ -487,6 +510,7 @@ class CompactOverlay(tb.Toplevel):
             self.current_pack_cards,
             show_recs=True,
             is_pool=False,
+            picked_cards=picked_cards,
         )
 
         self.missing_tree = self.missing_manager.tree

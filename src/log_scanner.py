@@ -58,6 +58,7 @@ class ArenaScanner:
         self.draft_log = logging.getLogger(LOG_TYPE_DRAFT)
         self.draft_log.setLevel(logging.INFO)
         self.sets_location = sets_location
+        self.state_file = os.path.join(constants.TEMP_FOLDER, "active_draft_state.json")
 
         # CENTRAL DATA LOCK: Co-ordinates UI and Background Threading
         self.lock = threading.RLock()
@@ -94,9 +95,13 @@ class ArenaScanner:
 
         self.data_source = "None"
         self.event_string = ""
+        self.current_transaction_id = ""
         self.draft_label = ""
         self.draft_history = []
         self.current_draft_id = ""
+        self.draft_start_time = ""
+        self._last_seen_timestamp = "Unknown"
+        self._load_state()
 
     def set_arena_file(self, filename):
         """Updates the log path and resets pointers for a clean scan."""
@@ -141,12 +146,96 @@ class ArenaScanner:
         except Exception as error:
             logger.error(error)
 
+    def _load_state(self, target_draft_id=None):
+        """Recovers the active draft state if the app was closed mid-draft."""
+        try:
+            if os.path.exists(self.state_file):
+                with open(self.state_file, "r", encoding="utf-8") as f:
+                    state = json.load(f)
+
+                # If an ID is provided, strictly match it.
+                if target_draft_id is not None and str(
+                    state.get("current_draft_id", "")
+                ) != str(target_draft_id):
+                    return False
+
+                self.draft_type = state.get(
+                    "draft_type", constants.LIMITED_TYPE_UNKNOWN
+                )
+                self.draft_sets = state.get("draft_sets", [])
+                self.draft_label = state.get("draft_label", "")
+                self.event_string = state.get("event_string", "")
+                self.current_draft_id = state.get("current_draft_id", "")
+                self.current_transaction_id = state.get("current_transaction_id", "")
+                self.number_of_players = state.get("number_of_players", 8)
+                self.taken_cards = state.get("taken_cards", [])
+                self.picked_cards = state.get(
+                    "picked_cards", [[] for _ in range(self.number_of_players)]
+                )
+                self.initial_pack = state.get(
+                    "initial_pack", [[] for _ in range(self.number_of_players)]
+                )
+                self.pack_cards = state.get(
+                    "pack_cards", [[] for _ in range(self.number_of_players)]
+                )
+                self.current_pack = state.get("current_pack", 0)
+                self.current_pick = state.get("current_pick", 0)
+                self.previous_scanned_pack = state.get("previous_scanned_pack", 0)
+                self.previous_picked_pack = state.get("previous_picked_pack", 0)
+                self.current_picked_pick = state.get("current_picked_pick", 0)
+                self.draft_history = state.get("draft_history", [])
+                self.draft_start_time = state.get("draft_start_time", "")
+
+                if self.draft_type != constants.LIMITED_TYPE_UNKNOWN:
+                    logger.info(
+                        f"Restored previous draft state: {self.event_string} (Pack {self.current_pack}, Pick {self.current_pick})"
+                    )
+
+                return True
+        except Exception as e:
+            logger.error(f"Failed to load draft state: {e}")
+        return False
+
+    def _save_state(self):
+        """Persists the memory state to disk to survive application crashes."""
+        try:
+            state = {
+                "draft_type": self.draft_type,
+                "draft_sets": self.draft_sets,
+                "draft_label": self.draft_label,
+                "event_string": self.event_string,
+                "current_draft_id": self.current_draft_id,
+                "current_transaction_id": getattr(self, "current_transaction_id", ""),
+                "number_of_players": self.number_of_players,
+                "taken_cards": self.taken_cards,
+                "picked_cards": self.picked_cards,
+                "initial_pack": self.initial_pack,
+                "pack_cards": self.pack_cards,
+                "current_pack": self.current_pack,
+                "current_pick": self.current_pick,
+                "previous_scanned_pack": self.previous_scanned_pack,
+                "previous_picked_pack": self.previous_picked_pack,
+                "current_picked_pick": self.current_picked_pick,
+                "draft_history": self.draft_history,
+                "draft_start_time": self.draft_start_time,
+            }
+            with open(self.state_file, "w", encoding="utf-8") as f:
+                json.dump(state, f)
+        except Exception as e:
+            logger.error(f"Failed to save draft state: {e}")
+
     def clear_draft(self, full_clear):
         with self.lock:
             if full_clear:
                 self.search_offset = 0
                 self.draft_start_offset = 0
                 self.file_size = 0
+                self.current_transaction_id = ""
+                if os.path.exists(self.state_file):
+                    try:
+                        os.remove(self.state_file)
+                    except:
+                        pass
             self.set_data.clear()
             self.draft_type = constants.LIMITED_TYPE_UNKNOWN
             self.pick_offset = 0
@@ -169,6 +258,9 @@ class ArenaScanner:
             self.draft_history = []
             self.current_draft_id = ""
             self.event_string = ""
+            self.draft_start_time = ""
+            if not full_clear:
+                self._save_state()
 
     def draft_start_search(self):
         """Search for the string that represents the start of a draft"""
@@ -204,6 +296,11 @@ class ArenaScanner:
                         offset = log.tell()
                         self.search_offset = offset
 
+                        if line.startswith("[UnityCrossThreadLogger]"):
+                            content = line[24:].strip()
+                            if content and content[0].isdigit() and (":" in content):
+                                self._last_seen_timestamp = content
+
                         start_offset = detect_string(
                             line, constants.DRAFT_START_STRINGS
                         )
@@ -218,6 +315,7 @@ class ArenaScanner:
                                 draft_id = did
                                 event_line = line
                                 self.draft_start_offset = offset
+                                self.draft_start_time = self._last_seen_timestamp
 
                         elif "InternalEventName" in line and "CardPool" in line:
                             try:
@@ -265,11 +363,15 @@ class ArenaScanner:
         event_type = ""
         draft_id = ""
         try:
-            draft_id = json_find("id", event_data)
+            raw_id = json_find("id", event_data)
+            draft_id = str(raw_id) if raw_id is not None else ""
             event_name = json_find("EventName", event_data)
 
             if self.event_string == event_name:
-                return update, event_type, draft_id
+                if str(getattr(self, "current_transaction_id", "")) == draft_id:
+                    return update, event_type, draft_id
+                if json_find("EntryCurrencyType", event_data) is None:
+                    return update, event_type, draft_id
 
             logger.info("Event found %s", event_name)
             event_match, event_type, event_label, event_set, number_of_players = (
@@ -286,7 +388,10 @@ class ArenaScanner:
                 self.draft_sets = event_set
                 self.draft_label = event_label
                 self.event_string = event_name
+                self.current_transaction_id = draft_id
+                self.current_draft_id = draft_id
                 self.number_of_players = number_of_players
+                self._save_state()
                 update = True
 
         except Exception as error:
@@ -394,6 +499,11 @@ class ArenaScanner:
 
                     current_pos = log.tell()
                     setattr(self, offset_attr, current_pos)
+
+                    if line.startswith("[UnityCrossThreadLogger]"):
+                        content = line[24:].strip()
+                        if content and content[0].isdigit() and (":" in content):
+                            self._last_seen_timestamp = content
 
                     start_idx = detect_string(line, search_strings)
                     if start_idx != -1:
@@ -512,6 +622,7 @@ class ArenaScanner:
 
         # 7. Record History
         self._record_pack(pack, pick, pack_cards)
+        self._save_state()
 
         # 8. Only trigger UI updates if this pack represents the latest state
         return is_new_high_watermark
@@ -560,17 +671,33 @@ class ArenaScanner:
         ):
             self.current_pack, self.current_pick = pack, pick
 
+        self._save_state()
         return True
 
     def _check_and_wipe_stale_pool(self, pack, pick, draft_id=None):
         wipe = False
 
-        if draft_id and self.current_draft_id:
-            if draft_id == self.current_draft_id:
-                return  # Safe, exactly the same draft. DO NOT WIPE.
+        str_draft_id = str(draft_id) if draft_id else ""
+        str_current_id = str(self.current_draft_id) if self.current_draft_id else ""
+
+        if str_draft_id and str_current_id:
+            if str_draft_id == str_current_id:
+                return
             else:
-                wipe = True  # IDs mismatched, definitely a new draft.
-        # Fallback for old formats
+                wipe = True
+        elif str_draft_id and not str_current_id:
+            if self._load_state(str_draft_id):
+                self.current_draft_id = str_draft_id
+                return
+            else:
+                # Don't wipe if we are freshly starting a draft in memory (e.g. OCR just ran)
+                if (
+                    self.current_pack > 1
+                    or self.current_pick > 1
+                    or len(self.taken_cards) > 0
+                ):
+                    wipe = True
+        # Fallback for old formats without draft_id
         elif pack == 1 and pick == 1:
             if self.current_pack > 1 or self.current_pick > 1:
                 wipe = True
@@ -589,9 +716,11 @@ class ArenaScanner:
             self.previous_scanned_pack = 0
             self.initial_pack = [[] for _ in range(self.number_of_players)]
             self.pack_cards = [[] for _ in range(self.number_of_players)]
+            self._save_state()
 
-        if draft_id and draft_id != self.current_draft_id:
-            self.current_draft_id = draft_id
+        if str_draft_id and str_draft_id != str_current_id:
+            self.current_draft_id = str_draft_id
+            self._save_state()
 
     # =========================================================================
     # EVENT DISPATCHER
@@ -622,6 +751,25 @@ class ArenaScanner:
             pp = self.current_picked_pick
 
         explicit_update = False
+
+        # RECOVERY MODE: If the app restarts mid-draft and misses EventJoin,
+        # infer the draft type from the active log events.
+        if self.draft_type == constants.LIMITED_TYPE_UNKNOWN:
+            if (
+                self._search_pack_notify()
+                or self._search_pick_human()
+                or self._search_pack_p1p1()
+            ):
+                self.draft_type = constants.LIMITED_TYPE_DRAFT_PREMIER_V2
+                self.number_of_players = 8
+                explicit_update = True
+            elif self._search_pack_bot() or self._search_pick_bot():
+                self.draft_type = constants.LIMITED_TYPE_DRAFT_QUICK
+                self.number_of_players = 8
+                explicit_update = True
+            elif self._search_sealed_pool():
+                self.draft_type = constants.LIMITED_TYPE_SEALED
+                explicit_update = True
 
         if self.draft_type == constants.LIMITED_TYPE_DRAFT_PREMIER_V1:
             explicit_update |= self._search_pick_v1()
@@ -892,6 +1040,7 @@ class ArenaScanner:
                         pool_strs
                     ):
                         self.taken_cards = pool_strs
+                        self._save_state()
                         update = True
             except Exception as e:
                 logger.error(f"Sealed Search Error: {e}")
@@ -940,6 +1089,7 @@ class ArenaScanner:
                 self.pack_cards[0] = pack_cards
                 self.current_pack, self.current_pick = 1, 1
                 self._record_pack(1, 1, pack_cards)
+                self._save_state()
 
                 if status_callback:
                     status_callback("Success!")
@@ -1116,9 +1266,7 @@ class ArenaScanner:
                     return_pick = (i + 1) + rotation_size
                     if return_pick > self.current_pick:
                         picked_from_slot = set(
-                            self.picked_cards[i]
-                            if i < len(self.picked_cards)
-                            else []
+                            self.picked_cards[i] if i < len(self.picked_cards) else []
                         )
                         remaining_ids = [
                             cid for cid in slot_ids if cid not in picked_from_slot

@@ -42,7 +42,8 @@ class Result(Enum):
 
 def process_json(obj):
     """
-    Convert JSON string with escape characters to a nested dictionary
+    Convert JSON string with escape characters to a nested dictionary.
+    Includes sanitization for malformed, unescaped MTGA logs.
     """
     if isinstance(obj, dict):
         return {key: process_json(value) for key, value in obj.items()}
@@ -51,6 +52,21 @@ def process_json(obj):
             parsed_json = json.loads(obj)
             return process_json(parsed_json)
         except json.JSONDecodeError:
+            # MTG Arena occasionally outputs broken, unescaped JSON (e.g. "request":"{"DraftId":"123"}")
+            # We intercept this, strip the outer string quotes, and reconstruct it into a valid nested dict.
+            sanitized = (
+                obj.strip()
+                .replace('"request":"{', '"request":{')
+                .replace('"Payload":"{', '"Payload":{')
+            )
+            if sanitized.endswith('}"}'):
+                sanitized = sanitized[:-3] + "}}"
+
+            try:
+                parsed_sanitized = json.loads(sanitized)
+                return process_json(parsed_sanitized)
+            except:
+                pass
             return obj
     else:
         return obj

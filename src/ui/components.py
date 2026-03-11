@@ -180,7 +180,10 @@ class CardToolTip(tkinter.Toplevel):
         # --- 1. Basic Land Filter ---
         # Prevent tooltips from appearing for Basic Lands to reduce clutter
         card_types = card.get("types", [])
-        if "Land" in card_types and "Basic" in card_types:
+        card_name = card.get("name", "")
+        if (
+            "Land" in card_types and "Basic" in card_types
+        ) or card_name in constants.BASIC_LANDS:
             # We must initialize the Toplevel class to avoid recursion errors in Python,
             # but we immediately hide and destroy it.
             super().__init__(parent)
@@ -214,7 +217,7 @@ class CardToolTip(tkinter.Toplevel):
             else (
                 "#eab308"
                 if rarity == "Rare"
-                else "#94a3b8" if rarity == "Uncommon" else None
+                else "#38bdf8" if rarity == "Uncommon" else None
             )
         )
         tb.Label(
@@ -512,19 +515,42 @@ class ModernTreeview(ttk.Treeview):
             )
 
     def _setup_row_colors(self):
+        # Bind theme updates so zebra striping changes seamlessly
+        self.bind(
+            "<<ThemeChanged>>", lambda e: self._apply_dynamic_row_colors(), add="+"
+        )
+        self._apply_dynamic_row_colors()
+
+    def _apply_dynamic_row_colors(self):
+        from src.ui.styles import Theme
+
+        # Standard Zebra Striping
+        self.tag_configure(
+            "bw_even", background=Theme.BG_SECONDARY, foreground=Theme.TEXT_MAIN
+        )
+        self.tag_configure(
+            "bw_odd", background=Theme.BG_PRIMARY, foreground=Theme.TEXT_MAIN
+        )
+
+        # Colored Highlights (Preserved for "Highlight Row by Mana Cost" setting)
         for t, b, f in [
             ("white", "#f8fafc", "#0f172a"),
             ("blue", "#e0f2fe", "#0369a1"),
-            ("black", "#334155", "#f8fafc"),
+            ("black", "#cbd5e1", "#0f172a"),
             ("red", "#fee2e2", "#991b1b"),
             ("green", "#dcfce7", "#166534"),
             ("gold", "#fef3c7", "#92400e"),
             ("colorless", "#e2e8f0", "#1e293b"),
             ("elite_bomb", "#78350f", "#fde047"),
             ("high_fit", "#0c4a6e", "#e0f2fe"),
+            ("picked", "#15803d", "#ffffff"),
         ]:
             self.tag_configure(
-                f"{t}_card" if "elite" not in t and "high" not in t else t,
+                (
+                    f"{t}_card"
+                    if "elite" not in t and "high" not in t and "picked" not in t
+                    else t
+                ),
                 background=b,
                 foreground=f,
             )
@@ -590,7 +616,12 @@ class ModernTreeview(ttk.Treeview):
         for i, (v, k) in enumerate(it):
             self.move(k, "", i)
             ts = [t for t in self.item(k, "tags") if t not in ("bw_odd", "bw_even")]
-            ts.append("bw_odd" if i % 2 == 0 else "bw_even")
+            has_special = any(
+                t in ("elite_bomb", "high_fit") or str(t).endswith("_card") for t in ts
+            )
+            if not has_special:
+                ts.append("bw_odd" if i % 2 == 0 else "bw_even")
+
             self.item(k, tags=tuple(ts))
 
     def reapply_sort(self):
@@ -910,21 +941,15 @@ class ManaCurvePlot(tb.Frame):
 class TypePieChart(tb.Frame):
     def __init__(self, parent, **kwargs):
         super().__init__(parent, **kwargs)
-        self.canvas_size, self.counts = 80, {
-            "Creatures": 0,
-            "Non-Creatures": 0,
-            "Lands": 0,
-        }
+        self.counts = {"Creatures": 0, "Non-Creatures": 0, "Lands": 0}
+        self.canvas_height = 80
+        self.pie_size = 76  # Slightly smaller to fit bounds cleanly
+
         self.canvas = tb.Canvas(
-            self,
-            height=self.canvas_size,
-            width=self.canvas_size,
-            bg=Theme.BG_PRIMARY,
-            highlightthickness=0,
+            self, height=self.canvas_height, bg=Theme.BG_PRIMARY, highlightthickness=0
         )
-        self.canvas.pack(side=LEFT, padx=10)
-        self.legend_frame = tb.Frame(self)
-        self.legend_frame.pack(side=LEFT, fill=Y, padx=5)
+        self.canvas.pack(fill=BOTH, expand=True)
+        self.canvas.bind("<Configure>", lambda e: self.redraw())
         self.bind_all("<<ThemeChanged>>", self._on_theme_change, add="+")
 
     def _on_theme_change(self, event=None):
@@ -933,50 +958,81 @@ class TypePieChart(tb.Frame):
             self.redraw()
 
     def update_counts(self, c, n, l):
-        self.counts["Creatures"], self.counts["Non-Creatures"], self.counts["Lands"] = (
-            c,
-            n,
-            l,
-        )
+        self.counts["Creatures"] = c
+        self.counts["Non-Creatures"] = n
+        self.counts["Lands"] = l
         self.redraw()
 
     def redraw(self):
         self.canvas.delete("all")
-        [w.destroy() for w in self.legend_frame.winfo_children()]
-        items = [
-            ("Crea", self.counts["Creatures"], Theme.SUCCESS),
-            ("Spell", self.counts["Non-Creatures"], Theme.ACCENT),
-            ("Land", self.counts["Lands"], Theme.BG_TERTIARY),
-        ]
-        for lb, c, cl in items:
-            rf = tb.Frame(self.legend_frame)
-            rf.pack(anchor="w")
-            tb.Label(rf, text="●", foreground=cl, font=(None, 6)).pack(side=LEFT)
-            tb.Label(rf, text=f"{lb}: {c}", font=(Theme.FONT_FAMILY, 10)).pack(
-                side=LEFT, padx=2
-            )
-        tl = sum(self.counts.values())
-        if tl == 0:
+        w = self.canvas.winfo_width()
+        if w < 10:
             return
-        cx, cy, r, a = (
-            self.canvas_size / 2,
-            self.canvas_size / 2,
-            (self.canvas_size / 2) - 2,
-            90,
-        )
+
+        c_col = Theme.SUCCESS
+        n_col = Theme.ACCENT
+        l_col = Theme.BG_TERTIARY
+
+        items = [
+            ("Crea", self.counts["Creatures"], c_col),
+            ("Spell", self.counts["Non-Creatures"], n_col),
+            ("Land", self.counts["Lands"], l_col),
+        ]
+
+        # Geometry Math to center both elements dynamically
+        legend_w = 60
+        gap = 20
+        pie_r = self.pie_size / 2
+        total_w = legend_w + gap + self.pie_size
+
+        sx = max(0, (w - total_w) / 2)
+
+        # 1. Draw Legend on the Left
+        ly = (self.canvas_height - (3 * 18)) / 2 + 9
+        for lb, count, cl in items:
+            self.canvas.create_text(
+                sx, ly, text="●", fill=cl, font=(None, 10), anchor="w"
+            )
+            self.canvas.create_text(
+                sx + 12,
+                ly,
+                text=f"{lb}: {count}",
+                fill=Theme.TEXT_MAIN,
+                font=(Theme.FONT_FAMILY, 10),
+                anchor="w",
+            )
+            ly += 18
+
+        # 2. Draw Pie Chart on the Right
+        cx = sx + legend_w + gap + pie_r
+        cy = self.canvas_height / 2
+        tl = sum(self.counts.values())
+
+        if tl == 0:
+            self.canvas.create_oval(
+                cx - pie_r,
+                cy - pie_r,
+                cx + pie_r,
+                cy + pie_r,
+                fill=Theme.BG_SECONDARY,
+                outline="",
+            )
+            return
+
+        a = 90
         for c, cl in [
-            (self.counts["Creatures"], Theme.SUCCESS),
-            (self.counts["Non-Creatures"], Theme.ACCENT),
-            (self.counts["Lands"], Theme.BG_TERTIARY),
+            (self.counts["Creatures"], c_col),
+            (self.counts["Non-Creatures"], n_col),
+            (self.counts["Lands"], l_col),
         ]:
             if c == 0:
                 continue
             ex = (c / tl) * 360
             self.canvas.create_arc(
-                cx - r,
-                cy - r,
-                cx + r,
-                cy + r,
+                cx - pie_r,
+                cy - pie_r,
+                cx + pie_r,
+                cy + pie_r,
                 start=a,
                 extent=-ex,
                 fill=cl,
@@ -984,14 +1040,19 @@ class TypePieChart(tb.Frame):
                 style="pieslice",
             )
             a -= ex
+
+        # Donut Hole
+        inner_r = pie_r - 12
         self.canvas.create_oval(
-            cx - r / 2,
-            cy - r / 2,
-            cx + r / 2,
-            cy + r / 2,
+            cx - inner_r,
+            cy - inner_r,
+            cx + inner_r,
+            cy + inner_r,
             fill=Theme.BG_PRIMARY,
             outline="",
         )
+
+        # Total text in center
         self.canvas.create_text(
             cx,
             cy,

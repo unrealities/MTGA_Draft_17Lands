@@ -284,13 +284,22 @@ class DownloadWindow(ttk.Frame):
         self.btn_dl.configure(state="normal")
         self.progress["value"] = 0
         self._update_table()
-        if self.on_update_callback:
-            self.on_update_callback()
-        self.vars["status"].set(
+
+        status_str = (
             "DOWNLOAD SUCCESSFUL"
             if "Min Games" not in msg
             else "DOWNLOADED (LIMITED DATA)"
         )
+        self.vars["status"].set(status_str)
+
+        # Force UI to fully redraw and settle BEFORE the blocking messagebox appears
+        self.update_idletasks()
+
+        messagebox.showinfo("Dataset Download Complete", msg)
+
+        # Defer the main app UI refresh until after the user dismisses the dialog
+        if self.on_update_callback:
+            self.after(50, self.on_update_callback)
 
     def _handle_error(self, err):
         self.btn_dl.configure(state="normal")

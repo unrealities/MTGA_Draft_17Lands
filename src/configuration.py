@@ -57,7 +57,8 @@ class Settings(BaseModel):
     overlay_geometry: str = "300x600+50+50"
 
     main_window_geometry: str = "600x1080"
-    paned_window_sash: int = 550
+    paned_window_sash: int = 500
+    dashboard_sash: int = 800
 
     collapsible_states: Dict[str, bool] = Field(default_factory=dict)
 

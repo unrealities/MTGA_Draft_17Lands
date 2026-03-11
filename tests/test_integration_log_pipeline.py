@@ -27,8 +27,12 @@ class TestLogPipelineIntegration:
         temp_sets.mkdir()
         temp_logs = tmp_path / "Logs"
         temp_logs.mkdir()
+        temp_dir = tmp_path / "Temp"
+        temp_dir.mkdir()
+
         monkeypatch.setattr("src.constants.SETS_FOLDER", str(temp_sets))
         monkeypatch.setattr("src.constants.DRAFT_LOG_FOLDER", str(temp_logs))
+        monkeypatch.setattr("src.constants.TEMP_FOLDER", str(temp_dir))
 
         log_file = tmp_path / "Player.log"
         log_file.write_text("MTGA Log Start\n")

@@ -15,6 +15,18 @@ _shared_root = None
 
 
 @pytest.fixture(autouse=True)
+def reset_theme():
+    """Reset Theme class variables after each test to prevent cross-test pollution."""
+    orig_bg = Theme.BG_PRIMARY
+    orig_accent = Theme.ACCENT
+    orig_text = Theme.TEXT_MAIN
+    yield
+    Theme.BG_PRIMARY = orig_bg
+    Theme.ACCENT = orig_accent
+    Theme.TEXT_MAIN = orig_text
+
+
+@pytest.fixture(autouse=True)
 def patch_ttkbootstrap_crash():
     """
     Prevents ttkbootstrap from crashing when it tries to re-style
@@ -94,3 +106,51 @@ def patch_tk_lifecycle(monkeypatch, session_tk_root):
             widget.destroy()
         except tkinter.TclError:
             pass
+
+
+@pytest.fixture(autouse=True)
+def clean_draft_state():
+    """Ensures the active draft state file is wiped before and after every test
+    so the log scanner doesn't accidentally resume a draft from a previous test!"""
+    import os
+    from src import constants
+
+    state_file = os.path.join(constants.TEMP_FOLDER, "active_draft_state.json")
+
+    if os.path.exists(state_file):
+        try:
+            os.remove(state_file)
+        except Exception:
+            pass
+
+    yield
+
+    if os.path.exists(state_file):
+        try:
+            os.remove(state_file)
+        except Exception:
+            pass
+
+
+@pytest.fixture
+def mock_style(self):
+    """Patches ttk.Style so it doesn't attempt to contact a real Tcl interpreter."""
+    with patch("src.ui.styles.ttk.Style") as mock:
+        style_instance = mock.return_value
+        colors_mock = MagicMock()
+        style_instance.colors = colors_mock
+
+        # Prevent the mock from leaking into the color variables
+        style_instance.lookup.return_value = ""
+
+        # Setup default behavior for colors
+        colors_mock.bg = "#1e1e1e"  # Default Dark
+        colors_mock.secondary = "gray"
+        colors_mock.inputbg = "white"
+        colors_mock.fg = "white"
+        colors_mock.primary = "#4dabff"
+        colors_mock.success = "green"
+        colors_mock.danger = "red"
+        colors_mock.warning = "orange"
+
+        yield style_instance

@@ -371,7 +371,7 @@ class FileExtractor(UIProgress):
                 return False, f"Network Error: {str(e)}", 0
 
         # 3. Assemble the final dataset
-        self._assemble_deep_set(deep_ratings)
+        matched_count, total_17lands_count = self._assemble_deep_set(deep_ratings)
 
         # Backfill game_count if needed
         if self.combined_data["meta"].get("game_count", 0) == 0:
@@ -394,30 +394,67 @@ class FileExtractor(UIProgress):
 
         self._inject_community_tags(update_ui)
 
+        tag_errors = self._inject_community_tags(update_ui)
+
         # 4. Export
         filename = self.export_card_data()
+
+        # Analyze dataset quality for user feedback
+        total_cards = len(self.combined_data.get("card_ratings", {}))
+        cards_with_tags = sum(
+            1
+            for c in self.combined_data.get("card_ratings", {}).values()
+            if c.get("tags")
+        )
+        archetypes_found = len(target_colors)
+
+        coverage_pct = (
+            (matched_count / total_17lands_count * 100)
+            if total_17lands_count > 0
+            else 0.0
+        )
+
+        tag_status = str(cards_with_tags)
+        if cards_with_tags == 0:
+            if tag_errors:
+                tag_status += " (Network/API Error)"
+            else:
+                tag_status += " (Not yet tagged by Scryfall community)"
+
+        stats_msg = (
+            f"17Lands Coverage: {matched_count} / {total_17lands_count} cards ({coverage_pct:.1f}%)\n"
+            f"Archetypes Downloaded: {archetypes_found}\n"
+            f"Cards with Scryfall Tags: {tag_status}\n\n"
+        )
+
+        if matched_count == 0:
+            stats_msg += "\n\n⚠️ WARNING: 0 cards matched! Please launch Magic Arena to ensure the latest game files are downloaded, then try again."
+
+        if total_cards < 50:
+            stats_msg += "\n\n⚠️ WARNING: Very few MTGA cards were found! Please launch Magic Arena to ensure the latest game files are downloaded, then try again."
 
         if filename:
             if not self.combined_data.get("color_ratings"):
                 if self.combined_data["meta"].get("game_count", 0) == 0:
                     return (
                         True,
-                        "Local Cards Downloaded. 17Lands data not yet available for this set.",
+                        f"Local Cards Downloaded. 17Lands data not yet available for this set.\n\n{stats_msg}",
                         temp_size,
                     )
                 else:
                     return (
                         True,
-                        "Cards Downloaded, but no color archetypes met your 'Min Games' threshold.",
+                        f"Cards Downloaded, but no color archetypes met your 'Min Games' threshold.\n\n{stats_msg}",
                         temp_size,
                     )
-            return True, "Download Successful", temp_size
+            return True, f"Download Successful!\n\n{stats_msg}", temp_size
         else:
             return False, "Dataset Validation Failed", 0
 
     def _assemble_deep_set(self, deep_ratings: Dict):
         """Combines 17Lands intelligence with local Arena IDs."""
         self.combined_data["card_ratings"] = {}
+        matched_names = set()
 
         matching_only = constants.SET_SELECTION_ALL in self.selected_sets.arena
         target_set = (
@@ -446,6 +483,7 @@ class FileExtractor(UIProgress):
             card_set = local_card.get("set", "").upper()
 
             if name in deep_ratings:
+                matched_names.add(name)
                 # Inject the deep performance data into the card object
                 local_card["deck_colors"] = deep_ratings[name]["deck_colors"]
                 local_card["image"] = deep_ratings[name]["image"]
@@ -466,6 +504,8 @@ class FileExtractor(UIProgress):
                 # We specifically asked for a narrow Arena set (no "ALL" flag) -> include it
                 initialize_card_data(local_card)
                 self.combined_data["card_ratings"][arena_id] = local_card
+
+        return len(matched_names), len(deep_ratings)
 
     def _download_expansion(self, database_size):
         """Function that performs the following steps:
@@ -1114,13 +1154,15 @@ class FileExtractor(UIProgress):
         )
 
         tagger = ScryfallTagger()
-        harvested_tags = tagger.harvest_set_tags(set_code, progress_callback)
+        harvested_tags, errors = tagger.harvest_set_tags(set_code, progress_callback)
 
         # Inject into the combined data
         if "card_ratings" in self.combined_data:
             for arena_id, card in self.combined_data["card_ratings"].items():
                 card_name = card.get("name", "")
                 card["tags"] = harvested_tags.get(card_name, [])
+
+        return errors
 
     def _assemble_set(self, matching_only):
         """Combine the 17Lands ratings and the card data to form the complete set data"""

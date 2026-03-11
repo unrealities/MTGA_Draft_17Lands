@@ -26,11 +26,21 @@ from src.card_logic import format_win_rate
 
 
 class DashboardFrame(ttk.Frame):
-    def __init__(self, parent, configuration, on_card_select, on_reconfigure_ui):
+    def __init__(
+        self,
+        parent,
+        configuration,
+        on_card_select,
+        on_reconfigure_ui,
+        on_advisor_click=None,
+        on_context_menu=None,
+    ):
         super().__init__(parent)
         self.configuration = configuration
         self.on_card_select = on_card_select
         self.on_reconfigure_ui = on_reconfigure_ui
+        self.on_advisor_click = on_advisor_click
+        self.on_context_menu = on_context_menu
 
         self.pack_manager: Optional[DynamicTreeviewManager] = None
         self.missing_manager: Optional[DynamicTreeviewManager] = None
@@ -43,6 +53,11 @@ class DashboardFrame(ttk.Frame):
         self._pack_count = 0
         self._missing_count = 0
         self._taken_count = 0
+        self._current_event_type = ""
+        self._current_event_set = ""
+        self._current_pack = 0
+        self._current_pick = 0
+        self.on_p1p1_scan = None
 
         self._build_layout()
 
@@ -52,24 +67,35 @@ class DashboardFrame(ttk.Frame):
         return self.missing_manager.tree if self.missing_manager else None
 
     def _build_layout(self):
-        # Base grid for the Dashboard to hold the State Frames
+        self._dynamic_wrap_labels = []
         self.columnconfigure(0, weight=1)
         self.rowconfigure(0, weight=1)
 
         self._build_no_data_state()
         self._build_waiting_state()
+        self._build_p1p1_state()
+        self._build_deck_recovery_state()
         self._build_active_state()
 
         self._update_dashboard_state()
+        self.bind("<Configure>", self._on_resize)
+
+    def _on_resize(self, event):
+        if event.widget == self:
+            if event.width > 100:
+                wrap_len = min(550, max(300, event.width - 60))
+                for lbl in self._dynamic_wrap_labels:
+                    if lbl.winfo_exists():
+                        lbl.configure(wraplength=wrap_len)
 
     def _build_customization_tips(self, parent):
         """Helper to build a unified tips section for both waiting screens."""
-        tips_frame = ttk.Frame(parent, style="Card.TFrame", padding=20)
+        tips_frame = ttk.Frame(parent)
 
         ttk.Label(
             tips_frame,
             text="✨ Personalize Your Experience",
-            font=(Theme.FONT_FAMILY, 16, "bold"),
+            font=(Theme.FONT_FAMILY, 11, "bold"),
             bootstyle="primary",
         ).pack(anchor="w", pady=(0, 8))
 
@@ -89,24 +115,25 @@ class DashboardFrame(ttk.Frame):
         ]
 
         for title, desc in tips:
-            row = ttk.Frame(tips_frame, style="Card.TFrame")
-            row.pack(fill="x", pady=4)
+            row = ttk.Frame(tips_frame)
+            row.pack(fill="x", pady=3)
 
             ttk.Label(
                 row,
                 text=title,
-                font=(Theme.FONT_FAMILY, 12, "bold"),
+                font=(Theme.FONT_FAMILY, 9, "bold"),
                 bootstyle="primary",
             ).pack(anchor="nw")
 
-            ttk.Label(
+            lbl = ttk.Label(
                 row,
                 text=desc,
-                font=(Theme.FONT_FAMILY, 11),
+                font=(Theme.FONT_FAMILY, 9),
                 bootstyle="info",
-                wraplength=400,
                 justify="left",
-            ).pack(anchor="nw", pady=(2, 0))
+            )
+            lbl.pack(anchor="nw", fill="x", expand=True)
+            self._dynamic_wrap_labels.append(lbl)
 
         return tips_frame
 
@@ -114,24 +141,28 @@ class DashboardFrame(ttk.Frame):
         """State 1: First time user, no data downloaded."""
         self.no_data_frame = ttk.Frame(self)
 
-        center_box = ttk.Frame(self.no_data_frame, style="Card.TFrame", padding=30)
+        center_box = ttk.Frame(self.no_data_frame)
         center_box.pack(expand=True)
 
         ttk.Label(
             center_box,
             text="👋 Welcome to MTGA Draft Tool",
-            font=(Theme.FONT_FAMILY, 16, "bold"),
+            font=(Theme.FONT_FAMILY, 13, "bold"),
             bootstyle="primary",
-        ).pack(pady=(0, 10))
+            justify="center",
+        ).pack(pady=(0, 10), anchor="center")
 
-        ttk.Label(
+        desc1 = ttk.Label(
             center_box,
             text="No 17Lands dataset is currently loaded. You need to download data before you can draft.",
-            font=(Theme.FONT_FAMILY, 12),
-        ).pack(pady=(0, 20))
+            font=(Theme.FONT_FAMILY, 9),
+            justify="center",
+        )
+        desc1.pack(pady=(0, 15), anchor="center")
+        self._dynamic_wrap_labels.append(desc1)
 
-        step_frame = ttk.Frame(center_box, style="Card.TFrame")
-        step_frame.pack(fill="x")
+        step_frame = ttk.Frame(center_box)
+        step_frame.pack(anchor="center")
 
         steps = [
             "1. Click the 'Datasets' tab below.",
@@ -142,79 +173,170 @@ class DashboardFrame(ttk.Frame):
             ttk.Label(
                 step_frame,
                 text=s,
-                font=(Theme.FONT_FAMILY, 12, "bold"),
-            ).pack(anchor="w", pady=4)
+                font=(Theme.FONT_FAMILY, 9, "bold"),
+            ).pack(anchor="w", pady=2)
 
-        expl_frame = ttk.Frame(center_box, style="Card.TFrame")
-        expl_frame.pack(fill="x", pady=(15, 0))
+        expl_frame = ttk.Frame(center_box)
+        expl_frame.pack(pady=(15, 0), anchor="center")
 
         ttk.Label(
             expl_frame,
             text="Dataset Options:",
-            font=(Theme.FONT_FAMILY, 11, "bold"),
+            font=(Theme.FONT_FAMILY, 9, "bold"),
             bootstyle="warning",
         ).pack(anchor="w", pady=(0, 5))
-        ttk.Label(
+
+        lbl_ug = ttk.Label(
             expl_frame,
             text="• USERS: 'All' pulls data from everyone. 'Top' pulls data exclusively from top players.",
-            font=(Theme.FONT_FAMILY, 11),
-        ).pack(anchor="w", pady=2)
-        ttk.Label(
+            font=(Theme.FONT_FAMILY, 9),
+            justify="left",
+        )
+        lbl_ug.pack(anchor="w", pady=2)
+        self._dynamic_wrap_labels.append(lbl_ug)
+
+        lbl_mg = ttk.Label(
             expl_frame,
             text="• MIN GAMES: The minimum amount of data required to show color-specific win rates.",
-            font=(Theme.FONT_FAMILY, 11),
-        ).pack(anchor="w", pady=2)
+            font=(Theme.FONT_FAMILY, 9),
+            justify="left",
+        )
+        lbl_mg.pack(anchor="w", pady=2)
+        self._dynamic_wrap_labels.append(lbl_mg)
 
         tips = self._build_customization_tips(center_box)
-        tips.pack(fill="x", pady=(20, 0))
+        tips.pack(pady=(20, 0), anchor="center")
 
     def _build_waiting_state(self):
         """State 2: Data downloaded, but no draft is active."""
         self.waiting_frame = ttk.Frame(self)
 
-        center_box = ttk.Frame(self.waiting_frame, padding=30)
+        center_box = ttk.Frame(self.waiting_frame)
+        center_box.pack(expand=True)
+
+        self.lbl_waiting_title = ttk.Label(
+            center_box,
+            text="Waiting for draft to begin...",
+            font=(Theme.FONT_FAMILY, 13, "bold"),
+            bootstyle="primary",
+            justify="center",
+        )
+        self.lbl_waiting_title.pack(pady=(0, 10), anchor="center")
+
+        self.lbl_waiting_desc = ttk.Label(
+            center_box,
+            text="Ensure 'Detailed Logs (Plugin Support)' is checked in your MTGA Account Settings.",
+            font=(Theme.FONT_FAMILY, 9),
+            justify="center",
+        )
+        self.lbl_waiting_desc.pack(pady=(0, 20), anchor="center")
+        self._dynamic_wrap_labels.append(self.lbl_waiting_desc)
+
+        tips = self._build_customization_tips(center_box)
+        tips.pack(anchor="center")
+
+    def _build_p1p1_state(self):
+        """State 2B: Draft active, but Pack 1 is hidden by MTGA logs."""
+        self.p1p1_frame = ttk.Frame(self)
+
+        center_box = ttk.Frame(self.p1p1_frame)
         center_box.pack(expand=True)
 
         ttk.Label(
             center_box,
-            text="Waiting for draft to begin...",
-            font=(Theme.FONT_FAMILY, 16, "bold"),
-            bootstyle="primary",
-        ).pack(pady=(0, 10))
+            text="Draft Started: The P1P1 Gap",
+            font=(Theme.FONT_FAMILY, 14, "bold"),
+            bootstyle="warning",
+            justify="center",
+        ).pack(pady=(0, 10), anchor="center")
 
-        ttk.Label(
+        desc1 = ttk.Label(
             center_box,
-            text="Ensure 'Detailed Logs (Plugin Support)' is checked in your MTGA Account Settings.",
-            font=(Theme.FONT_FAMILY, 11),
-        ).pack(pady=(0, 20))
+            text="MTG Arena delays writing the first pack to the log file in Human Drafts.\nTo see your options before picking, we must use Screen Capture (OCR).",
+            font=(Theme.FONT_FAMILY, 10),
+            justify="center",
+        )
+        desc1.pack(pady=(0, 20), anchor="center")
+        self._dynamic_wrap_labels.append(desc1)
 
-        tips = self._build_customization_tips(center_box)
-        tips.pack(fill="x")
+        self.btn_dashboard_scan = ttk.Button(
+            center_box,
+            text="SCAN P1P1 (Take Screenshot)",
+            bootstyle="success",
+            command=lambda: self.on_p1p1_scan() if self.on_p1p1_scan else None,
+            padding=(20, 10),
+        )
+        self.btn_dashboard_scan.pack(pady=(0, 20))
+
+        desc2 = ttk.Label(
+            center_box,
+            text="Note: You can disable this feature or choose to save the screenshots locally via File -> Preferences.",
+            font=(Theme.FONT_FAMILY, 9),
+            bootstyle="secondary",
+            justify="center",
+        )
+        desc2.pack(pady=(0, 0), anchor="center")
+        self._dynamic_wrap_labels.append(desc2)
+
+    def _build_deck_recovery_state(self):
+        """State 2C: Draft recovered from logs, but no active pack data available."""
+        self.recovery_frame = ttk.Frame(self)
+
+        center_box = ttk.Frame(self.recovery_frame)
+        center_box.pack(expand=True)
+
+        self.lbl_recovery_title = ttk.Label(
+            center_box,
+            text="Draft Recovered",
+            font=(Theme.FONT_FAMILY, 14, "bold"),
+            bootstyle="info",
+            justify="center",
+        )
+        self.lbl_recovery_title.pack(pady=(0, 10), anchor="center")
+
+        desc1 = ttk.Label(
+            center_box,
+            text="We successfully recovered your drafted cards from the MTGA logs.\nYour pool is available in the 'Card Pool' and 'Deck Builder' tabs below.",
+            font=(Theme.FONT_FAMILY, 10),
+            justify="center",
+        )
+        desc1.pack(pady=(0, 20), anchor="center")
+        self._dynamic_wrap_labels.append(desc1)
+
+        desc2 = ttk.Label(
+            center_box,
+            text="Waiting for a new draft to begin...",
+            font=(Theme.FONT_FAMILY, 9),
+            bootstyle="secondary",
+            justify="center",
+        )
+        desc2.pack(pady=(0, 0), anchor="center")
+        self._dynamic_wrap_labels.append(desc2)
 
     def _build_active_state(self):
         """State 3: Active drafting / deckbuilding."""
         self.content_frame = ttk.Frame(self)
-        self.content_frame.columnconfigure(0, weight=4)
-        self.content_frame.columnconfigure(1, weight=1)
+        self.content_frame.columnconfigure(0, weight=1)
         self.content_frame.rowconfigure(0, weight=1)
 
+        # The Horizontal Slider replacing the rigid grid layout
+        self.h_splitter = ttk.PanedWindow(self.content_frame, orient=tkinter.HORIZONTAL)
+        self.h_splitter.grid(row=0, column=0, sticky="nsew")
+
         # --- LEFT: Tables ---
-        self.f_left = ttk.Frame(self.content_frame)
-        self.f_left.grid(row=0, column=0, sticky="nsew", padx=(10, 15), pady=10)
+        self.f_left = ttk.Frame(self.h_splitter)
+        self.h_splitter.add(self.f_left, weight=1)
+
         self.f_left.columnconfigure(0, weight=1)
+        self.f_left.columnconfigure(1, weight=0)  # Button column
         self.f_left.rowconfigure(0, weight=1)
         self.f_left.rowconfigure(1, weight=0)
 
         # 1. Pack Table
-        self.pack_frame = ttk.Frame(self.f_left)
-        self.pack_frame.grid(row=0, column=0, sticky="nsew")
-
-        self.lbl_pack_header = ttk.Label(
-            self.pack_frame,
-            text="LIVE PACK: TACTICAL EVALUATION",
-            font=(Theme.FONT_FAMILY, 10, "bold"),
+        self.pack_frame = ttk.Labelframe(
+            self.f_left, text=" LIVE PACK: TACTICAL EVALUATION ", padding=5
         )
-        self.lbl_pack_header.pack(anchor="w", pady=(0, 5))
+        self.pack_frame.grid(row=0, column=0, sticky="nsew", padx=(10, 0), pady=(10, 0))
 
         self.pack_manager = DynamicTreeviewManager(
             self.pack_frame,
@@ -230,15 +352,21 @@ class DashboardFrame(ttk.Frame):
             lambda e: self.on_card_select(e, self.pack_manager.tree, "pack"),
         )
 
-        # 2. Missing Table (Wheel Tracker)
-        self.missing_frame = ttk.Frame(self.f_left)
+        for event_type in ["<Button-3>", "<Control-Button-1>"]:
+            self.pack_manager.tree.bind(
+                event_type,
+                lambda e: (
+                    self.on_context_menu(e, self.pack_manager.tree, "pack")
+                    if self.on_context_menu
+                    else None
+                ),
+                add="+",
+            )
 
-        self.lbl_missing_header = ttk.Label(
-            self.missing_frame,
-            text="SEEN CARDS (WHEEL TRACKER)",
-            font=(Theme.FONT_FAMILY, 10, "bold"),
+        # 2. Missing Table (Wheel Tracker)
+        self.missing_frame = ttk.Labelframe(
+            self.f_left, text=" SEEN CARDS (WHEEL TRACKER) ", padding=5
         )
-        self.lbl_missing_header.pack(anchor="w", pady=(0, 5))
 
         self.missing_manager = DynamicTreeviewManager(
             self.missing_frame,
@@ -253,18 +381,56 @@ class DashboardFrame(ttk.Frame):
             lambda e: self.on_card_select(e, self.missing_manager.tree, "missing"),
         )
 
+        for event_type in ["<Button-3>", "<Control-Button-1>"]:
+            self.missing_manager.tree.bind(
+                event_type,
+                lambda e: (
+                    self.on_context_menu(e, self.missing_manager.tree, "missing")
+                    if self.on_context_menu
+                    else None
+                ),
+                add="+",
+            )
+
         self.missing_frame.grid_remove()
 
-        # --- RIGHT: Sidebar ---
-        self.sidebar_frame = ttk.Frame(self.content_frame, width=250)
-        self.sidebar_frame.grid(row=0, column=1, sticky="nsew", padx=(5, 10), pady=10)
-        self.sidebar_frame.pack_propagate(False)
+        # --- MIDDLE: Thin Rail Button ---
+        self.sidebar_visible = self.configuration.settings.collapsible_states.get(
+            "sidebar_panel", True
+        )
 
-        self.advisor_panel = AdvisorPanel(self.sidebar_frame, self.configuration)
+        self.rail_btn = ttk.Button(
+            self.f_left,
+            text="◀" if self.sidebar_visible else "▶",
+            command=self._toggle_sidebar,
+            bootstyle="secondary-link",
+            cursor="hand2",
+            takefocus=False,
+            width=1,
+            padding=0,
+        )
+        self.rail_btn.grid(row=0, column=1, rowspan=2, sticky="", padx=(2, 2))
+
+        # --- RIGHT: Sidebar ---
+        self.sidebar_frame = ttk.Frame(self.h_splitter, width=280)
+        self.sidebar_container = ttk.Frame(self.sidebar_frame)
+        self.sidebar_container.pack(
+            side="right", fill="y", expand=False, padx=(0, 10), pady=(10, 10)
+        )
+
+        if self.sidebar_visible:
+            self.h_splitter.add(self.sidebar_frame, weight=0)
+
+        # --- Advisor Panel ---
+        self.advisor_panel = AdvisorPanel(
+            self.sidebar_container,
+            self.configuration,
+            on_click_callback=self.on_advisor_click,
+        )
         self.advisor_panel.pack(fill="x", pady=(0, 15))
 
         self.signal_container = CollapsibleFrame(
-            self.sidebar_frame,
+            self.sidebar_container,
             title="OPEN LANES",
             configuration=self.configuration,
             setting_key="open_lanes_panel",
@@ -274,7 +440,7 @@ class DashboardFrame(ttk.Frame):
         self.signal_meter.pack(fill="x")
 
         self.curve_container = CollapsibleFrame(
-            self.sidebar_frame,
+            self.sidebar_container,
             title="MANA CURVE",
             configuration=self.configuration,
             setting_key="mana_curve_panel",
@@ -287,7 +453,7 @@ class DashboardFrame(ttk.Frame):
         self.curve_plot.pack(fill="x")
 
         self.pool_container = CollapsibleFrame(
-            self.sidebar_frame,
+            self.sidebar_container,
             title="POOL BALANCE",
             configuration=self.configuration,
             setting_key="pool_balance_panel",
@@ -311,29 +477,104 @@ class DashboardFrame(ttk.Frame):
             self._pack_count > 0 or self._missing_count > 0 or self._taken_count > 0
         )
 
+        is_human = self._current_event_type in [
+            constants.LIMITED_TYPE_STRING_DRAFT_PREMIER,
+            constants.LIMITED_TYPE_STRING_DRAFT_TRAD,
+            constants.LIMITED_TYPE_STRING_DRAFT_PICK_TWO,
+            constants.LIMITED_TYPE_STRING_DRAFT_PICK_TWO_TRAD,
+        ]
+
+        # Determine if we should show the explicit P1P1 OCR frame
+        show_p1p1 = (
+            self._current_event_set
+            and is_human
+            and self._current_pack <= 1
+            and self._current_pick <= 1
+            and self._pack_count == 0
+            and self.configuration.settings.p1p1_ocr_enabled
+        )
+
+        # Determine if we recovered a deck but have no active packs.
+        # Only show this static screen if the draft is fully COMPLETED (>= 40 cards).
+        # Otherwise, they are mid-draft and just waiting for the next pack to appear!
+        show_recovery = (
+            self._taken_count >= 40
+            and self._pack_count == 0
+            and self._missing_count == 0
+        )
+
         self.content_frame.grid_remove()
         self.waiting_frame.grid_remove()
         self.no_data_frame.grid_remove()
+        if hasattr(self, "p1p1_frame"):
+            self.p1p1_frame.grid_remove()
+        if hasattr(self, "recovery_frame"):
+            self.recovery_frame.grid_remove()
 
         if not has_any_datasets:
             self.no_data_frame.grid(row=0, column=0, sticky="nsew")
-        elif not has_draft_data:
-            self.waiting_frame.grid(row=0, column=0, sticky="nsew")
-        else:
+        elif show_p1p1:
+            self.p1p1_frame.grid(row=0, column=0, sticky="nsew")
+        elif show_recovery:
+            if self._current_event_set:
+                self.lbl_recovery_title.config(
+                    text=f"Draft Recovered: {self._current_event_set} {self._current_event_type}"
+                )
+            self.recovery_frame.grid(row=0, column=0, sticky="nsew")
+        elif has_draft_data:
+            was_hidden = not self.content_frame.winfo_viewable()
             self.content_frame.grid(row=0, column=0, sticky="nsew")
+
+            if was_hidden and self.sidebar_visible:
+
+                def fix_sash():
+                    try:
+                        curr_w = self.winfo_width()
+                        if curr_w > 200:
+                            dash_sash = getattr(
+                                self.configuration.settings, "dashboard_sash", 800
+                            )
+                            safe_sash = min(dash_sash, curr_w - 280)
+                            if safe_sash > 50:
+                                self.h_splitter.sashpos(0, safe_sash)
+                    except Exception:
+                        pass
+
+                self.after(50, fix_sash)
+        else:
+            if self._current_event_set:
+                self.lbl_waiting_title.config(
+                    text=f"Draft Started: {self._current_event_set} {self._current_event_type}"
+                )
+                self.lbl_waiting_desc.config(
+                    text="Waiting for pack data to appear in the log..."
+                )
+            else:
+                self.lbl_waiting_title.config(text="Waiting for draft to begin...")
+                self.lbl_waiting_desc.config(
+                    text="Ensure 'Detailed Logs (Plugin Support)' is checked in your MTGA Account Settings."
+                )
+
+            self.waiting_frame.grid(row=0, column=0, sticky="nsew")
 
     def _adjust_grid_weights(self):
         """Dynamically shifts vertical space based on wheel tracker visibility."""
         if self._missing_count == 0:
             self.missing_frame.grid_remove()
-            self.f_left.rowconfigure(0, weight=1)
-            self.f_left.rowconfigure(1, weight=0)
+            self.f_left.rowconfigure(0, weight=1, minsize=0)
+            self.f_left.rowconfigure(1, weight=0, minsize=0)
         else:
-            self.missing_frame.grid(row=1, column=0, sticky="nsew", pady=(15, 0))
+            self.missing_frame.grid(
+                row=1, column=0, sticky="nsew", padx=(10, 0), pady=(15, 10)
+            )
+
             pack_w = max(1, self._pack_count)
             miss_w = max(1, self._missing_count)
-            self.f_left.rowconfigure(0, weight=pack_w)
-            self.f_left.rowconfigure(1, weight=miss_w)
+
+            # minsize guarantees that even if a table only has 1 card, Tkinter will refuse
+            # to crush it smaller than 140 pixels, ensuring it remains fully readable!
+            self.f_left.rowconfigure(0, weight=pack_w, minsize=140)
+            self.f_left.rowconfigure(1, weight=miss_w, minsize=140)
 
     def update_pack_data(
         self,
@@ -344,6 +585,7 @@ class DashboardFrame(ttk.Frame):
         current_pick,
         source_type="pack",
         recommendations=None,
+        picked_cards=None,
     ):
         tree = self.get_treeview(source_type)
         if not tree or not hasattr(tree, "active_fields"):
@@ -384,6 +626,11 @@ class DashboardFrame(ttk.Frame):
 
                 row_tag = row_color_tag(card.get(constants.DATA_FIELD_MANA_COST, ""))
 
+            is_picked = False
+            if picked_cards and source_type == "pack":
+                if any(c.get(constants.DATA_FIELD_NAME) == name for c in picked_cards):
+                    is_picked = True
+
             display_name = name
             if rec:
                 if rec.is_elite:
@@ -400,6 +647,9 @@ class DashboardFrame(ttk.Frame):
                         if not self.configuration.settings.card_colors_enabled
                         else row_tag
                     )
+
+            if is_picked:
+                row_tag = "picked_card"
 
             returnable_at = card.get("returnable_at", [])
             if returnable_at:
@@ -466,7 +716,15 @@ class DashboardFrame(ttk.Frame):
             )
 
         processed_rows.sort(key=lambda x: x["sort_key"], reverse=True)
-        for row in processed_rows:
+
+        # Apply zebra striping AFTER sorting so the alternating pattern is correct on load
+        for i, row in enumerate(processed_rows):
+            if not self.configuration.settings.card_colors_enabled and row["tag"] in [
+                "bw_odd",
+                "bw_even",
+            ]:
+                row["tag"] = "bw_odd" if i % 2 == 0 else "bw_even"
+
             tree.insert("", "end", values=row["vals"], tags=(row["tag"],))
 
         if hasattr(tree, "reapply_sort"):
@@ -503,9 +761,36 @@ class DashboardFrame(ttk.Frame):
         if hasattr(self, "advisor_panel"):
             self.advisor_panel.update_recommendations(recs)
 
-    def set_sidebar_visible(self, visible: bool):
-        """Dynamically grid or hide the sidebar to reclaim table width."""
-        if visible:
-            self.sidebar_frame.grid()
+    def _toggle_sidebar(self):
+        """Dynamically grid or hide the sidebar via the rail button."""
+        self.sidebar_visible = not self.sidebar_visible
+        self.rail_btn.config(text="◀" if self.sidebar_visible else "▶")
+
+        if self.sidebar_visible:
+            self.h_splitter.add(self.sidebar_frame, weight=0)
+
+            self.update_idletasks()
+
+            current_width = self.winfo_width()
+            default_sash = max(50, current_width - 280) if current_width > 280 else 800
+
+            dash_sash = getattr(
+                self.configuration.settings, "dashboard_sash", default_sash
+            )
+            if dash_sash < 50 or dash_sash >= current_width - 20:
+                dash_sash = default_sash
+
+            self.h_splitter.sashpos(0, dash_sash)
         else:
-            self.sidebar_frame.grid_remove()
+            try:
+                self.configuration.settings.dashboard_sash = self.h_splitter.sashpos(0)
+            except:
+                pass
+            self.h_splitter.forget(self.sidebar_frame)
+
+        self.configuration.settings.collapsible_states["sidebar_panel"] = (
+            self.sidebar_visible
+        )
+        from src.configuration import write_configuration
+
+        write_configuration(self.configuration)

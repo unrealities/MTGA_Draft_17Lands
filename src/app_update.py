@@ -2,6 +2,7 @@ import os
 import json
 import urllib.request
 import ssl
+import sys
 import re
 import shutil
 import zipfile
@@ -15,7 +16,13 @@ DOWNLOADS_FOLDER = os.path.join(os.getcwd(), "Downloads")
 UPDATE_LATEST_URL = (
     "https://api.github.com/repos/unrealities/MTGA_Draft_17Lands/releases/latest"
 )
-UPDATE_FILENAME = "MTGA_Draft_Tool_Setup.exe"
+
+if sys.platform == "darwin":
+    UPDATE_FILENAME = "MTGA_Draft_Tool_macOS.zip"
+elif sys.platform == "linux":
+    UPDATE_FILENAME = "MTGA_Draft_Tool_Linux.tar.gz"
+else:
+    UPDATE_FILENAME = "MTGA_Draft_Tool_Setup.exe"
 
 if not os.path.exists(DOWNLOADS_FOLDER):
     os.makedirs(DOWNLOADS_FOLDER)

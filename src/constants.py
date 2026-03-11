@@ -1,14 +1,26 @@
 import os
 import getpass
 
-APPLICATION_VERSION = 4.05
+APPLICATION_VERSION = 4.06
 OLD_APPLICATION_VERSION = "3.2"
-PREVIOUS_APPLICATION_VERSION = "0404"
+PREVIOUS_APPLICATION_VERSION = "0405"
 
 FONT_SANS_SERIF = "Arial"
 FONT_MONO_SPACE = "Courier"
 
-BASIC_LANDS = ["Island", "Mountain", "Swamp", "Plains", "Forest"]
+BASIC_LANDS = [
+    "Island",
+    "Mountain",
+    "Swamp",
+    "Plains",
+    "Forest",
+    "Snow-Covered Island",
+    "Snow-Covered Mountain",
+    "Snow-Covered Swamp",
+    "Snow-Covered Plains",
+    "Snow-Covered Forest",
+    "Wastes",
+]
 
 CARD_COLOR_SYMBOL_WHITE = "W"
 CARD_COLOR_SYMBOL_BLACK = "B"
@@ -762,6 +774,10 @@ CARD_RARITY_DICT = {
 }
 
 UI_SIZE_DICT = {
+    "40%": 0.4,
+    "50%": 0.5,
+    "60%": 0.6,
+    "70%": 0.7,
     "80%": 0.8,
     "90%": 0.9,
     "100%": 1.0,

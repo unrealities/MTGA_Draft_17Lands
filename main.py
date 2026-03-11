@@ -93,15 +93,26 @@ def load_data(args, config, progress_callback):
         if pk > 0:
             progress_callback(f"Loading {e_set} - Pack {pk} Pick {pi}...")
     else:
-        # Fallback: load the most recently used dataset if no active draft
-        last_dataset = config.card_data.latest_dataset
-        if last_dataset:
-            progress_callback(f"Indexing {last_dataset.split('_')[0]}...")
+        # Fallback: Check if we successfully recovered a draft state from a previous session
+        e_set, e_type = scanner.retrieve_current_limited_event()
+        if e_set:
+            progress_callback(f"Recovered Session: {e_set} {e_type}...")
             sources = scanner.retrieve_data_sources()
             for label, path in sources.items():
-                if os.path.basename(path) == last_dataset:
+                if f"[{e_set.upper()}]" in label.upper():
                     scanner.retrieve_set_data(path)
+                    config.card_data.latest_dataset = os.path.basename(path)
                     break
+        else:
+            # Absolute fallback: load the most recently used dataset
+            last_dataset = config.card_data.latest_dataset
+            if last_dataset:
+                progress_callback(f"Indexing {last_dataset.split('_')[0]}...")
+                sources = scanner.retrieve_data_sources()
+                for label, path in sources.items():
+                    if os.path.basename(path) == last_dataset:
+                        scanner.retrieve_set_data(path)
+                        break
 
     return {"scanner": scanner, "config": config}
 
