@@ -1,6 +1,7 @@
 import re
 import os
 import argparse
+import subprocess
 from datetime import datetime
 
 # --- CONFIGURATION ---
@@ -107,6 +108,11 @@ def get_current_version_from_file():
     return float(ver_match.group(1)), content
 
 
+def run_cmd(cmd):
+    print(f"Running: {' '.join(cmd)}")
+    subprocess.run(cmd, check=True)
+
+
 def main():
     parser = argparse.ArgumentParser(description="Automate version bumping.")
     parser.add_argument(
@@ -119,32 +125,77 @@ def main():
     parser.add_argument(
         "--set", type=float, help="Manually set a specific version number (e.g., 3.50)"
     )
+    parser.add_argument(
+        "--push-only",
+        action="store_true",
+        help="Skip modifying files; just tag and push the CURRENT version in constants.py",
+    )
     args = parser.parse_args()
 
     try:
         # 1. Determine Versions
         current_ver, constants_content = get_current_version_from_file()
-        new_ver = calculate_new_version(current_ver, args.mode, args.set)
 
-        # 2. Process constants.py
-        print(f"Reading {CONSTANTS_PATH}...")
-        new_constants, _ = bump_constants(constants_content, new_ver)
-        write_file(CONSTANTS_PATH, new_constants)
-        print(f"Updated {CONSTANTS_PATH}")
+        if args.push_only:
+            new_ver = current_ver
+            print(
+                f"\nPush-Only Mode: Skipping file modifications. Using current version {new_ver}"
+            )
+        else:
+            new_ver = calculate_new_version(current_ver, args.mode, args.set)
 
-        # 3. Process Installer.iss
-        print(f"Reading {INSTALLER_PATH}...")
-        installer_content = read_file(INSTALLER_PATH)
-        new_installer = bump_installer(installer_content, new_ver)
-        write_file(INSTALLER_PATH, new_installer)
-        print(f"Updated {INSTALLER_PATH}")
+            # 2. Process constants.py
+            print(f"Reading {CONSTANTS_PATH}...")
+            new_constants, _ = bump_constants(constants_content, new_ver)
+            write_file(CONSTANTS_PATH, new_constants)
+            print(f"Updated {CONSTANTS_PATH}")
 
-        # 4. Process Release Notes
-        print(f"Updating {REL_NOTES_PATH}...")
-        prepend_release_notes(REL_NOTES_PATH, new_ver)
-        print(f"Prepended header to {REL_NOTES_PATH}")
+            # 3. Process Installer.iss
+            print(f"Reading {INSTALLER_PATH}...")
+            installer_content = read_file(INSTALLER_PATH)
+            new_installer = bump_installer(installer_content, new_ver)
+            write_file(INSTALLER_PATH, new_installer)
+            print(f"Updated {INSTALLER_PATH}")
 
-        print(f"\nSUCCESS! Version bumped: {current_ver} -> {new_ver}")
+            # 4. Process Release Notes
+            print(f"Updating {REL_NOTES_PATH}...")
+            prepend_release_notes(REL_NOTES_PATH, new_ver)
+            print(f"Prepended header to {REL_NOTES_PATH}")
+
+            print(f"\nSUCCESS! Version bumped: {current_ver} -> {new_ver}")
+
+        # 5. Auto-Commit
+        response = input(
+            f"\nWould you like to automatically commit and push these changes to your branch? (y/N): "
+        )
+        if response.lower() == "y":
+            try:
+                if args.push_only:
+                    run_cmd(["git", "add", "-u"])
+                    commit_msg = f"chore: prep release version {new_ver}"
+                else:
+                    run_cmd(
+                        ["git", "add", CONSTANTS_PATH, INSTALLER_PATH, REL_NOTES_PATH]
+                    )
+                    commit_msg = f"chore: bump version to {new_ver}"
+
+                run_cmd(["git", "commit", "-m", commit_msg])
+                run_cmd(["git", "push", "origin", "HEAD"])
+
+                print("\n" + "=" * 50)
+                print(f"✅ Branch successfully pushed!")
+                print(
+                    "When you merge this branch into 'master', GitHub will automatically"
+                )
+                print(
+                    f"create the MTGA_Draft_Tool_V{format_version_code(new_ver)} tag and publish the release!"
+                )
+                print("=" * 50)
+            except subprocess.CalledProcessError as e:
+                print(f"\n❌ Git operation failed: {e}")
+                print("Please check your git status and push manually.")
+        else:
+            print("\nDone. Please manually commit and push your changes when ready.")
 
     except Exception as e:
         print(f"Error: {e}")

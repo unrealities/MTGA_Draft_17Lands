@@ -11,10 +11,10 @@ from datetime import datetime
 from pydantic import BaseModel
 from typing import Dict, Optional, List, Tuple
 from src.logger import create_logger
-from src.constants import GRADE_ORDER_DICT, LETTER_GRADE_NA
+from src.constants import GRADE_ORDER_DICT, LETTER_GRADE_NA, BASE_DIR
 
 # Constants for tier list storage and API
-TIER_FOLDER = os.path.join(os.getcwd(), "Tier")
+TIER_FOLDER = os.path.join(BASE_DIR, "Tier")
 TIER_FILE_PREFIX = "Tier"
 TIER_URL_17LANDS = "https://www.17lands.com/tier_list/"
 TIER_VERSION = 3

@@ -2,11 +2,11 @@ import pytest
 import unittest
 from unittest.mock import patch, MagicMock
 import os
-from src.constants import SETS_FOLDER
+from src.constants import SETS_FOLDER, BASE_DIR
 from src.utils import capture_screen_base64str, retrieve_local_set_list, Result
 from src.utils import normalize_color_string
 
-SCREENSHOT_FOLDER = os.path.join(os.getcwd(), "Screenshots")
+SCREENSHOT_FOLDER = os.path.join(BASE_DIR, "Screenshots")
 SCREENSHOT_PREFIX = "p1p1_screenshot_"
 
 MOCKED_SET_CODES = ["MH3", "OTJ"]

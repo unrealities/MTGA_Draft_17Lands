@@ -1,7 +1,37 @@
 import os
+import sys
 import getpass
 
-APPLICATION_VERSION = 4.06
+
+def get_base_dir():
+    if getattr(sys, "frozen", False):
+        if sys.platform == "darwin":
+            path = os.path.expanduser("~/Library/Application Support/MTGA_Draft_Tool")
+        elif sys.platform == "linux":
+            path = os.path.expanduser("~/.config/MTGA_Draft_Tool")
+        else:
+            path = os.path.dirname(sys.executable)
+    else:
+        path = os.getcwd()
+
+    if not os.path.exists(path):
+        try:
+            os.makedirs(path)
+        except Exception:
+            pass
+    return path
+
+
+def get_resource_dir():
+    if getattr(sys, "frozen", False):
+        return getattr(sys, "_MEIPASS", os.getcwd())
+    return os.getcwd()
+
+
+BASE_DIR = get_base_dir()
+RESOURCE_DIR = get_resource_dir()
+
+APPLICATION_VERSION = 4.07
 OLD_APPLICATION_VERSION = "3.2"
 PREVIOUS_APPLICATION_VERSION = "0405"
 
@@ -187,7 +217,7 @@ DECK_FILTER_DEFAULT = FILTER_OPTION_AUTO
 UI_SIZE_DEFAULT = "100%"
 
 DRAFT_LOG_PREFIX = "DraftLog_"
-DRAFT_LOG_FOLDER = os.path.join(os.getcwd(), "Logs")
+DRAFT_LOG_FOLDER = os.path.join(BASE_DIR, "Logs")
 
 DRAFT_DETECTION_CATCH_ALL = ["Draft", "draft"]
 
@@ -353,7 +383,7 @@ LOCAL_CARDS_KEY_CASTING_COST = "oldschoolmanatext"
 LOCAL_CARDS_KEY_RARITY = "rarity"
 LOCAL_CARDS_KEY_PRIMARY = "isprimarycard"
 
-SETS_FOLDER = os.path.join(os.getcwd(), "Sets")
+SETS_FOLDER = os.path.join(BASE_DIR, "Sets")
 SET_FILE_SUFFIX = "Data.json"
 
 SCRYFALL_REQUEST_BACKOFF_DELAY_SECONDS = 5
@@ -467,7 +497,7 @@ SUPPORTED_SET_TYPES = [
 
 TABLE_STYLE = "Treeview"
 
-TEMP_FOLDER = os.path.join(os.getcwd(), "Temp")
+TEMP_FOLDER = os.path.join(BASE_DIR, "Temp")
 TEMP_LOCALIZATION_FILE = os.path.join(TEMP_FOLDER, "temp_localization.json")
 TEMP_CARD_DATA_FILE = os.path.join(TEMP_FOLDER, "temp_card_data.json")
 
@@ -800,7 +830,7 @@ UI_SIZE_DICT = {
 
 PACK_PARSER_URL = "https://us-central1-mtgalimited.cloudfunctions.net/pack_parser"
 
-SCREENSHOT_FOLDER = os.path.join(os.getcwd(), "Screenshots")
+SCREENSHOT_FOLDER = os.path.join(BASE_DIR, "Screenshots")
 SCREENSHOT_PREFIX = "p1p1_screenshot_"
 
 PICK_TWO_EVENT_STRING = "PickTwo"

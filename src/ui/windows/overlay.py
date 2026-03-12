@@ -325,6 +325,29 @@ class CompactOverlay(tb.Toplevel):
         grp = self.app_context.vars["selected_group"].get()
         filt = self.app_context.vars["deck_filter"].get()
 
+        if (
+            filt == constants.FILTER_OPTION_AUTO
+            and self.configuration.settings.auto_highest_enabled
+        ):
+            active_color = colors[0] if colors else "All Decks"
+            if active_color != "All Decks":
+                color_ratings = (
+                    self.app_context.orchestrator.scanner.set_data.get_color_ratings()
+                )
+                wr_str = (
+                    f" {color_ratings[active_color]}%"
+                    if active_color in color_ratings
+                    else ""
+                )
+                display_name = active_color
+                if (
+                    self.configuration.settings.filter_format
+                    == constants.DECK_FILTER_FORMAT_NAMES
+                    and active_color in constants.COLOR_NAMES_DICT
+                ):
+                    display_name = constants.COLOR_NAMES_DICT[active_color]
+                filt = f"Auto ({display_name}{wr_str})"
+
         # Graceful fallback if no data is loaded
         if not evt:
             _, evt = (

@@ -17,6 +17,7 @@ from src.configuration import Configuration
 from src.limited_sets import SetDictionary, SetInfo
 from src import constants
 from src.utils import Result
+from src.constants import BASE_DIR
 
 
 # --- MOCK DATA GENERATOR ---
@@ -64,6 +65,28 @@ def create_mock_dataset(path):
                 "colors": ["B", "G"],
                 "mana_cost": "",
                 "deck_colors": {"All Decks": {"gihwr": 52.0, "alsa": 5.0}},
+            },
+            # Filler cards to prevent VOR scarcity bonus from ruining test math
+            "106": {
+                "name": "Filler G1",
+                "cmc": 2,
+                "types": ["Creature"],
+                "colors": ["G"],
+                "deck_colors": {"All Decks": {"gihwr": 56.0, "alsa": 5.0}},
+            },
+            "107": {
+                "name": "Filler G2",
+                "cmc": 2,
+                "types": ["Creature"],
+                "colors": ["G"],
+                "deck_colors": {"All Decks": {"gihwr": 56.0, "alsa": 5.0}},
+            },
+            "108": {
+                "name": "Filler G3",
+                "cmc": 2,
+                "types": ["Creature"],
+                "colors": ["G"],
+                "deck_colors": {"All Decks": {"gihwr": 56.0, "alsa": 5.0}},
             },
         },
     }
@@ -180,7 +203,7 @@ class TestBrainIntegration:
         # Pick 2.
         p1p2 = (
             '[UnityCrossThreadLogger]Draft.Notify {"draftId":"1","SelfPick":2,"SelfPack":1,'
-            '"PackCards":"101,104"}\n'
+            '"PackCards":"101,102,103,105,104"}\n'
         )
         with open(log, "a") as f:
             f.write(p1p2)

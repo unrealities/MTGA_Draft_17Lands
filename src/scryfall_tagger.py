@@ -11,6 +11,7 @@ import os
 import json
 from typing import Dict, List
 from src.utils import is_cache_stale
+from src.constants import BASE_DIR
 
 logger = logging.getLogger(__name__)
 
@@ -21,7 +22,7 @@ class ScryfallTagger:
         "User-Agent": "MTGADraftTool/5.0 (Educational Tool)",
         "Accept": "application/json",
     }
-    CACHE_DIR = os.path.join(os.getcwd(), "Temp", "RawCache")
+    CACHE_DIR = os.path.join(BASE_DIR, "Temp", "RawCache")
 
     TAG_QUERIES = {
         "removal": "otag:removal OR otag:board-wipe OR otag:pacifism OR otag:counterspell OR otag:bounce OR otag:edict OR otag:burn",

@@ -127,7 +127,7 @@ class DraftAdvisor:
                         power_bonus += lateness * z_score * 3.0
                         reasons.append(f"LATE SIGNAL")
 
-                # --- STEP 4: Synergy & Focus ---
+                # --- STEP 4: Archetype Synergy & 'Glue Cards' ---
                 is_on_lane = (
                     all(c in self.main_colors for c in card_colors)
                     if card_colors
@@ -141,27 +141,65 @@ class DraftAdvisor:
                     )
                     if arch_wr > 0.0:
                         delta = arch_wr - raw_gihwr
-                        if delta >= 1.5:
-                            synergy_bonus = delta * 3.5
+
+                        # GLUE CARD DETECTION:
+                        # If a Common/Uncommon heavily outperforms its global average in our specific lane,
+                        # it is an archetype "Glue Card" and gets a massive multiplier to push it over generic Rares.
+                        rarity = str(card.get("rarity", "common")).lower()
+                        if delta >= 1.0 and rarity in ["common", "uncommon"]:
+                            synergy_bonus = delta * 5.0
+                            reasons.append(f"Archetype Glue (+{synergy_bonus:.1f})")
+                        elif delta >= 1.5:
+                            synergy_bonus = delta * 3.0
                             reasons.append(f"Archetype Synergy (+{synergy_bonus:.1f})")
+
                     if is_on_lane:
                         base_score *= 1.3 if needs_playables else 1.1
 
-                # --- STEP 5: Castability (Pip-Sensitive Discipline) ---
+                # --- STEP 5: Value Over Replacement (VOR) ---
+                # Checks if the card fulfills a role that is highly scarce in the set for its color.
+                if pack_number == 1 and card_colors and len(card_colors) == 1:
+                    c = card_colors[0]
+                    texture = getattr(self.metrics, "format_texture", {}).get(c, {})
+                    if texture and raw_gihwr >= (self.global_mean - self.global_std):
+                        tags = card.get("tags", [])
+                        cmc = self._get_functional_cmc(card)
+
+                        roles_to_check = []
+                        if "Creature" in card.get("types", []) and cmc <= 2:
+                            roles_to_check.append(("2-drop", "2-Drops"))
+                        if "removal" in tags:
+                            roles_to_check.append(("removal", "Removal"))
+                        if "evasion" in tags:
+                            roles_to_check.append(("evasion", "Evasion"))
+
+                        for role_key, role_name in roles_to_check:
+                            count = texture.get(role_key, 99)
+                            if count <= 2:
+                                vor_bonus = 6.0
+                                power_bonus += vor_bonus
+                                reasons.append(
+                                    f"High VOR: Scarce {c} {role_name} (+{vor_bonus:.0f})"
+                                )
+                            elif count >= 7:
+                                power_bonus -= 2.0
+                                reasons.append(f"Highly Replaceable {role_name}")
+
+                # --- STEP 6: Castability (Pip-Sensitive Discipline) ---
                 cast_mult, cast_reason = self._calculate_castability_v5(
                     card, pack_number, safe_pick, z_score
                 )
                 if cast_reason:
                     reasons.append(cast_reason)
 
-                # --- STEP 6: Composition ---
+                # --- STEP 7: Composition ---
                 role_mult, role_reason = self._calculate_composition_bonus(
                     card, pack_number
                 )
                 if role_reason:
                     reasons.append(role_reason)
 
-                # --- STEP 7: Wheel logic ---
+                # --- STEP 8: Wheel logic ---
                 rank_in_pack = pack_ranks.get(name, 99)
                 wheel_mult, _, wheel_pct = self._check_relative_wheel(
                     card, safe_pick, rank_in_pack

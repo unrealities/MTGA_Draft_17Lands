@@ -389,7 +389,6 @@ class ArenaScanner:
                 self.draft_label = event_label
                 self.event_string = event_name
                 self.current_transaction_id = draft_id
-                self.current_draft_id = draft_id
                 self.number_of_players = number_of_players
                 self._save_state()
                 update = True
@@ -1050,7 +1049,7 @@ class ArenaScanner:
     # DATA RETRIEVAL
     # =========================================================================
 
-    def run_ocr_workflow(self, persist, status_callback=None):
+    def run_ocr_workflow(self, persist, status_callback=None, capture_callback=None):
         with self.lock:
             if (
                 self.current_pack == 1
@@ -1070,9 +1069,16 @@ class ArenaScanner:
             if status_callback:
                 status_callback("Capturing Screen...")
             screenshot = capture_screen_base64str(persist)
+
+            # The app hides, takes the screenshot, and instantly pops back up
+            if capture_callback:
+                capture_callback()
+
             if status_callback:
                 status_callback("Calling Cloud...")
+
             received_names = OCR().get_pack(card_names, screenshot)
+
             if status_callback:
                 status_callback("Processing Data...")
 
@@ -1088,6 +1094,34 @@ class ArenaScanner:
                 self.initial_pack[0] = pack_cards
                 self.pack_cards[0] = pack_cards
                 self.current_pack, self.current_pick = 1, 1
+                self.previous_scanned_pack = 1
+                self._record_pack(1, 1, pack_cards)
+                self._save_state()
+
+                if status_callback:
+                    status_callback("Success!")
+                time.sleep(0.5)
+                return True
+        except Exception as error:
+            logger.error(f"OCR Error: {error}")
+            if status_callback:
+                status_callback("OCR Failed")
+            time.sleep(1.5)
+            return False
+
+            with self.lock:
+                pack_cards = self.set_data.get_ids_by_name(received_names)
+                if not pack_cards:
+                    if status_callback:
+                        status_callback("No Cards Found")
+                    time.sleep(1.5)
+                    return False
+
+                self._check_and_wipe_stale_pool(1, 1)
+                self.initial_pack[0] = pack_cards
+                self.pack_cards[0] = pack_cards
+                self.current_pack, self.current_pick = 1, 1
+                self.previous_scanned_pack = 1
                 self._record_pack(1, 1, pack_cards)
                 self._save_state()
 
