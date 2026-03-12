@@ -131,7 +131,7 @@ class TestLogPipelineIntegration:
         ), f"Failed to detect OTJ. Current detected code: '{app.detected_set_code}'"
 
         p1p1 = (
-            '[UnityCrossThreadLogger]==> LogBusinessEvents {"id":"2","request":"{\\"PackNumber\\":1,\\"PickNumber\\":1,'
+            '[UnityCrossThreadLogger]==> LogBusinessEvents {"id":"2","request":"{\\"DraftId\\":\\"1\\",\\"PackNumber\\":1,\\"PickNumber\\":1,'
             '\\"CardsInPack\\":[90734,90584,90631,90362,90440,90349,90486,90527,90406,90439,90488,90480,90388,90459]}"}\n'
         )
         with open(log, "a") as f:
@@ -158,7 +158,7 @@ class TestLogPipelineIntegration:
             x in first_row_val for x in ["Back for More", "90734", "Vadmir", "90459"]
         )
 
-    def test_signals_and_missing_cards_logic(self, env):
+    def test_event_join_detection(self, env):
         app, log, root = env["app"], env["log"], env["root"]
         with open(log, "a") as f:
             f.write(
@@ -239,15 +239,15 @@ class TestLogPipelineIntegration:
             time.sleep(0.1)
 
         p1p1 = (
-            '[UnityCrossThreadLogger]==> LogBusinessEvents {"id":"2","request":"{\\"PackNumber\\":1,\\"PickNumber\\":1,'
-            '\\"CardsInPack\\":[90734, 90584, 90459]}"}\n'
+            '[UnityCrossThreadLogger]==> LogBusinessEvents {"id":"2","request":"{\\"DraftId\\":\\"1\\",\\"PackNumber\\":1,\\"PickNumber\\":1,'
+            '\\"CardsInPack\\":[90734,90584,90631,90362,90440,90349,90486,90527,90406,90439,90488,90480,90388,90459]}"}\n'
         )
         with open(log, "a") as f:
             f.write(p1p1)
         app._update_loop()
         root.update()
 
-        pick1 = '[UnityCrossThreadLogger]==> Event_PlayerDraftMakePick {"id":"3","request":"{\\"Pack\\":1,\\"Pick\\":1,\\"GrpId\\":90734}"}\n'
+        pick1 = '[UnityCrossThreadLogger]==> Event_PlayerDraftMakePick {"id":"3","request":"{\\"DraftId\\":\\"1\\",\\"Pack\\":1,\\"Pick\\":1,\\"GrpId\\":90734}"}\n'
         with open(log, "a") as f:
             f.write(pick1)
         app._update_loop()
