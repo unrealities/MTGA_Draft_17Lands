@@ -1,5 +1,9 @@
 ===================== RELEASE NOTES 4.07 =====================
-* [TODO]: Add release notes here
+* unrealities: [Major Feature] Introduced "Value Over Replacement" (VOR) to the Advisor Engine. The app now mathematically analyzes the MTG set upon download to map its "Format Texture." It actively identifies when a card fulfills a highly scarce role (e.g., if a set only has one viable Red 2-drop at common) and applies a massive score bonus to prioritize drafting scarce resources over highly-replaceable filler.
+* unrealities: [Feature] Added "Archetype Glue" detection. The Advisor now explicitly identifies Commons and Uncommons that dramatically over-perform in your specific color lane, applying an aggressive score multiplier so they correctly outrank generic, off-color Rares.
+* unrealities: [UX/UI] The P1P1 OCR scanner now instantly hides the application window, takes the screenshot, and reappears. This ensures your draft tool never accidentally blocks the Magic Arena cards during the screen capture.
+* unrealities: [Bug] Fixed a severe file-pathing bug that caused macOS and Linux standalone apps to crash or spawn blank, invisible windows when opening Card Tooltips due to OS write-permission restrictions.
+* unrealities: [Bug] Fixed a state-tracking issue where using the P1P1 OCR scanner would accidentally trick the app into clearing its memory at Pick 2, preventing the "Seen Cards (Wheel Tracker)" from populating at Pick 9.
 
 ===================== RELEASE NOTES 4.06 =====================
 * unrealities: [Major Feature] Official Standalone Support for macOS and Linux. The application is now distributed as native, pre-compiled binaries for Mac (.app) and Linux (.tar.gz), removing the need to install Python manually. The auto-updater fully supports these new platforms.
