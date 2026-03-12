@@ -2,8 +2,9 @@ name: Build & Publish Release
 
 on:
   push:
-    tags:
-      - "MTGA_Draft_Tool_V*" # Triggers on your exact tag format
+    branches:
+      - master
+      - main
   workflow_dispatch:
 
 permissions:
@@ -26,8 +27,7 @@ jobs:
         run: python -m PyInstaller main.spec --clean
       - name: Package to ZIP and Checksum
         run: |
-          VER_CODE="${GITHUB_REF_NAME##*_}"
-          if [ -z "$VER_CODE" ] || [ "$VER_CODE" == "master" ] || [ "$VER_CODE" == "main" ]; then VER_CODE="dev"; fi
+          VER_CODE=$(python -c "import re; print(f\"{int(float(re.search(r'APPLICATION_VERSION\s*=\s*([0-9.]+)', open('src/constants.py').read()).group(1)) * 100):04d}\")")
           FILE_NAME="MTGA_Draft_Tool_macOS_${VER_CODE}.zip"
           cd dist
           zip -r "../$FILE_NAME" MTGA_Draft_Tool.app
@@ -61,8 +61,7 @@ jobs:
         run: python -m PyInstaller main.spec --clean
       - name: Package to Tarball and Checksum
         run: |
-          VER_CODE="${GITHUB_REF_NAME##*_}"
-          if [ -z "$VER_CODE" ] || [ "$VER_CODE" == "master" ] || [ "$VER_CODE" == "main" ]; then VER_CODE="dev"; fi
+          VER_CODE=$(python -c "import re; print(f\"{int(float(re.search(r'APPLICATION_VERSION\s*=\s*([0-9.]+)', open('src/constants.py').read()).group(1)) * 100):04d}\")")
           FILE_NAME="MTGA_Draft_Tool_Linux_${VER_CODE}.tar.gz"
           cd dist
           tar -czvf "../$FILE_NAME" MTGA_Draft_Tool
@@ -116,10 +115,20 @@ jobs:
         with:
           path: release_assets
           merge-multiple: true
-      - name: Generate Release Body
+      - name: Generate Release Body & Tag
+        id: prep
         run: |
           python -c "
           import os, re
+
+          # Parse version to generate Tag Name
+          with open('src/constants.py', 'r', encoding='utf-8') as f:
+              ver_float = float(re.search(r'APPLICATION_VERSION\s*=\s*([0-9.]+)', f.read()).group(1))
+          tag_name = f'MTGA_Draft_Tool_V{int(ver_float * 100):04d}'
+
+          # Output tag to GitHub Actions environment
+          with open(os.environ.get('GITHUB_OUTPUT', ''), 'a') as f:
+              f.write(f'tag_name={tag_name}\n')
 
           # Extract top chunk of release_notes.txt
           with open('release_notes.txt', 'r', encoding='utf-8') as f:
@@ -175,8 +184,9 @@ jobs:
           "
       - name: Publish GitHub Release
         uses: softprops/action-gh-release@v2
-        if: startsWith(github.ref, 'refs/tags/')
         with:
+          tag_name: ${{ steps.prep.outputs.tag_name }}
+          target_commitish: ${{ github.sha }}
           files: |
             release_assets/*.exe
             release_assets/*.zip

@@ -164,48 +164,38 @@ def main():
 
             print(f"\nSUCCESS! Version bumped: {current_ver} -> {new_ver}")
 
-        # 5. Auto-Commit and Tag
-        new_tag = f"MTGA_Draft_Tool_V{format_version_code(new_ver)}"
-
+        # 5. Auto-Commit
         response = input(
-            f"\nWould you like to automatically commit, tag, and push this release ({new_tag}) to GitHub? (y/N): "
+            f"\nWould you like to automatically commit and push these changes to your branch? (y/N): "
         )
         if response.lower() == "y":
             try:
-                # Stage files (If push-only, we add all tracked changes to catch manual edits)
                 if args.push_only:
                     run_cmd(["git", "add", "-u"])
-                    commit_msg = f"chore: release version {new_ver}"
+                    commit_msg = f"chore: prep release version {new_ver}"
                 else:
                     run_cmd(
                         ["git", "add", CONSTANTS_PATH, INSTALLER_PATH, REL_NOTES_PATH]
                     )
                     commit_msg = f"chore: bump version to {new_ver}"
 
-                # Commit
                 run_cmd(["git", "commit", "-m", commit_msg])
-
-                # Tag
-                run_cmd(["git", "tag", new_tag])
-
-                # Push branch and tags
                 run_cmd(["git", "push", "origin", "HEAD"])
-                run_cmd(["git", "push", "origin", new_tag])
 
                 print("\n" + "=" * 50)
-                print(f"✅ Release {new_ver} successfully pushed!")
-                print("GitHub Actions will now build and publish the release.")
+                print(f"✅ Branch successfully pushed!")
+                print(
+                    "When you merge this branch into 'master', GitHub will automatically"
+                )
+                print(
+                    f"create the MTGA_Draft_Tool_V{format_version_code(new_ver)} tag and publish the release!"
+                )
                 print("=" * 50)
             except subprocess.CalledProcessError as e:
                 print(f"\n❌ Git operation failed: {e}")
                 print("Please check your git status and push manually.")
         else:
-            print("\n" + "=" * 50)
-            print("NEXT STEPS:")
-            print("1. Commit these changes.")
-            print(f"2. Create a git tag: git tag {new_tag}")
-            print("3. Push the tag: git push origin --tags")
-            print("=" * 50)
+            print("\nDone. Please manually commit and push your changes when ready.")
 
     except Exception as e:
         print(f"Error: {e}")
