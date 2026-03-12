@@ -1,7 +1,10 @@
 ===================== RELEASE NOTES 4.07 =====================
 * unrealities: [Major Feature] Introduced "Value Over Replacement" (VOR) to the Advisor Engine. The app now mathematically analyzes the MTG set upon download to map its "Format Texture." It actively identifies when a card fulfills a highly scarce role (e.g., if a set only has one viable Red 2-drop at common) and applies a massive score bonus to prioritize drafting scarce resources over highly-replaceable filler.
 * unrealities: [Feature] Added "Archetype Glue" detection. The Advisor now explicitly identifies Commons and Uncommons that dramatically over-perform in your specific color lane, applying an aggressive score multiplier so they correctly outrank generic, off-color Rares.
+* unrealities: [UX/UI] Enhanced the "Auto" Deck Filter mode. The dashboard now displays a dynamic label next to the filter dropdown showing exactly which color lane the app has detected and its associated win rate (e.g., `(Auto: Selesnya 57.5%)` or `(Auto: Detecting...)`).
 * unrealities: [UX/UI] The P1P1 OCR scanner now instantly hides the application window, takes the screenshot, and reappears. This ensures your draft tool never accidentally blocks the Magic Arena cards during the screen capture.
+* unrealities: [Bug] Fixed an issue where the application would incorrectly reset the event type dropdown (e.g., reverting back to a default format) when picking your first card due to MTG Arena's transition from temporary Transaction IDs to permanent Draft IDs.
+* unrealities: [Bug] Fixed a core indentation bug that was completely preventing the "Auto-Switch Deck Filter" feature from analyzing your pool and detecting your lane.
 * unrealities: [Bug] Fixed a severe file-pathing bug that caused macOS and Linux standalone apps to crash or spawn blank, invisible windows when opening Card Tooltips due to OS write-permission restrictions.
 * unrealities: [Bug] Fixed a state-tracking issue where using the P1P1 OCR scanner would accidentally trick the app into clearing its memory at Pick 2, preventing the "Seen Cards (Wheel Tracker)" from populating at Pick 9.
 

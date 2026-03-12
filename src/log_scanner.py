@@ -389,7 +389,6 @@ class ArenaScanner:
                 self.draft_label = event_label
                 self.event_string = event_name
                 self.current_transaction_id = draft_id
-                self.current_draft_id = draft_id
                 self.number_of_players = number_of_players
                 self._save_state()
                 update = True

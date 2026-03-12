@@ -50,31 +50,29 @@ def filter_options(deck, option_selection, metrics, configuration):
     if not configuration.settings.auto_highest_enabled:
         return [constants.FILTER_OPTION_ALL_DECKS]
 
-        # Auto Logic: Identify top 2 colors
-        try:
-            # Don't auto-switch until we have enough data (e.g. pick 5)
-            if len(deck) < 5:
-                return [constants.FILTER_OPTION_ALL_DECKS]
+    # Auto Logic: Identify top 2 colors
+    try:
+        # Don't auto-switch until we have enough data (e.g. pick 5)
+        if len(deck) < 5:
+            return [constants.FILTER_OPTION_ALL_DECKS]
 
-            top_pair = identify_top_pairs(deck, metrics)
-            if top_pair and top_pair[0]:
-                from src.utils import normalize_color_string
+        top_pair = identify_top_pairs(deck, metrics)
+        if top_pair and top_pair[0]:
+            from src.utils import normalize_color_string
 
-                # Convert ["U", "B"] -> "UB" in strict WUBRG order
-                pair_str = normalize_color_string("".join(top_pair[0]))
+            # Convert ["U", "B"] -> "UB" in strict WUBRG order
+            pair_str = normalize_color_string("".join(top_pair[0]))
 
-                # Check if we actually have data for this archetype
-                if pair_str:
-                    mean, std = metrics.get_metrics(
-                        pair_str, constants.DATA_FIELD_GIHWR
-                    )
-                    if mean > 0.0:
-                        return [pair_str]
+            # Check if we actually have data for this archetype
+            if pair_str:
+                mean, std = metrics.get_metrics(pair_str, constants.DATA_FIELD_GIHWR)
+                if mean > 0.0:
+                    return [pair_str]
 
-        except Exception as e:
-            logger.error(f"Auto filter error: {e}")
+    except Exception as e:
+        logger.error(f"Auto filter error: {e}")
 
-        return [constants.FILTER_OPTION_ALL_DECKS]
+    return [constants.FILTER_OPTION_ALL_DECKS]
 
 
 def get_deck_metrics(deck):
@@ -460,7 +458,7 @@ def suggest_deck(taken_cards, metrics, configuration, event_type="PremierDraft")
             sorted_decks[label] = variant
 
             # Limit to top 10 unique options so we don't overwhelm the UI
-            if len(sorted_decks) >= 10: 
+            if len(sorted_decks) >= 10:
                 break
 
     except Exception as e:

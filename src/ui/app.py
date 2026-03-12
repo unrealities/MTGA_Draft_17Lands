@@ -372,6 +372,14 @@ class DraftApp:
         )
         self.om_filter.pack(side="right", padx=2)
 
+        self.lbl_auto_detect = ttk.Label(
+            self.dataset_controls_frame,
+            text="",
+            font=(Theme.FONT_FAMILY, 9, "italic"),
+            bootstyle="info",
+        )
+        self.lbl_auto_detect.pack(side="right", padx=8)
+
         # Group (Right)
         self.om_group = ttk.OptionMenu(
             self.dataset_controls_frame,
@@ -636,6 +644,37 @@ class DraftApp:
             self.configuration,
         )
 
+        # Update Auto-Detect Label
+        if hasattr(self, "lbl_auto_detect"):
+            if (
+                self.configuration.settings.deck_filter == constants.FILTER_OPTION_AUTO
+                and self.configuration.settings.auto_highest_enabled
+            ):
+                active_color = colors[0] if colors else "All Decks"
+                if active_color == "All Decks":
+                    self.lbl_auto_detect.config(text="(Auto: Detecting...)")
+                else:
+                    color_ratings = (
+                        self.orchestrator.scanner.set_data.get_color_ratings()
+                    )
+                    wr_str = (
+                        f" {color_ratings[active_color]}%"
+                        if active_color in color_ratings
+                        else ""
+                    )
+
+                    display_name = active_color
+                    if (
+                        self.configuration.settings.filter_format
+                        == constants.DECK_FILTER_FORMAT_NAMES
+                        and active_color in constants.COLOR_NAMES_DICT
+                    ):
+                        display_name = constants.COLOR_NAMES_DICT[active_color]
+
+                    self.lbl_auto_detect.config(text=f"(Auto: {display_name}{wr_str})")
+            else:
+                self.lbl_auto_detect.config(text="")
+
         self.dashboard._current_event_set = es
         self.dashboard._current_event_type = et
         self.dashboard._current_pack = pk
@@ -774,6 +813,15 @@ class DraftApp:
 
             event_transitioned = False
             current_draft_id = self.orchestrator.scanner.current_draft_id
+
+            if (
+                current_draft_id
+                and not self.current_draft_id
+                and current_set == self.active_event_set
+                and current_event_type == self.active_event_type
+            ):
+                self.current_draft_id = current_draft_id
+
             if (
                 current_set != self.active_event_set
                 or current_event_type != self.active_event_type

@@ -225,13 +225,13 @@ python -m pytest tests/
 
 This project uses a fully automated CI/CD pipeline via GitHub Actions. Releasing a new version to the public is as simple as running a single script.
 
-To bump the version, update all config files, generate the macOS/Linux/Windows executables, calculate their SHA-256 security hashes, and publish them to the GitHub Releases page:
+To bump the version, update all config files, commit, tag, and push to GitHub (which automatically triggers the build of macOS/Linux/Windows executables and publishes them):
 
 1. Run the bump script:
    - **Patch Bump (+0.01):** `python bump_version.py`
    - **Major Bump (+1.0):** `python bump_version.py major`
    - **Manual Set:** `python bump_version.py --set 4.50`
-2. The script will ask: `Would you like to automatically commit and push the tag to trigger a GitHub Release? (y/N)`
+2. The script will ask: `Would you like to automatically commit, tag, and push this release to GitHub? (y/N)`
 3. Type `y` and press **Enter**.
 4. GitHub Actions will take over, build all 3 operating systems in parallel, and publish the final `.zip`, `.tar.gz`, and `.exe` files directly to your Releases page!
 
