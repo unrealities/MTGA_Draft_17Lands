@@ -1,6 +1,6 @@
-import pytest
-import os
 import sys
+import json
+from unittest.mock import patch, MagicMock
 from src.app_update import AppUpdate
 from src.constants import OLD_APPLICATION_VERSION, PREVIOUS_APPLICATION_VERSION
 from src.constants import BASE_DIR
@@ -43,11 +43,25 @@ def output_filename():
     return "test_file.exe"
 
 
-@pytest.mark.skipif(
-    sys.platform == "darwin",
-    reason="Skipping on macOS because of Github API rate limiting",
-)
-def test_retrieve_file_version_latest_success(app_update, valid_search_location_latest):
+@patch("src.app_update.urllib.request.urlopen")
+def test_retrieve_file_version_latest_success(
+    mock_urlopen, app_update, valid_search_location_latest
+):
+    mock_response = MagicMock()
+    mock_response.read.return_value = json.dumps(
+        {
+            "tag_name": "v4.07",
+            "assets": [
+                {
+                    "browser_download_url": "https://mock.url/file.exe",
+                    "name": "MTGA_Draft_Tool.exe",
+                }
+            ],
+        }
+    ).encode("utf-8")
+    mock_response.__enter__.return_value = mock_response
+    mock_urlopen.return_value = mock_response
+
     version, file_location = app_update.retrieve_file_version(
         valid_search_location_latest
     )
@@ -56,20 +70,35 @@ def test_retrieve_file_version_latest_success(app_update, valid_search_location_
     assert len(file_location) != 0
 
 
-@pytest.mark.skipif(
-    sys.platform == "darwin",
-    reason="Skipping on macOS because of Github API rate limiting",
-)
-def test_retrieve_file_version_old_success(app_update, valid_search_location_old):
+@patch("src.app_update.urllib.request.urlopen")
+def test_retrieve_file_version_old_success(
+    mock_urlopen, app_update, valid_search_location_old
+):
+    mock_response = MagicMock()
+    mock_response.read.return_value = json.dumps(
+        {
+            "tag_name": f"v{OLD_APPLICATION_VERSION}",
+            "assets": [
+                {
+                    "browser_download_url": "https://mock.url/old.zip",
+                    "name": "MTGA_Draft_Tool_old.zip",
+                }
+            ],
+        }
+    ).encode("utf-8")
+    mock_response.__enter__.return_value = mock_response
+    mock_urlopen.return_value = mock_response
+
     version, file_location = app_update.retrieve_file_version(valid_search_location_old)
     assert version == OLD_APPLICATION_VERSION
 
 
-@pytest.mark.skipif(
-    sys.platform == "darwin",
-    reason="Skipping on macOS because of Github API rate limiting",
-)
-def test_retrieve_file_version_failure(app_update, invalid_search_location):
+@patch("src.app_update.urllib.request.urlopen")
+def test_retrieve_file_version_failure(
+    mock_urlopen, app_update, invalid_search_location
+):
+    mock_urlopen.side_effect = Exception("Network Error")
+
     version, file_location = app_update.retrieve_file_version(invalid_search_location)
     assert version == ""
     assert file_location == ""
