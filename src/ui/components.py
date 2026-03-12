@@ -172,7 +172,7 @@ class AutocompleteEntry(tb.Entry):
 
 
 class CardToolTip(tkinter.Toplevel):
-    IMAGE_CACHE_DIR = os.path.join(os.getcwd(), "Temp", "Images")
+    IMAGE_CACHE_DIR = os.path.join(constants.TEMP_FOLDER, "Images")
     _active_tooltip = None
     _image_executor = ThreadPoolExecutor(max_workers=4)
 
@@ -200,8 +200,13 @@ class CardToolTip(tkinter.Toplevel):
         self.configure(
             bg=Theme.BG_PRIMARY, highlightthickness=1, highlightbackground=Theme.ACCENT
         )
-        if not os.path.exists(self.IMAGE_CACHE_DIR):
-            os.makedirs(self.IMAGE_CACHE_DIR)
+
+        try:
+            if not os.path.exists(self.IMAGE_CACHE_DIR):
+                os.makedirs(self.IMAGE_CACHE_DIR)
+        except Exception:
+            pass
+
         name, stats, urls, tags, rarity = (
             card.get("name", "Unknown"),
             card.get("deck_colors", {}),

@@ -60,6 +60,7 @@ class DraftApp:
         self.detected_set_code = ""
         self.active_event_set = ""
         self.active_event_type = ""
+        self.current_draft_id = ""
         self._notified_missing_sets = set()
 
         # 2. CORE LOGIC SERVICE
@@ -1008,14 +1009,34 @@ class DraftApp:
                 except RuntimeError:
                     pass
 
+            def restore_windows():
+                if self.overlay_window:
+                    self.overlay_window.deiconify()
+                else:
+                    self.root.deiconify()
+
             def _scan_thread():
+                import time
+
+                time.sleep(
+                    0.2
+                )  # Allow OS compositor to fully clear the app from screen
                 data_found = self.orchestrator.scanner.run_ocr_workflow(
-                    save_img, status_callback=update_btn_text
+                    save_img,
+                    status_callback=update_btn_text,
+                    capture_callback=lambda: self.root.after(0, restore_windows),
                 )
                 try:
                     self.root.after(0, lambda: self._on_scan_complete(data_found))
                 except RuntimeError:
                     pass
+
+            # Instantly hide UI to prevent blocking cards
+            if self.overlay_window:
+                self.overlay_window.withdraw()
+            else:
+                self.root.withdraw()
+            self.root.update()
 
             import threading
 

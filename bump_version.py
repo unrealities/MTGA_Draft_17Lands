@@ -146,26 +146,24 @@ def main():
 
         print(f"\nSUCCESS! Version bumped: {current_ver} -> {new_ver}")
 
-        # 5. Git Automation
-        response = input(
-            f"\nWould you like to automatically commit and push the v{new_ver} tag to trigger a GitHub Release? (y/N): "
+        # 5. Output Next Steps
+        new_tag = f"MTGA_Draft_Tool_V{format_version_code(new_ver)}"
+        print("\n" + "=" * 50)
+        print("NEXT STEPS:")
+        print("1. Commit these changes and push your PR to GitHub.")
+        print("2. Merge your PR into the master branch.")
+        print(
+            "3. Run the following commands to trigger the automated Release Pipeline:"
         )
-        if response.strip().lower() == "y":
-            import subprocess
-
-            subprocess.run(["git", "add", "."])
-            subprocess.run(["git", "commit", "-m", f"Bump version to v{new_ver}"])
-            subprocess.run(["git", "tag", f"v{new_ver}"])
-            subprocess.run(["git", "push", "origin", "main", "--tags"])
-            print(f"\n🚀 Tag v{new_ver} pushed successfully!")
-            print(
-                "GitHub Actions is now automatically building the macOS, Linux, and Windows apps."
-            )
-            print("Check your repository's 'Actions' tab to watch the progress.")
+        print("=" * 50)
+        print("git checkout master")
+        print("git pull")
+        print(f"git tag {new_tag}")
+        print("git push origin --tags")
+        print("=" * 50)
 
     except Exception as e:
         print(f"Error: {e}")
-
 
 if __name__ == "__main__":
     main()

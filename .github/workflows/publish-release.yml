@@ -3,11 +3,11 @@ name: Build & Publish Release
 on:
   push:
     tags:
-      - "v*" # Triggers automatically when a version tag (e.g., v4.06) is pushed
-  workflow_dispatch: # Still allows manual testing from the Actions tab
+      - "MTGA_Draft_Tool_V*" # Triggers on your exact tag format
+  workflow_dispatch:
 
 permissions:
-  contents: write # Required for the action to create the GitHub Release
+  contents: write # Required to create the GitHub Release
 
 jobs:
   build-macos:
@@ -22,31 +22,24 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
           pip install pyinstaller==6.7.0 jaraco.text platformdirs importlib-metadata zipp
-      - name: Build executable and App Bundle
+      - name: Build executable
         run: python -m PyInstaller main.spec --clean
       - name: Package to ZIP and Checksum
         run: |
-          # Use the tag name (v4.06) or fallback to 'dev' if triggered manually
-          VERSION=${{ github.ref_type == 'tag' && github.ref_name || 'dev' }}
+          VER_CODE="${GITHUB_REF_NAME##*_}"
+          if [ -z "$VER_CODE" ] || [ "$VER_CODE" == "master" ] || [ "$VER_CODE" == "main" ]; then VER_CODE="dev"; fi
+          FILE_NAME="MTGA_Draft_Tool_macOS_${VER_CODE}.zip"
           cd dist
-          zip -r ../MTGA_Draft_Tool_macOS_$VERSION.zip MTGA_Draft_Tool.app
+          zip -r "../$FILE_NAME" MTGA_Draft_Tool.app
           cd ..
-          shasum -a 256 MTGA_Draft_Tool_macOS_$VERSION.zip > MTGA_Draft_Tool_macOS_$VERSION.zip.sha256
-      - name: Upload Artifacts
+          shasum -a 256 "$FILE_NAME" | awk '{print $1}' > mac_hash.txt
+      - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: macOS-Build
+          name: macos-artifact
           path: |
             MTGA_Draft_Tool_macOS_*.zip
-            MTGA_Draft_Tool_macOS_*.zip.sha256
-      - name: Add to GitHub Release
-        if: startsWith(github.ref, 'refs/tags/')
-        uses: softprops/action-gh-release@v2
-        with:
-          generate_release_notes: true
-          files: |
-            MTGA_Draft_Tool_macOS_*.zip
-            MTGA_Draft_Tool_macOS_*.zip.sha256
+            mac_hash.txt
 
   build-linux:
     runs-on: ubuntu-20.04
@@ -59,7 +52,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - name: Install Python dependencies
+      - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
@@ -68,25 +61,20 @@ jobs:
         run: python -m PyInstaller main.spec --clean
       - name: Package to Tarball and Checksum
         run: |
-          VERSION=${{ github.ref_type == 'tag' && github.ref_name || 'dev' }}
+          VER_CODE="${GITHUB_REF_NAME##*_}"
+          if [ -z "$VER_CODE" ] || [ "$VER_CODE" == "master" ] || [ "$VER_CODE" == "main" ]; then VER_CODE="dev"; fi
+          FILE_NAME="MTGA_Draft_Tool_Linux_${VER_CODE}.tar.gz"
           cd dist
-          tar -czvf ../MTGA_Draft_Tool_Linux_$VERSION.tar.gz MTGA_Draft_Tool
+          tar -czvf "../$FILE_NAME" MTGA_Draft_Tool
           cd ..
-          sha256sum MTGA_Draft_Tool_Linux_$VERSION.tar.gz > MTGA_Draft_Tool_Linux_$VERSION.tar.gz.sha256
-      - name: Upload Artifacts
+          sha256sum "$FILE_NAME" | awk '{print $1}' > linux_hash.txt
+      - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: Linux-Build
+          name: linux-artifact
           path: |
             MTGA_Draft_Tool_Linux_*.tar.gz
-            MTGA_Draft_Tool_Linux_*.tar.gz.sha256
-      - name: Add to GitHub Release
-        if: startsWith(github.ref, 'refs/tags/')
-        uses: softprops/action-gh-release@v2
-        with:
-          files: |
-            MTGA_Draft_Tool_Linux_*.tar.gz
-            MTGA_Draft_Tool_Linux_*.tar.gz.sha256
+            linux_hash.txt
 
   build-windows:
     runs-on: windows-2022
@@ -104,19 +92,94 @@ jobs:
         run: python -m PyInstaller main.spec --clean
       - name: Build installer
         run: iscc ./builder/Installer.iss
-      - name: Calculate installer hash
+      - name: Calculate Hash and Prepare Upload
         run: |
-          Get-ChildItem -Path "./builder/{app}" -Filter *.exe | ForEach-Object {
-              $hash = (Get-FileHash $_.FullName -Algorithm SHA256).Hash
-              [IO.File]::WriteAllText("$($_.FullName).sha256.txt", $hash)
-          }
-      - name: Upload Artifacts
+          $exePath = Get-ChildItem -Path "./builder/{app}" -Filter *.exe | Select-Object -First 1
+          $hash = (Get-FileHash $exePath.FullName -Algorithm SHA256).Hash.ToLower()
+          [IO.File]::WriteAllText("windows_hash.txt", $hash)
+          Move-Item $exePath.FullName "./"
+      - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: Windows-Build
-          path: ./builder/{app}/*
-      - name: Add to GitHub Release
-        if: startsWith(github.ref, 'refs/tags/')
-        uses: softprops/action-gh-release@v2
+          name: windows-artifact
+          path: |
+            *.exe
+            windows_hash.txt
+
+  publish:
+    needs: [build-macos, build-linux, build-windows]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
         with:
-          files: ./builder/{app}/*
+          path: release_assets
+          merge-multiple: true
+      - name: Generate Release Body
+        run: |
+          python -c "
+          import os, re
+
+          # Extract top chunk of release_notes.txt
+          with open('release_notes.txt', 'r', encoding='utf-8') as f:
+              content = f.read()
+          match = re.search(r'(===================== RELEASE NOTES .*? =====================\n.*?)(?=\n===================== RELEASE NOTES|$)', content, re.DOTALL)
+          notes = match.group(1).strip() if match else ''
+
+          def get_hash(name):
+              p = os.path.join('release_assets', name)
+              return open(p).read().strip() if os.path.exists(p) else 'N/A'
+              
+          win_hash = get_hash('windows_hash.txt')
+          mac_hash = get_hash('mac_hash.txt')
+          linux_hash = get_hash('linux_hash.txt')
+
+          files = os.listdir('release_assets')
+          exe_name = next((f for f in files if f.endswith('.exe')), 'MTGA_Draft_Tool.exe')
+          mac_name = next((f for f in files if f.endswith('.zip')), 'MTGA_Draft_Tool_macOS.zip')
+          lin_name = next((f for f in files if f.endswith('.tar.gz')), 'MTGA_Draft_Tool_Linux.tar.gz')
+
+          body = f'''{notes}
+
+          ## Security & Verification Hashes
+
+          *Note: These executables and their SHA256 hashes were generated securely via GitHub Actions. To ensure security, verify the hash of the file you download.*
+
+          ### Windows
+          **SHA256 Hash:** \`{win_hash}\`
+
+          **Verification Instructions:**
+          1. Unzip the downloaded file.
+          2. Open the Windows Command Prompt.
+          3. Run: \`CertUtil -hashfile {exe_name} SHA256\`
+
+          ### macOS
+          **SHA256 Hash:** \`{mac_hash}\`
+
+          **Verification Instructions:**
+          1. Open Terminal.
+          2. Run: \`shasum -a 256 {mac_name}\`
+
+          *⚠️ macOS Gatekeeper bypass: Because this is an unsigned app, macOS will flag it as \"damaged\" or \"malware\". To fix this, extract the app to your Applications folder, open Terminal, and run \`xattr -cr /Applications/MTGA_Draft_Tool.app\`.*
+
+          ### Linux
+          **SHA256 Hash:** \`{linux_hash}\`
+
+          **Verification Instructions:**
+          1. Open Terminal.
+          2. Run: \`sha256sum {lin_name}\`
+          '''
+          with open('release_body.md', 'w', encoding='utf-8') as f:
+              f.write(body)
+          "
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          files: |
+            release_assets/*.exe
+            release_assets/*.zip
+            release_assets/*.tar.gz
+          body_path: release_body.md
+          generate_release_notes: true
