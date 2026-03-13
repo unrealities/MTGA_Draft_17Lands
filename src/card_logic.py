@@ -47,8 +47,6 @@ def filter_options(deck, option_selection, metrics, configuration):
     """
     if constants.FILTER_OPTION_AUTO not in option_selection:
         return [option_selection]
-    if not configuration.settings.auto_highest_enabled:
-        return [constants.FILTER_OPTION_ALL_DECKS]
 
     # Auto Logic: Identify top 2 colors
     try:
@@ -323,6 +321,25 @@ class CardResult:
 # --- UNIVERSAL DECK BUILDER & LIQUID SCORING ENGINE ---
 
 
+def get_sideboard(pool, deck_stacked):
+    """Calculates sideboard by subtracting drafted deck from raw pool."""
+    pool_stacked = stack_cards(pool)
+    sideboard = []
+    deck_counts = {c.get("name"): c.get("count", 1) for c in deck_stacked}
+    for c in pool_stacked:
+        name = c.get("name")
+        total_count = c.get("count", 1)
+        used_count = deck_counts.get(name, 0)
+        sb_count = total_count - used_count
+        if sb_count > 0:
+            import copy
+
+            sb_card = copy.deepcopy(c)
+            sb_card["count"] = sb_count
+            sideboard.append(sb_card)
+    return sideboard
+
+
 def suggest_deck(taken_cards, metrics, configuration, event_type="PremierDraft"):
     """
     Entry point. Generates multiple distinct deck variants based on the pool.
@@ -353,7 +370,7 @@ def suggest_deck(taken_cards, metrics, configuration, event_type="PremierDraft")
                     "rating": score,
                     "record": estimate_record(score, is_bo3),
                     "deck_cards": con_deck,
-                    "sideboard_cards": [],
+                    "sideboard_cards": get_sideboard(taken_cards, con_deck),
                     "colors": main_colors,
                     "breakdown": breakdown,
                 }
@@ -377,7 +394,7 @@ def suggest_deck(taken_cards, metrics, configuration, event_type="PremierDraft")
                     "rating": score,
                     "record": estimate_record(score, is_bo3),
                     "deck_cards": greedy_deck,
-                    "sideboard_cards": [],
+                    "sideboard_cards": get_sideboard(taken_cards, greedy_deck),
                     "colors": target_colors,
                     "breakdown": breakdown,
                 }
@@ -398,7 +415,7 @@ def suggest_deck(taken_cards, metrics, configuration, event_type="PremierDraft")
                     "rating": score,
                     "record": estimate_record(score, is_bo3),
                     "deck_cards": tempo_deck,
-                    "sideboard_cards": [],
+                    "sideboard_cards": get_sideboard(taken_cards, tempo_deck),
                     "colors": main_colors,
                     "breakdown": breakdown,
                 }
@@ -419,7 +436,7 @@ def suggest_deck(taken_cards, metrics, configuration, event_type="PremierDraft")
                 "rating": score,
                 "record": estimate_record(score, is_bo3),
                 "deck_cards": soup_deck,
-                "sideboard_cards": [],
+                "sideboard_cards": get_sideboard(taken_cards, soup_deck),
                 "colors": soup_colors[:3] if soup_colors else ["All Decks"],
                 "breakdown": breakdown,
             }

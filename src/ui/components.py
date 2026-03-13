@@ -1,7 +1,6 @@
 """
 src/ui/components.py
 Atomic UI Widgets for the MTGA Draft Tool.
-Restored full parameter names for keyword argument compatibility.
 """
 
 import tkinter
@@ -176,7 +175,16 @@ class CardToolTip(tkinter.Toplevel):
     _active_tooltip = None
     _image_executor = ThreadPoolExecutor(max_workers=4)
 
+    @classmethod
+    def create(cls, parent, card, images_enabled, scale):
+        """Factory method ensures only one tooltip exists globally and avoids flickering loops."""
+        if cls._active_tooltip and cls._active_tooltip.winfo_exists():
+            cls._active_tooltip.destroy()
+            cls._active_tooltip = None
+        cls._active_tooltip = cls(parent, card, images_enabled, scale)
+
     def __init__(self, parent, card, images_enabled, scale):
+        super().__init__(parent)
         # --- 1. Basic Land Filter ---
         # Prevent tooltips from appearing for Basic Lands to reduce clutter
         card_types = card.get("types", [])
@@ -184,17 +192,10 @@ class CardToolTip(tkinter.Toplevel):
         if (
             "Land" in card_types and "Basic" in card_types
         ) or card_name in constants.BASIC_LANDS:
-            # We must initialize the Toplevel class to avoid recursion errors in Python,
-            # but we immediately hide and destroy it.
-            super().__init__(parent)
             self.withdraw()
             self.destroy()
             return
 
-        if CardToolTip._active_tooltip and CardToolTip._active_tooltip.winfo_exists():
-            CardToolTip._active_tooltip.destroy()
-        CardToolTip._active_tooltip = self
-        super().__init__(parent)
         self.wm_overrideredirect(True)
         self.attributes("-topmost", True)
         self.configure(
@@ -253,9 +254,7 @@ class CardToolTip(tkinter.Toplevel):
             img_w = int(240 * scale)
             img_h = int(335 * scale)
 
-            # Create a fixed-size container frame
             self.img_frame = tb.Frame(b, width=img_w, height=img_h)
-            # This is key: tell the frame NOT to shrink to fit its (currently empty) children
             self.img_frame.pack_propagate(False)
             self.img_frame.pack(side="left", padx=(0, 15), anchor="n")
 
@@ -362,17 +361,20 @@ class CardToolTip(tkinter.Toplevel):
                 wraplength=int(280 * scale),
                 justify="left",
             ).pack(anchor="w")
+
         # Anchor to the mouse position AT THE TIME OF CREATION
         self._mouse_x = parent.winfo_pointerx()
         self._mouse_y = parent.winfo_pointery()
         self._reposition()
 
-        parent.bind(
-            "<Leave>",
-            lambda e: self.destroy() if self.winfo_exists() else None,
-            add="+",
-        )
-        self.bind("<Button-1>", lambda e: self.destroy())
+        # Bind closing interactions securely
+        parent.bind("<Leave>", self._close, add="+")
+        self.bind("<Button-1>", self._close)
+        self.bind("<Leave>", self._close)
+
+    def _close(self, event=None):
+        if self.winfo_exists():
+            self.destroy()
 
     def _reposition(self):
         """Calculates bounds using the static initial mouse position so the tooltip doesn't teleport."""
@@ -385,7 +387,9 @@ class CardToolTip(tkinter.Toplevel):
 
         sw = self.winfo_screenwidth()
         sh = self.winfo_screenheight()
-        offset_x, offset_y = 25, 25
+
+        # Offset aggressively to prevent cursor hovering over the tooltip immediately, causing a rapid <Leave> flicker
+        offset_x, offset_y = 35, 25
 
         if self._mouse_x + offset_x + ww > sw:
             tx = max(self._mouse_x - offset_x - ww - 10, 0)
@@ -402,7 +406,6 @@ class CardToolTip(tkinter.Toplevel):
     def _load_image_async(self, u, s):
         if "scryfall" in u:
             u = u.replace("/small/", "/large/").replace("/normal/", "/large/")
-
         self._image_executor.submit(self._fetch_and_apply_image, u, s)
 
     def _fetch_and_apply_image(self, u, s):
@@ -1108,96 +1111,77 @@ class CardPile(tb.Frame):
         self.container.pack(fill=BOTH, expand=True)
 
     def add_card(self, card_data):
-        nm, ct, cn = (
-            card_data["name"],
-            card_data.get("mana_cost", ""),
-            card_data.get("count", 1),
-        )
+        nm = card_data.get("name", "Unknown")
+        ct = card_data.get("mana_cost", "")
+        cn = card_data.get("count", 1)
+
         cl = sorted(
             list(set(re.findall(r"[WUBRG]", ct or ""))),
             key=lambda x: ["W", "U", "B", "R", "G"].index(x) if x in "WUBRG" else 99,
         )
-        ch = tb.Frame(self.container)
+        if not cl:
+            cl = ["NC"]
+
+        # We explicitly use a standard tk.Frame here to completely override bootstyle limitations
+        # Use a sleek dark background for all cards in the visual view to guarantee readability
+        bg_col = "#1e293b"
+        fg_col = "#f8fafc"
+
+        ch = tkinter.Frame(self.container, bg=bg_col, cursor="hand2")
         ch.pack(fill=X, pady=1, padx=2)
+
         tx = f"{cn}x {nm}" if cn > 1 else nm
-        if len(cl) > 1:
-            lb = tb.Label(
-                ch,
-                text=tx,
-                font=(Theme.FONT_FAMILY, 10),
-                foreground="#000000",
-                background="#d4af37",
-                anchor="w",
-                padding=(5, 2),
+
+        # Left color strip accent
+        cv = tkinter.Canvas(
+            ch, width=6, height=24, bg=bg_col, highlightthickness=0, cursor="hand2"
+        )
+        cv.pack(side=LEFT, fill=Y)
+
+        h = 24 / len(cl)
+        color_map = {
+            "W": "#f8f6f1",
+            "U": "#3498db",
+            "B": "#8b8b93",
+            "R": "#e74c3c",
+            "G": "#00bc8c",
+            "NC": "#8e9eae",
+        }
+
+        for i, c in enumerate(cl):
+            cv.create_rectangle(
+                0,
+                i * h,
+                6,
+                (i + 1) * h,
+                fill=color_map.get(c, "#8e9eae"),
+                outline="",
             )
-            lb.pack(side=LEFT, fill=BOTH, expand=True)
-            cv = tb.Canvas(ch, width=12, height=20, bg="#d4af37", highlightthickness=0)
-            cv.pack(side=RIGHT, fill=Y)
-            h = 20 / len(cl)
-            for i, c in enumerate(cl):
-                cv.create_rectangle(
-                    0,
-                    i * h,
-                    12,
-                    (i + 1) * h,
-                    fill={
-                        "W": "#f8f6f1",
-                        "U": "#3498db",
-                        "B": "#2c3e50",
-                        "R": "#e74c3c",
-                        "G": "#00bc8c",
-                    }.get(c, "#000"),
-                    outline="",
-                )
-            lb.bind(
-                "<Enter>",
-                lambda e: CardToolTip(
-                    lb,
-                    card_data,
-                    self.app.configuration.features.images_enabled,
-                    constants.UI_SIZE_DICT.get(
-                        self.app.configuration.settings.ui_size, 1.0
-                    ),
+
+        # Card Name Label
+        lb = tkinter.Label(
+            ch,
+            text=tx,
+            bg=bg_col,
+            fg=fg_col,
+            font=(Theme.FONT_FAMILY, 10),
+            anchor="w",
+            padx=6,
+            pady=2,
+            cursor="hand2",
+        )
+        lb.pack(side=LEFT, fill=BOTH, expand=True)
+
+        def _trigger_tooltip(e):
+            CardToolTip.create(
+                ch,  # Anchor safely to the row container
+                card_data,
+                self.app.configuration.features.images_enabled,
+                constants.UI_SIZE_DICT.get(
+                    self.app.configuration.settings.ui_size, 1.0
                 ),
             )
-        else:
-            c = cl[0] if cl else "NC"
-            s = {
-                "W": "warning",
-                "U": "info",
-                "B": "dark",
-                "R": "danger",
-                "G": "success",
-            }.get(c, "secondary")
-            lb = tb.Label(
-                ch,
-                text=tx,
-                bootstyle=(
-                    "info"
-                    if c == "U"
-                    else (
-                        "success"
-                        if c == "G"
-                        else (
-                            "danger"
-                            if c == "R"
-                            else ("dark" if c == "B" else "secondary")
-                        )
-                    )
-                ),
-                font=(Theme.FONT_FAMILY, 10),
-                anchor="w",
-                padding=(5, 2),
-            )
-            lb.pack(fill=X)
-            lb.bind(
-                "<Enter>",
-                lambda e: CardToolTip(
-                    lb,
-                    card_data,
-                    self.app.configuration.features.images_enabled,
-                    constants.UI_SIZE_DICT.get(
-                        self.app.configuration.settings.ui_size, 1.0
-                    ),
-                ),
-            )
+
+        ch.bind("<Button-1>", _trigger_tooltip)
+        cv.bind("<Button-1>", _trigger_tooltip)
+        lb.bind("<Button-1>", _trigger_tooltip)

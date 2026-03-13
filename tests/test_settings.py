@@ -61,10 +61,10 @@ class TestSettingsWindow:
         """Verify toggling a feature updates the config boolean."""
         window = SettingsWindow(root, config, MagicMock())
 
-        # Simulate unchecking 'Auto-Switch Deck Filter'
-        window.vars["auto_highest_enabled"].set(0)
+        # Simulate unchecking 'Enable P1P1 OCR'
+        window.vars["p1p1_ocr_enabled"].set(0)
 
-        assert config.settings.auto_highest_enabled is False
+        assert config.settings.p1p1_ocr_enabled is False
         assert mock_write.called
 
     @patch("src.ui.windows.settings.reset_configuration")

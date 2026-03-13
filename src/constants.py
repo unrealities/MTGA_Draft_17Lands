@@ -31,9 +31,9 @@ def get_resource_dir():
 BASE_DIR = get_base_dir()
 RESOURCE_DIR = get_resource_dir()
 
-APPLICATION_VERSION = 4.07
+APPLICATION_VERSION = 4.08
 OLD_APPLICATION_VERSION = "3.2"
-PREVIOUS_APPLICATION_VERSION = "0405"
+PREVIOUS_APPLICATION_VERSION = "0407"
 
 FONT_SANS_SERIF = "Arial"
 FONT_MONO_SPACE = "Courier"
@@ -903,4 +903,11 @@ TAG_VISUALS = {
     "mana_sink": "⚙️ Sink",
     "protection": "🛡️ Protect",
     "hate": "🚫 Hate",
+}
+
+# Known corrupted mappings returned by 17Lands API
+CARD_NAME_CORRECTIONS = {
+    "Bespoke B?": "Bespoke Bō",
+    "Bespoke B": "Bespoke Bō",
+    "Bespoke BÃ´": "Bespoke Bō",
 }

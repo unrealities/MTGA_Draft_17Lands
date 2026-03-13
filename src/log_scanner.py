@@ -559,7 +559,8 @@ class ArenaScanner:
         if not pack or not pick or not pack_cards:
             return False
 
-        # DYNAMIC ASSERTION: Force exact 4-player math for Pick Two drafts
+        self._check_and_wipe_stale_pool(pack, pick, draft_id)
+
         expected_players = (
             4
             if self.draft_type
@@ -572,12 +573,7 @@ class ArenaScanner:
         )
         self.number_of_players = expected_players
 
-        # 1. Wipe Check (New Draft Identifiers)
-        self._check_and_wipe_stale_pool(pack, pick, draft_id)
-
-        # 2. Handle Pack Transitions securely
-        # Only clear if we are moving FORWARD to a new pack.
-        # This prevents out-of-order catchup logs from corrupting internal state.
+        # Handle Pack Transitions securely
         if (
             pack > self.previous_scanned_pack
             or len(self.initial_pack) != expected_players
@@ -591,27 +587,25 @@ class ArenaScanner:
 
         pack_index = (pick - 1) % expected_players
 
-        # 3. Prevent duplicate processing of the exact same pack
+        # Prevent duplicate processing of the exact same pack
         if (
             len(self.pack_cards) > pack_index
             and self.pack_cards[pack_index] == pack_cards
         ):
             return False
 
-        # 4. P1P1 Telemetry Fallback Guard
+        # P1P1 Telemetry Fallback Guard
         if is_p1p1_fallback:
             if len(self.pack_cards[pack_index]) >= len(pack_cards):
                 return False
 
-        # 5. Commit Data safely
-        # We ONLY set the initial_pack if it's currently empty AND we are in the first rotation of the pack.
-        # This correctly allows out-of-order pack parsing to rebuild memory safely.
+        # Commit Data safely
         if len(self.initial_pack[pack_index]) == 0 and pick <= expected_players:
             self.initial_pack[pack_index] = pack_cards
 
         self.pack_cards[pack_index] = pack_cards
 
-        # 6. Update High Watermark
+        # Update High Watermark
         is_new_high_watermark = False
         if pack > self.current_pack or (
             pack == self.current_pack and pick >= self.current_pick
@@ -619,11 +613,10 @@ class ArenaScanner:
             self.current_pack, self.current_pick = pack, pick
             is_new_high_watermark = True
 
-        # 7. Record History
+        # Record History
         self._record_pack(pack, pick, pack_cards)
         self._save_state()
 
-        # 8. Only trigger UI updates if this pack represents the latest state
         return is_new_high_watermark
 
     def _process_pick_data(
@@ -632,6 +625,26 @@ class ArenaScanner:
         """Universal handler for processing human and bot picks."""
         if not cards or not pack or not pick:
             return False
+
+        self._check_and_wipe_stale_pool(pack, pick, draft_id)
+
+        # DYNAMIC EVENT UPGRADE: If MTGA mislabels a Pick-Two draft as a standard draft,
+        # detect it based on the number of cards in the first pick payload.
+        if len(cards) >= 2 and self.draft_type not in [
+            constants.LIMITED_TYPE_DRAFT_PICK_TWO,
+            constants.LIMITED_TYPE_DRAFT_PICK_TWO_TRAD,
+            constants.LIMITED_TYPE_DRAFT_PICK_TWO_QUICK,
+        ]:
+            logger.info(f"Dynamically upgrading event to Pick-Two based on payload size: {len(cards)}")
+            if self.draft_type == constants.LIMITED_TYPE_DRAFT_TRADITIONAL:
+                self.draft_type = constants.LIMITED_TYPE_DRAFT_PICK_TWO_TRAD
+            elif self.draft_type == constants.LIMITED_TYPE_DRAFT_QUICK:
+                self.draft_type = constants.LIMITED_TYPE_DRAFT_PICK_TWO_QUICK
+            else:
+                self.draft_type = constants.LIMITED_TYPE_DRAFT_PICK_TWO
+
+        # Enforce maximum cards per pick to prevent MTGA JSON array-bloat bugs
+        cards = cards[:self.cards_per_pick]
 
         expected_players = (
             4
@@ -645,10 +658,10 @@ class ArenaScanner:
         )
         self.number_of_players = expected_players
 
-        self._check_and_wipe_stale_pool(pack, pick, draft_id)
-
-        # If this is a historical pick from a previous pack, ignore it to prevent corruption
+        # Prevent duplicate processing of historical picks when reconstructing state
         if pack < self.previous_picked_pack:
+            return False
+        if pack == self.previous_picked_pack and pick <= self.current_picked_pick:
             return False
 
         pack_index = (pick - 1) % expected_players
@@ -679,32 +692,29 @@ class ArenaScanner:
         str_draft_id = str(draft_id) if draft_id else ""
         str_current_id = str(self.current_draft_id) if self.current_draft_id else ""
 
-        if str_draft_id and str_current_id:
-            if str_draft_id == str_current_id:
-                return
-            else:
-                wipe = True
+        # 1. Draft ID Mismatch
+        if str_draft_id and str_current_id and str_draft_id != str_current_id:
+            wipe = True
         elif str_draft_id and not str_current_id:
-            if self._load_state(str_draft_id):
-                self.current_draft_id = str_draft_id
-                return
-            else:
-                # Don't wipe if we are freshly starting a draft in memory (e.g. OCR just ran)
-                if (
-                    self.current_pack > 1
-                    or self.current_pick > 1
-                    or len(self.taken_cards) > 0
-                ):
+            if not self._load_state(str_draft_id) and self.taken_cards:
+                wipe = True
+        
+        # 2. Time-Travel Protection (Always runs if we haven't decided to wipe yet)
+        if not wipe:
+            if pack < self.current_pack:
+                wipe = True
+            elif pack == self.current_pack and pick < self.current_pick:
+                # Ignore duplicate pick dumps (e.g. from app restarts). 
+                # Only wipe if the new pick is IMPOSSIBLY far behind the current state.
+                # e.g. current is P1P9, new is P1P1 -> WIPE.
+                wipe = True
+            elif pack == 1 and pick == 1 and self.taken_cards:
+                # If we see P1P1 and we already have a massive pool, we missed the end of the last draft.
+                if len(self.taken_cards) > 15 or self.current_pack > 1 or self.current_pick > 1:
                     wipe = True
-        # Fallback for old formats without draft_id
-        elif pack == 1 and pick == 1:
-            if self.current_pack > 1 or self.current_pick > 1:
-                wipe = True
-            elif len(self.taken_cards) > 0:
-                wipe = True
 
         if wipe:
-            logger.info("New Draft Start detected. Wiping stale card pool.")
+            logger.info(f"Stale Pool Wiped. Trigger: Pack {pack} Pick {pick} vs Current P{self.current_pack}P{self.current_pick}")
             self.taken_cards = []
             self.picked_cards = [[] for _ in range(self.number_of_players)]
             self.draft_history = []
@@ -713,9 +723,9 @@ class ArenaScanner:
             self.current_pick = 0
             self.previous_picked_pack = 0
             self.previous_scanned_pack = 0
+            self.current_picked_pick = 0
             self.initial_pack = [[] for _ in range(self.number_of_players)]
             self.pack_cards = [[] for _ in range(self.number_of_players)]
-            self._save_state()
 
         if str_draft_id and str_draft_id != str_current_id:
             self.current_draft_id = str_draft_id
@@ -1081,33 +1091,6 @@ class ArenaScanner:
 
             if status_callback:
                 status_callback("Processing Data...")
-
-            with self.lock:
-                pack_cards = self.set_data.get_ids_by_name(received_names)
-                if not pack_cards:
-                    if status_callback:
-                        status_callback("No Cards Found")
-                    time.sleep(1.5)
-                    return False
-
-                self._check_and_wipe_stale_pool(1, 1)
-                self.initial_pack[0] = pack_cards
-                self.pack_cards[0] = pack_cards
-                self.current_pack, self.current_pick = 1, 1
-                self.previous_scanned_pack = 1
-                self._record_pack(1, 1, pack_cards)
-                self._save_state()
-
-                if status_callback:
-                    status_callback("Success!")
-                time.sleep(0.5)
-                return True
-        except Exception as error:
-            logger.error(f"OCR Error: {error}")
-            if status_callback:
-                status_callback("OCR Failed")
-            time.sleep(1.5)
-            return False
 
             with self.lock:
                 pack_cards = self.set_data.get_ids_by_name(received_names)

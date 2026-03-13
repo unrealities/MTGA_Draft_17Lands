@@ -306,3 +306,12 @@ def is_cache_stale(filepath: str, hours: int = 24) -> bool:
         return True
     file_age_seconds = time.time() - os.path.getmtime(filepath)
     return file_age_seconds > (hours * 3600)
+
+
+def sanitize_card_name(name: str) -> str:
+    from src.constants import CARD_NAME_CORRECTIONS
+    if not name: return name
+    for bad, good in CARD_NAME_CORRECTIONS.items():
+        if bad in name:
+            name = name.replace(bad, good)
+    return name

@@ -2,6 +2,7 @@
 src/ui/windows/suggest_deck.py
 Professional Deck Builder Panel.
 Uses the Advisor Engine to suggest optimal archetypes from the pool.
+Displays Main Deck and Sideboard in separate notebook tabs.
 """
 
 import tkinter
@@ -22,14 +23,20 @@ class SuggestDeckPanel(ttk.Frame):
 
         self.suggestions: Dict[str, Any] = {}
         self.current_deck_list: List[Dict] = []
+        self.current_sb_list: List[Dict] = []
         self.current_archetype_key: str = ""
 
         self._build_ui()
 
     @property
     def table(self) -> ttk.Treeview:
-        """Dynamically retrieves the current tree widget from the manager."""
+        """Dynamically retrieves the current Main Deck tree widget from the manager."""
         return self.table_manager.tree if hasattr(self, "table_manager") else None
+
+    @property
+    def sb_table(self) -> ttk.Treeview:
+        """Dynamically retrieves the current Sideboard tree widget from the manager."""
+        return self.sb_manager.tree if hasattr(self, "sb_manager") else None
 
     def refresh(self):
         """Triggers the archetype building algorithm and refreshes the view."""
@@ -63,16 +70,42 @@ class SuggestDeckPanel(ttk.Frame):
         )
         self.btn_copy.pack(side="right", padx=5)
 
+        # Replaced PanedWindow with a Notebook to give the tables maximum vertical space
+        self.notebook = ttk.Notebook(self)
+        self.notebook.pack(fill="both", expand=True)
+
+        # Main Deck Tab
+        self.deck_frame = ttk.Frame(self.notebook, padding=2)
+        self.notebook.add(self.deck_frame, text=" MAIN DECK (0) ")
+
         cols = ["name", "count", "cmc", "types", "colors", "gihwr"]
         self.table_manager = DynamicTreeviewManager(
-            self,
+            self.deck_frame,
             view_id="deck_builder",
             configuration=self.configuration,
             on_update_callback=self.refresh,
             static_columns=cols,
         )
         self.table_manager.pack(fill="both", expand=True)
-        self.table.bind("<<TreeviewSelect>>", self._on_selection)
+        self.table.bind(
+            "<<TreeviewSelect>>", lambda e: self._on_selection(e, is_sb=False)
+        )
+
+        # Sideboard Tab
+        self.sb_frame = ttk.Frame(self.notebook, padding=2)
+        self.notebook.add(self.sb_frame, text=" SIDEBOARD ")
+
+        self.sb_manager = DynamicTreeviewManager(
+            self.sb_frame,
+            view_id="deck_builder",
+            configuration=self.configuration,
+            on_update_callback=self.refresh,
+            static_columns=cols,
+        )
+        self.sb_manager.pack(fill="both", expand=True)
+        self.sb_table.bind(
+            "<<TreeviewSelect>>", lambda e: self._on_selection(e, is_sb=True)
+        )
 
     def _on_theme_change(self, event=None):
         pass
@@ -154,11 +187,15 @@ class SuggestDeckPanel(ttk.Frame):
             self._render_deck(label)
 
     def _clear_table(self):
-        t = self.table
-        if t:
-            for item in t.get_children():
-                t.delete(item)
+        if self.table:
+            for item in self.table.get_children():
+                self.table.delete(item)
+        if self.sb_table:
+            for item in self.sb_table.get_children():
+                self.sb_table.delete(item)
         self.current_deck_list = []
+        self.current_sb_list = []
+        self.notebook.tab(self.deck_frame, text=" MAIN DECK (0) ")
 
     def _render_deck(self, label: str):
         self._clear_table()
@@ -166,88 +203,96 @@ class SuggestDeckPanel(ttk.Frame):
         if not data:
             return
 
-        # Extract the archetype key (e.g., "UB" from "UB Consistent...")
-        # The key is usually the first part of the label or stored in data['colors'] list
-        # We construct a string key from the color list
         deck_colors = data.get("colors", [])
         self.current_archetype_key = (
             "".join(sorted(deck_colors)) if deck_colors else "All Decks"
         )
-
-        # If the constructed key is empty, fallback to All Decks
         if not self.current_archetype_key:
             self.current_archetype_key = "All Decks"
 
         self.current_deck_list = data.get("deck_cards", [])
-        # Sort deck by CMC -> Name
-        self.current_deck_list.sort(
-            key=lambda x: (
+        self.current_sb_list = data.get("sideboard_cards", [])
+
+        # Sort logically
+        def card_sort_key(x):
+            return (
                 x.get(constants.DATA_FIELD_CMC, 0),
                 x.get(constants.DATA_FIELD_NAME, ""),
             )
-        )
+
+        self.current_deck_list.sort(key=card_sort_key)
+        self.current_sb_list.sort(key=card_sort_key)
 
         from src.card_logic import row_color_tag
 
-        for idx, card in enumerate(self.current_deck_list):
-            name = card.get(constants.DATA_FIELD_NAME, "Unknown")
-            count = card.get(constants.DATA_FIELD_COUNT, 1)
-            cmc = card.get(constants.DATA_FIELD_CMC, 0)
-            types = " ".join(card.get(constants.DATA_FIELD_TYPES, []))
-            card_colors = "".join(card.get(constants.DATA_FIELD_COLORS, []))
-            stats = card.get("deck_colors", {})
+        # Update the Main Deck tab title with the dynamic count
+        total_main_cards = sum(
+            c.get(constants.DATA_FIELD_COUNT, 1) for c in self.current_deck_list
+        )
+        self.notebook.tab(self.deck_frame, text=f" MAIN DECK ({total_main_cards}) ")
 
-            # Check if we have data for the specific pair (e.g. "UB")
-            # If not, check if we have data for "All Decks"
-            arch_stats = stats.get(self.current_archetype_key, {})
-            if not arch_stats.get("gihwr"):
-                arch_stats = stats.get("All Decks", {})
+        def populate_tree(tree, source_list):
+            if not tree:
+                return
+            for idx, card in enumerate(source_list):
+                name = card.get(constants.DATA_FIELD_NAME, "Unknown")
+                count = card.get(constants.DATA_FIELD_COUNT, 1)
+                cmc = card.get(constants.DATA_FIELD_CMC, 0)
+                types = " ".join(card.get(constants.DATA_FIELD_TYPES, []))
+                card_colors = "".join(card.get(constants.DATA_FIELD_COLORS, []))
+                stats = card.get("deck_colors", {})
 
-            gihwr_val = arch_stats.get("gihwr", 0.0)
-            gihwr_str = f"{gihwr_val:.1f}%" if gihwr_val > 0 else "-"
+                arch_stats = stats.get(self.current_archetype_key, {})
+                if not arch_stats.get("gihwr"):
+                    arch_stats = stats.get("All Decks", {})
 
-            tag = "bw_odd" if idx % 2 == 0 else "bw_even"
-            if self.configuration.settings.card_colors_enabled:
-                tag = row_color_tag(card.get(constants.DATA_FIELD_MANA_COST, ""))
+                gihwr_val = arch_stats.get("gihwr", 0.0)
+                gihwr_str = f"{gihwr_val:.1f}%" if gihwr_val > 0 else "-"
 
-            if self.table:
-                self.table.insert(
+                tag = "bw_odd" if idx % 2 == 0 else "bw_even"
+                if self.configuration.settings.card_colors_enabled:
+                    tag = row_color_tag(card.get(constants.DATA_FIELD_MANA_COST, ""))
+
+                tree.insert(
                     "",
                     "end",
                     iid=idx,
                     values=(name, count, cmc, types, card_colors, gihwr_str),
                     tags=(tag,),
                 )
+            if hasattr(tree, "reapply_sort"):
+                tree.reapply_sort()
 
-        if self.table and hasattr(self.table, "reapply_sort"):
-            self.table.reapply_sort()
+        populate_tree(self.table, self.current_deck_list)
+        populate_tree(self.sb_table, self.current_sb_list)
 
     def _copy_to_clipboard(self):
         selection = self.var_archetype.get()
         if selection in self.suggestions:
             deck_data = self.suggestions[selection]
             export_text = copy_deck(
-                deck_data.get("deck_cards", []), deck_data.get("sideboard_cards")
+                deck_data.get("deck_cards", []), deck_data.get("sideboard_cards", [])
             )
             self.clipboard_clear()
             self.clipboard_append(export_text)
 
-            # Visual Feedback
             self.btn_copy.config(text="Copied! ✔", bootstyle="success")
             self.after(
                 2000,
                 lambda: self.btn_copy.config(text="Copy Deck", bootstyle="primary"),
             )
 
-    def _on_selection(self, event):
-        selection = self.table.selection()
+    def _on_selection(self, event, is_sb=False):
+        tree = self.sb_table if is_sb else self.table
+        selection = tree.selection()
         if not selection:
             return
         idx = int(selection[0])
-        if idx < len(self.current_deck_list):
-            card = self.current_deck_list[idx]
-            CardToolTip(
-                self.table,
+        source_list = self.current_sb_list if is_sb else self.current_deck_list
+        if idx < len(source_list):
+            card = source_list[idx]
+            CardToolTip.create(
+                tree,
                 card,
                 self.configuration.features.images_enabled,
                 constants.UI_SIZE_DICT.get(self.configuration.settings.ui_size, 1.0),
