@@ -322,6 +322,7 @@ class DashboardFrame(ttk.Frame):
         # The Horizontal Slider replacing the rigid grid layout
         self.h_splitter = ttk.PanedWindow(self.content_frame, orient=tkinter.HORIZONTAL)
         self.h_splitter.grid(row=0, column=0, sticky="nsew")
+        self.h_splitter.bind("<ButtonRelease-1>", self._on_sash_drag_end)
 
         # --- LEFT: Tables ---
         self.f_left = ttk.Frame(self.h_splitter)
@@ -503,6 +504,9 @@ class DashboardFrame(ttk.Frame):
             and self._missing_count == 0
         )
 
+        # Capture visibility BEFORE grid_remove() so was_hidden is accurate
+        was_content_hidden = not self.content_frame.winfo_viewable()
+
         self.content_frame.grid_remove()
         self.waiting_frame.grid_remove()
         self.no_data_frame.grid_remove()
@@ -522,10 +526,9 @@ class DashboardFrame(ttk.Frame):
                 )
             self.recovery_frame.grid(row=0, column=0, sticky="nsew")
         elif has_draft_data:
-            was_hidden = not self.content_frame.winfo_viewable()
             self.content_frame.grid(row=0, column=0, sticky="nsew")
 
-            if was_hidden and self.sidebar_visible:
+            if was_content_hidden and self.sidebar_visible:
 
                 def fix_sash():
                     try:
@@ -760,6 +763,13 @@ class DashboardFrame(ttk.Frame):
     def update_recommendations(self, recs):
         if hasattr(self, "advisor_panel"):
             self.advisor_panel.update_recommendations(recs)
+
+    def _on_sash_drag_end(self, event):
+        """Save the sash position immediately after the user drags it."""
+        try:
+            self.configuration.settings.dashboard_sash = self.h_splitter.sashpos(0)
+        except Exception:
+            pass
 
     def _toggle_sidebar(self):
         """Dynamically grid or hide the sidebar via the rail button."""
