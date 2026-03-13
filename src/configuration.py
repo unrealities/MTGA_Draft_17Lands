@@ -78,6 +78,7 @@ class Settings(BaseModel):
     )
 
     table_sort_states: Dict[str, dict] = Field(default_factory=dict)
+    column_display_orders: Dict[str, List[str]] = Field(default_factory=dict)
     deck_filter: str = constants.DECK_FILTER_DEFAULT
     filter_format: str = constants.DECK_FILTER_FORMAT_COLORS
     result_format: str = constants.RESULT_FORMAT_WIN_RATE
