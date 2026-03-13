@@ -679,6 +679,8 @@ class DynamicTreeviewManager(ttk.Frame):
     def rebuild(self, trigger_callback=True):
         if self.tree:
             self.tree.destroy()
+        if hasattr(self, "_scrollbar") and self._scrollbar:
+            self._scrollbar.destroy()
 
         self.active_fields = (
             list(self.static_columns)
@@ -699,7 +701,13 @@ class DynamicTreeviewManager(ttk.Frame):
             **self.kwargs,
         )
         self.tree.active_fields = self.active_fields
-        self.tree.pack(fill="both", expand=True)
+
+        self._scrollbar = ttk.Scrollbar(
+            self, orient="vertical", command=self.tree.yview
+        )
+        self.tree.configure(yscrollcommand=self._scrollbar.set)
+        self._scrollbar.pack(side="right", fill="y")
+        self.tree.pack(side="left", fill="both", expand=True)
 
         if not self.static_columns:
             self.tree.bind("<Button-3>", self._show_context_menu)
