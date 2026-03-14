@@ -9,7 +9,7 @@ from src import constants
 from src.configuration import write_configuration
 from src.file_extractor import FileExtractor
 from src.utils import retrieve_local_set_list
-from src.ui.components import DynamicTreeviewManager
+from src.ui.components import DynamicTreeviewManager, AutoScrollbar
 
 
 @dataclass
@@ -38,10 +38,14 @@ class DownloadWindow(ttk.Frame):
         self._update_table()
 
     def _build_ui(self):
+        self.rowconfigure(0, weight=1)
+        self.columnconfigure(0, weight=1)
+
         canvas = tkinter.Canvas(self, highlightthickness=0)
-        scrollbar = ttk.Scrollbar(self, orient="vertical", command=canvas.yview)
-        scrollbar.pack(side="right", fill="y")
-        canvas.pack(side="left", fill="both", expand=True)
+        scrollbar = AutoScrollbar(self, orient="vertical", command=canvas.yview)
+
+        canvas.grid(row=0, column=0, sticky="nsew")
+        scrollbar.grid(row=0, column=1, sticky="ns")
         canvas.configure(yscrollcommand=scrollbar.set)
 
         container = ttk.Frame(canvas, padding=10)
@@ -55,10 +59,11 @@ class DownloadWindow(ttk.Frame):
 
         container.bind("<Configure>", _on_content_resize)
         canvas.bind("<Configure>", _on_canvas_resize)
-        canvas.bind(
-            "<MouseWheel>",
-            lambda e: canvas.yview_scroll(-1 * (e.delta // 120), "units"),
-        )
+
+        from src.utils import bind_scroll
+
+        bind_scroll(canvas, canvas.yview_scroll)
+        bind_scroll(container, canvas.yview_scroll)
 
         self.table_manager = DynamicTreeviewManager(
             container,

@@ -36,6 +36,23 @@ def identify_safe_coordinates(root, window_width, window_height, offset_x, offse
         return offset_x, offset_y
 
 
+class AutoScrollbar(ttk.Scrollbar):
+    """A scrollbar that hides itself if it's not needed. Only works within the grid geometry manager."""
+
+    def set(self, lo, hi):
+        if float(lo) <= 0.0 and float(hi) >= 1.0:
+            self.grid_remove()
+        else:
+            self.grid()
+        super().set(lo, hi)
+
+    def pack(self, **kw):
+        raise tkinter.TclError("AutoScrollbar cannot use pack. Use grid instead.")
+
+    def place(self, **kw):
+        raise tkinter.TclError("AutoScrollbar cannot use place. Use grid instead.")
+
+
 class CollapsibleFrame(ttk.Frame):
     def __init__(
         self,
@@ -479,10 +496,81 @@ class ModernTreeview(ttk.Treeview):
         self._drag_col = None
         self._drag_start_x = 0
         self._dragging = False
-
         self._setup_headers(columns)
         self._setup_row_colors()
         self._setup_column_drag()
+
+        self._pulse_step = 0
+        self._last_picked_items = set()
+        self._animate_picked_row()
+
+    def _animate_picked_row(self):
+        if not self.winfo_exists():
+            return
+
+        current_picked = set(
+            item
+            for item in self.get_children("")
+            if "picked" in self.item(item, "tags")
+        )
+
+        # Reset animation if new items are picked (e.g. data refreshed)
+        if current_picked != self._last_picked_items:
+            self._pulse_step = 0
+            self._last_picked_items = current_picked
+
+        if current_picked:
+            # Sequence for ~1 second (15 frames @ 65ms)
+            bg_colors = [
+                "#14532d",
+                "#166534",
+                "#15803d",
+                "#16a34a",
+                "#22c55e",
+                "#4ade80",
+                "#22c55e",
+                "#16a34a",
+                "#15803d",
+                "#166534",
+                "#15803d",
+                "#15803d",
+                "#15803d",
+                "#15803d",
+                "#15803d",
+            ]
+            fg_colors = [
+                "#f8fafc",
+                "#f8fafc",
+                "#f8fafc",
+                "#f8fafc",
+                "#0f172a",
+                "#0f172a",
+                "#0f172a",
+                "#f8fafc",
+                "#f8fafc",
+                "#f8fafc",
+                "#ffffff",
+                "#ffffff",
+                "#ffffff",
+                "#ffffff",
+                "#ffffff",
+            ]
+
+            if self._pulse_step < len(bg_colors):
+                idx = self._pulse_step
+                self.tag_configure(
+                    "picked", background=bg_colors[idx], foreground=fg_colors[idx]
+                )
+                self._pulse_step += 1
+            else:
+                # Settle on final solid color after animation ends
+                self.tag_configure("picked", background="#15803d", foreground="#ffffff")
+        else:
+            self._pulse_step = 0
+            self.tag_configure("picked", background="#15803d", foreground="#ffffff")
+
+        # Loop roughly at 15 FPS
+        self.after(65, self._animate_picked_row)
 
     def _get_sort_group(self, view_id):
         """Links shared tables (e.g. Main Pack and Mini Pack) so they inherit sorting from each other."""
@@ -527,6 +615,84 @@ class ModernTreeview(ttk.Treeview):
                 anchor=tkinter.W if i == "name" else tkinter.CENTER,
             )
 
+    def _setup_column_drag(self):
+        self.bind("<Button-1>", self._on_header_press, add="+")
+        self.bind("<B1-Motion>", self._on_header_motion, add="+")
+        self.bind("<ButtonRelease-1>", self._on_header_release, add="+")
+
+    def _get_display_order(self):
+        """Returns current column display order (excluding add_btn)."""
+        dc = self["displaycolumns"]
+        if isinstance(dc, str) or (isinstance(dc, tuple) and dc and dc[0] == "#all"):
+            return [c for c in self["columns"] if c != "add_btn"]
+        return [c for c in dc if c != "add_btn"]
+
+    def _on_header_press(self, event):
+        if self.identify_region(event.x, event.y) != "heading":
+            self._drag_col = None
+            return
+        try:
+            idx = int(self.identify_column(event.x).replace("#", "")) - 1
+        except (ValueError, AttributeError):
+            self._drag_col = None
+            return
+        display_order = self._get_display_order()
+        if idx < 0 or idx >= len(display_order):
+            self._drag_col = None
+            return
+        self._drag_col = display_order[idx]
+        self._drag_start_x = event.x
+        self._dragging = False
+
+    def _on_header_motion(self, event):
+        if self._drag_col and abs(event.x - self._drag_start_x) > 8:
+            self._dragging = True
+            self.configure(cursor="fleur")
+
+    def _on_header_release(self, event):
+        self.configure(cursor="")
+        if self._drag_col is None:
+            return
+        if not self._dragging:
+            # It was a click — sort
+            col = self._drag_col
+            self._drag_col = None
+            self._handle_sort(col)
+            return
+        # It was a drag — reorder display only (do NOT touch active_fields,
+        # which must stay in self["columns"] order for correct value insertion)
+        try:
+            target_idx = int(self.identify_column(event.x).replace("#", "")) - 1
+        except (ValueError, AttributeError):
+            self._drag_col = None
+            self._dragging = False
+            return
+        display_order = self._get_display_order()
+        src_idx = (
+            display_order.index(self._drag_col)
+            if self._drag_col in display_order
+            else -1
+        )
+        if (
+            src_idx >= 0
+            and 0 <= target_idx < len(display_order)
+            and src_idx != target_idx
+        ):
+            display_order.insert(target_idx, display_order.pop(src_idx))
+            has_add_btn = "add_btn" in self["columns"]
+            self["displaycolumns"] = display_order + (
+                ["add_btn"] if has_add_btn else []
+            )
+            if self.config and self.view_id:
+                if not hasattr(self.config.settings, "column_display_orders"):
+                    self.config.settings.column_display_orders = {}
+                self.config.settings.column_display_orders[self.view_id] = display_order
+                from src.configuration import write_configuration
+
+                write_configuration(self.config)
+        self._drag_col = None
+        self._dragging = False
+
     def _setup_row_colors(self):
         # Bind theme updates so zebra striping changes seamlessly
         self.bind(
@@ -567,79 +733,6 @@ class ModernTreeview(ttk.Treeview):
                 background=b,
                 foreground=f,
             )
-
-    def _setup_column_drag(self):
-        self.bind("<Button-1>", self._on_header_press, add="+")
-        self.bind("<B1-Motion>", self._on_header_motion, add="+")
-        self.bind("<ButtonRelease-1>", self._on_header_release, add="+")
-
-    def _get_display_order(self):
-        """Returns current column display order (excluding add_btn)."""
-        dc = self["displaycolumns"]
-        if isinstance(dc, str) or (isinstance(dc, tuple) and dc and dc[0] == "#all"):
-            return [c for c in self["columns"] if c != "add_btn"]
-        return [c for c in dc if c != "add_btn"]
-
-    def _on_header_press(self, event):
-        if self.identify_region(event.x, event.y) != "heading":
-            self._drag_col = None
-            return
-        try:
-            idx = int(self.identify_column(event.x).replace("#", "")) - 1
-        except (ValueError, AttributeError):
-            self._drag_col = None
-            return
-        display_order = self._get_display_order()
-        if idx < 0 or idx >= len(display_order):
-            self._drag_col = None
-            return
-        self._drag_col = display_order[idx]
-        self._drag_start_x = event.x
-        self._dragging = False
-
-    def _on_header_motion(self, event):
-        if self._drag_col and abs(event.x - self._drag_start_x) > 8:
-            self._dragging = True
-            self.configure(cursor="fleur")
-
-    def _on_header_release(self, event):
-        self.configure(cursor="")
-        if self._drag_col is None:
-            return
-
-        if not self._dragging:
-            # It was a click — sort
-            col = self._drag_col
-            self._drag_col = None
-            self._handle_sort(col)
-            return
-
-        # It was a drag — reorder display only (do NOT touch active_fields,
-        # which must stay in self["columns"] order for correct value insertion)
-        try:
-            target_idx = int(self.identify_column(event.x).replace("#", "")) - 1
-        except (ValueError, AttributeError):
-            self._drag_col = None
-            self._dragging = False
-            return
-
-        display_order = self._get_display_order()
-        src_idx = display_order.index(self._drag_col) if self._drag_col in display_order else -1
-
-        if src_idx >= 0 and 0 <= target_idx < len(display_order) and src_idx != target_idx:
-            display_order.insert(target_idx, display_order.pop(src_idx))
-            has_add_btn = "add_btn" in self["columns"]
-            self["displaycolumns"] = display_order + (["add_btn"] if has_add_btn else [])
-
-            if self.config and self.view_id:
-                if not hasattr(self.config.settings, "column_display_orders"):
-                    self.config.settings.column_display_orders = {}
-                self.config.settings.column_display_orders[self.view_id] = display_order
-                from src.configuration import write_configuration
-                write_configuration(self.config)
-
-        self._drag_col = None
-        self._dragging = False
 
     def _handle_sort(self, column, force_reverse=None):
         from src.card_logic import field_process_sort
@@ -783,20 +876,33 @@ class DynamicTreeviewManager(ttk.Frame):
         )
         self.tree.active_fields = self.active_fields
 
-        # Restore saved display order if present
-        saved_display = getattr(self.config.settings, "column_display_orders", {}).get(self.view_id)
+        # Restore saved display order if present, while gracefully appending NEW columns
+        saved_display = getattr(self.config.settings, "column_display_orders", {}).get(
+            self.view_id
+        )
         if saved_display:
             valid = [f for f in saved_display if f in self.tree["columns"]]
-            if valid:
-                has_add_btn = "add_btn" in self.tree["columns"]
-                self.tree["displaycolumns"] = valid + (["add_btn"] if has_add_btn else [])
+            new_fields = [
+                f for f in self.tree["columns"] if f not in valid and f != "add_btn"
+            ]
 
-        self._scrollbar = ttk.Scrollbar(
+            combined_display = valid + new_fields
+            if combined_display:
+                has_add_btn = "add_btn" in self.tree["columns"]
+                self.tree["displaycolumns"] = combined_display + (
+                    ["add_btn"] if has_add_btn else []
+                )
+
+        self.rowconfigure(0, weight=1)
+        self.columnconfigure(0, weight=1)
+
+        self._scrollbar = AutoScrollbar(
             self, orient="vertical", command=self.tree.yview
         )
         self.tree.configure(yscrollcommand=self._scrollbar.set)
-        self._scrollbar.pack(side="right", fill="y")
-        self.tree.pack(side="left", fill="both", expand=True)
+
+        self.tree.grid(row=0, column=0, sticky="nsew")
+        self._scrollbar.grid(row=0, column=1, sticky="ns")
 
         if not self.static_columns:
             self.tree.bind("<Button-3>", self._show_context_menu)
@@ -816,13 +922,22 @@ class DynamicTreeviewManager(ttk.Frame):
             return
         if i >= len(self.active_fields):
             return
-        field, menu = self.active_fields[i], tkinter.Menu(self, tearoff=0)
+
+        # We must use display order to figure out which column they actually clicked on
+        display_order = self.tree._get_display_order()
+        if i >= len(display_order):
+            return
+
+        field = display_order[i]
+        menu = tkinter.Menu(self, tearoff=0)
+
         if field != "name":
             menu.add_command(
                 label=f"Remove '{field.upper()}'",
-                command=lambda x=i: self._remove_column(x),
+                command=lambda f=field: self._remove_column_by_name(f),
             )
             menu.add_separator()
+
         am = tkinter.Menu(menu, tearoff=0)
         menu.add_cascade(label="Add Column", menu=am)
         from src.constants import COLUMN_FIELD_LABELS
@@ -891,13 +1006,18 @@ class DynamicTreeviewManager(ttk.Frame):
             pass
         self._persist()
 
-    def _remove_column(self, index):
-        if len(self.active_fields) > 1:
-            self.active_fields.pop(index)
+    def _remove_column_by_name(self, field):
+        if len(self.active_fields) > 1 and field in self.active_fields:
+            self.active_fields.remove(field)
             self._persist()
 
     def _reset_defaults(self):
         self.active_fields = ["name", "value", "gihwr"]
+
+        if hasattr(self.config.settings, "column_display_orders"):
+            if self.view_id in self.config.settings.column_display_orders:
+                del self.config.settings.column_display_orders[self.view_id]
+
         self._persist()
 
     def _persist(self):
@@ -1167,14 +1287,19 @@ class TypePieChart(tb.Frame):
 class ScrolledFrame(tb.Frame):
     def __init__(self, parent, **kwargs):
         super().__init__(parent, **kwargs)
-        self.scrollbar = tb.Scrollbar(
+        self.rowconfigure(0, weight=1)
+        self.columnconfigure(0, weight=1)
+
+        self.scrollbar = AutoScrollbar(
             self, orient="horizontal", bootstyle="secondary-round"
         )
-        self.scrollbar.pack(side="bottom", fill="x")
         self.canvas = tb.Canvas(self, bg=Theme.BG_PRIMARY, highlightthickness=0)
-        self.canvas.pack(side="top", fill="both", expand=True)
+        self.canvas.grid(row=0, column=0, sticky="nsew")
+        self.scrollbar.grid(row=1, column=0, sticky="ew")
+
         self.canvas.configure(xscrollcommand=self.scrollbar.set)
         self.scrollbar.configure(command=self.canvas.xview)
+
         self.scrollable_frame = tb.Frame(self.canvas)
         self.window_id = self.canvas.create_window(
             (0, 0), window=self.scrollable_frame, anchor="nw"
@@ -1226,7 +1351,7 @@ class CardPile(tb.Frame):
 
         tx = f"{cn}x {nm}" if cn > 1 else nm
 
-        # Left color strip accent
+        # Left color strip accent (width 6 is half the old massive block size)
         cv = tkinter.Canvas(
             ch, width=6, height=24, bg=bg_col, highlightthickness=0, cursor="hand2"
         )
@@ -1236,7 +1361,7 @@ class CardPile(tb.Frame):
         color_map = {
             "W": "#f8f6f1",
             "U": "#3498db",
-            "B": "#8b8b93",
+            "B": "#8b8b93",  # Lightened gray so black mana clearly shows up against dark background
             "R": "#e74c3c",
             "G": "#00bc8c",
             "NC": "#8e9eae",
@@ -1276,6 +1401,7 @@ class CardPile(tb.Frame):
                 ),
             )
 
+        # Require an explicit click to view the tooltip to stop erratic hovering/flashing
         ch.bind("<Button-1>", _trigger_tooltip)
         cv.bind("<Button-1>", _trigger_tooltip)
         lb.bind("<Button-1>", _trigger_tooltip)

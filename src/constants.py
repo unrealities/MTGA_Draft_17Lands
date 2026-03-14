@@ -843,10 +843,10 @@ CARD_RATINGS_ATTEMPT_MAX = 5
 # Substrings to search for in card oracle text (Case Insensitive)
 FIXING_KEYWORDS = [
     # Direct Production (Any Color)
-    "add one mana of any color",
-    "add one mana of any type",
-    "add x mana of any one color",
-    "add one mana of the chosen color",
+    "mana of any color",
+    "mana of any one color",
+    "mana of any type",
+    "mana of the chosen color",
     # "Choose a color" usually implies fixing (e.g. Thriving lands, Unknown Shores)
     "choose a color",
     # Fetching / Tutoring

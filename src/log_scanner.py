@@ -559,7 +559,7 @@ class ArenaScanner:
         if not pack or not pick or not pack_cards:
             return False
 
-        self._check_and_wipe_stale_pool(pack, pick, draft_id)
+        self._check_and_wipe_stale_pool(pack, pick, pack_cards, draft_id)
 
         expected_players = (
             4
@@ -626,7 +626,7 @@ class ArenaScanner:
         if not cards or not pack or not pick:
             return False
 
-        self._check_and_wipe_stale_pool(pack, pick, draft_id)
+        self._check_and_wipe_stale_pool(pack, pick, cards, draft_id)
 
         # DYNAMIC EVENT UPGRADE: If MTGA mislabels a Pick-Two draft as a standard draft,
         # detect it based on the number of cards in the first pick payload.
@@ -635,7 +635,9 @@ class ArenaScanner:
             constants.LIMITED_TYPE_DRAFT_PICK_TWO_TRAD,
             constants.LIMITED_TYPE_DRAFT_PICK_TWO_QUICK,
         ]:
-            logger.info(f"Dynamically upgrading event to Pick-Two based on payload size: {len(cards)}")
+            logger.info(
+                f"Dynamically upgrading event to Pick-Two based on payload size: {len(cards)}"
+            )
             if self.draft_type == constants.LIMITED_TYPE_DRAFT_TRADITIONAL:
                 self.draft_type = constants.LIMITED_TYPE_DRAFT_PICK_TWO_TRAD
             elif self.draft_type == constants.LIMITED_TYPE_DRAFT_QUICK:
@@ -644,7 +646,7 @@ class ArenaScanner:
                 self.draft_type = constants.LIMITED_TYPE_DRAFT_PICK_TWO
 
         # Enforce maximum cards per pick to prevent MTGA JSON array-bloat bugs
-        cards = cards[:self.cards_per_pick]
+        cards = cards[: self.cards_per_pick]
 
         expected_players = (
             4
@@ -686,35 +688,57 @@ class ArenaScanner:
         self._save_state()
         return True
 
-    def _check_and_wipe_stale_pool(self, pack, pick, draft_id=None):
+    def _check_and_wipe_stale_pool(self, pack, pick, current_cards, draft_id=None):
         wipe = False
-
         str_draft_id = str(draft_id) if draft_id else ""
         str_current_id = str(self.current_draft_id) if self.current_draft_id else ""
 
-        # 1. Draft ID Mismatch
-        if str_draft_id and str_current_id and str_draft_id != str_current_id:
-            wipe = True
+        # 1. Draft ID Exact Match Protection
+        if str_draft_id and str_current_id:
+            if str_draft_id != str_current_id:
+                wipe = True
+            else:
+                return  # Exact match! We are definitely re-reading history. Do not wipe!
         elif str_draft_id and not str_current_id:
             if not self._load_state(str_draft_id) and self.taken_cards:
                 wipe = True
-        
-        # 2. Time-Travel Protection (Always runs if we haven't decided to wipe yet)
+
+        # 2. Time-Travel Protection (When Draft ID is missing or new)
         if not wipe:
-            if pack < self.current_pack:
-                wipe = True
-            elif pack == self.current_pack and pick < self.current_pick:
-                # Ignore duplicate pick dumps (e.g. from app restarts). 
-                # Only wipe if the new pick is IMPOSSIBLY far behind the current state.
-                # e.g. current is P1P9, new is P1P1 -> WIPE.
-                wipe = True
+            if pack < self.current_pack or (
+                pack == self.current_pack and pick < self.current_pick
+            ):
+                # We are seeing an older pack/pick.
+                # Is it historical catch-up (app restart), or did the user start a new draft?
+                is_historical = False
+                if not current_cards:
+                    is_historical = True
+                elif self.draft_history:
+                    # Find the history entry for this pack/pick
+                    for entry in self.draft_history:
+                        if entry["Pack"] == pack and entry["Pick"] == pick:
+                            # If ANY card overlaps, we confidently assume it's history.
+                            # (Subset check in case MTGA truncates the array differently on restart)
+                            if any(c in entry["Cards"] for c in current_cards):
+                                is_historical = True
+                            break
+
+                if not is_historical:
+                    wipe = True
+
             elif pack == 1 and pick == 1 and self.taken_cards:
                 # If we see P1P1 and we already have a massive pool, we missed the end of the last draft.
-                if len(self.taken_cards) > 15 or self.current_pack > 1 or self.current_pick > 1:
+                if (
+                    len(self.taken_cards) > 15
+                    or self.current_pack > 1
+                    or self.current_pick > 1
+                ):
                     wipe = True
 
         if wipe:
-            logger.info(f"Stale Pool Wiped. Trigger: Pack {pack} Pick {pick} vs Current P{self.current_pack}P{self.current_pick}")
+            logger.info(
+                f"Stale Pool Wiped. Trigger: Pack {pack} Pick {pick} vs Current P{self.current_pack}P{self.current_pick}"
+            )
             self.taken_cards = []
             self.picked_cards = [[] for _ in range(self.number_of_players)]
             self.draft_history = []
@@ -1100,7 +1124,7 @@ class ArenaScanner:
                     time.sleep(1.5)
                     return False
 
-                self._check_and_wipe_stale_pool(1, 1)
+                self._check_and_wipe_stale_pool(1, 1, pack_cards)
                 self.initial_pack[0] = pack_cards
                 self.pack_cards[0] = pack_cards
                 self.current_pack, self.current_pick = 1, 1

@@ -198,16 +198,6 @@ def detect_string(search_line: str, search_strings: List[str]) -> int:
 def open_file(file_path: str):
     """
     Open a file in its default application based on the operating system.
-
-    Parameters:
-        file_path (str): The path to the file to be opened.
-
-    Behavior:
-        - On Windows: Uses os.startfile() to open the file with the default application.
-        - On macOS: Uses the 'open' command via subprocess to open the file.
-        - On Linux/Unix: Uses the 'xdg-open' command via subprocess to open the file.
-
-    This function ensures cross-platform compatibility for opening files.
     """
     if platform.system() == "Windows":
         os.startfile(file_path)
@@ -315,3 +305,19 @@ def sanitize_card_name(name: str) -> str:
         if bad in name:
             name = name.replace(bad, good)
     return name
+
+
+def bind_scroll(widget, scroll_command):
+    """
+    Applies cross-platform mouse wheel bindings to a Tkinter widget.
+    Smoothly handles OS-specific Delta calculation quirks.
+    """
+    import sys
+    if sys.platform == "darwin":
+        widget.bind("<MouseWheel>", lambda e: scroll_command(-1 * e.delta, "units"), add="+")
+    elif sys.platform == "win32":
+        widget.bind("<MouseWheel>", lambda e: scroll_command(-1 * (int(e.delta) // 120), "units"), add="+")
+    else: 
+        # Linux / X11
+        widget.bind("<Button-4>", lambda e: scroll_command(-1, "units"), add="+")
+        widget.bind("<Button-5>", lambda e: scroll_command(1, "units"), add="+")

@@ -109,7 +109,7 @@ def test_dynamic_mana_base_math():
         {"mana_cost": "{G}"} for _ in range(2)
     ]
 
-    lands = calculate_dynamic_mana_base(spells, ["R", "G"], forced_count=17)
+    lands = calculate_dynamic_mana_base(spells, [], ["R", "G"], forced_count=17)
 
     # Count the generated basic lands
     forests = sum(1 for c in lands if c["name"] == "Forest")
@@ -118,6 +118,42 @@ def test_dynamic_mana_base_math():
     assert len(lands) == 17
     assert forests >= 3, "Light splash should have a hard floor of 3 sources"
     assert mountains >= 6, "Primary color should have a hard floor of 6 sources"
+
+
+def test_hybrid_mana_does_not_force_unneeded_lands():
+    spells = [{"mana_cost": "{U}"} for _ in range(15)] + [
+        {"mana_cost": "{W/U}"} for _ in range(2)
+    ]
+    lands = calculate_dynamic_mana_base(spells, [], ["U", "W"], forced_count=17)
+
+    plains = sum(1 for c in lands if c["name"] == "Plains")
+    islands = sum(1 for c in lands if c["name"] == "Island")
+
+    assert plains == 0
+    assert islands == 17
+
+
+def test_proportional_mana_base_fixes_starvation():
+    """Verify that a 3-color pool distributes lands mathematically fairly and enforces safety floors."""
+    # 17 lands to distribute among 3 colors. U has 8 pips, B has 3 pips, G has 7 pips. Total 18 pips.
+    # Proportions: U: ~7.5->8, B: ~2.8->3, G: ~6.6->7. Total = 18. Diff = -1.
+    # B drops to 2 to fix diff, but safety floor forces it to steal 1 from U to get back to 3.
+    # Final expected: U: 7, B: 3, G: 7.
+    spells = (
+        [{"mana_cost": "{U}"} for _ in range(8)]
+        + [{"mana_cost": "{B}"} for _ in range(3)]
+        + [{"mana_cost": "{G}"} for _ in range(7)]
+    )
+
+    lands = calculate_dynamic_mana_base(spells, [], ["U", "B", "G"], forced_count=17)
+
+    islands = sum(1 for c in lands if c["name"] == "Island")
+    swamps = sum(1 for c in lands if c["name"] == "Swamp")
+    forests = sum(1 for c in lands if c["name"] == "Forest")
+
+    assert islands == 7
+    assert swamps == 3
+    assert forests == 7
 
 
 def test_mana_source_analyzer():

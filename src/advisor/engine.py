@@ -8,6 +8,7 @@ import statistics
 import logging
 import math
 import numpy as np
+import re
 from typing import List, Dict, Any, Tuple
 from src.advisor.schema import Recommendation
 from src import constants
@@ -371,14 +372,30 @@ class DraftAdvisor:
         self, card: Dict, pack: int, pick: int, z_score: float
     ) -> Tuple[float, str]:
         mana_cost = card.get("mana_cost", "")
-        if not mana_cost:
-            return 1.0, ""
         card_colors = card.get("colors", [])
         top_2_lane = self.main_colors[:2]
-        is_on_lane = all(c in top_2_lane for c in card_colors) if card_colors else True
-        off_color_pips = sum(
-            1 for char in mana_cost if char in "WUBRG" and char not in top_2_lane
-        )
+
+        # Parse pip requirements specifically to support Hybrid mana cleanly
+        if mana_cost:
+            off_color_pips = 0
+            is_on_lane = True
+            pips = re.findall(r"\{(.*?)\}", mana_cost)
+            for pip in pips:
+                options = [c for c in pip.split("/") if c in "WUBRG"]
+                if not options:
+                    continue
+                # If ANY of the hybrid options are in our top 2 lane, this pip is totally free to cast!
+                if any(opt in top_2_lane for opt in options):
+                    continue
+                else:
+                    off_color_pips += 1
+                    is_on_lane = False
+        else:
+            # Fallback for lands / pip-less cards
+            is_on_lane = (
+                all(c in top_2_lane for c in card_colors) if card_colors else True
+            )
+            off_color_pips = 0 if is_on_lane else 1
 
         if pack == 1:
             if is_on_lane:
@@ -386,7 +403,7 @@ class DraftAdvisor:
             pressure = 1.0 - (max(0, ((pack - 1) * 15 + (pick - 1)) - 7) * 0.05)
             return (
                 (max(0.2, pressure - 0.2), "Off-Color Gold")
-                if len(card_colors) > 1
+                if len(card_colors) > 1 and off_color_pips > 0
                 else (max(0.4, pressure), "Off-Color")
             )
 
