@@ -134,11 +134,13 @@ def test_hybrid_mana_does_not_force_unneeded_lands():
 
 
 def test_proportional_mana_base_fixes_starvation():
-    """Verify that a 3-color pool distributes lands mathematically fairly and enforces safety floors."""
-    # 17 lands to distribute among 3 colors. U has 8 pips, B has 3 pips, G has 7 pips. Total 18 pips.
-    # Proportions: U: ~7.5->8, B: ~2.8->3, G: ~6.6->7. Total = 18. Diff = -1.
-    # B drops to 2 to fix diff, but safety floor forces it to steal 1 from U to get back to 3.
-    # Final expected: U: 7, B: 3, G: 7.
+    """Verify that a 3-color pool distributes lands using Frank Karsten targets and caps splash basics."""
+    # 17 lands to distribute among 3 colors. U has 8 pips, B has 3 pips, G has 7 pips.
+    # Core colors (U, G) target 7 sources each based on pip counts.
+    # Splash color (B) targets 4 sources but is strictly capped at 2 basics to prevent starving core colors.
+    # Base allocation: U: 7, G: 7, B: 2. Total = 16.
+    # Remaining 1 land safely goes to the top core color (U).
+    # Final expected: U: 8, B: 2, G: 7.
     spells = (
         [{"mana_cost": "{U}"} for _ in range(8)]
         + [{"mana_cost": "{B}"} for _ in range(3)]
@@ -151,8 +153,8 @@ def test_proportional_mana_base_fixes_starvation():
     swamps = sum(1 for c in lands if c["name"] == "Swamp")
     forests = sum(1 for c in lands if c["name"] == "Forest")
 
-    assert islands == 7
-    assert swamps == 3
+    assert islands == 8
+    assert swamps == 2
     assert forests == 7
 
 

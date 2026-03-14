@@ -1,8 +1,11 @@
 ===================== RELEASE NOTES 4.08 =====================
-* unrealities: [Feature] Added a "Sample Hand" tab to the Deck Builder that draws 7 cards, dynamically downloads their full artwork, and displays them in an interactive, vertically-fanned stack.
+* unrealities: [Major Feature] Added a 10,000-game Monte Carlo Simulation engine to the Deck Builder. It calculates advanced hypergeometrics (Curve Out probability, Mana/Color Screw rates, Removal draw rates) utilizing a Pro-Level London Mulligan heuristic.
+* unrealities: [Feature] Added an AI Advisor Summary to the simulation tab. It translates raw simulation percentages into actionable advice and actively scans your sideboard to suggest specific 1-for-1 card swaps to fix curve or consistency issues.
+* unrealities: [Feature] Added an interactive "Sample Hand" generator that dynamically downloads full artwork and displays your opening hand in a vertically-fanned stack. It automatically draws a new hand when evaluating a deck and is fully scrollable for smaller displays.
 * unrealities: [Feature] Overhauled the Frank Karsten Mana Base Engine. It now accurately detects universal fixers (including tokens and land searchers), intelligently resolves hybrid mana toward your core colors, and sets strict limits on splash basics to prevent starving your primary colors.
 * unrealities: [Feature] Added an "Auto-Switch Deck Filter to Best Colors" toggle in Preferences to explicitly control automatic lane tracking.
-* unrealities: [Feature] Overhauled the Deck Builder tab to explicitly generate and display a separate "Sideboard" table directly beneath your generated main deck.
+* unrealities: [Feature] Overhauled the Deck Builder tab to explicitly generate and display a separate "Sideboard" tab.
+* unrealities: [UX/UI] Added a color-coded grading system (🟢 Great, 🟡 Fair, 🔴 Poor) to the simulation metrics to help instantly evaluate if a deck is statistically sound.
 * unrealities: [UX/UI] Re-designed the visual indicator for picked cards. The Live Pack table now pulses a smooth green gradient animation for 1 second upon picking a card before settling on a solid color.
 * unrealities: [UX/UI] Made the "Stats & Analysis" tab in the Deck Builder fully scrollable to accommodate decks with massive amounts of tags and synergies.
 * unrealities: [UX/UI] Completely resolved the visual readability issues in the "Visual View" Card Pool tab. Cards are now rendered using explicitly highly-legible hex combinations instead of inheriting restrictive framework styles.
