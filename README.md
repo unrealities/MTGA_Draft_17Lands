@@ -106,7 +106,7 @@ The application is structured into a collapsible Live Dashboard and functional t
 
 - **Datasets:** Manage, download, and update 17Lands card data locally. Provides detailed download summaries, including exactly how many MTGA cards were successfully matched with 17Lands telemetry data.
 - **Card Pool:** View the cards you have drafted. Features a **"Switch to Visual View"** button to stack your cards into mana curve columns exactly like MTG Arena does.
-- **Deck Builder:** Generates multiple distinct deck variants (Midrange, Aggro, Bomb Splash, and "Good Stuff / Soup") from your drafted pool, utilizing Frank Karsten's mana base math. Allows you to copy the deck to your clipboard.
+- **Deck Builder:** Generates multiple distinct deck variants (Midrange, Aggro, Bomb Splash, and "Good Stuff / Soup") from your drafted pool and places remaining cards cleanly in a dedicated **Sideboard** table. Includes an integrated **Monte Carlo Simulator** and **AI Auto-Optimizer** that evaluates your deck's consistency and automatically swaps cards to maximize your curve-out win rate. Also features an interactive, visual **Sample Hand Generator**.
 - **Comparisons:** Search and add multiple cards to directly compare their stats side-by-side.
 - **Tier Lists:** Import and manage custom tier lists from the 17Lands API.
 

@@ -344,7 +344,7 @@ class TakenCardsPanel(ttk.Frame):
             (c for c in self.current_display_list if c.get("name") == card_name), None
         )
         if card:
-            CardToolTip(
+            CardToolTip.create(
                 self.table,
                 card,
                 self.configuration.features.images_enabled,

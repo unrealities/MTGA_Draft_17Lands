@@ -1,7 +1,6 @@
 """
 src/ui/components.py
 Atomic UI Widgets for the MTGA Draft Tool.
-Restored full parameter names for keyword argument compatibility.
 """
 
 import tkinter
@@ -35,6 +34,23 @@ def identify_safe_coordinates(root, window_width, window_height, offset_x, offse
         return location_x, location_y
     except:
         return offset_x, offset_y
+
+
+class AutoScrollbar(ttk.Scrollbar):
+    """A scrollbar that hides itself if it's not needed. Only works within the grid geometry manager."""
+
+    def set(self, lo, hi):
+        if float(lo) <= 0.0 and float(hi) >= 1.0:
+            self.grid_remove()
+        else:
+            self.grid()
+        super().set(lo, hi)
+
+    def pack(self, **kw):
+        raise tkinter.TclError("AutoScrollbar cannot use pack. Use grid instead.")
+
+    def place(self, **kw):
+        raise tkinter.TclError("AutoScrollbar cannot use place. Use grid instead.")
 
 
 class CollapsibleFrame(ttk.Frame):
@@ -176,7 +192,16 @@ class CardToolTip(tkinter.Toplevel):
     _active_tooltip = None
     _image_executor = ThreadPoolExecutor(max_workers=4)
 
+    @classmethod
+    def create(cls, parent, card, images_enabled, scale):
+        """Factory method ensures only one tooltip exists globally and avoids flickering loops."""
+        if cls._active_tooltip and cls._active_tooltip.winfo_exists():
+            cls._active_tooltip.destroy()
+            cls._active_tooltip = None
+        cls._active_tooltip = cls(parent, card, images_enabled, scale)
+
     def __init__(self, parent, card, images_enabled, scale):
+        super().__init__(parent)
         # --- 1. Basic Land Filter ---
         # Prevent tooltips from appearing for Basic Lands to reduce clutter
         card_types = card.get("types", [])
@@ -184,17 +209,10 @@ class CardToolTip(tkinter.Toplevel):
         if (
             "Land" in card_types and "Basic" in card_types
         ) or card_name in constants.BASIC_LANDS:
-            # We must initialize the Toplevel class to avoid recursion errors in Python,
-            # but we immediately hide and destroy it.
-            super().__init__(parent)
             self.withdraw()
             self.destroy()
             return
 
-        if CardToolTip._active_tooltip and CardToolTip._active_tooltip.winfo_exists():
-            CardToolTip._active_tooltip.destroy()
-        CardToolTip._active_tooltip = self
-        super().__init__(parent)
         self.wm_overrideredirect(True)
         self.attributes("-topmost", True)
         self.configure(
@@ -253,9 +271,7 @@ class CardToolTip(tkinter.Toplevel):
             img_w = int(240 * scale)
             img_h = int(335 * scale)
 
-            # Create a fixed-size container frame
             self.img_frame = tb.Frame(b, width=img_w, height=img_h)
-            # This is key: tell the frame NOT to shrink to fit its (currently empty) children
             self.img_frame.pack_propagate(False)
             self.img_frame.pack(side="left", padx=(0, 15), anchor="n")
 
@@ -362,17 +378,20 @@ class CardToolTip(tkinter.Toplevel):
                 wraplength=int(280 * scale),
                 justify="left",
             ).pack(anchor="w")
+
         # Anchor to the mouse position AT THE TIME OF CREATION
         self._mouse_x = parent.winfo_pointerx()
         self._mouse_y = parent.winfo_pointery()
         self._reposition()
 
-        parent.bind(
-            "<Leave>",
-            lambda e: self.destroy() if self.winfo_exists() else None,
-            add="+",
-        )
-        self.bind("<Button-1>", lambda e: self.destroy())
+        # Bind closing interactions securely
+        parent.bind("<Leave>", self._close, add="+")
+        self.bind("<Button-1>", self._close)
+        self.bind("<Leave>", self._close)
+
+    def _close(self, event=None):
+        if self.winfo_exists():
+            self.destroy()
 
     def _reposition(self):
         """Calculates bounds using the static initial mouse position so the tooltip doesn't teleport."""
@@ -385,7 +404,9 @@ class CardToolTip(tkinter.Toplevel):
 
         sw = self.winfo_screenwidth()
         sh = self.winfo_screenheight()
-        offset_x, offset_y = 25, 25
+
+        # Offset aggressively to prevent cursor hovering over the tooltip immediately, causing a rapid <Leave> flicker
+        offset_x, offset_y = 35, 25
 
         if self._mouse_x + offset_x + ww > sw:
             tx = max(self._mouse_x - offset_x - ww - 10, 0)
@@ -402,7 +423,6 @@ class CardToolTip(tkinter.Toplevel):
     def _load_image_async(self, u, s):
         if "scryfall" in u:
             u = u.replace("/small/", "/large/").replace("/normal/", "/large/")
-
         self._image_executor.submit(self._fetch_and_apply_image, u, s)
 
     def _fetch_and_apply_image(self, u, s):
@@ -476,10 +496,81 @@ class ModernTreeview(ttk.Treeview):
         self._drag_col = None
         self._drag_start_x = 0
         self._dragging = False
-
         self._setup_headers(columns)
         self._setup_row_colors()
         self._setup_column_drag()
+
+        self._pulse_step = 0
+        self._last_picked_items = set()
+        self._animate_picked_row()
+
+    def _animate_picked_row(self):
+        if not self.winfo_exists():
+            return
+
+        current_picked = set(
+            item
+            for item in self.get_children("")
+            if "picked" in self.item(item, "tags")
+        )
+
+        # Reset animation if new items are picked (e.g. data refreshed)
+        if current_picked != self._last_picked_items:
+            self._pulse_step = 0
+            self._last_picked_items = current_picked
+
+        if current_picked:
+            # Sequence for ~1 second (15 frames @ 65ms)
+            bg_colors = [
+                "#14532d",
+                "#166534",
+                "#15803d",
+                "#16a34a",
+                "#22c55e",
+                "#4ade80",
+                "#22c55e",
+                "#16a34a",
+                "#15803d",
+                "#166534",
+                "#15803d",
+                "#15803d",
+                "#15803d",
+                "#15803d",
+                "#15803d",
+            ]
+            fg_colors = [
+                "#f8fafc",
+                "#f8fafc",
+                "#f8fafc",
+                "#f8fafc",
+                "#0f172a",
+                "#0f172a",
+                "#0f172a",
+                "#f8fafc",
+                "#f8fafc",
+                "#f8fafc",
+                "#ffffff",
+                "#ffffff",
+                "#ffffff",
+                "#ffffff",
+                "#ffffff",
+            ]
+
+            if self._pulse_step < len(bg_colors):
+                idx = self._pulse_step
+                self.tag_configure(
+                    "picked", background=bg_colors[idx], foreground=fg_colors[idx]
+                )
+                self._pulse_step += 1
+            else:
+                # Settle on final solid color after animation ends
+                self.tag_configure("picked", background="#15803d", foreground="#ffffff")
+        else:
+            self._pulse_step = 0
+            self.tag_configure("picked", background="#15803d", foreground="#ffffff")
+
+        # Loop roughly at 15 FPS
+        self.after(65, self._animate_picked_row)
 
     def _get_sort_group(self, view_id):
         """Links shared tables (e.g. Main Pack and Mini Pack) so they inherit sorting from each other."""
@@ -524,6 +615,84 @@ class ModernTreeview(ttk.Treeview):
                 anchor=tkinter.W if i == "name" else tkinter.CENTER,
             )
 
+    def _setup_column_drag(self):
+        self.bind("<Button-1>", self._on_header_press, add="+")
+        self.bind("<B1-Motion>", self._on_header_motion, add="+")
+        self.bind("<ButtonRelease-1>", self._on_header_release, add="+")
+
+    def _get_display_order(self):
+        """Returns current column display order (excluding add_btn)."""
+        dc = self["displaycolumns"]
+        if isinstance(dc, str) or (isinstance(dc, tuple) and dc and dc[0] == "#all"):
+            return [c for c in self["columns"] if c != "add_btn"]
+        return [c for c in dc if c != "add_btn"]
+
+    def _on_header_press(self, event):
+        if self.identify_region(event.x, event.y) != "heading":
+            self._drag_col = None
+            return
+        try:
+            idx = int(self.identify_column(event.x).replace("#", "")) - 1
+        except (ValueError, AttributeError):
+            self._drag_col = None
+            return
+        display_order = self._get_display_order()
+        if idx < 0 or idx >= len(display_order):
+            self._drag_col = None
+            return
+        self._drag_col = display_order[idx]
+        self._drag_start_x = event.x
+        self._dragging = False
+
+    def _on_header_motion(self, event):
+        if self._drag_col and abs(event.x - self._drag_start_x) > 8:
+            self._dragging = True
+            self.configure(cursor="fleur")
+
+    def _on_header_release(self, event):
+        self.configure(cursor="")
+        if self._drag_col is None:
+            return
+        if not self._dragging:
+            # It was a click — sort
+            col = self._drag_col
+            self._drag_col = None
+            self._handle_sort(col)
+            return
+        # It was a drag — reorder display only (do NOT touch active_fields,
+        # which must stay in self["columns"] order for correct value insertion)
+        try:
+            target_idx = int(self.identify_column(event.x).replace("#", "")) - 1
+        except (ValueError, AttributeError):
+            self._drag_col = None
+            self._dragging = False
+            return
+        display_order = self._get_display_order()
+        src_idx = (
+            display_order.index(self._drag_col)
+            if self._drag_col in display_order
+            else -1
+        )
+        if (
+            src_idx >= 0
+            and 0 <= target_idx < len(display_order)
+            and src_idx != target_idx
+        ):
+            display_order.insert(target_idx, display_order.pop(src_idx))
+            has_add_btn = "add_btn" in self["columns"]
+            self["displaycolumns"] = display_order + (
+                ["add_btn"] if has_add_btn else []
+            )
+            if self.config and self.view_id:
+                if not hasattr(self.config.settings, "column_display_orders"):
+                    self.config.settings.column_display_orders = {}
+                self.config.settings.column_display_orders[self.view_id] = display_order
+                from src.configuration import write_configuration
+
+                write_configuration(self.config)
+        self._drag_col = None
+        self._dragging = False
+
     def _setup_row_colors(self):
         # Bind theme updates so zebra striping changes seamlessly
         self.bind(
@@ -564,79 +733,6 @@ class ModernTreeview(ttk.Treeview):
                 background=b,
                 foreground=f,
             )
-
-    def _setup_column_drag(self):
-        self.bind("<Button-1>", self._on_header_press, add="+")
-        self.bind("<B1-Motion>", self._on_header_motion, add="+")
-        self.bind("<ButtonRelease-1>", self._on_header_release, add="+")
-
-    def _get_display_order(self):
-        """Returns current column display order (excluding add_btn)."""
-        dc = self["displaycolumns"]
-        if isinstance(dc, str) or (isinstance(dc, tuple) and dc and dc[0] == "#all"):
-            return [c for c in self["columns"] if c != "add_btn"]
-        return [c for c in dc if c != "add_btn"]
-
-    def _on_header_press(self, event):
-        if self.identify_region(event.x, event.y) != "heading":
-            self._drag_col = None
-            return
-        try:
-            idx = int(self.identify_column(event.x).replace("#", "")) - 1
-        except (ValueError, AttributeError):
-            self._drag_col = None
-            return
-        display_order = self._get_display_order()
-        if idx < 0 or idx >= len(display_order):
-            self._drag_col = None
-            return
-        self._drag_col = display_order[idx]
-        self._drag_start_x = event.x
-        self._dragging = False
-
-    def _on_header_motion(self, event):
-        if self._drag_col and abs(event.x - self._drag_start_x) > 8:
-            self._dragging = True
-            self.configure(cursor="fleur")
-
-    def _on_header_release(self, event):
-        self.configure(cursor="")
-        if self._drag_col is None:
-            return
-
-        if not self._dragging:
-            # It was a click — sort
-            col = self._drag_col
-            self._drag_col = None
-            self._handle_sort(col)
-            return
-
-        # It was a drag — reorder display only (do NOT touch active_fields,
-        # which must stay in self["columns"] order for correct value insertion)
-        try:
-            target_idx = int(self.identify_column(event.x).replace("#", "")) - 1
-        except (ValueError, AttributeError):
-            self._drag_col = None
-            self._dragging = False
-            return
-
-        display_order = self._get_display_order()
-        src_idx = display_order.index(self._drag_col) if self._drag_col in display_order else -1
-
-        if src_idx >= 0 and 0 <= target_idx < len(display_order) and src_idx != target_idx:
-            display_order.insert(target_idx, display_order.pop(src_idx))
-            has_add_btn = "add_btn" in self["columns"]
-            self["displaycolumns"] = display_order + (["add_btn"] if has_add_btn else [])
-
-            if self.config and self.view_id:
-                if not hasattr(self.config.settings, "column_display_orders"):
-                    self.config.settings.column_display_orders = {}
-                self.config.settings.column_display_orders[self.view_id] = display_order
-                from src.configuration import write_configuration
-                write_configuration(self.config)
-
-        self._drag_col = None
-        self._dragging = False
 
     def _handle_sort(self, column, force_reverse=None):
         from src.card_logic import field_process_sort
@@ -780,20 +876,33 @@ class DynamicTreeviewManager(ttk.Frame):
         )
         self.tree.active_fields = self.active_fields
 
-        # Restore saved display order if present
-        saved_display = getattr(self.config.settings, "column_display_orders", {}).get(self.view_id)
+        # Restore saved display order if present, while gracefully appending NEW columns
+        saved_display = getattr(self.config.settings, "column_display_orders", {}).get(
+            self.view_id
+        )
         if saved_display:
             valid = [f for f in saved_display if f in self.tree["columns"]]
-            if valid:
-                has_add_btn = "add_btn" in self.tree["columns"]
-                self.tree["displaycolumns"] = valid + (["add_btn"] if has_add_btn else [])
+            new_fields = [
+                f for f in self.tree["columns"] if f not in valid and f != "add_btn"
+            ]
 
-        self._scrollbar = ttk.Scrollbar(
+            combined_display = valid + new_fields
+            if combined_display:
+                has_add_btn = "add_btn" in self.tree["columns"]
+                self.tree["displaycolumns"] = combined_display + (
+                    ["add_btn"] if has_add_btn else []
+                )
+
+        self.rowconfigure(0, weight=1)
+        self.columnconfigure(0, weight=1)
+
+        self._scrollbar = AutoScrollbar(
             self, orient="vertical", command=self.tree.yview
         )
         self.tree.configure(yscrollcommand=self._scrollbar.set)
-        self._scrollbar.pack(side="right", fill="y")
-        self.tree.pack(side="left", fill="both", expand=True)
+
+        self.tree.grid(row=0, column=0, sticky="nsew")
+        self._scrollbar.grid(row=0, column=1, sticky="ns")
 
         if not self.static_columns:
             self.tree.bind("<Button-3>", self._show_context_menu)
@@ -813,13 +922,22 @@ class DynamicTreeviewManager(ttk.Frame):
             return
         if i >= len(self.active_fields):
             return
-        field, menu = self.active_fields[i], tkinter.Menu(self, tearoff=0)
+
+        # We must use display order to figure out which column they actually clicked on
+        display_order = self.tree._get_display_order()
+        if i >= len(display_order):
+            return
+
+        field = display_order[i]
+        menu = tkinter.Menu(self, tearoff=0)
+
         if field != "name":
             menu.add_command(
                 label=f"Remove '{field.upper()}'",
-                command=lambda x=i: self._remove_column(x),
+                command=lambda f=field: self._remove_column_by_name(f),
             )
             menu.add_separator()
+
         am = tkinter.Menu(menu, tearoff=0)
         menu.add_cascade(label="Add Column", menu=am)
         from src.constants import COLUMN_FIELD_LABELS
@@ -888,13 +1006,18 @@ class DynamicTreeviewManager(ttk.Frame):
             pass
         self._persist()
 
-    def _remove_column(self, index):
-        if len(self.active_fields) > 1:
-            self.active_fields.pop(index)
+    def _remove_column_by_name(self, field):
+        if len(self.active_fields) > 1 and field in self.active_fields:
+            self.active_fields.remove(field)
             self._persist()
 
     def _reset_defaults(self):
         self.active_fields = ["name", "value", "gihwr"]
+
+        if hasattr(self.config.settings, "column_display_orders"):
+            if self.view_id in self.config.settings.column_display_orders:
+                del self.config.settings.column_display_orders[self.view_id]
+
         self._persist()
 
     def _persist(self):
@@ -1164,14 +1287,19 @@ class TypePieChart(tb.Frame):
 class ScrolledFrame(tb.Frame):
     def __init__(self, parent, **kwargs):
         super().__init__(parent, **kwargs)
-        self.scrollbar = tb.Scrollbar(
+        self.rowconfigure(0, weight=1)
+        self.columnconfigure(0, weight=1)
+
+        self.scrollbar = AutoScrollbar(
             self, orient="horizontal", bootstyle="secondary-round"
         )
-        self.scrollbar.pack(side="bottom", fill="x")
         self.canvas = tb.Canvas(self, bg=Theme.BG_PRIMARY, highlightthickness=0)
-        self.canvas.pack(side="top", fill="both", expand=True)
+        self.canvas.grid(row=0, column=0, sticky="nsew")
+        self.scrollbar.grid(row=1, column=0, sticky="ew")
+
         self.canvas.configure(xscrollcommand=self.scrollbar.set)
         self.scrollbar.configure(command=self.canvas.xview)
+
         self.scrollable_frame = tb.Frame(self.canvas)
         self.window_id = self.canvas.create_window(
             (0, 0), window=self.scrollable_frame, anchor="nw"
@@ -1202,96 +1330,78 @@ class CardPile(tb.Frame):
         self.container.pack(fill=BOTH, expand=True)
 
     def add_card(self, card_data):
-        nm, ct, cn = (
-            card_data["name"],
-            card_data.get("mana_cost", ""),
-            card_data.get("count", 1),
-        )
+        nm = card_data.get("name", "Unknown")
+        ct = card_data.get("mana_cost", "")
+        cn = card_data.get("count", 1)
+
         cl = sorted(
             list(set(re.findall(r"[WUBRG]", ct or ""))),
             key=lambda x: ["W", "U", "B", "R", "G"].index(x) if x in "WUBRG" else 99,
         )
-        ch = tb.Frame(self.container)
+        if not cl:
+            cl = ["NC"]
+
+        # We explicitly use a standard tk.Frame here to completely override bootstyle limitations
+        # Use a sleek dark background for all cards in the visual view to guarantee readability
+        bg_col = "#1e293b"
+        fg_col = "#f8fafc"
+
+        ch = tkinter.Frame(self.container, bg=bg_col, cursor="hand2")
         ch.pack(fill=X, pady=1, padx=2)
+
         tx = f"{cn}x {nm}" if cn > 1 else nm
-        if len(cl) > 1:
-            lb = tb.Label(
-                ch,
-                text=tx,
-                font=(Theme.FONT_FAMILY, 10),
-                foreground="#000000",
-                background="#d4af37",
-                anchor="w",
-                padding=(5, 2),
+
+        # Left color strip accent (width 6 is half the old massive block size)
+        cv = tkinter.Canvas(
+            ch, width=6, height=24, bg=bg_col, highlightthickness=0, cursor="hand2"
+        )
+        cv.pack(side=LEFT, fill=Y)
+
+        h = 24 / len(cl)
+        color_map = {
+            "W": "#f8f6f1",
+            "U": "#3498db",
+            "B": "#8b8b93",  # Lightened gray so black mana clearly shows up against dark background
+            "R": "#e74c3c",
+            "G": "#00bc8c",
+            "NC": "#8e9eae",
+        }
+
+        for i, c in enumerate(cl):
+            cv.create_rectangle(
+                0,
+                i * h,
+                6,
+                (i + 1) * h,
+                fill=color_map.get(c, "#8e9eae"),
+                outline="",
             )
-            lb.pack(side=LEFT, fill=BOTH, expand=True)
-            cv = tb.Canvas(ch, width=12, height=20, bg="#d4af37", highlightthickness=0)
-            cv.pack(side=RIGHT, fill=Y)
-            h = 20 / len(cl)
-            for i, c in enumerate(cl):
-                cv.create_rectangle(
-                    0,
-                    i * h,
-                    12,
-                    (i + 1) * h,
-                    fill={
-                        "W": "#f8f6f1",
-                        "U": "#3498db",
-                        "B": "#2c3e50",
-                        "R": "#e74c3c",
-                        "G": "#00bc8c",
-                    }.get(c, "#000"),
-                    outline="",
-                )
-            lb.bind(
-                "<Enter>",
-                lambda e: CardToolTip(
-                    lb,
-                    card_data,
-                    self.app.configuration.features.images_enabled,
-                    constants.UI_SIZE_DICT.get(
-                        self.app.configuration.settings.ui_size, 1.0
-                    ),
+
+        # Card Name Label
+        lb = tkinter.Label(
+            ch,
+            text=tx,
+            bg=bg_col,
+            fg=fg_col,
+            font=(Theme.FONT_FAMILY, 10),
+            anchor="w",
+            padx=6,
+            pady=2,
+            cursor="hand2",
+        )
+        lb.pack(side=LEFT, fill=BOTH, expand=True)
+
+        def _trigger_tooltip(e):
+            CardToolTip.create(
+                ch,  # Anchor safely to the row container
+                card_data,
+                self.app.configuration.features.images_enabled,
+                constants.UI_SIZE_DICT.get(
+                    self.app.configuration.settings.ui_size, 1.0
                 ),
             )
-        else:
-            c = cl[0] if cl else "NC"
-            s = {
-                "W": "warning",
-                "U": "info",
-                "B": "dark",
-                "R": "danger",
-                "G": "success",
-            }.get(c, "secondary")
-            lb = tb.Label(
-                ch,
-                text=tx,
-                bootstyle=(
-                    "info"
-                    if c == "U"
-                    else (
-                        "success"
-                        if c == "G"
-                        else (
-                            "danger"
-                            if c == "R"
-                            else ("dark" if c == "B" else "secondary")
-                        )
-                    )
-                ),
-                font=(Theme.FONT_FAMILY, 10),
-                anchor="w",
-                padding=(5, 2),
-            )
-            lb.pack(fill=X)
-            lb.bind(
-                "<Enter>",
-                lambda e: CardToolTip(
-                    lb,
-                    card_data,
-                    self.app.configuration.features.images_enabled,
-                    constants.UI_SIZE_DICT.get(
-                        self.app.configuration.settings.ui_size, 1.0
-                    ),
-                ),
-            )
+
+        # Require an explicit click to view the tooltip to stop erratic hovering/flashing
+        ch.bind("<Button-1>", _trigger_tooltip)
+        cv.bind("<Button-1>", _trigger_tooltip)
+        lb.bind("<Button-1>", _trigger_tooltip)

@@ -52,6 +52,8 @@ Modern Limited is dictated by "Mana Velocity"—the ability to affect the board 
 - **Panic Mode:** If the projection is below 7 entering Pack 2, all 2-drop creatures receive a "Critical: Needs 2-Drops" multiplier (up to 1.5x).
 - **Top-Heavy Penalty:** If you have 4+ cards costing 5+ mana, expensive cards receive a `0.7x` dampening multiplier to prevent "clunky" hands.
 
+---
+
 ## 6. Value Over Replacement (VOR) & "Glue Cards"
 
 The v5 engine moves beyond raw win rates by pre-calculating the **Format Texture** of a set when it loads.
@@ -73,17 +75,6 @@ The app parses Scryfall community tags to understand a card's functional role, p
 
 ---
 
-## 7. Signal Capitalization (Draft Navigation)
-
-The engine reads signals in Pack 1 to identify if a specific color is being "passed" by your neighbors.
-
-- **Trigger:** Pack 1, Pick 5+.
-- **Math:** `Lateness = Current Pick - Average Taken At (ATA)`.
-- **Application:** If a high-quality card (Z-Score > 0.5) is seen much later than its average take-rate, it receives a flat point bonus.
-- **Effect:** This gently nudges the user to pivot into an open lane if a premium card wheels or appears late.
-
----
-
 ## 8. True Bomb Detection (IWD Injection)
 
 A high win rate can be misleading (e.g., an aggressive 1-drop has a high win rate but is not a "bomb").
@@ -93,7 +84,31 @@ A high win rate can be misleading (e.g., an aggressive 1-drop has a high win rat
 
 ---
 
-## 9. Premium Fixing Speculation
+## 9. Deck Generation & AI Optimization
 
-- **Pack 1 Speculation:** Multi-color lands (Duals) receive a `1.15x` multiplier to encourage staying open.
-- **Splash Enablers:** If you drafted a high-quality bomb early but abandoned its color, the engine logs it as a "Splash Target." Lands that produce that color then receive a `1.3x` multiplier to proactively fix the mana base for that bomb.
+The application shifts from pack-evaluation to deck-optimization using a hyper-geometric simulation engine.
+
+### A. Frank Karsten Mana Base Engine
+
+Instead of simple proportional allocation, the app builds mana bases using Pro-Tour heuristics:
+
+- **Pip Volume Calculation:** It counts the exact number of specific colored mana symbols (Pips) required by the spells in the deck.
+- **Universal Fixer Detection:** It explicitly identifies Treasure-makers, Fetchlands, and "Any Color" dorks to supplement mathematical mana sources.
+- **Hybrid Mana Resolution:** It correctly categorizes hybrid mana (e.g., `{W/U}`) towards whichever core color the deck favors.
+- **Splash Starvation Protection:** It strictly caps basic land allocations for splash colors (max 2 basics for a single-pip splash) to prevent a greedy splash from stealing lands from the primary curve colors.
+
+### B. Monte Carlo Simulation
+
+The app evaluates built decks by running a **10,000-game Monte Carlo simulation**.
+
+- **London Mulligan Logic:** It applies pro-level mulligan heuristics, automatically throwing back 0-land, 1-land, and 6+ land hands. When reducing hand size, it intelligently bottom-decks the highest CMC cards.
+- **Hypergeometrics:** It calculates the exact probability of casting a 2-drop on Turn 2, a 3-drop on Turn 3, and "Curving Out" perfectly on the play.
+- **Risk Factors:** It tracks probabilities for Mana Screw (Missing 3rd/4th land drops), Mana Flood (6+ lands by turn 5), and Color Screw.
+
+### C. AI Auto-Optimizer
+
+The application can actively "brute-force" permutations of the user's drafted pool.
+
+- It generates variations: **Play 18 Lands**, **Play 16 Lands**, **Curve Lower** (swap an expensive 5-drop for a cheap 2-drop from the sideboard), and **Power Up** (swap the weakest main deck card for the strongest sideboard card).
+- It simulates thousands of games for each variation simultaneously.
+- It selects the deck configuration that mathematically maximizes Cast Rates and minimizes Screw Rates, then automatically updates the UI.

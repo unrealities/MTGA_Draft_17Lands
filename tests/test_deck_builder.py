@@ -109,7 +109,7 @@ def test_dynamic_mana_base_math():
         {"mana_cost": "{G}"} for _ in range(2)
     ]
 
-    lands = calculate_dynamic_mana_base(spells, ["R", "G"], forced_count=17)
+    lands = calculate_dynamic_mana_base(spells, [], ["R", "G"], forced_count=17)
 
     # Count the generated basic lands
     forests = sum(1 for c in lands if c["name"] == "Forest")
@@ -118,6 +118,44 @@ def test_dynamic_mana_base_math():
     assert len(lands) == 17
     assert forests >= 3, "Light splash should have a hard floor of 3 sources"
     assert mountains >= 6, "Primary color should have a hard floor of 6 sources"
+
+
+def test_hybrid_mana_does_not_force_unneeded_lands():
+    spells = [{"mana_cost": "{U}"} for _ in range(15)] + [
+        {"mana_cost": "{W/U}"} for _ in range(2)
+    ]
+    lands = calculate_dynamic_mana_base(spells, [], ["U", "W"], forced_count=17)
+
+    plains = sum(1 for c in lands if c["name"] == "Plains")
+    islands = sum(1 for c in lands if c["name"] == "Island")
+
+    assert plains == 0
+    assert islands == 17
+
+
+def test_proportional_mana_base_fixes_starvation():
+    """Verify that a 3-color pool distributes lands using Frank Karsten targets and caps splash basics."""
+    # 17 lands to distribute among 3 colors. U has 8 pips, B has 3 pips, G has 7 pips.
+    # Core colors (U, G) target 7 sources each based on pip counts.
+    # Splash color (B) targets 4 sources but is strictly capped at 2 basics to prevent starving core colors.
+    # Base allocation: U: 7, G: 7, B: 2. Total = 16.
+    # Remaining 1 land safely goes to the top core color (U).
+    # Final expected: U: 8, B: 2, G: 7.
+    spells = (
+        [{"mana_cost": "{U}"} for _ in range(8)]
+        + [{"mana_cost": "{B}"} for _ in range(3)]
+        + [{"mana_cost": "{G}"} for _ in range(7)]
+    )
+
+    lands = calculate_dynamic_mana_base(spells, [], ["U", "B", "G"], forced_count=17)
+
+    islands = sum(1 for c in lands if c["name"] == "Island")
+    swamps = sum(1 for c in lands if c["name"] == "Swamp")
+    forests = sum(1 for c in lands if c["name"] == "Forest")
+
+    assert islands == 8
+    assert swamps == 2
+    assert forests == 7
 
 
 def test_mana_source_analyzer():

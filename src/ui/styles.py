@@ -17,6 +17,27 @@ from src.constants import RESOURCE_DIR
 
 logger = logging.getLogger(__name__)
 
+import tkinter.ttk as tk_ttk
+
+# --- MONKEY PATCH TKINTER.TTK TO PREVENT TTKBOOTSTRAP NATIVE THEME CRASH ---
+# When switching to the "System" (Native) theme, ttkbootstrap incorrectly attempts
+# to recreate layout elements (like Horizontal.Progressbar.pbar) that already exist
+# in the underlying Tcl interpreter, causing a fatal application crash on startup.
+_orig_element_create = tk_ttk.Style.element_create
+
+
+def _safe_element_create(self, elementname, etype, *args, **kw):
+    try:
+        _orig_element_create(self, elementname, etype, *args, **kw)
+    except tkinter.TclError as e:
+        if "Duplicate element" in str(e):
+            pass
+        else:
+            raise
+
+
+tk_ttk.Style.element_create = _safe_element_create
+
 
 class Theme:
     FONT_FAMILY = (

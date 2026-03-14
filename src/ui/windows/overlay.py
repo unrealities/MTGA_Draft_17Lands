@@ -325,10 +325,7 @@ class CompactOverlay(tb.Toplevel):
         grp = self.app_context.vars["selected_group"].get()
         filt = self.app_context.vars["deck_filter"].get()
 
-        if (
-            filt == constants.FILTER_OPTION_AUTO
-            and self.configuration.settings.auto_highest_enabled
-        ):
+        if filt == constants.FILTER_OPTION_AUTO:
             active_color = colors[0] if colors else "All Decks"
             if active_color != "All Decks":
                 color_ratings = (
@@ -586,7 +583,7 @@ class CompactOverlay(tb.Toplevel):
         )
 
         if found:
-            CardToolTip(
+            CardToolTip.create(
                 tree,
                 found,
                 self.configuration.features.images_enabled,

@@ -3,7 +3,12 @@ src/dataset.py
 Data storage and retrieval for card ratings.
 """
 
-from src.utils import Result, check_file_integrity, normalize_color_string
+from src.utils import (
+    Result,
+    check_file_integrity,
+    normalize_color_string,
+    sanitize_card_name,
+)
 from src.file_extractor import initialize_card_data
 from typing import List, Dict, Tuple
 from src.constants import (
@@ -54,8 +59,9 @@ class Dataset:
                         normalize_color_string(k_color): v_color
                         for k_color, v_color in card["deck_colors"].items()
                     }
-                card_name = card.get(DATA_FIELD_NAME)
+                card_name = sanitize_card_name(card.get(DATA_FIELD_NAME))
                 if card_name:
+                    card[DATA_FIELD_NAME] = card_name
                     self._name_index[card_name] = card
                     self._id_index[card_name] = k
 

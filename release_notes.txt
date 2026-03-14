@@ -1,3 +1,23 @@
+===================== RELEASE NOTES 4.08 =====================
+* unrealities: [Major Feature] AI Monte Carlo Auto-Optimizer. Click the "Auto-Optimize Deck" button to unleash a background simulation engine that mathematically tests different deck permutations (16 lands vs 17 lands, swapping out expensive 5-drops for efficient 2-drops) across thousands of games to find the perfect 40-card configuration.
+* unrealities: [Feature] Added an AI Advisor Summary to the simulation tab. It translates raw simulation percentages into actionable advice and actively scans your sideboard to suggest specific 1-for-1 card swaps to fix curve or consistency issues.
+* unrealities: [Feature] Added an interactive "Sample Hand" generator that dynamically downloads full artwork and displays your opening hand in a vertically-fanned stack. It automatically draws a new hand when evaluating a deck and is fully scrollable for smaller displays.
+* unrealities: [Feature] Overhauled the Frank Karsten Mana Base Engine. It now accurately detects universal fixers (including tokens and land searchers), intelligently resolves hybrid mana toward your core colors, and sets strict limits on splash basics to prevent starving your primary colors.
+* unrealities: [Feature] Added an "Auto-Switch Deck Filter to Best Colors" toggle in Preferences to explicitly control automatic lane tracking.
+* unrealities: [Feature] Overhauled the Deck Builder tab to explicitly generate and display a separate "Sideboard" tab.
+* unrealities: [UX/UI] Added a color-coded grading system (🟢 Great, 🟡 Fair, 🔴 Poor) to the simulation metrics to help instantly evaluate if a deck is statistically sound.
+* unrealities: [UX/UI] Re-designed the visual indicator for picked cards. The Live Pack table now pulses a smooth green gradient animation for 1 second upon picking a card before settling on a solid color.
+* unrealities: [UX/UI] Made the "Stats & Analysis" tab in the Deck Builder fully scrollable to accommodate decks with massive amounts of tags and synergies.
+* unrealities: [UX/UI] Completely resolved the visual readability issues in the "Visual View" Card Pool tab. Cards are now rendered using explicitly highly-legible hex combinations instead of inheriting restrictive framework styles.
+* unrealities: [UX/UI] Radically fixed tooltip flickering and persistence. Tooltips now use an intelligent singleton manager with dynamic mouse offsetting, completely eliminating the bug where tooltips would rapidly open and close or fail to disappear.
+* adverseselection: [UX/UI] Add scrollbars to all tables and overflowing panels
+* adverseselection: [UX/UI] Drag-to-reorder columns
+* adverseselection: [Bug] Fix dashboard sash resetting on every pick
+* unrealities: [Bug] Fixed a fatal crash on startup (`Duplicate element`) when using the "System (Native)" theme. Added a safe-mode recovery loop that automatically reverts to default settings and restarts the app if a theme failure occurs, preventing lockouts.
+* unrealities: [Bug] Hardened 17Lands network requests by implementing a global data sanitizer. Corrupted special characters (e.g. 'Bespoke B?' instead of 'Bespoke Bō') returned by 17Lands endpoints are now intercepted and corrected instantly to prevent application failures.
+* unrealities: [Bug] Fixed a rendering glitch where the Dashboard sidebar would slightly expand and contract its width upon every new pick due to aggressive UI resetting.
+* unrealities: [Bug] Fixed a critical state-corruption bug where playing consecutive drafts (or missing the start of a draft) would cause the app to endlessly merge new picks into your previous deck's card pool, resulting in 50+ card pools. The app now strictly detects pick progressions and enforces a clean wipe when time-travel or cross-draft pollution is detected.
+
 ===================== RELEASE NOTES 4.07 =====================
 * unrealities: [Major Feature] Introduced "Value Over Replacement" (VOR) to the Advisor Engine. The app now mathematically analyzes the MTG set upon download to map its "Format Texture." It actively identifies when a card fulfills a highly scarce role (e.g., if a set only has one viable Red 2-drop at common) and applies a massive score bonus to prioritize drafting scarce resources over highly-replaceable filler.
 * unrealities: [Feature] Added "Archetype Glue" detection. The Advisor now explicitly identifies Commons and Uncommons that dramatically over-perform in your specific color lane, applying an aggressive score multiplier so they correctly outrank generic, off-color Rares.

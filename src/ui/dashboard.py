@@ -19,6 +19,7 @@ from src.ui.components import (
     ManaCurvePlot,
     TypePieChart,
     CollapsibleFrame,
+    AutoScrollbar,
 )
 from src.advisor.schema import Recommendation
 from src.ui.advisor_view import AdvisorPanel
@@ -106,7 +107,7 @@ class DashboardFrame(ttk.Frame):
             ),
             (
                 "📊 Custom Columns:",
-                "Right-click any table header (like 'GIH WR' or 'NAME') to add, remove, or swap the stats. You can even display your downloaded Tier Lists!",
+                "Right-click any table header (like 'GIH WR' or 'NAME') to re-arrange, add, or remove stats. You can even display your downloaded Tier Lists!",
             ),
             (
                 "⚙️ Preferences:",
@@ -415,14 +416,17 @@ class DashboardFrame(ttk.Frame):
         # --- RIGHT: Sidebar ---
         self.sidebar_frame = ttk.Frame(self.h_splitter, width=280)
 
-        self._sidebar_scrollbar = ttk.Scrollbar(self.sidebar_frame, orient="vertical")
-        self._sidebar_scrollbar.pack(side="right", fill="y")
+        self.sidebar_frame.rowconfigure(0, weight=1)
+        self.sidebar_frame.columnconfigure(0, weight=1)
 
+        self._sidebar_scrollbar = AutoScrollbar(self.sidebar_frame, orient="vertical")
         self._sidebar_canvas = tkinter.Canvas(
-            self.sidebar_frame, highlightthickness=0,
+            self.sidebar_frame,
+            highlightthickness=0,
             yscrollcommand=self._sidebar_scrollbar.set,
         )
-        self._sidebar_canvas.pack(side="left", fill="both", expand=True)
+        self._sidebar_canvas.grid(row=0, column=0, sticky="nsew")
+        self._sidebar_scrollbar.grid(row=0, column=1, sticky="ns")
         self._sidebar_scrollbar.config(command=self._sidebar_canvas.yview)
 
         self.sidebar_container = ttk.Frame(self._sidebar_canvas)
@@ -442,13 +446,17 @@ class DashboardFrame(ttk.Frame):
 
         self._sidebar_canvas.bind("<Configure>", _on_sidebar_resize)
         self.sidebar_container.bind("<Configure>", _on_sidebar_content_resize)
-        self._sidebar_canvas.bind(
-            "<MouseWheel>",
-            lambda e: self._sidebar_canvas.yview_scroll(-1 * (e.delta // 120), "units"),
-        )
+
+        # Cross-platform safe scrolling
+        from src.utils import bind_scroll
+
+        bind_scroll(self._sidebar_canvas, self._sidebar_canvas.yview_scroll)
+        bind_scroll(self.sidebar_container, self._sidebar_canvas.yview_scroll)
         self.sidebar_container.bind(
-            "<MouseWheel>",
-            lambda e: self._sidebar_canvas.yview_scroll(-1 * (e.delta // 120), "units"),
+            "<Enter>",
+            lambda e: bind_scroll(
+                self.sidebar_container, self._sidebar_canvas.yview_scroll
+            ),
         )
 
         if self.sidebar_visible:
@@ -538,7 +546,6 @@ class DashboardFrame(ttk.Frame):
 
         # Capture visibility BEFORE grid_remove() so was_hidden is accurate
         was_content_hidden = not self.content_frame.winfo_viewable()
-
         self.content_frame.grid_remove()
         self.waiting_frame.grid_remove()
         self.no_data_frame.grid_remove()
@@ -684,7 +691,7 @@ class DashboardFrame(ttk.Frame):
                     )
 
             if is_picked:
-                row_tag = "picked_card"
+                row_tag = "picked"
 
             returnable_at = card.get("returnable_at", [])
             if returnable_at:

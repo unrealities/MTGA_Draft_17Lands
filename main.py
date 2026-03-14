@@ -126,44 +126,68 @@ def main():
 
     # Load Config
     config, _ = read_configuration()
+    root = None
 
-    root = ttk.Window(themename="cyborg")
-    root.withdraw()
+    def launch_ui(is_safe_mode=False):
+        nonlocal root
+        if is_safe_mode:
+            logger.info("Attempting safe-mode UI launch with default theme.")
+            config.settings.theme = "Neutral"
+            config.settings.theme_base = "clam"
+            config.settings.theme_custom_path = ""
+            write_configuration(config)
+            if root:
+                try:
+                    root.destroy()
+                except Exception:
+                    pass
 
-    # Initialize Styling Engine
-    # We apply a baseline theme so the splash screen matches the app
-    Theme.apply(
-        root,
-        engine=getattr(config.settings, "theme_base", "clam"),
-        palette=getattr(config.settings, "theme", "Neutral"),
-    )
+        root = ttk.Window(themename="cyborg")
+        root.withdraw()
 
-    def on_ready(data, splash):
-        try:
-            splash.close()
-            app = DraftApp(root, data["scanner"], data["config"])
+        # Initialize Styling Engine
+        # We apply a baseline theme so the splash screen matches the app
+        Theme.apply(
+            root,
+            engine=getattr(config.settings, "theme_base", "clam"),
+            palette=getattr(config.settings, "theme", "Neutral"),
+        )
 
-            # 1. Show the window skeleton immediately
-            root.deiconify()
+        def on_ready(data, splash):
+            try:
+                splash.close()
+                app = DraftApp(root, data["scanner"], data["config"])
 
-            # 2. Immediately trigger Phase 1 (Geometry & Data Sync)
-            # We use a very short delay (10ms) to ensure the window is 'active'
-            root.after(10, app._perform_boot_sync)
+                # 1. Show the window skeleton immediately
+                root.deiconify()
 
-        except Exception as e:
-            logger.error(f"Launch Error: {e}", exc_info=True)
-            root.destroy()
+                # 2. Immediately trigger Phase 1 (Geometry & Data Sync)
+                # We use a very short delay (10ms) to ensure the window is 'active'
+                root.after(10, app._perform_boot_sync)
 
-    # Launch non-blocking Splash
-    SplashWindow(
-        root, task=lambda cb: load_data(args, config, cb), on_complete=on_ready
-    )
+            except Exception as e:
+                logger.error(f"Launch Error: {e}", exc_info=True)
+                root.destroy()
+
+        # Launch non-blocking Splash
+        SplashWindow(
+            root, task=lambda cb: load_data(args, config, cb), on_complete=on_ready
+        )
 
     try:
-        root.mainloop()
+        launch_ui(is_safe_mode=False)
+    except Exception as e:
+        logger.error(f"Fatal error during UI initialization: {e}", exc_info=True)
+        # Guarantee the user is never permanently locked out due to a corrupted theme
+        launch_ui(is_safe_mode=True)
+
+    try:
+        if root:
+            root.mainloop()
     except KeyboardInterrupt:
         logger.info("Application stopped by user (KeyboardInterrupt).")
-        root.destroy()
+        if root:
+            root.destroy()
         sys.exit(0)
 
 

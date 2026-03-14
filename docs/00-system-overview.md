@@ -14,29 +14,29 @@ The system follows a uni-directional data flow.
 graph TD
     A[MTGA Client] -->|Writes to| B(Player.log)
     B -->|Tails File| C{Log Scanner}
-    
+
     C -->|Event: Start Draft| D[Data Manager]
     D -->|Fetch Stats| E[17Lands API]
     E -->|Cache JSON| F[Local Storage]
-    
+
     C -->|Event: Pack Data| G[Advisor Engine]
     F -->|Card Stats| G
-    
+
     H[Taken Cards Pool] -->|Current Deck State| G
-    
+
     G -->|Calculate Score| I[Tabbed UI / Dashboard]
     I -->|Render| J((User Display))
 ```
 
 ## 3. Key Modules
 
-| Module | Function | Dependencies | Criticality |
-| :--- | :--- | :--- | :--- |
-| **Log Scanner** | Tails `Player.log`, executes Regex matching, manages state machine (Idle -> Drafting -> Game). | OS File System | **High** (App fails without it) |
-| **Data Manager** | Downloads/Caches set data. Handles fallback (if Premier data missing, use Quick data). | 17Lands API | **High** |
-| **Advisor Engine** | The "Brain." Normalizes win-rates, calculates Z-Scores, applies "Lane Commitment" logic. | None (Pure Math) | **High** |
-| **OCR Service** | **Edge Case:** Reads P1P1 (Pack 1 Pick 1) via screenshot because logs are delayed. | Google Cloud Functions | Medium |
-| **Deck Suggester** | Algorithmic deck builder. Fits user's pool into "Aggro" or "Control" templates. | Card Logic | Low (Optional feature) |
+| Module             | Function                                                                                                                                                             | Dependencies           | Criticality                     |
+| :----------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :--------------------- | :------------------------------ |
+| **Log Scanner**    | Tails `Player.log`, executes Regex matching, manages state machine (Idle -> Drafting -> Game).                                                                       | OS File System         | **High** (App fails without it) |
+| **Data Manager**   | Downloads/Caches set data. Handles fallback (if Premier data missing, use Quick data).                                                                               | 17Lands API            | **High**                        |
+| **Advisor Engine** | The "Brain." Normalizes win-rates, calculates Z-Scores, applies "Lane Commitment" logic.                                                                             | None (Pure Math)       | **High**                        |
+| **OCR Service**    | **Edge Case:** Reads P1P1 (Pack 1 Pick 1) via screenshot because logs are delayed.                                                                                   | Google Cloud Functions | Medium                          |
+| **Deck Suggester** | Algorithmic deck builder. Employs a 10,000-game Monte Carlo simulation to evaluate curve and an AI Auto-Optimizer to perfect the mana base using Frank Karsten math. | Card Logic             | Medium                          |
 
 ## 4. Operational Lifecycle
 
@@ -45,29 +45,29 @@ graph TD
 The application polls for file changes every **1000ms**.
 
 1. **State: Waiting for Event**
-    * Listens for: `[UnityCrossThreadLogger]==> Event_Join`
-    * Action: Identify Set Code (e.g., "OTJ"). Download/Load JSON stats from 17Lands.
+   - Listens for: `[UnityCrossThreadLogger]==> Event_Join`
+   - Action: Identify Set Code (e.g., "OTJ"). Download/Load JSON stats from 17Lands.
 
 2. **State: Pack Review**
-    * Listens for: `Draft.Notify` containing `PackCards` array.
-    * Action:
-        1. Retrieve stats for `CardsInPack`.
-        2. Retrieve stats for `TakenCards` (User's pool).
-        3. Pass data to **Advisor Engine**.
-        4. Render Overlay Table sorted by "Score".
+   - Listens for: `Draft.Notify` containing `PackCards` array.
+   - Action:
+     1. Retrieve stats for `CardsInPack`.
+     2. Retrieve stats for `TakenCards` (User's pool).
+     3. Pass data to **Advisor Engine**.
+     4. Render Overlay Table sorted by "Score".
 
 3. **State: P1P1 (Pack 1 Pick 1)**
-    * **The Gap:** MTGA often delays writing the log for the very first pack.
-    * **User Action:** User clicks the **"P1P1"** button in the UI.
-    * **System Action:** Takes a screenshot -> Sends to OCR Service -> Returns Card Names -> Updates UI.
+   - **The Gap:** MTGA often delays writing the log for the very first pack.
+   - **User Action:** User clicks the **"P1P1"** button in the UI.
+   - **System Action:** Takes a screenshot -> Sends to OCR Service -> Returns Card Names -> Updates UI.
 
 4. **State: Pick Confirmation**
-    * Listens for: `Event_PlayerDraftMakePick`.
-    * Action: Move selected `GrpId` from "Pack" array to "TakenCards" array. Update "Signals" logic.
+   - Listens for: `Event_PlayerDraftMakePick`.
+   - Action: Move selected `GrpId` from "Pack" array to "TakenCards" array. Update "Signals" logic.
 
 ### Phase C: Shutdown
 
-* Save window coordinates and column preferences to `config.json`.
+- Save window coordinates and column preferences to `config.json`.
 
 ## 5. Constraints & Invariants
 

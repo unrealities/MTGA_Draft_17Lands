@@ -10,7 +10,6 @@ import logging
 import math
 import copy
 import re
-import numpy
 import io
 import csv
 import json
@@ -47,8 +46,6 @@ def filter_options(deck, option_selection, metrics, configuration):
     """
     if constants.FILTER_OPTION_AUTO not in option_selection:
         return [option_selection]
-    if not configuration.settings.auto_highest_enabled:
-        return [constants.FILTER_OPTION_ALL_DECKS]
 
     # Auto Logic: Identify top 2 colors
     try:
@@ -113,7 +110,6 @@ def get_card_colors(mana_cost):
     """
     Parses a mana cost string (e.g., "{1}{W}{U}") and returns a dictionary
     of color counts (e.g., {'W': 1, 'U': 1}).
-    Used by Signal Calculator and UI.
     """
     colors = {}
     try:
@@ -121,7 +117,6 @@ def get_card_colors(mana_cost):
             return colors
 
         for color in constants.CARD_COLORS:
-            # Count occurrences of the color symbol in the string
             count = mana_cost.count(color)
             if count > 0:
                 colors[color] = count
@@ -135,7 +130,6 @@ def row_color_tag(mana_cost):
     if not mana_cost:
         return constants.CARD_ROW_COLOR_COLORLESS_TAG
 
-    # Extract symbols {R}, {U} etc.
     colors = set()
     for c in constants.CARD_COLORS:
         if c in mana_cost:
@@ -161,13 +155,10 @@ def field_process_sort(field_value):
     """Helper for treeview sorting."""
     try:
         if isinstance(field_value, str):
-            # Sanitize styling characters before parsing
             val = field_value.replace("*", "").replace("%", "").strip()
-
             if val in ["NA", "-", ""]:
-                return (0, 0.0)  # Bottom priority
+                return (0, 0.0)
 
-            # Cross-reference with the GRADE dictionary via stripped keys
             for k, v in constants.GRADE_ORDER_DICT.items():
                 if k.strip() == val:
                     return (1, float(v))
@@ -179,7 +170,6 @@ def field_process_sort(field_value):
 
         return (1, float(field_value))
     except (ValueError, TypeError):
-        # Top priority fallback for valid strings (Names, Colors, etc)
         return (2, str(field_value).lower())
 
 
@@ -232,13 +222,11 @@ class CardResult:
                 selected_card = copy.deepcopy(card)
                 selected_card["results"] = ["NA"] * len(fields)
 
-                # Default filter color
                 primary_color = (
                     colors[0] if colors else constants.FILTER_OPTION_ALL_DECKS
                 )
 
                 for count, option in enumerate(fields):
-                    # Handle Win Rates
                     if option in constants.WIN_RATE_OPTIONS or option in [
                         "alsa",
                         "iwd",
@@ -248,11 +236,9 @@ class CardResult:
                         "gdwr",
                         "gnswr",
                     ]:
-                        # Deep lookup
                         stats = card.get("deck_colors", {}).get(primary_color, {})
                         val = stats.get(option, 0.0)
 
-                        # Handle Formatting (Grade/Rating)
                         if (
                             option in constants.WIN_RATE_OPTIONS
                             and self.configuration.settings.result_format
@@ -268,7 +254,6 @@ class CardResult:
                         selected_card["results"][count] = "".join(
                             card.get("colors", [])
                         )
-                    # Handle Tier Lists
                     elif "TIER" in option:
                         if self.tier_data and option in self.tier_data:
                             tier_list = self.tier_data[option]
@@ -323,6 +308,25 @@ class CardResult:
 # --- UNIVERSAL DECK BUILDER & LIQUID SCORING ENGINE ---
 
 
+def get_sideboard(pool, deck_stacked):
+    """Calculates sideboard by subtracting drafted deck from raw pool."""
+    pool_stacked = stack_cards(pool)
+    sideboard = []
+    deck_counts = {c.get("name"): c.get("count", 1) for c in deck_stacked}
+    for c in pool_stacked:
+        name = c.get("name")
+        total_count = c.get("count", 1)
+        used_count = deck_counts.get(name, 0)
+        sb_count = total_count - used_count
+        if sb_count > 0:
+            import copy
+
+            sb_card = copy.deepcopy(c)
+            sb_card["count"] = sb_count
+            sideboard.append(sb_card)
+    return sideboard
+
+
 def suggest_deck(taken_cards, metrics, configuration, event_type="PremierDraft"):
     """
     Entry point. Generates multiple distinct deck variants based on the pool.
@@ -353,7 +357,7 @@ def suggest_deck(taken_cards, metrics, configuration, event_type="PremierDraft")
                     "rating": score,
                     "record": estimate_record(score, is_bo3),
                     "deck_cards": con_deck,
-                    "sideboard_cards": [],
+                    "sideboard_cards": get_sideboard(taken_cards, con_deck),
                     "colors": main_colors,
                     "breakdown": breakdown,
                 }
@@ -377,7 +381,7 @@ def suggest_deck(taken_cards, metrics, configuration, event_type="PremierDraft")
                     "rating": score,
                     "record": estimate_record(score, is_bo3),
                     "deck_cards": greedy_deck,
-                    "sideboard_cards": [],
+                    "sideboard_cards": get_sideboard(taken_cards, greedy_deck),
                     "colors": target_colors,
                     "breakdown": breakdown,
                 }
@@ -398,7 +402,7 @@ def suggest_deck(taken_cards, metrics, configuration, event_type="PremierDraft")
                     "rating": score,
                     "record": estimate_record(score, is_bo3),
                     "deck_cards": tempo_deck,
-                    "sideboard_cards": [],
+                    "sideboard_cards": get_sideboard(taken_cards, tempo_deck),
                     "colors": main_colors,
                     "breakdown": breakdown,
                 }
@@ -419,7 +423,7 @@ def suggest_deck(taken_cards, metrics, configuration, event_type="PremierDraft")
                 "rating": score,
                 "record": estimate_record(score, is_bo3),
                 "deck_cards": soup_deck,
-                "sideboard_cards": [],
+                "sideboard_cards": get_sideboard(taken_cards, soup_deck),
                 "colors": soup_colors[:3] if soup_colors else ["All Decks"],
                 "breakdown": breakdown,
             }
@@ -428,18 +432,13 @@ def suggest_deck(taken_cards, metrics, configuration, event_type="PremierDraft")
             else:
                 incomplete_variants.append(variant_data)
 
-        # If the pool is too spread out to form ANY complete 23-card decks,
-        # fall back to the incomplete variants so the UI doesn't look broken.
         if not all_variants and incomplete_variants:
             all_variants = incomplete_variants
 
-        # Sort all generated variants by their holistic score
         all_variants.sort(key=lambda x: x["rating"], reverse=True)
 
-        # Filter out duplicates (e.g. if Tempo and Consistent generated the exact same 40 cards)
         seen_signatures = set()
         for variant in all_variants:
-            # Create a unique signature for the deck based on card names and counts
             sig = tuple(
                 sorted(
                     [
@@ -452,12 +451,10 @@ def suggest_deck(taken_cards, metrics, configuration, event_type="PremierDraft")
                 continue
             seen_signatures.add(sig)
 
-            # Map the key dynamically (handles 2 colors for standard, 3 colors for soup)
             pair_key = "".join(sorted(variant["colors"]))
             label = f"{pair_key} {variant['label_prefix']}"
             sorted_decks[label] = variant
 
-            # Limit to top 10 unique options so we don't overwhelm the UI
             if len(sorted_decks) >= 10:
                 break
 
@@ -508,7 +505,6 @@ def identify_top_pairs(pool, metrics):
 def calculate_holistic_score(deck, colors, pool_size, metrics):
     """
     Evaluates a deck on a 0-100 Power Level scale.
-    Universally applicable to any MTG set by analyzing mechanical structures.
     """
     if not deck:
         return 0.0, ""
@@ -530,7 +526,6 @@ def calculate_holistic_score(deck, colors, pool_size, metrics):
         "".join(sorted(colors)) if len(colors) <= 2 else "".join(sorted(colors[:2]))
     )
 
-    # Weight the ratings by the number of copies
     valid_ratings = []
     for c in spells:
         rating = get_card_rating(c, [arch_key], metrics)
@@ -542,7 +537,6 @@ def calculate_holistic_score(deck, colors, pool_size, metrics):
     else:
         avg_gihwr = sum(valid_ratings) / len(valid_ratings)
 
-    # Convert to z_score of the deck average.
     z_score = (avg_gihwr - global_mean) / global_std
     power_level = 60.0 + (z_score * 16.67)
     breakdown_notes = []
@@ -554,7 +548,6 @@ def calculate_holistic_score(deck, colors, pool_size, metrics):
 
     avg_cmc = sum(cmcs) / spell_count
 
-    # Calculate Lands and Sources
     analyzer = ManaSourceAnalyzer(deck)
     land_count = sum(c.get("count", 1) for c in deck if "Land" in c.get("types", []))
     total_mana_sources = (
@@ -619,26 +612,29 @@ def calculate_holistic_score(deck, colors, pool_size, metrics):
             if "colors among" in str(c.get("text", "")).lower()
             or "basic land types" in str(c.get("text", "")).lower()
         )
-        fixing_count = sum(analyzer.sources.values()) + analyzer.any_color_sources
+
+        fixing_count = analyzer.total_fixing_cards
 
         if domain_payoffs >= 2 and fixing_count >= 4:
             power_level += 6.0
             breakdown_notes.append("Supported Domain/Soup (+6.0)")
-        elif fixing_count < len(colors) + 1:
-            penalty = (len(colors) + 1 - fixing_count) * 6.0
+        elif fixing_count < len(colors) - 1:
+            penalty = (len(colors) - 1 - fixing_count) * 6.0
             power_level -= penalty
             breakdown_notes.append(f"Greedy Mana Strain (-{penalty:.1f})")
 
     evasion_count = sum(
         c.get("count", 1)
         for c in spells
-        if any(
+        if "evasion" in c.get("tags", [])
+        or any(
             kw in str(c.get("text", "")).lower()
             for kw in [
                 "flying",
                 "trample",
                 "menace",
                 "can't be blocked",
+                "unblockable",
                 "deals damage to any target",
             ]
         )
@@ -688,13 +684,14 @@ def build_variant_consistency(pool, colors, metrics):
         if is_castable(c, colors, strict=True) and "Land" not in c.get("types", [])
     ]
     candidates.sort(key=lambda x: get_card_rating(x, colors, metrics), reverse=True)
-    spells = candidates[:23]  # Caps at 23 spells max
+    spells = candidates[:23]
     non_basic_lands = select_useful_lands(pool, colors)
 
-    # GUARANTEE EXACTLY 40 CARDS
     total_lands_needed = 40 - len(spells)
     needed_basics = max(0, total_lands_needed - len(non_basic_lands))
-    basics = calculate_dynamic_mana_base(spells, colors, forced_count=needed_basics)
+    basics = calculate_dynamic_mana_base(
+        spells, non_basic_lands, colors, forced_count=needed_basics
+    )
 
     return stack_cards(spells + non_basic_lands + basics)
 
@@ -712,15 +709,26 @@ def build_variant_greedy(pool, colors, metrics):
 
     for card in pool:
         card_colors = card.get("colors", [])
-        if (
-            not card_colors
-            or any(c in colors for c in card_colors)
-            or len(card_colors) > 1
-        ):
+        mana_cost = card.get("mana_cost", "")
+
+        if is_castable(card, colors, strict=True):
             continue
+
+        if not card_colors or len(card_colors) > 1:
+            continue
+
         splash_col = card_colors[0]
-        pips = sum(1 for c in card.get("mana_cost", "") if c == splash_col)
-        if pips > 1:
+
+        pips = re.findall(r"\{(.*?)\}", mana_cost)
+        off_color_pips = 0
+        for pip in pips:
+            options = [c for c in pip.split("/") if c in constants.CARD_COLORS]
+            if not options:
+                continue
+            if not any(opt in colors for opt in options):
+                off_color_pips += 1
+
+        if off_color_pips > 1:
             continue
 
         rating = get_card_rating(card, ["All Decks"], metrics)
@@ -742,11 +750,10 @@ def build_variant_greedy(pool, colors, metrics):
     target_colors = colors + [best_splash[1]]
     non_basic_lands = select_useful_lands(pool, target_colors)
 
-    # GUARANTEE EXACTLY 40 CARDS
     total_lands_needed = 40 - len(deck_spells)
     needed_basics = max(0, total_lands_needed - len(non_basic_lands))
     basics = calculate_dynamic_mana_base(
-        deck_spells, target_colors, forced_count=needed_basics
+        deck_spells, non_basic_lands, target_colors, forced_count=needed_basics
     )
 
     return stack_cards(deck_spells + non_basic_lands + basics), best_splash[1]
@@ -769,43 +776,103 @@ def build_variant_curve(pool, colors, metrics):
         return base
 
     candidates.sort(key=tempo_rating, reverse=True)
-    spells = candidates[:24]  # Caps at 24 spells max for aggro
+    spells = candidates[:24]
     non_basic_lands = select_useful_lands(pool, colors)
 
-    # GUARANTEE EXACTLY 40 CARDS
     total_lands_needed = 40 - len(spells)
     needed_basics = max(0, total_lands_needed - len(non_basic_lands))
-    basics = calculate_dynamic_mana_base(spells, colors, forced_count=needed_basics)
+    basics = calculate_dynamic_mana_base(
+        spells, non_basic_lands, colors, forced_count=needed_basics
+    )
 
     return stack_cards(spells + non_basic_lands + basics)
 
 
+def get_strict_colors(spells):
+    """Determines true deck colors by evaluating strict pip requirements, discarding unneeded hybrid halves."""
+    pips = {c: 0 for c in constants.CARD_COLORS}
+    hybrid_pips_list = []
+
+    for card in spells:
+        cost = card.get("mana_cost", "")
+        if not cost:
+            for c in card.get("colors", []):
+                if c in pips:
+                    pips[c] += 1
+            continue
+
+        pip_matches = re.findall(r"\{(.*?)\}", cost)
+        for pip in pip_matches:
+            if any(ch.isdigit() or ch in ["X", "C"] for ch in pip.split("/")):
+                continue
+            options = [c for c in pip.split("/") if c in constants.CARD_COLORS]
+            if not options:
+                continue
+            if len(options) == 1:
+                pips[options[0]] += 1
+            else:
+                hybrid_pips_list.append(options)
+
+    strict_colors = {c for c, p in pips.items() if p > 0}
+    for options in hybrid_pips_list:
+        # If a hybrid pip cannot be paid by our strict colors, we must adopt one of its colors
+        if not any(opt in strict_colors for opt in options):
+            strict_colors.add(options[0])
+
+    sorted_strict = [c for c in constants.CARD_COLORS if c in strict_colors]
+    return sorted_strict
+
+
 def build_variant_soup(pool, metrics):
-    """Builds a 'Good Stuff' deck strictly prioritizing global power, ignoring color constraints."""
+    """Builds a 'Good Stuff' deck strictly prioritizing global power, but forces fixing into the top 23."""
     candidates = [c for c in pool if "Land" not in c.get("types", [])]
 
-    # Sort entirely by Global Rating (All Decks)
-    candidates.sort(
-        key=lambda x: get_card_rating(x, ["All Decks"], metrics), reverse=True
-    )
+    def soup_rating(card):
+        base = get_card_rating(card, ["All Decks"], metrics)
+        tags = card.get("tags", [])
+        text = str(card.get("text", "")).lower()
+        name = str(card.get("name", "")).lower()
+
+        is_fixer = "fixing_ramp" in tags or any(
+            fn in name for fn in constants.FIXING_NAMES
+        )
+        if not is_fixer:
+            universal_phrases = [
+                "any color",
+                "any one color",
+                "any type",
+                "chosen color",
+                "{w}, {u}, {b}, {r}, or {g}",
+                "search your library for a basic",
+                "create a treasure",
+                "treasure token",
+                "basic landcycling",
+            ]
+            if any(phrase in text for phrase in universal_phrases):
+                is_fixer = True
+
+        # Massive priority boost for fixers to ensure they aren't cut for random 2-drops
+        if is_fixer:
+            return base + 5.0
+
+        return base
+
+    candidates.sort(key=soup_rating, reverse=True)
     spells = candidates[:23]
 
     if not spells:
         return None, []
 
-    used_colors = set()
-    for c in spells:
-        for color in c.get("colors", []):
-            used_colors.add(color)
-    soup_colors = list(used_colors)
+    soup_colors = get_strict_colors(spells)
+    if not soup_colors:
+        soup_colors = ["W", "U", "B", "R", "G"]
 
     non_basic_lands = select_useful_lands(pool, soup_colors)
 
-    # Fill exactly to 40
     total_lands_needed = 40 - len(spells)
     needed_basics = max(0, total_lands_needed - len(non_basic_lands))
     basics = calculate_dynamic_mana_base(
-        spells, soup_colors, forced_count=needed_basics
+        spells, non_basic_lands, soup_colors, forced_count=needed_basics
     )
 
     return stack_cards(spells + non_basic_lands + basics), soup_colors
@@ -817,94 +884,216 @@ def build_variant_soup(pool, metrics):
 def select_useful_lands(pool, target_colors):
     useful_lands = []
     for card in pool:
-        if "Land" not in card.get("types", []) or "Basic" in card.get("types", []):
+        name = card.get("name", "")
+        types = card.get("types", [])
+
+        # Explicitly reject true basic lands that might be missing internal tags
+        if name in constants.BASIC_LANDS:
             continue
-        name, text, card_colors = (
-            card.get("name", "").lower(),
-            str(card.get("text", "")).lower(),
-            card.get("colors", []),
-        )
-        if (
-            any(fn in name for fn in constants.FIXING_NAMES)
-            or "search your library for a basic land" in text
+
+        if "Land" not in types or "Basic" in types:
+            continue
+
+        text = str(card.get("text", "")).lower()
+        card_colors = card.get("colors", [])
+
+        is_universal = False
+        universal_phrases = [
+            "any color",
+            "any one color",
+            "any type",
+            "chosen color",
+            "{w}, {u}, {b}, {r}, or {g}",
+            "search your library for a basic",
+        ]
+        if any(phrase in text for phrase in universal_phrases) or any(
+            fn in name.lower() for fn in constants.FIXING_NAMES
         ):
             useful_lands.append(card)
-        elif card_colors and any(c in target_colors for c in card_colors):
+        # To prevent useless tap-lands, a dual land MUST have ALL its colors in our strict target colors
+        elif card_colors and all(c in target_colors for c in card_colors):
             useful_lands.append(card)
+
     return useful_lands
 
 
-def calculate_dynamic_mana_base(spells, colors, forced_count=17):
+def calculate_dynamic_mana_base(spells, non_basic_lands, colors, forced_count=17):
     """
-    Advanced Mana Base algorithm. Uses proportional division but enforces
-    strict minimums to prevent color screw (e.g. 10/7 split instead of 13/4).
+    Pro-Tour Caliber Mana Base algorithm.
+    1. Calculates Exact Pip Requirements (Frank Karsten math).
+    2. Identifies Core vs Splash colors based on Pip Volume and Early Curve.
+    3. Analyzes existing dual lands and universal fixers (Treasure, Any-Color Dorks).
+    4. Prioritizes fixing the exact deficits for all colors.
+    5. Fills remaining slots with primary colors.
     """
     if forced_count <= 0:
         return []
 
-    pips = {c: 0 for c in constants.CARD_COLORS}
+    strict_pips = {c: 0 for c in constants.CARD_COLORS}
+    max_pip_in_single_card = {c: 0 for c in constants.CARD_COLORS}
+    lowest_cmc = {c: 99 for c in constants.CARD_COLORS}
+    hybrid_pips = []
+
+    analyzer = ManaSourceAnalyzer(spells + non_basic_lands)
+    existing_sources = analyzer.sources
+    any_color = analyzer.any_color_sources
+    any_color_enabler_pips = analyzer.any_color_enabler_pips
+
     for card in spells:
-        cost = card.get("mana_cost") or ""
-        for char in cost:
-            if char in pips:
-                pips[char] += 1
+        cost = card.get("mana_cost", "")
+        raw_cmc = card.get("cmc")
+        cmc = int(raw_cmc) if raw_cmc is not None else 99
 
-    active_pips = {c: p for c, p in pips.items() if c in colors and p > 0}
-    total_pips = sum(active_pips.values())
-    lands = []
+        if cost:
+            pips = re.findall(r"\{(.*?)\}", cost)
+            card_color_pips = {c: 0 for c in constants.CARD_COLORS}
+            for pip in pips:
+                opts = pip.split("/")
+                if any(opt.isdigit() or opt in ["X", "C"] for opt in opts):
+                    continue
 
-    # Fallback if no colored pips exist (e.g., all artifacts)
-    if total_pips == 0:
-        for c in colors[:2]:
-            lands.extend(create_basic_lands(c, forced_count // max(1, len(colors))))
-        rem = forced_count - len(lands)
-        if rem > 0 and colors:
-            lands.extend(create_basic_lands(colors[0], rem))
-        return lands
+                valid_opts = [
+                    opt
+                    for opt in opts
+                    if opt in constants.CARD_COLORS and opt in colors
+                ]
+                if not valid_opts:
+                    valid_opts = [opt for opt in opts if opt in constants.CARD_COLORS]
 
-    allocations = {c: 0 for c in active_pips}
-    remaining = forced_count
+                if len(valid_opts) == 1:
+                    card_color_pips[valid_opts[0]] += 1
+                elif len(valid_opts) > 1:
+                    hybrid_pips.append((valid_opts, cmc))
 
-    # Step 1: Assign Safety Floors
-    for c, p in active_pips.items():
-        if p >= 4:
-            # Secondary color requires at least 6-7 sources. We guarantee 6 basics if possible.
-            minimum = min(6, remaining)
+            for c, count in card_color_pips.items():
+                if count > 0:
+                    strict_pips[c] += count
+                    if count > max_pip_in_single_card[c]:
+                        max_pip_in_single_card[c] = count
+                    if cmc < lowest_cmc[c]:
+                        lowest_cmc[c] = cmc
         else:
-            # Light splash requires at least 3 sources
-            minimum = min(3, remaining)
+            for c in card.get("colors", []):
+                if c in colors:
+                    strict_pips[c] += 1
+                    if 1 > max_pip_in_single_card[c]:
+                        max_pip_in_single_card[c] = 1
+                    if cmc < lowest_cmc[c]:
+                        lowest_cmc[c] = cmc
 
-        allocations[c] += minimum
-        remaining -= minimum
+    # Resolve Hybrid Pips intelligently towards core colors
+    for opts, cmc in hybrid_pips:
+        valid_opts = [opt for opt in opts if opt in colors]
+        if not valid_opts:
+            valid_opts = opts
+        best_opt = max(valid_opts, key=lambda o: strict_pips[o])
+        strict_pips[best_opt] += 1
+        if 1 > max_pip_in_single_card[best_opt]:
+            max_pip_in_single_card[best_opt] = 1
+        if cmc < lowest_cmc[best_opt]:
+            lowest_cmc[best_opt] = cmc
 
-    # Step 2: Distribute the remaining lands proportionally
-    if remaining > 0:
-        for c in active_pips:
-            extra = int(round(remaining * (active_pips[c] / total_pips)))
-            allocations[c] += extra
+    active_colors = [c for c in colors if strict_pips[c] > 0]
 
-        # Handle floating point rounding overflow/underflow
-        current_total = sum(allocations.values())
-        diff = forced_count - current_total
+    if not active_colors:
+        active_colors = [c for c in colors]
+        if not active_colors:
+            active_colors = ["W", "U", "B", "R", "G"]
 
-        if diff > 0:
-            # Give to the color with the most pips
-            top_color = max(active_pips, key=active_pips.get)
-            allocations[top_color] += diff
-        elif diff < 0:
-            # Take away from the color with the least pips (without violating math)
-            bottom_color = min(active_pips, key=active_pips.get)
-            allocations[bottom_color] += diff
+    sorted_active = sorted(active_colors, key=lambda c: strict_pips[c], reverse=True)
 
-    # Step 3: Generate the actual cards
+    targets = {}
+    for c in sorted_active:
+        pips = strict_pips.get(c, 0)
+        max_pip = max_pip_in_single_card.get(c, 0)
+
+        if max_pip >= 3:
+            target = 9
+        elif max_pip == 2:
+            if pips <= 3:
+                target = 6
+            elif pips <= 5:
+                target = 7
+            else:
+                target = 8
+        else:
+            if pips == 0:
+                target = 0
+            elif pips == 1:
+                target = 3
+            elif pips <= 3:
+                target = 4
+            elif pips <= 5:
+                target = 5
+            elif pips <= 8:
+                target = 7
+            else:
+                target = 8
+
+        if lowest_cmc.get(c, 99) <= 1 and target > 0:
+            target = max(target, 8)
+        elif lowest_cmc.get(c, 99) == 2 and target > 0:
+            target = max(target, 7)
+
+        if any_color_enabler_pips.get(c, 0) > 0:
+            target = max(target, 8)
+
+        targets[c] = target
+
+    allocations = {c: 0 for c in sorted_active}
+
+    for c in sorted_active:
+        effective_any = max(0, any_color - any_color_enabler_pips.get(c, 0))
+        provided = existing_sources.get(c, 0) + effective_any
+
+        deficit = targets[c] - provided
+
+        if c not in sorted_active[:2]:
+            if max_pip >= 2:
+                max_basics = 4
+            else:
+                max_basics = 2
+            allocations[c] = max(0, min(deficit, max_basics))
+        else:
+            allocations[c] = max(0, deficit)
+
+    total_allocated = sum(allocations.values())
+
+    if total_allocated > forced_count:
+        diff = total_allocated - forced_count
+        trim_order = list(reversed(sorted_active))
+
+        while diff > 0:
+            for c in trim_order:
+                if allocations[c] > 0 and diff > 0:
+                    if (
+                        allocations[c] == 1
+                        and c not in sorted_active[:2]
+                        and any(allocations[k] > 1 for k in trim_order)
+                    ):
+                        continue
+                    allocations[c] -= 1
+                    diff -= 1
+
+    elif total_allocated < forced_count:
+        diff = forced_count - total_allocated
+        core_colors = sorted_active[:2]
+
+        while diff > 0:
+            for c in core_colors:
+                if diff > 0:
+                    allocations[c] += 1
+                    diff -= 1
+
+    lands = []
     for c, count in allocations.items():
         if count > 0:
             lands.extend(create_basic_lands(c, count))
 
-    # Final failsafe in case of weird pip dictionaries
     final_diff = forced_count - len(lands)
-    if final_diff > 0 and colors:
-        lands.extend(create_basic_lands(colors[0], final_diff))
+    if final_diff > 0:
+        fallback_color = sorted_active[0] if sorted_active else "W"
+        lands.extend(create_basic_lands(fallback_color, final_diff))
 
     return lands
 
@@ -927,16 +1116,41 @@ def create_basic_lands(color, count):
             "colors": [color],
             "count": 1,
         }
-    ] * count
+        for _ in range(count)
+    ]
 
 
 def is_castable(card, colors, strict=True):
+    """
+    Determines if a card can be cast natively by the target deck colors.
+    """
     card_colors = card.get("colors", [])
+    mana_cost = card.get("mana_cost", "")
+
     if not card_colors:
         return True
+
     if strict:
-        return all(c in colors for c in card_colors)
-    return any(c in colors for c in card_colors)
+        if mana_cost:
+            pips = re.findall(r"\{(.*?)\}", mana_cost)
+            for pip in pips:
+                options = pip.split("/")
+
+                if any(opt.isdigit() or opt in ["X", "C"] for opt in options):
+                    continue
+
+                valid_mana_options = [opt for opt in options if opt in "WUBRGP"]
+
+                if not valid_mana_options:
+                    continue
+
+                if not any(opt in colors or opt == "P" for opt in valid_mana_options):
+                    return False
+            return True
+        else:
+            return all(c in colors for c in card_colors)
+    else:
+        return any(c in colors for c in card_colors)
 
 
 def get_card_rating(card, colors, metrics=None):
@@ -982,37 +1196,65 @@ class ManaSourceAnalyzer:
         self.pool = pool
         self.sources = {c: 0 for c in constants.CARD_COLORS}
         self.any_color_sources = 0
+        self.any_color_enabler_pips = {c: 0 for c in constants.CARD_COLORS}
+        self.total_fixing_cards = 0
         for card in self.pool:
             self._evaluate(card)
 
     def _evaluate(self, card):
         count = card.get("count", 1)
-        types, text, name = (
-            card.get("types", []),
-            str(card.get("text", "")).lower(),
-            card.get("name", "").lower(),
-        )
-        if "Land" in types and "Basic" not in types:
-            for c in card.get("colors", []):
-                self.sources[c] += count
-            if any(fn in name for fn in constants.FIXING_NAMES) or "any color" in text:
-                self.any_color_sources += count
-        elif (
-            "Artifact" in types
-            and not any(c in card.get("mana_cost", "") for c in "WUBRG")
-            and card.get("colors")
+        types = card.get("types", [])
+        text = str(card.get("text", "")).lower()
+        name = card.get("name", "").lower()
+        card_colors = card.get("colors", [])
+        tags = card.get("tags", [])
+
+        is_land = "Land" in types
+        is_basic = "Basic" in types
+
+        is_universal = False
+        universal_phrases = [
+            "any color",
+            "any one color",
+            "any type",
+            "chosen color",
+            "{w}, {u}, {b}, {r}, or {g}",
+            "search your library for a basic",
+            "search your library for a land",
+            "create a treasure",
+            "treasure token",
+            "gold token",
+            "basic landcycling",
+        ]
+        if any(phrase in text for phrase in universal_phrases) or any(
+            fn in name for fn in constants.FIXING_NAMES
         ):
-            for c in card.get("colors", []):
-                self.sources[c] += count
-        elif (
-            "treasure" in text
-            or "search your library for a basic land" in text
-            or "basic landcycling" in text
-        ):
+            is_universal = True
+
+        # Protect against missing card text in new sets. If it's tagged as a fixer and it's a spell (like a dork or fetch), assume it's universal
+        if "fixing_ramp" in tags and not is_land:
+            is_universal = True
+
+        if is_universal:
             self.any_color_sources += count
-        elif "Creature" in types and "G" in card.get("colors", []) and "add {" in text:
-            for c in card.get("colors", []):
-                self.sources[c] += count
+            self.total_fixing_cards += count
+            for c in card_colors:
+                if c in self.any_color_enabler_pips:
+                    self.any_color_enabler_pips[c] += count
+            return
+
+        if is_land and not is_basic:
+            # Colorless fetching lands without text (e.g., Evolving Wilds in an incomplete dataset)
+            if not card_colors and "fixing_ramp" in tags:
+                self.any_color_sources += count
+                self.total_fixing_cards += count
+                return
+
+            for c in card_colors:
+                if c in self.sources:
+                    self.sources[c] += count
+            if len(card_colors) > 1 or "fixing_ramp" in tags:
+                self.total_fixing_cards += count
 
 
 def count_fixing(pool):

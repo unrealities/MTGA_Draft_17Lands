@@ -31,9 +31,9 @@ def get_resource_dir():
 BASE_DIR = get_base_dir()
 RESOURCE_DIR = get_resource_dir()
 
-APPLICATION_VERSION = 4.07
+APPLICATION_VERSION = 4.08
 OLD_APPLICATION_VERSION = "3.2"
-PREVIOUS_APPLICATION_VERSION = "0405"
+PREVIOUS_APPLICATION_VERSION = "0407"
 
 FONT_SANS_SERIF = "Arial"
 FONT_MONO_SPACE = "Courier"
@@ -843,10 +843,10 @@ CARD_RATINGS_ATTEMPT_MAX = 5
 # Substrings to search for in card oracle text (Case Insensitive)
 FIXING_KEYWORDS = [
     # Direct Production (Any Color)
-    "add one mana of any color",
-    "add one mana of any type",
-    "add x mana of any one color",
-    "add one mana of the chosen color",
+    "mana of any color",
+    "mana of any one color",
+    "mana of any type",
+    "mana of the chosen color",
     # "Choose a color" usually implies fixing (e.g. Thriving lands, Unknown Shores)
     "choose a color",
     # Fetching / Tutoring
@@ -903,4 +903,11 @@ TAG_VISUALS = {
     "mana_sink": "⚙️ Sink",
     "protection": "🛡️ Protect",
     "hate": "🚫 Hate",
+}
+
+# Known corrupted mappings returned by 17Lands API
+CARD_NAME_CORRECTIONS = {
+    "Bespoke B?": "Bespoke Bō",
+    "Bespoke B": "Bespoke Bō",
+    "Bespoke BÃ´": "Bespoke Bō",
 }

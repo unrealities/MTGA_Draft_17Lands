@@ -646,10 +646,7 @@ class DraftApp:
 
         # Update Auto-Detect Label
         if hasattr(self, "lbl_auto_detect"):
-            if (
-                self.configuration.settings.deck_filter == constants.FILTER_OPTION_AUTO
-                and self.configuration.settings.auto_highest_enabled
-            ):
+            if self.configuration.settings.deck_filter == constants.FILTER_OPTION_AUTO:
                 active_color = colors[0] if colors else "All Decks"
                 if active_color == "All Decks":
                     self.lbl_auto_detect.config(text="(Auto: Detecting...)")
@@ -1147,7 +1144,7 @@ class DraftApp:
             current_scale = constants.UI_SIZE_DICT.get(
                 self.configuration.settings.ui_size, 1.0
             )
-            CardToolTip(
+            CardToolTip.create(
                 widget, found, self.configuration.features.images_enabled, current_scale
             )
 
