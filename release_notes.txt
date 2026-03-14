@@ -1,8 +1,16 @@
 ===================== RELEASE NOTES 4.08 =====================
-* unrealities: [Feature] Integrated the Auto-Switch filter natively. Selecting the "Auto" filter will now permanently and automatically track your lane without needing to toggle a separate preference.
+* unrealities: [Feature] Added a "Sample Hand" tab to the Deck Builder that draws 7 cards, dynamically downloads their full artwork, and displays them in an interactive, vertically-fanned stack.
+* unrealities: [Feature] Overhauled the Frank Karsten Mana Base Engine. It now accurately detects universal fixers (including tokens and land searchers), intelligently resolves hybrid mana toward your core colors, and sets strict limits on splash basics to prevent starving your primary colors.
+* unrealities: [Feature] Added an "Auto-Switch Deck Filter to Best Colors" toggle in Preferences to explicitly control automatic lane tracking.
 * unrealities: [Feature] Overhauled the Deck Builder tab to explicitly generate and display a separate "Sideboard" table directly beneath your generated main deck.
+* unrealities: [UX/UI] Re-designed the visual indicator for picked cards. The Live Pack table now pulses a smooth green gradient animation for 1 second upon picking a card before settling on a solid color.
+* unrealities: [UX/UI] Made the "Stats & Analysis" tab in the Deck Builder fully scrollable to accommodate decks with massive amounts of tags and synergies.
 * unrealities: [UX/UI] Completely resolved the visual readability issues in the "Visual View" Card Pool tab. Cards are now rendered using explicitly highly-legible hex combinations instead of inheriting restrictive framework styles.
 * unrealities: [UX/UI] Radically fixed tooltip flickering and persistence. Tooltips now use an intelligent singleton manager with dynamic mouse offsetting, completely eliminating the bug where tooltips would rapidly open and close or fail to disappear.
+* adverseselection: [UX/UI] Add scrollbars to all tables and overflowing panels
+* adverseselection: [UX/UI] Drag-to-reorder columns
+* adverseselection: [Bug] Fix dashboard sash resetting on every pick
+* unrealities: [Bug] Fixed a fatal crash on startup (`Duplicate element`) when using the "System (Native)" theme. Added a safe-mode recovery loop that automatically reverts to default settings and restarts the app if a theme failure occurs, preventing lockouts.
 * unrealities: [Bug] Hardened 17Lands network requests by implementing a global data sanitizer. Corrupted special characters (e.g. 'Bespoke B?' instead of 'Bespoke Bō') returned by 17Lands endpoints are now intercepted and corrected instantly to prevent application failures.
 * unrealities: [Bug] Fixed a rendering glitch where the Dashboard sidebar would slightly expand and contract its width upon every new pick due to aggressive UI resetting.
 * unrealities: [Bug] Fixed a critical state-corruption bug where playing consecutive drafts (or missing the start of a draft) would cause the app to endlessly merge new picks into your previous deck's card pool, resulting in 50+ card pools. The app now strictly detects pick progressions and enforces a clean wipe when time-travel or cross-draft pollution is detected.
