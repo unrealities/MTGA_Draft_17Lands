@@ -473,8 +473,13 @@ class ModernTreeview(ttk.Treeview):
                 else:
                     self.active_sort_column = None
 
+        self._drag_col = None
+        self._drag_start_x = 0
+        self._dragging = False
+
         self._setup_headers(columns)
         self._setup_row_colors()
+        self._setup_column_drag()
 
     def _get_sort_group(self, view_id):
         """Links shared tables (e.g. Main Pack and Mini Pack) so they inherit sorting from each other."""
@@ -510,7 +515,7 @@ class ModernTreeview(ttk.Treeview):
             else:
                 display_text = l
 
-            self.heading(i, text=display_text, command=lambda x=i: self._handle_sort(x))
+            self.heading(i, text=display_text)
             self.column(
                 i,
                 width=140 if i == "name" else 50,
@@ -559,6 +564,79 @@ class ModernTreeview(ttk.Treeview):
                 background=b,
                 foreground=f,
             )
+
+    def _setup_column_drag(self):
+        self.bind("<Button-1>", self._on_header_press, add="+")
+        self.bind("<B1-Motion>", self._on_header_motion, add="+")
+        self.bind("<ButtonRelease-1>", self._on_header_release, add="+")
+
+    def _get_display_order(self):
+        """Returns current column display order (excluding add_btn)."""
+        dc = self["displaycolumns"]
+        if isinstance(dc, str) or (isinstance(dc, tuple) and dc and dc[0] == "#all"):
+            return [c for c in self["columns"] if c != "add_btn"]
+        return [c for c in dc if c != "add_btn"]
+
+    def _on_header_press(self, event):
+        if self.identify_region(event.x, event.y) != "heading":
+            self._drag_col = None
+            return
+        try:
+            idx = int(self.identify_column(event.x).replace("#", "")) - 1
+        except (ValueError, AttributeError):
+            self._drag_col = None
+            return
+        display_order = self._get_display_order()
+        if idx < 0 or idx >= len(display_order):
+            self._drag_col = None
+            return
+        self._drag_col = display_order[idx]
+        self._drag_start_x = event.x
+        self._dragging = False
+
+    def _on_header_motion(self, event):
+        if self._drag_col and abs(event.x - self._drag_start_x) > 8:
+            self._dragging = True
+            self.configure(cursor="fleur")
+
+    def _on_header_release(self, event):
+        self.configure(cursor="")
+        if self._drag_col is None:
+            return
+
+        if not self._dragging:
+            # It was a click — sort
+            col = self._drag_col
+            self._drag_col = None
+            self._handle_sort(col)
+            return
+
+        # It was a drag — reorder display only (do NOT touch active_fields,
+        # which must stay in self["columns"] order for correct value insertion)
+        try:
+            target_idx = int(self.identify_column(event.x).replace("#", "")) - 1
+        except (ValueError, AttributeError):
+            self._drag_col = None
+            self._dragging = False
+            return
+
+        display_order = self._get_display_order()
+        src_idx = display_order.index(self._drag_col) if self._drag_col in display_order else -1
+
+        if src_idx >= 0 and 0 <= target_idx < len(display_order) and src_idx != target_idx:
+            display_order.insert(target_idx, display_order.pop(src_idx))
+            has_add_btn = "add_btn" in self["columns"]
+            self["displaycolumns"] = display_order + (["add_btn"] if has_add_btn else [])
+
+            if self.config and self.view_id:
+                if not hasattr(self.config.settings, "column_display_orders"):
+                    self.config.settings.column_display_orders = {}
+                self.config.settings.column_display_orders[self.view_id] = display_order
+                from src.configuration import write_configuration
+                write_configuration(self.config)
+
+        self._drag_col = None
+        self._dragging = False
 
     def _handle_sort(self, column, force_reverse=None):
         from src.card_logic import field_process_sort
@@ -679,6 +757,8 @@ class DynamicTreeviewManager(ttk.Frame):
     def rebuild(self, trigger_callback=True):
         if self.tree:
             self.tree.destroy()
+        if hasattr(self, "_scrollbar") and self._scrollbar:
+            self._scrollbar.destroy()
 
         self.active_fields = (
             list(self.static_columns)
@@ -699,12 +779,26 @@ class DynamicTreeviewManager(ttk.Frame):
             **self.kwargs,
         )
         self.tree.active_fields = self.active_fields
-        self.tree.pack(fill="both", expand=True)
+
+        # Restore saved display order if present
+        saved_display = getattr(self.config.settings, "column_display_orders", {}).get(self.view_id)
+        if saved_display:
+            valid = [f for f in saved_display if f in self.tree["columns"]]
+            if valid:
+                has_add_btn = "add_btn" in self.tree["columns"]
+                self.tree["displaycolumns"] = valid + (["add_btn"] if has_add_btn else [])
+
+        self._scrollbar = ttk.Scrollbar(
+            self, orient="vertical", command=self.tree.yview
+        )
+        self.tree.configure(yscrollcommand=self._scrollbar.set)
+        self._scrollbar.pack(side="right", fill="y")
+        self.tree.pack(side="left", fill="both", expand=True)
 
         if not self.static_columns:
             self.tree.bind("<Button-3>", self._show_context_menu)
             self.tree.bind("<Control-Button-1>", self._show_context_menu)
-            self.tree.bind("<Button-1>", self._handle_click)
+            self.tree.bind("<Button-1>", self._handle_click, add="+")
 
         if trigger_callback:
             self.on_update()
