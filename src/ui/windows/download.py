@@ -38,8 +38,28 @@ class DownloadWindow(ttk.Frame):
         self._update_table()
 
     def _build_ui(self):
-        container = ttk.Frame(self, padding=10)
-        container.pack(fill="both", expand=True)
+        canvas = tkinter.Canvas(self, highlightthickness=0)
+        scrollbar = ttk.Scrollbar(self, orient="vertical", command=canvas.yview)
+        scrollbar.pack(side="right", fill="y")
+        canvas.pack(side="left", fill="both", expand=True)
+        canvas.configure(yscrollcommand=scrollbar.set)
+
+        container = ttk.Frame(canvas, padding=10)
+        canvas_window = canvas.create_window((0, 0), window=container, anchor="nw")
+
+        def _on_content_resize(event):
+            canvas.configure(scrollregion=canvas.bbox("all"))
+
+        def _on_canvas_resize(event):
+            canvas.itemconfig(canvas_window, width=event.width)
+
+        container.bind("<Configure>", _on_content_resize)
+        canvas.bind("<Configure>", _on_canvas_resize)
+        canvas.bind(
+            "<MouseWheel>",
+            lambda e: canvas.yview_scroll(-1 * (e.delta // 120), "units"),
+        )
+
         self.table_manager = DynamicTreeviewManager(
             container,
             view_id="dataset_manager",
@@ -56,7 +76,7 @@ class DownloadWindow(ttk.Frame):
             ],
             height=4,
         )
-        self.table_manager.pack(fill="both", expand=True, pady=(0, 10))
+        self.table_manager.pack(fill="x", pady=(0, 10))
         self.table = self.table_manager.tree
         form = ttk.Frame(container, style="Card.TFrame", padding=12)
         form.pack(fill="x")

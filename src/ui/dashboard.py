@@ -322,6 +322,7 @@ class DashboardFrame(ttk.Frame):
         # The Horizontal Slider replacing the rigid grid layout
         self.h_splitter = ttk.PanedWindow(self.content_frame, orient=tkinter.HORIZONTAL)
         self.h_splitter.grid(row=0, column=0, sticky="nsew")
+        self.h_splitter.bind("<ButtonRelease-1>", self._on_sash_drag_end)
 
         # --- LEFT: Tables ---
         self.f_left = ttk.Frame(self.h_splitter)
@@ -413,9 +414,41 @@ class DashboardFrame(ttk.Frame):
 
         # --- RIGHT: Sidebar ---
         self.sidebar_frame = ttk.Frame(self.h_splitter, width=280)
-        self.sidebar_container = ttk.Frame(self.sidebar_frame)
-        self.sidebar_container.pack(
-            side="right", fill="y", expand=False, padx=(0, 10), pady=(10, 10)
+
+        self._sidebar_scrollbar = ttk.Scrollbar(self.sidebar_frame, orient="vertical")
+        self._sidebar_scrollbar.pack(side="right", fill="y")
+
+        self._sidebar_canvas = tkinter.Canvas(
+            self.sidebar_frame, highlightthickness=0,
+            yscrollcommand=self._sidebar_scrollbar.set,
+        )
+        self._sidebar_canvas.pack(side="left", fill="both", expand=True)
+        self._sidebar_scrollbar.config(command=self._sidebar_canvas.yview)
+
+        self.sidebar_container = ttk.Frame(self._sidebar_canvas)
+        self._sidebar_canvas_window = self._sidebar_canvas.create_window(
+            (0, 0), window=self.sidebar_container, anchor="nw"
+        )
+
+        def _on_sidebar_resize(event):
+            self._sidebar_canvas.itemconfig(
+                self._sidebar_canvas_window, width=event.width
+            )
+
+        def _on_sidebar_content_resize(event):
+            self._sidebar_canvas.configure(
+                scrollregion=self._sidebar_canvas.bbox("all")
+            )
+
+        self._sidebar_canvas.bind("<Configure>", _on_sidebar_resize)
+        self.sidebar_container.bind("<Configure>", _on_sidebar_content_resize)
+        self._sidebar_canvas.bind(
+            "<MouseWheel>",
+            lambda e: self._sidebar_canvas.yview_scroll(-1 * (e.delta // 120), "units"),
+        )
+        self.sidebar_container.bind(
+            "<MouseWheel>",
+            lambda e: self._sidebar_canvas.yview_scroll(-1 * (e.delta // 120), "units"),
         )
 
         if self.sidebar_visible:
@@ -427,7 +460,7 @@ class DashboardFrame(ttk.Frame):
             self.configuration,
             on_click_callback=self.on_advisor_click,
         )
-        self.advisor_panel.pack(fill="x", pady=(0, 15))
+        self.advisor_panel.pack(fill="x", pady=(10, 15), padx=(0, 10))
 
         self.signal_container = CollapsibleFrame(
             self.sidebar_container,
@@ -435,7 +468,7 @@ class DashboardFrame(ttk.Frame):
             configuration=self.configuration,
             setting_key="open_lanes_panel",
         )
-        self.signal_container.pack(fill="x", pady=(0, 15))
+        self.signal_container.pack(fill="x", pady=(0, 15), padx=(0, 10))
         self.signal_meter = SignalMeter(self.signal_container.content_frame)
         self.signal_meter.pack(fill="x")
 
@@ -445,7 +478,7 @@ class DashboardFrame(ttk.Frame):
             configuration=self.configuration,
             setting_key="mana_curve_panel",
         )
-        self.curve_container.pack(fill="x", pady=(0, 15))
+        self.curve_container.pack(fill="x", pady=(0, 15), padx=(0, 10))
         default_ideal = self.configuration.card_logic.deck_mid.distribution
         self.curve_plot = ManaCurvePlot(
             self.curve_container.content_frame, ideal_distribution=default_ideal
@@ -458,7 +491,7 @@ class DashboardFrame(ttk.Frame):
             configuration=self.configuration,
             setting_key="pool_balance_panel",
         )
-        self.pool_container.pack(fill="x", pady=(0, 15))
+        self.pool_container.pack(fill="x", pady=(0, 15), padx=(0, 10))
         self.type_chart = TypePieChart(self.pool_container.content_frame)
         self.type_chart.pack(fill="x")
 
@@ -503,6 +536,9 @@ class DashboardFrame(ttk.Frame):
             and self._missing_count == 0
         )
 
+        # Capture visibility BEFORE grid_remove() so was_hidden is accurate
+        was_content_hidden = not self.content_frame.winfo_viewable()
+
         self.content_frame.grid_remove()
         self.waiting_frame.grid_remove()
         self.no_data_frame.grid_remove()
@@ -522,10 +558,9 @@ class DashboardFrame(ttk.Frame):
                 )
             self.recovery_frame.grid(row=0, column=0, sticky="nsew")
         elif has_draft_data:
-            was_hidden = not self.content_frame.winfo_viewable()
             self.content_frame.grid(row=0, column=0, sticky="nsew")
 
-            if was_hidden and self.sidebar_visible:
+            if was_content_hidden and self.sidebar_visible:
 
                 def fix_sash():
                     try:
@@ -760,6 +795,13 @@ class DashboardFrame(ttk.Frame):
     def update_recommendations(self, recs):
         if hasattr(self, "advisor_panel"):
             self.advisor_panel.update_recommendations(recs)
+
+    def _on_sash_drag_end(self, event):
+        """Save the sash position immediately after the user drags it."""
+        try:
+            self.configuration.settings.dashboard_sash = self.h_splitter.sashpos(0)
+        except Exception:
+            pass
 
     def _toggle_sidebar(self):
         """Dynamically grid or hide the sidebar via the rail button."""
