@@ -76,10 +76,364 @@ class DashboardFrame(ttk.Frame):
         self._build_waiting_state()
         self._build_p1p1_state()
         self._build_deck_recovery_state()
+        self._build_draft_recap_state()
         self._build_active_state()
 
         self._update_dashboard_state()
         self.bind("<Configure>", self._on_resize)
+
+    def _build_draft_recap_state(self):
+        self.recap_frame = ttk.Frame(self)
+
+        self.recap_canvas = tkinter.Canvas(
+            self.recap_frame, highlightthickness=0, bg=Theme.BG_PRIMARY
+        )
+        self.recap_scrollbar = AutoScrollbar(
+            self.recap_frame, orient="vertical", command=self.recap_canvas.yview
+        )
+
+        self.recap_canvas.grid(row=0, column=0, sticky="nsew")
+        self.recap_scrollbar.grid(row=0, column=1, sticky="ns")
+        self.recap_frame.rowconfigure(0, weight=1)
+        self.recap_frame.columnconfigure(0, weight=1)
+
+        self.recap_canvas.configure(yscrollcommand=self.recap_scrollbar.set)
+
+        self.recap_container = ttk.Frame(self.recap_canvas, padding=15)
+        self.recap_canvas_window = self.recap_canvas.create_window(
+            (0, 0), window=self.recap_container, anchor="nw"
+        )
+
+        def _on_content_resize(event):
+            self.recap_canvas.configure(scrollregion=self.recap_canvas.bbox("all"))
+
+        def _on_canvas_resize(event):
+            self.recap_canvas.itemconfig(self.recap_canvas_window, width=event.width)
+
+        self.recap_container.bind("<Configure>", _on_content_resize)
+        self.recap_canvas.bind("<Configure>", _on_canvas_resize)
+
+        from src.utils import bind_scroll
+
+        bind_scroll(self.recap_canvas, self.recap_canvas.yview_scroll)
+        bind_scroll(self.recap_container, self.recap_canvas.yview_scroll)
+        self.recap_container.bind(
+            "<Enter>",
+            lambda e: bind_scroll(self.recap_container, self.recap_canvas.yview_scroll),
+        )
+
+    def _populate_recap_frame(self):
+        for widget in self.recap_container.winfo_children():
+            widget.destroy()
+
+        if not getattr(self, "_taken_cards", None):
+            return
+
+        taken = self._taken_cards
+        is_pick_two = "PickTwo" in self._current_event_type
+        cards_per_pack = max(1, len(taken) // 3)
+
+        baseline_wr = 54.0
+        if getattr(self, "_metrics", None):
+            b, _ = self._metrics.get_metrics("All Decks", "gihwr")
+            if b > 0:
+                baseline_wr = b
+
+        # --- HEADER (Grade Placeholders) ---
+        header = ttk.Frame(self.recap_container)
+        header.pack(fill="x", pady=(0, 20))
+
+        self.lbl_grade_desc = ttk.Label(
+            header,
+            text="Analyzing Draft Data...",
+            font=(Theme.FONT_FAMILY, 16, "bold"),
+            bootstyle="secondary",
+        )
+        self.lbl_grade_desc.pack(anchor="center")
+
+        badge_frame = ttk.Frame(header)
+        badge_frame.pack(pady=10)
+        ttk.Label(
+            badge_frame, text="Overall Grade: ", font=(Theme.FONT_FAMILY, 14)
+        ).pack(side="left")
+        self.lbl_grade_letter = ttk.Label(
+            badge_frame,
+            text=" ? ",
+            font=(Theme.FONT_FAMILY, 20, "bold"),
+            bootstyle="inverse-secondary",
+        )
+        self.lbl_grade_letter.pack(side="left")
+
+        # --- DATA CRUNCHING (Fast Operations) ---
+        taken = self._taken_cards
+        is_pick_two = "PickTwo" in self._current_event_type
+        cards_per_pack = max(1, len(taken) // 3)
+
+        baseline_wr = 54.0
+        if getattr(self, "_metrics", None):
+            b, _ = self._metrics.get_metrics("All Decks", "gihwr")
+            if b > 0:
+                baseline_wr = b
+
+        # 1. Biggest Steals
+        from src import constants
+
+        steals = []
+        for i, card in enumerate(taken):
+            if (
+                "Basic" in card.get("types", [])
+                or card.get("name") in constants.BASIC_LANDS
+            ):
+                continue
+            pick_num = (
+                (i % cards_per_pack) // 2 + 1
+                if is_pick_two
+                else (i % cards_per_pack) + 1
+            )
+            stats = card.get("deck_colors", {}).get("All Decks", {})
+            alsa = float(stats.get("alsa", 0.0))
+            gihwr = float(stats.get("gihwr", 0.0))
+
+            # Criteria: Better than average card, picked much later than it is typically seen
+            if gihwr >= (baseline_wr + 0.5) and alsa > 0 and pick_num >= (alsa + 1.5):
+                steals.append(
+                    {
+                        "card": card,
+                        "pick": pick_num,
+                        "alsa": alsa,
+                        "gihwr": gihwr,
+                        "diff": pick_num - alsa,
+                    }
+                )
+
+        steals.sort(key=lambda x: x["diff"], reverse=True)
+        top_steals = steals[:7]
+
+        # 2. Top Power Cards
+        top_power = [
+            c
+            for c in taken
+            if not (
+                "Basic" in c.get("types", [])
+                or c.get("name", "") in constants.BASIC_LANDS
+            )
+        ]
+        top_power.sort(
+            key=lambda c: float(
+                c.get("deck_colors", {}).get("All Decks", {}).get("gihwr", 0.0)
+            ),
+            reverse=True,
+        )
+        top_power = top_power[:7]
+
+        # 3. Rares & Mythics
+        rares = [c for c in taken if c.get("rarity", "").lower() in ["rare", "mythic"]]
+        rares.sort(
+            key=lambda c: float(
+                c.get("deck_colors", {}).get("All Decks", {}).get("gihwr", 0.0)
+            ),
+            reverse=True,
+        )
+
+        # --- RENDER LISTS ---
+        content_grid = ttk.Frame(self.recap_container)
+        content_grid.pack(fill="both", expand=True)
+        content_grid.columnconfigure(0, weight=1)
+        content_grid.columnconfigure(1, weight=1)
+
+        def build_card_list(parent, row, col, title, items, is_steal=False):
+            frame = ttk.Labelframe(parent, text=f" {title} ", padding=15)
+            frame.grid(row=row, column=col, sticky="nsew", padx=10, pady=10)
+
+            if not items:
+                ttk.Label(
+                    frame,
+                    text="None found.",
+                    font=(Theme.FONT_FAMILY, 10, "italic"),
+                    bootstyle="secondary",
+                ).pack(anchor="w")
+                return
+
+            for item in items:
+                card = item["card"] if is_steal else item
+                name = card.get("name", "Unknown")
+                stats = card.get("deck_colors", {}).get("All Decks", {})
+                gihwr = float(stats.get("gihwr", 0.0))
+
+                row_f = ttk.Frame(frame)
+                row_f.pack(fill="x", pady=4)
+
+                if is_steal:
+                    pick_num = item["pick"]
+                    alsa = item["alsa"]
+                    stat_str = f"Pick {pick_num} (ALSA {alsa:.1f})"
+                else:
+                    stat_str = f"{gihwr:.1f}% WR"
+
+                lbl_name = ttk.Label(
+                    row_f,
+                    text=name,
+                    font=(Theme.FONT_FAMILY, 11, "bold"),
+                    cursor="hand2",
+                )
+                lbl_name.pack(side="left")
+
+                lbl_stat = ttk.Label(
+                    row_f,
+                    text=f"  {stat_str}",
+                    font=(Theme.FONT_FAMILY, 10),
+                    bootstyle="secondary",
+                )
+                lbl_stat.pack(side="right")
+
+                # Attach Tooltips
+                lbl_name.bind(
+                    "<Button-1>",
+                    lambda e, c=card: self._trigger_recap_tooltip(lbl_name, c),
+                )
+                row_f.bind(
+                    "<Button-1>",
+                    lambda e, c=card: self._trigger_recap_tooltip(row_f, c),
+                )
+
+        build_card_list(content_grid, 0, 0, "Biggest Steals", top_steals, is_steal=True)
+        build_card_list(
+            content_grid, 0, 1, "Best Cards Drafted", top_power, is_steal=False
+        )
+        build_card_list(content_grid, 1, 0, "Rares & Mythics", rares, is_steal=False)
+
+        # --- STATS PANEL (Placeholders) ---
+        self.stats_frame = ttk.Labelframe(
+            content_grid, text=" Draft Profile ", padding=15
+        )
+        self.stats_frame.grid(row=1, column=1, sticky="nsew", padx=10, pady=10)
+
+        self.lbl_stats_loading = ttk.Label(
+            self.stats_frame,
+            text="Running AI Optimizer...",
+            font=(Theme.FONT_FAMILY, 10, "italic"),
+            bootstyle="secondary",
+        )
+        self.lbl_stats_loading.pack(anchor="w")
+
+        # --- ASYNC GRADE CALCULATION ---
+        dataset_name = self.configuration.card_data.latest_dataset
+
+        def _recap_worker():
+            try:
+                from src.card_logic import suggest_deck
+
+                variants = suggest_deck(
+                    self._taken_cards,
+                    self._metrics,
+                    self.configuration,
+                    self._current_event_type,
+                    dataset_name=dataset_name,
+                )
+                self.after(0, lambda: self._apply_recap_grade(variants))
+            except Exception as e:
+                import logging
+
+                logging.getLogger(__name__).error(f"Recap Generation Error: {e}")
+
+        import threading
+
+        threading.Thread(target=_recap_worker, daemon=True).start()
+
+    def _apply_recap_grade(self, variants):
+        if not self.winfo_exists() or not hasattr(self, "lbl_grade_letter"):
+            return
+
+        grade_letter = "N/A"
+        grade_color = "secondary"
+        grade_desc = "Draft Complete!"
+        best_variant = None
+
+        if variants:
+            best_variant = max(variants.values(), key=lambda v: v["rating"])
+            rating = best_variant["rating"]
+            if rating >= 85.0:
+                grade_letter = "S"
+                grade_color = "success"
+                grade_desc = "Incredible Draft! (Trophy Contender)"
+            elif rating >= 75.0:
+                grade_letter = "A"
+                grade_color = "success"
+                grade_desc = "Excellent Draft! (Strong Deck)"
+            elif rating >= 65.0:
+                grade_letter = "B"
+                grade_color = "info"
+                grade_desc = "Solid Draft (Good Fundamentals)"
+            elif rating >= 55.0:
+                grade_letter = "C"
+                grade_color = "warning"
+                grade_desc = "Average Draft (Playable)"
+            else:
+                grade_letter = "D"
+                grade_color = "danger"
+                grade_desc = "Rough Draft (Needs Luck)"
+
+        self.lbl_grade_desc.config(text=grade_desc, bootstyle="primary")
+        self.lbl_grade_letter.config(
+            text=f" {grade_letter} ", bootstyle=f"inverse-{grade_color}"
+        )
+
+        for widget in self.stats_frame.winfo_children():
+            widget.destroy()
+
+        if best_variant:
+            deck = best_variant["deck_cards"]
+            creatures = sum(
+                c.get("count", 1) for c in deck if "Creature" in c.get("types", [])
+            )
+            lands = sum(c.get("count", 1) for c in deck if "Land" in c.get("types", []))
+            spells = sum(c.get("count", 1) for c in deck) - creatures - lands
+
+            arch_str = "".join(best_variant.get("colors", ["Auto"]))
+            from src.constants import COLOR_NAMES_DICT
+
+            arch_name = COLOR_NAMES_DICT.get(arch_str, arch_str)
+
+            ttk.Label(
+                self.stats_frame,
+                text="Suggested Archetype:",
+                font=(Theme.FONT_FAMILY, 11),
+            ).pack(anchor="w", pady=(0, 2))
+            ttk.Label(
+                self.stats_frame,
+                text=f"{arch_name}",
+                font=(Theme.FONT_FAMILY, 13, "bold"),
+                bootstyle="primary",
+            ).pack(anchor="w", pady=(0, 10))
+
+            ttk.Label(
+                self.stats_frame,
+                text=f"Creatures: {creatures}",
+                font=(Theme.FONT_FAMILY, 11),
+            ).pack(anchor="w", pady=2)
+            ttk.Label(
+                self.stats_frame,
+                text=f"Non-Creatures: {spells}",
+                font=(Theme.FONT_FAMILY, 11),
+            ).pack(anchor="w", pady=2)
+            ttk.Label(
+                self.stats_frame, text=f"Lands: {lands}", font=(Theme.FONT_FAMILY, 11)
+            ).pack(anchor="w", pady=2)
+        else:
+            ttk.Label(
+                self.stats_frame,
+                text="Not enough cards to form a profile.",
+                bootstyle="secondary",
+            ).pack(anchor="w")
+
+    def _trigger_recap_tooltip(self, widget, card):
+        from src.ui.components import CardToolTip
+        from src import constants
+
+        scale = constants.UI_SIZE_DICT.get(self.configuration.settings.ui_size, 1.0)
+        CardToolTip.create(
+            widget, card, self.configuration.features.images_enabled, scale
+        )
 
     def _on_resize(self, event):
         if event.widget == self:
@@ -525,6 +879,8 @@ class DashboardFrame(ttk.Frame):
             constants.LIMITED_TYPE_STRING_DRAFT_PICK_TWO_TRAD,
         ]
 
+        is_sealed = "Sealed" in self._current_event_type
+
         # Determine if we should show the explicit P1P1 OCR frame
         show_p1p1 = (
             self._current_event_set
@@ -538,11 +894,19 @@ class DashboardFrame(ttk.Frame):
         # Determine if we recovered a deck but have no active packs.
         # Only show this static screen if the draft is fully COMPLETED (>= 40 cards).
         # Otherwise, they are mid-draft and just waiting for the next pack to appear!
-        show_recovery = (
-            self._taken_count >= 40
-            and self._pack_count == 0
-            and self._missing_count == 0
-        )
+        is_draft_complete = False
+        if is_sealed and self._taken_count >= 40:
+            is_draft_complete = True
+        elif (
+            not is_sealed
+            and getattr(self, "_pack_fully_picked", False)
+            and self._current_pack >= 3
+        ):
+            is_draft_complete = True
+        elif not is_sealed and self._taken_count >= 40 and self._pack_count == 0:
+            is_draft_complete = True
+
+        show_recap = is_draft_complete
 
         # Capture visibility BEFORE grid_remove() so was_hidden is accurate
         was_content_hidden = not self.content_frame.winfo_viewable()
@@ -553,17 +917,23 @@ class DashboardFrame(ttk.Frame):
             self.p1p1_frame.grid_remove()
         if hasattr(self, "recovery_frame"):
             self.recovery_frame.grid_remove()
+        if hasattr(self, "recap_frame"):
+            self.recap_frame.grid_remove()
 
         if not has_any_datasets:
             self.no_data_frame.grid(row=0, column=0, sticky="nsew")
         elif show_p1p1:
             self.p1p1_frame.grid(row=0, column=0, sticky="nsew")
-        elif show_recovery:
-            if self._current_event_set:
-                self.lbl_recovery_title.config(
-                    text=f"Draft Recovered: {self._current_event_set} {self._current_event_type}"
-                )
-            self.recovery_frame.grid(row=0, column=0, sticky="nsew")
+        elif show_recap:
+            if is_sealed:
+                if self._current_event_set:
+                    self.lbl_recovery_title.config(
+                        text=f"Sealed Pool Recovered: {self._current_event_set} {self._current_event_type}"
+                    )
+                self.recovery_frame.grid(row=0, column=0, sticky="nsew")
+            else:
+                self.recap_frame.grid(row=0, column=0, sticky="nsew")
+                self._populate_recap_frame()
         elif has_draft_data:
             self.content_frame.grid(row=0, column=0, sticky="nsew")
 
@@ -644,6 +1014,11 @@ class DashboardFrame(ttk.Frame):
         # Track card counts for dynamic layout rendering
         if source_type == "pack":
             self._pack_count = len(cards) if cards else 0
+            self._pack_fully_picked = (
+                picked_cards is not None
+                and self._pack_count > 0
+                and len(picked_cards) >= self._pack_count
+            )
         else:
             self._missing_count = len(cards) if cards else 0
 
@@ -780,8 +1155,11 @@ class DashboardFrame(ttk.Frame):
         if self.curve_plot:
             self.curve_plot.update_curve(distribution)
 
-    def update_deck_balance(self, taken_cards):
+    def update_deck_balance(self, taken_cards, history=None, metrics=None):
         # Determine if we have a pool loaded to enforce the "Active" state
+        self._taken_cards = taken_cards
+        self._history = history
+        self._metrics = metrics
         self._taken_count = len(taken_cards) if taken_cards else 0
         self._update_dashboard_state()
 

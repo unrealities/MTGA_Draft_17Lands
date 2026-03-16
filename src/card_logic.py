@@ -13,6 +13,7 @@ import re
 import io
 import csv
 import json
+import random
 from src import constants
 from src.logger import create_logger
 
@@ -327,10 +328,382 @@ def get_sideboard(pool, deck_stacked):
     return sideboard
 
 
-def suggest_deck(taken_cards, metrics, configuration, event_type="PremierDraft"):
+def simulate_deck(deck_list, iterations=10000):
+    flat_deck = []
+    for c in deck_list:
+        is_land = "Land" in c.get("types", [])
+        colors_produced = set()
+        if is_land:
+            colors_produced.update(c.get("colors", []))
+            text = str(c.get("text", "")).lower()
+            if "any color" in text or "fixing_ramp" in c.get("tags", []):
+                colors_produced.update(["W", "U", "B", "R", "G"])
+
+        pips = []
+        if not is_land:
+            cost = c.get("mana_cost", "")
+            matches = re.findall(r"\{(.*?)\}", cost)
+            for pip in matches:
+                opts = [opt for opt in pip.split("/") if opt in "WUBRG"]
+                if opts:
+                    pips.append(opts)
+
+        for _ in range(int(c.get("count", 1))):
+            flat_deck.append(
+                {
+                    "is_land": is_land,
+                    "is_removal": "removal" in c.get("tags", []),
+                    "colors_produced": colors_produced,
+                    "cmc": int(c.get("cmc", 0)),
+                    "pips": pips,
+                }
+            )
+
+    if len(flat_deck) < 40:
+        return None
+
+    stats = {
+        "mulligans": 0,
+        "screw_t3": 0,
+        "screw_t4": 0,
+        "flood_t5": 0,
+        "cast_t2": 0,
+        "cast_t3": 0,
+        "cast_t4": 0,
+        "curve_out": 0,
+        "removal_t4": 0,
+        "color_screw_t3": 0,
+        "avg_hand_size": 0,
+    }
+
+    for _ in range(iterations):
+        random.shuffle(flat_deck)
+
+        # Pro-Level London Mulligan Heuristic
+        mull_count = 0
+        hand = flat_deck[0:7]
+        lands = sum(1 for c in hand if c["is_land"])
+
+        if lands < 2 or lands > 5:
+            mull_count = 1
+            hand = flat_deck[7:14]
+            lands = sum(1 for c in hand if c["is_land"])
+            if lands < 2 or lands > 4:
+                mull_count = 2
+                hand = flat_deck[14:21]
+
+        if mull_count > 0:
+            stats["mulligans"] += 1
+
+        kept_size = 7 - mull_count
+        stats["avg_hand_size"] += kept_size
+        start_idx = mull_count * 7
+
+        current_7 = flat_deck[start_idx : start_idx + 7]
+        if kept_size < 7:
+            # London Mulligan Heuristic: Drop the highest CMC cards.
+            current_7.sort(key=lambda x: x["cmc"])
+
+        kept_hand = current_7[:kept_size]
+        deck_rest = flat_deck[start_idx + 7 :]
+
+        game_state = kept_hand + deck_rest
+
+        t2_state = game_state[: kept_size + 1]
+        t3_state = game_state[: kept_size + 2]
+        t4_state = game_state[: kept_size + 3]
+        t5_state = game_state[: kept_size + 4]
+
+        lands_t3 = [c for c in t3_state if c["is_land"]]
+        if len(lands_t3) < 3:
+            stats["screw_t3"] += 1
+
+        lands_t4 = [c for c in t4_state if c["is_land"]]
+        if len(lands_t4) < 4:
+            stats["screw_t4"] += 1
+
+        lands_t5 = sum(1 for c in t5_state if c["is_land"])
+        if lands_t5 >= 6:
+            stats["flood_t5"] += 1
+
+        if any(c["is_removal"] for c in t4_state):
+            stats["removal_t4"] += 1
+
+        def can_cast(state, target_cmc):
+            available_lands = [c for c in state if c["is_land"]]
+            if len(available_lands) < target_cmc:
+                return False
+
+            spells = [c for c in state if not c["is_land"] and c["cmc"] == target_cmc]
+            if not spells:
+                return False
+
+            color_sources = {"W": 0, "U": 0, "B": 0, "R": 0, "G": 0}
+            for l in available_lands:
+                for c in l["colors_produced"]:
+                    color_sources[c] += 1
+
+            for s in spells:
+                castable = True
+                temp_sources = color_sources.copy()
+                for pip_opts in s["pips"]:
+                    paid = False
+                    for opt in pip_opts:
+                        if temp_sources.get(opt, 0) > 0:
+                            temp_sources[opt] -= 1
+                            paid = True
+                            break
+                    if not paid:
+                        castable = False
+                        break
+                if castable:
+                    return True
+            return False
+
+        c2 = can_cast(t2_state, 2)
+        c3 = can_cast(t3_state, 3)
+        c4 = can_cast(t4_state, 4)
+
+        if c2:
+            stats["cast_t2"] += 1
+        if c3:
+            stats["cast_t3"] += 1
+        if c4:
+            stats["cast_t4"] += 1
+        if c2 and c3 and c4:
+            stats["curve_out"] += 1
+
+        if len(lands_t3) >= 3:
+            color_sources = {"W": 0, "U": 0, "B": 0, "R": 0, "G": 0}
+            for l in lands_t3:
+                for c in l["colors_produced"]:
+                    color_sources[c] += 1
+
+            t3_spells = [c for c in t3_state if not c["is_land"] and c["cmc"] <= 3]
+            any_color_screw = False
+            for s in t3_spells:
+                temp_sources = color_sources.copy()
+                can_pay_colors = True
+                for pip_opts in s["pips"]:
+                    paid = False
+                    for opt in pip_opts:
+                        if temp_sources.get(opt, 0) > 0:
+                            temp_sources[opt] -= 1
+                            paid = True
+                            break
+                    if not paid:
+                        can_pay_colors = False
+                        break
+                if not can_pay_colors:
+                    any_color_screw = True
+                    break
+            if any_color_screw:
+                stats["color_screw_t3"] += 1
+
+    stats["avg_hand_size"] = stats["avg_hand_size"] / iterations
+    for k in list(stats.keys()):
+        if k != "avg_hand_size":
+            stats[k] = (stats[k] / iterations) * 100.0
+    return stats
+
+
+GLOBAL_DECK_CACHE = {}
+
+
+def optimize_deck(base_deck, base_sb, archetype_key, colors):
     """
-    Entry point. Generates multiple distinct deck variants based on the pool.
-    Evaluates them using a universal, holistic scoring engine and returns the best options.
+    Brute-forces deck permutations using Monte Carlo to ensure the optimal final 40.
+    """
+    total_cards = sum(c.get("count", 1) for c in base_deck)
+    if total_cards < 40:
+        return base_deck, base_sb, None, ""
+
+    spells = [c for c in base_deck if "Land" not in c.get("types", [])]
+    lands = [c for c in base_deck if "Land" in c.get("types", [])]
+    sb_spells = [
+        c
+        for c in base_sb
+        if "Land" not in c.get("types", []) and is_castable(c, colors, strict=True)
+    ]
+
+    def get_wr(c):
+        return float(
+            c.get("deck_colors", {}).get(archetype_key, {}).get("gihwr")
+            or c.get("deck_colors", {}).get("All Decks", {}).get("gihwr", 0.0)
+        )
+
+    spells.sort(key=get_wr)
+    sb_spells.sort(key=get_wr, reverse=True)
+
+    worst_spell = spells[0] if spells else None
+    best_sb_spell = sb_spells[0] if sb_spells else None
+
+    highest_cmc_spell = (
+        max(spells, key=lambda c: int(c.get("cmc", 0))) if spells else None
+    )
+    cheap_sb_spells = [c for c in sb_spells if int(c.get("cmc", 0)) <= 2]
+    best_cheap_sb = cheap_sb_spells[0] if cheap_sb_spells else None
+
+    basic_lands = [
+        c
+        for c in lands
+        if "Basic" in c.get("types", []) or c.get("name") in constants.BASIC_LANDS
+    ]
+    cuttable_land = basic_lands[0] if basic_lands else None
+
+    colorless_utility_lands = [
+        c
+        for c in lands
+        if not c.get("colors")
+        and not any(fn in c.get("name", "").lower() for fn in constants.FIXING_NAMES)
+    ]
+    worst_colorless_land = (
+        min(colorless_utility_lands, key=get_wr) if colorless_utility_lands else None
+    )
+
+    permutations = []
+    permutations.append(("Base Deck", base_deck, base_sb))
+
+    def swap_cards(deck, sb, out_card, in_card):
+        new_deck = []
+        new_sb = list(sb)
+        removed = False
+
+        for c in deck:
+            if not removed and c["name"] == out_card["name"]:
+                if c.get("count", 1) > 1:
+                    new_c = dict(c)
+                    new_c["count"] -= 1
+                    new_deck.append(new_c)
+                removed = True
+            else:
+                new_deck.append(c)
+
+        if removed and in_card:
+            added = False
+            for c in new_deck:
+                if c["name"] == in_card["name"]:
+                    new_c = dict(c)
+                    new_c["count"] += 1
+                    new_deck = [
+                        new_c if x["name"] == in_card["name"] else x for x in new_deck
+                    ]
+                    added = True
+                    break
+            if not added:
+                in_c = dict(in_card)
+                in_c["count"] = 1
+                new_deck.append(in_c)
+
+            sb_removed = False
+            final_sb = []
+            for c in new_sb:
+                if not sb_removed and c["name"] == in_card["name"]:
+                    if c.get("count", 1) > 1:
+                        new_c = dict(c)
+                        new_c["count"] -= 1
+                        final_sb.append(new_c)
+                    sb_removed = True
+                else:
+                    final_sb.append(c)
+            new_sb = final_sb
+
+        return new_deck, new_sb
+
+    if (
+        highest_cmc_spell
+        and best_cheap_sb
+        and highest_cmc_spell["name"] != best_cheap_sb["name"]
+    ):
+        d, s = swap_cards(base_deck, base_sb, highest_cmc_spell, best_cheap_sb)
+        permutations.append(
+            (
+                f"Curve Lower (-{highest_cmc_spell['name']}, +{best_cheap_sb['name']})",
+                d,
+                s,
+            )
+        )
+
+    if worst_spell and best_sb_spell and worst_spell["name"] != best_sb_spell["name"]:
+        d, s = swap_cards(base_deck, base_sb, worst_spell, best_sb_spell)
+        permutations.append(
+            (f"Power Up (-{worst_spell['name']}, +{best_sb_spell['name']})", d, s)
+        )
+
+    if worst_spell and cuttable_land:
+        d, s = swap_cards(base_deck, base_sb, worst_spell, cuttable_land)
+        permutations.append((f"Play 18 Lands (-{worst_spell['name']})", d, s))
+
+    if cuttable_land and best_sb_spell:
+        d, s = swap_cards(base_deck, base_sb, cuttable_land, best_sb_spell)
+        permutations.append((f"Play 16 Lands (+{best_sb_spell['name']})", d, s))
+
+    if worst_colorless_land:
+        pip_counts = {c: 0 for c in constants.CARD_COLORS}
+        for c in spells:
+            cost = c.get("mana_cost", "")
+            for pip in re.findall(r"\{(.*?)\}", cost):
+                for opt in pip.split("/"):
+                    if opt in pip_counts:
+                        pip_counts[opt] += c.get("count", 1)
+
+        best_basic_color = (
+            max(pip_counts, key=pip_counts.get)
+            if any(pip_counts.values())
+            else (
+                archetype_key[0]
+                if archetype_key and archetype_key != "All Decks"
+                else "W"
+            )
+        )
+        synth_basic = create_basic_lands(best_basic_color, 1)[0]
+
+        d, s = swap_cards(base_deck, base_sb, worst_colorless_land, synth_basic)
+        permutations.append(
+            (f"Fix Mana Base (-{worst_colorless_land['name']}, +Basic Land)", d, s)
+        )
+
+    best_score = -9999
+    best_perm = permutations[0]
+
+    for desc, p_deck, p_sb in permutations:
+        stats = simulate_deck(p_deck, iterations=300)
+        if not stats:
+            continue
+        score = (
+            stats["cast_t2"]
+            + stats["cast_t3"]
+            + stats["cast_t4"]
+            + (stats["curve_out"] * 2)
+            - stats["mulligans"]
+            - stats["screw_t3"]
+            - stats["color_screw_t3"]
+            - (stats["flood_t5"] * 1.5)
+        )
+        if score > best_score:
+            best_score = score
+            best_perm = (desc, p_deck, p_sb)
+
+    final_deck, final_sb = best_perm[1], best_perm[2]
+
+    # 2,000 iterations is plenty for accurate decimal percentages without blocking CPU
+    final_stats = simulate_deck(final_deck, iterations=2000)
+    opt_note = f"Optimized: {best_perm[0]}"
+
+    return final_deck, final_sb, final_stats, opt_note
+
+
+def suggest_deck(
+    taken_cards,
+    metrics,
+    configuration,
+    event_type="PremierDraft",
+    progress_callback=None,
+    dataset_name=None,
+):
+    """
+    Entry point. Generates distinct deck variants, forces them through the AI Optimizer,
+    and yields the mathematically perfected options dynamically via callback.
     """
     sorted_decks = {}
     pool_size = len(taken_cards)
@@ -340,123 +713,157 @@ def suggest_deck(taken_cards, metrics, configuration, event_type="PremierDraft")
         return sorted_decks
 
     try:
+        # Check Global Cache First (incorporating Dataset Name so toggling Trad/Premier forces updates)
+        pool_sig = tuple(
+            sorted([f"{c.get('name', '')}:{c.get('count', 1)}" for c in taken_cards])
+        )
+        cache_key = (event_type, dataset_name, len(taken_cards), pool_sig)
+
+        if cache_key in GLOBAL_DECK_CACHE:
+            if progress_callback:
+                progress_callback({"status": "Loaded optimized decks from cache."})
+            return GLOBAL_DECK_CACHE[cache_key]
+
         color_options = identify_top_pairs(taken_cards, metrics)
         all_variants = []
         incomplete_variants = []
+        seen_signatures = set()
+
+        def process_variant(variant_name, deck, sb, colors, arch_key):
+            if not deck:
+                return
+            opt_deck, opt_sb, opt_stats, opt_note = optimize_deck(
+                deck, sb, arch_key, colors
+            )
+            score, breakdown = calculate_holistic_score(
+                opt_deck, colors, pool_size, metrics
+            )
+
+            # --- MONTE CARLO REALITY CHECK ---
+            # The heuristic score measures raw card power, but the simulator reveals if the mana base actually works.
+            # We heavily penalize the final rating if the deck mathematically defeats itself.
+            if opt_stats:
+                mc_penalties = []
+                # Baseline color screw is ~10-15%. Punish severely if over 16%.
+                if opt_stats["color_screw_t3"] > 16.0:
+                    pen = (opt_stats["color_screw_t3"] - 16.0) * 2.5
+                    score -= pen
+                    mc_penalties.append(f"Color Screw (-{pen:.1f})")
+
+                # Baseline mana screw is ~15-20%. Punish if over 22%.
+                if opt_stats["screw_t3"] > 22.0:
+                    pen = (opt_stats["screw_t3"] - 22.0) * 1.5
+                    score -= pen
+                    mc_penalties.append(f"Mana Screw (-{pen:.1f})")
+
+                # Baseline flood is ~20-25%. Punish if over 27%.
+                if opt_stats["flood_t5"] > 27.0:
+                    pen = (opt_stats["flood_t5"] - 27.0) * 1.5
+                    score -= pen
+                    mc_penalties.append(f"Flood Risk (-{pen:.1f})")
+
+                score = max(0.0, score)
+                if mc_penalties:
+                    breakdown = (
+                        f"{breakdown} | {', '.join(mc_penalties)}"
+                        if breakdown
+                        else ", ".join(mc_penalties)
+                    )
+
+            sig = tuple(
+                sorted([f"{c.get('name')}:{c.get('count', 1)}" for c in opt_deck])
+            )
+            if sig in seen_signatures:
+                return
+            seen_signatures.add(sig)
+
+            variant_data = {
+                "label_prefix": variant_name,
+                "type": "Deck",
+                "rating": score,
+                "record": estimate_record(score, is_bo3),
+                "deck_cards": opt_deck,
+                "sideboard_cards": opt_sb,
+                "colors": colors,
+                "breakdown": breakdown,
+                "stats": opt_stats,
+                "optimization_note": opt_note,
+            }
+
+            full_label = f"{arch_key} {variant_name} [Est: {variant_data['record']}] (Power: {score:.0f})"
+
+            if "Incomplete Deck" not in breakdown:
+                all_variants.append((full_label, variant_data))
+            else:
+                incomplete_variants.append((full_label, variant_data))
+
+            if progress_callback:
+                progress_callback(
+                    {"variant_label": full_label, "variant_data": variant_data}
+                )
 
         for main_colors in color_options:
-            # 1. Variant: Consistency (Strictly 2 colors)
-            con_deck = build_variant_consistency(taken_cards, main_colors, metrics)
-            if con_deck:
-                score, breakdown = calculate_holistic_score(
-                    con_deck, main_colors, pool_size, metrics
-                )
-                variant_data = {
-                    "label_prefix": "Consistent",
-                    "type": "Midrange / Standard",
-                    "rating": score,
-                    "record": estimate_record(score, is_bo3),
-                    "deck_cards": con_deck,
-                    "sideboard_cards": get_sideboard(taken_cards, con_deck),
-                    "colors": main_colors,
-                    "breakdown": breakdown,
-                }
-                if "Incomplete Deck" not in breakdown:
-                    all_variants.append(variant_data)
-                else:
-                    incomplete_variants.append(variant_data)
+            arch_key = "".join(sorted(main_colors))
+            if progress_callback:
+                progress_callback({"status": f"Analyzing {arch_key} Archetypes..."})
 
-            # 2. Variant: Greedy (Splash bombs/synergy)
+            # 1. Consistent
+            con_deck = build_variant_consistency(taken_cards, main_colors, metrics)
+            process_variant(
+                "Consistent",
+                con_deck,
+                get_sideboard(taken_cards, con_deck),
+                main_colors,
+                arch_key,
+            )
+
+            # 2. Greedy / Splash
             greedy_deck, splash_color = build_variant_greedy(
                 taken_cards, main_colors, metrics
             )
             if greedy_deck:
                 target_colors = main_colors + [splash_color]
-                score, breakdown = calculate_holistic_score(
-                    greedy_deck, target_colors, pool_size, metrics
+                process_variant(
+                    f"Splash {splash_color}",
+                    greedy_deck,
+                    get_sideboard(taken_cards, greedy_deck),
+                    target_colors,
+                    arch_key,
                 )
-                variant_data = {
-                    "label_prefix": f"Splash {splash_color}",
-                    "type": "Power / Domain",
-                    "rating": score,
-                    "record": estimate_record(score, is_bo3),
-                    "deck_cards": greedy_deck,
-                    "sideboard_cards": get_sideboard(taken_cards, greedy_deck),
-                    "colors": target_colors,
-                    "breakdown": breakdown,
-                }
-                if "Incomplete Deck" not in breakdown:
-                    all_variants.append(variant_data)
-                else:
-                    incomplete_variants.append(variant_data)
 
-            # 3. Variant: Tempo (Low curve, aggro)
+            # 3. Tempo
             tempo_deck = build_variant_curve(taken_cards, main_colors, metrics)
-            if tempo_deck:
-                score, breakdown = calculate_holistic_score(
-                    tempo_deck, main_colors, pool_size, metrics
-                )
-                variant_data = {
-                    "label_prefix": "Tempo",
-                    "type": "Aggro",
-                    "rating": score,
-                    "record": estimate_record(score, is_bo3),
-                    "deck_cards": tempo_deck,
-                    "sideboard_cards": get_sideboard(taken_cards, tempo_deck),
-                    "colors": main_colors,
-                    "breakdown": breakdown,
-                }
-                if "Incomplete Deck" not in breakdown:
-                    all_variants.append(variant_data)
-                else:
-                    incomplete_variants.append(variant_data)
+            process_variant(
+                "Tempo",
+                tempo_deck,
+                get_sideboard(taken_cards, tempo_deck),
+                main_colors,
+                arch_key,
+            )
 
-        # 4. Variant: Good Stuff Soup (Fallback for disjointed drafts)
+        # 4. Soup
+        if progress_callback:
+            progress_callback({"status": "Analyzing Domain / Soup..."})
         soup_deck, soup_colors = build_variant_soup(taken_cards, metrics)
         if soup_deck:
-            score, breakdown = calculate_holistic_score(
-                soup_deck, soup_colors, pool_size, metrics
+            soup_arch_key = (
+                "".join(sorted(soup_colors[:3])) if soup_colors else "All Decks"
             )
-            variant_data = {
-                "label_prefix": "Good Stuff (Soup)",
-                "type": "Domain / 4+ Colors",
-                "rating": score,
-                "record": estimate_record(score, is_bo3),
-                "deck_cards": soup_deck,
-                "sideboard_cards": get_sideboard(taken_cards, soup_deck),
-                "colors": soup_colors[:3] if soup_colors else ["All Decks"],
-                "breakdown": breakdown,
-            }
-            if "Incomplete Deck" not in breakdown:
-                all_variants.append(variant_data)
-            else:
-                incomplete_variants.append(variant_data)
-
-        if not all_variants and incomplete_variants:
-            all_variants = incomplete_variants
-
-        all_variants.sort(key=lambda x: x["rating"], reverse=True)
-
-        seen_signatures = set()
-        for variant in all_variants:
-            sig = tuple(
-                sorted(
-                    [
-                        f"{c.get('name')}:{c.get('count', 1)}"
-                        for c in variant["deck_cards"]
-                    ]
-                )
+            process_variant(
+                "Good Stuff (Soup)",
+                soup_deck,
+                get_sideboard(taken_cards, soup_deck),
+                soup_colors[:3] if soup_colors else ["All Decks"],
+                soup_arch_key,
             )
-            if sig in seen_signatures:
-                continue
-            seen_signatures.add(sig)
 
-            pair_key = "".join(sorted(variant["colors"]))
-            label = f"{pair_key} {variant['label_prefix']}"
-            sorted_decks[label] = variant
+        final_list = all_variants if all_variants else incomplete_variants
+        final_list.sort(key=lambda x: x[1]["rating"], reverse=True)
 
-            if len(sorted_decks) >= 10:
-                break
+        for label, data in final_list[:10]:
+            sorted_decks[label] = data
+
+        GLOBAL_DECK_CACHE[cache_key] = sorted_decks
 
     except Exception as e:
         logger.error(f"Deck builder failure: {e}", exc_info=True)
@@ -685,7 +1092,7 @@ def build_variant_consistency(pool, colors, metrics):
     ]
     candidates.sort(key=lambda x: get_card_rating(x, colors, metrics), reverse=True)
     spells = candidates[:23]
-    non_basic_lands = select_useful_lands(pool, colors)
+    non_basic_lands = select_useful_lands(pool, colors, metrics)
 
     total_lands_needed = 40 - len(spells)
     needed_basics = max(0, total_lands_needed - len(non_basic_lands))
@@ -748,7 +1155,7 @@ def build_variant_greedy(pool, colors, metrics):
     deck_spells = main_spells[:22] + [best_splash[0]]
 
     target_colors = colors + [best_splash[1]]
-    non_basic_lands = select_useful_lands(pool, target_colors)
+    non_basic_lands = select_useful_lands(pool, target_colors, metrics)
 
     total_lands_needed = 40 - len(deck_spells)
     needed_basics = max(0, total_lands_needed - len(non_basic_lands))
@@ -777,7 +1184,7 @@ def build_variant_curve(pool, colors, metrics):
 
     candidates.sort(key=tempo_rating, reverse=True)
     spells = candidates[:24]
-    non_basic_lands = select_useful_lands(pool, colors)
+    non_basic_lands = select_useful_lands(pool, colors, metrics)
 
     total_lands_needed = 40 - len(spells)
     needed_basics = max(0, total_lands_needed - len(non_basic_lands))
@@ -867,7 +1274,7 @@ def build_variant_soup(pool, metrics):
     if not soup_colors:
         soup_colors = ["W", "U", "B", "R", "G"]
 
-    non_basic_lands = select_useful_lands(pool, soup_colors)
+    non_basic_lands = select_useful_lands(pool, soup_colors, metrics)
 
     total_lands_needed = 40 - len(spells)
     needed_basics = max(0, total_lands_needed - len(non_basic_lands))
@@ -881,8 +1288,14 @@ def build_variant_soup(pool, metrics):
 # --- UTILITIES ---
 
 
-def select_useful_lands(pool, target_colors):
+def select_useful_lands(pool, target_colors, metrics=None):
     useful_lands = []
+    baseline_wr = 54.0
+    if metrics:
+        b, _ = metrics.get_metrics("All Decks", "gihwr")
+        if b > 0:
+            baseline_wr = b
+
     for card in pool:
         name = card.get("name", "")
         types = card.get("types", [])
@@ -909,10 +1322,39 @@ def select_useful_lands(pool, target_colors):
         if any(phrase in text for phrase in universal_phrases) or any(
             fn in name.lower() for fn in constants.FIXING_NAMES
         ):
+            is_universal = True
+
+        gihwr = float(
+            card.get("deck_colors", {}).get("All Decks", {}).get("gihwr", 0.0)
+        )
+
+        if is_universal:
             useful_lands.append(card)
-        # To prevent useless tap-lands, a dual land MUST have ALL its colors in our strict target colors
         elif card_colors and all(c in target_colors for c in card_colors):
-            useful_lands.append(card)
+            if gihwr >= (baseline_wr - 2.0) or gihwr == 0.0:
+                useful_lands.append(card)
+        elif not card_colors:
+            # Colorless utility land. Let the AI Optimizer test if it ruins the mana base!
+            if gihwr >= (baseline_wr - 2.0) or gihwr == 0.0:
+                useful_lands.append(card)
+
+    # Cap colorless utility lands to max 2 to prevent total mana base collapse
+    colorless_lands = [
+        c
+        for c in useful_lands
+        if not c.get("colors")
+        and not any(fn in c.get("name", "").lower() for fn in constants.FIXING_NAMES)
+    ]
+    if len(colorless_lands) > 2:
+        colorless_lands.sort(
+            key=lambda x: float(
+                x.get("deck_colors", {}).get("All Decks", {}).get("gihwr", 0.0)
+            ),
+            reverse=True,
+        )
+        # Remove the excess from useful_lands
+        for c in colorless_lands[2:]:
+            useful_lands.remove(c)
 
     return useful_lands
 

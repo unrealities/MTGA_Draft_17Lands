@@ -103,6 +103,12 @@ def load_data(args, config, progress_callback):
                     scanner.retrieve_set_data(path)
                     config.card_data.latest_dataset = os.path.basename(path)
                     break
+
+            # Deep-scan to catch up on any missed picks while the application was closed/restarting
+            scanner.draft_data_search()
+            pk, pi = scanner.retrieve_current_pack_and_pick()
+            if pk > 0:
+                progress_callback(f"Loading {e_set} - Pack {pk} Pick {pi}...")
         else:
             # Absolute fallback: load the most recently used dataset
             last_dataset = config.card_data.latest_dataset

@@ -29,6 +29,7 @@ from src.ui.advisor_view import AdvisorPanel
 # Windows
 from src.ui.windows.taken_cards import TakenCardsPanel
 from src.ui.windows.suggest_deck import SuggestDeckPanel
+from src.ui.windows.custom_deck import CustomDeckPanel
 from src.ui.windows.compare import ComparePanel
 from src.ui.windows.download import DownloadWindow
 from src.ui.windows.tier_list import TierListWindow
@@ -449,7 +450,13 @@ class DraftApp:
             self.notebook, self.orchestrator.scanner, self.configuration
         )
         self.panel_suggest = SuggestDeckPanel(
-            self.notebook, self.orchestrator.scanner, self.configuration
+            self.notebook,
+            self.orchestrator.scanner,
+            self.configuration,
+            on_export_custom=self._export_to_custom_builder,
+        )
+        self.panel_custom = CustomDeckPanel(
+            self.notebook, self.orchestrator.scanner, self.configuration, self
         )
         self.panel_compare = ComparePanel(
             self.notebook, self.orchestrator.scanner, self.configuration
@@ -466,7 +473,8 @@ class DraftApp:
 
         self.notebook.add(self.panel_data, text=" Datasets ")
         self.notebook.add(self.panel_taken, text=" Card Pool ")
-        self.notebook.add(self.panel_suggest, text=" Deck Builder ")
+        self.notebook.add(self.panel_suggest, text=" Deck Suggestions ")
+        self.notebook.add(self.panel_custom, text=" Deck Builder ")
         self.notebook.add(self.panel_compare, text=" Comparisons ")
         self.notebook.add(self.panel_tiers, text=" Tier Lists ")
 
@@ -484,6 +492,11 @@ class DraftApp:
             parts.append(str(start_time))
 
         self.lbl_session_info.config(text=" | ".join(parts))
+
+    def _export_to_custom_builder(self, deck, sb):
+        """Receives a deck from the SuggestDeckPanel and switches focus to CustomDeckPanel"""
+        self.panel_custom.import_deck(deck, sb)
+        self.notebook.select(self.panel_custom)
 
     def _toggle_tabs(self):
         if self.tabs_visible:
@@ -697,7 +710,7 @@ class DraftApp:
 
         deck_metrics = get_deck_metrics(taken_cards)
         self.dashboard.update_stats(deck_metrics.distribution_all)
-        self.dashboard.update_deck_balance(taken_cards)
+        self.dashboard.update_deck_balance(taken_cards, history, metrics)
 
         if self.overlay_window:
             self.overlay_window.update_data(
@@ -715,6 +728,7 @@ class DraftApp:
         for p in [
             self.panel_taken,
             self.panel_suggest,
+            self.panel_custom,
             self.panel_compare,
             self.panel_tiers,
         ]:
