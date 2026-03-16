@@ -84,31 +84,31 @@ A high win rate can be misleading (e.g., an aggressive 1-drop has a high win rat
 
 ---
 
-## 9. Deck Generation & AI Optimization
+## 9. Interactive Deck Building & AI Optimization
 
-The application shifts from pack-evaluation to deck-optimization using a hyper-geometric simulation engine.
+The application shifts from pack-evaluation to a unified, interactive deck construction environment that blends rapid baseline generation with on-demand deep analysis.
 
-### A. Frank Karsten Mana Base Engine
+### A. Frank Karsten Mana Base Engine ("Auto-Lands")
 
-Instead of simple proportional allocation, the app builds mana bases using Pro-Tour heuristics:
+Users can click a single button to perfectly balance their lands using Pro-Tour heuristics:
 
-- **Pip Volume Calculation:** It counts the exact number of specific colored mana symbols (Pips) required by the spells in the deck.
-- **Universal Fixer Detection:** It explicitly identifies Treasure-makers, Fetchlands, and "Any Color" dorks to supplement mathematical mana sources.
-- **Hybrid Mana Resolution:** It correctly categorizes hybrid mana (e.g., `{W/U}`) towards whichever core color the deck favors.
-- **Splash Starvation Protection:** It strictly caps basic land allocations for splash colors (max 2 basics for a single-pip splash) to prevent a greedy splash from stealing lands from the primary curve colors.
+- **Pip Volume Calculation:** Counts the exact number of specific colored mana symbols (Pips) required by the spells in the deck.
+- **Universal Fixer Detection:** Explicitly identifies Treasure-makers, Fetchlands, and "Any Color" dorks to supplement mathematical mana sources.
+- **Hybrid Mana Resolution:** Correctly categorizes hybrid mana (e.g., `{W/U}`) towards whichever core color the deck favors.
+- **Splash Starvation Protection:** Strictly caps basic land allocations for splash colors (max 2 basics for a single-pip splash) to prevent a greedy splash from stealing lands from the primary curve colors.
 
 ### B. Monte Carlo Simulation
 
-The app evaluates built decks by running a **10,000-game Monte Carlo simulation**.
+The app evaluates the user's customized 40-card deck by running a **10,000-game Monte Carlo simulation**.
 
-- **London Mulligan Logic:** It applies pro-level mulligan heuristics, automatically throwing back 0-land, 1-land, and 6+ land hands. When reducing hand size, it intelligently bottom-decks the highest CMC cards.
-- **Hypergeometrics:** It calculates the exact probability of casting a 2-drop on Turn 2, a 3-drop on Turn 3, and "Curving Out" perfectly on the play.
-- **Risk Factors:** It tracks probabilities for Mana Screw (Missing 3rd/4th land drops), Mana Flood (6+ lands by turn 5), and Color Screw.
+- **London Mulligan Logic:** Applies pro-level mulligan heuristics, automatically throwing back 0-land, 1-land, and 6+ land hands. When reducing hand size, it intelligently bottom-decks the highest CMC cards.
+- **Hypergeometrics:** Calculates the exact probability of casting a 2-drop on Turn 2, a 3-drop on Turn 3, and "Curving Out" perfectly on the play.
+- **Risk Factors:** Tracks probabilities for Mana Screw (Missing 3rd/4th land drops), Mana Flood (6+ lands by turn 5), and Color Screw.
 
-### C. AI Auto-Optimizer
+### C. On-Demand AI Auto-Optimizer
 
-The application can actively "brute-force" permutations of the user's drafted pool.
+Users can actively "brute-force" permutations of their current deck configuration via a dedicated background task.
 
 - It generates variations: **Play 18 Lands**, **Play 16 Lands**, **Curve Lower** (swap an expensive 5-drop for a cheap 2-drop from the sideboard), and **Power Up** (swap the weakest main deck card for the strongest sideboard card).
-- It simulates thousands of games for each variation simultaneously.
-- It selects the deck configuration that mathematically maximizes Cast Rates and minimizes Screw Rates, then automatically updates the UI.
+- It simulates thousands of games for each variation simultaneously without freezing the UI.
+- It selects the deck configuration that mathematically maximizes Cast Rates and minimizes Screw Rates, then automatically updates the interactive tables.

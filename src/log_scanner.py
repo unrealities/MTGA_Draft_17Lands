@@ -73,6 +73,7 @@ class ArenaScanner:
         self.pick_offset = 0
         self.pack_offset = 0
         self.p1p1_offset = 0
+        self.pool_offset = 0
         self.search_offset = 0
         self.draft_start_offset = 0
         self.file_size = 0
@@ -241,6 +242,7 @@ class ArenaScanner:
             self.pick_offset = 0
             self.pack_offset = 0
             self.p1p1_offset = 0
+            self.pool_offset = 0
             self.draft_sets = None
             self.current_pick = 0
             self.current_pack = 0
@@ -352,6 +354,7 @@ class ArenaScanner:
                     self.pick_offset = self.draft_start_offset
                     self.pack_offset = self.draft_start_offset
                     self.p1p1_offset = self.draft_start_offset
+                    self.pool_offset = self.draft_start_offset
             except Exception as error:
                 logger.error(error)
 
@@ -800,7 +803,7 @@ class ArenaScanner:
                 self.draft_type = constants.LIMITED_TYPE_DRAFT_QUICK
                 self.number_of_players = 8
                 explicit_update = True
-            elif self._search_sealed_pool():
+            elif self._search_card_pool():
                 self.draft_type = constants.LIMITED_TYPE_SEALED
                 explicit_update = True
 
@@ -808,6 +811,7 @@ class ArenaScanner:
             explicit_update |= self._search_pick_v1()
             explicit_update |= self._search_pack_p1p1()
             explicit_update |= self._search_pack_notify()
+            explicit_update |= self._search_card_pool()
         elif self.draft_type in [
             constants.LIMITED_TYPE_DRAFT_PREMIER_V2,
             constants.LIMITED_TYPE_DRAFT_PICK_TWO,
@@ -817,17 +821,19 @@ class ArenaScanner:
             explicit_update |= self._search_pick_human()
             explicit_update |= self._search_pack_p1p1()
             explicit_update |= self._search_pack_notify()
+            explicit_update |= self._search_card_pool()
         elif self.draft_type in [
             constants.LIMITED_TYPE_DRAFT_QUICK,
             constants.LIMITED_TYPE_DRAFT_PICK_TWO_QUICK,
         ]:
             explicit_update |= self._search_pick_bot()
             explicit_update |= self._search_pack_bot()
+            explicit_update |= self._search_card_pool()
         elif self.draft_type in [
             constants.LIMITED_TYPE_SEALED,
             constants.LIMITED_TYPE_SEALED_TRADITIONAL,
         ]:
-            explicit_update |= self._search_sealed_pool()
+            explicit_update |= self._search_card_pool()
 
         with self.lock:
             return bool(
@@ -1043,29 +1049,37 @@ class ArenaScanner:
             "pick_offset", [constants.DRAFT_PICK_STRING_QUICK], _extract
         )
 
-    def _search_sealed_pool(self):
+    def _search_card_pool(self):
         update = False
-        for payload in self._scan_log_for_events("pack_offset", ['"CardPool":[']):
+        for payload in self._scan_log_for_events("pool_offset", ['"CardPool":[']):
             try:
                 data = process_json(payload)
                 if not data:
                     continue
                 pool = []
-                course = data.get("Course", data.get("Courses", {}))
 
-                if isinstance(course, list):
-                    for c in course:
-                        if (
-                            not self.event_string
-                            or c.get("InternalEventName") == self.event_string
-                        ):
-                            pool.extend(c.get("CardPool", []))
-                elif isinstance(course, dict):
+                # Check root first
+                if "CardPool" in data and "InternalEventName" in data:
                     if (
                         not self.event_string
-                        or course.get("InternalEventName") == self.event_string
+                        or data.get("InternalEventName") == self.event_string
                     ):
-                        pool.extend(course.get("CardPool", []))
+                        pool.extend(data.get("CardPool", []))
+                else:
+                    course = data.get("Course", data.get("Courses", {}))
+                    if isinstance(course, list):
+                        for c in course:
+                            if (
+                                not self.event_string
+                                or c.get("InternalEventName") == self.event_string
+                            ):
+                                pool.extend(c.get("CardPool", []))
+                    elif isinstance(course, dict):
+                        if (
+                            not self.event_string
+                            or course.get("InternalEventName") == self.event_string
+                        ):
+                            pool.extend(course.get("CardPool", []))
 
                 if pool:
                     pool_strs = [str(x) for x in pool]
@@ -1076,7 +1090,7 @@ class ArenaScanner:
                         self._save_state()
                         update = True
             except Exception as e:
-                logger.error(f"Sealed Search Error: {e}")
+                logger.error(f"Card Pool Search Error: {e}")
         return update
 
     # =========================================================================

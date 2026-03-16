@@ -70,11 +70,12 @@ $$ Score = (Base + ZScore) \times ColorMult \times HungerMult $$
    - `Creatures < Expected`: 1.2x boost to Creatures.
    - `Removal < 2` (Late Game): 1.3x boost to Removal.
 
-## 6. Deck Building & Simulation Engine
+## 6. Interactive Deck Building & Simulation Engine
 
-- **Frank Karsten Mana Base:** Builds exact basic land arrays by analyzing pip volumes, hybrid mana, and universal fixers. Splashes are strictly capped to prevent main-color starvation.
-- **Monte Carlo Simulation:** Shuffles a generated deck 10,000 times applying London Mulligan heuristics to calculate realistic On-The-Play probabilities (Turn 2 Cast Rate, Color Screw, Mana Screw, Flood).
-- **AI Auto-Optimizer:** Tests various deck permutations (16 lands vs 17 lands, swapping cards) to find the configuration with the highest consistency metrics.
+- **Drag & Drop / Quick Clicks:** Users can seamlessly customize AI-generated archetypes by clicking or dragging cards between the Main Deck and Sideboard tables.
+- **Auto-Lands (Frank Karsten):** A 1-click feature that builds exact basic land arrays by analyzing pip volumes, hybrid mana, and universal fixers. Splashes are strictly capped to prevent main-color starvation.
+- **Monte Carlo Simulation:** Shuffles the custom 40-card deck 10,000 times applying London Mulligan heuristics to calculate realistic On-The-Play probabilities (Turn 2 Cast Rate, Color Screw, Mana Screw, Flood).
+- **On-Demand AI Auto-Optimizer:** An explicit background task the user triggers to brute-force deck permutations (16 lands vs 17 lands, swapping high-CMC cards for 2-drops) to find the configuration with the highest consistency metrics.
 
 ## 7. External Integrations
 

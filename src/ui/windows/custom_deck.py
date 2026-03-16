@@ -14,12 +14,12 @@ import urllib.parse
 import hashlib
 import os
 import io
+import re
 from concurrent.futures import ThreadPoolExecutor
 from PIL import Image, ImageTk
 
 from src import constants
 from src.card_logic import (
-    simulate_deck,
     copy_deck,
     stack_cards,
     calculate_dynamic_mana_base,
@@ -155,7 +155,7 @@ class CustomDeckPanel(ttk.Frame):
 
         # Smart Basics Toolbar (Left Click = Add, Right Click = Remove)
         self.basics_frame = ttk.Frame(self.header, style="Card.TFrame")
-        self.basics_frame.pack(side="left", padx=(5, 1))
+        self.basics_frame.pack(side="left", padx=(15, 2))
 
         self.basic_buttons = {}
         basics = [
@@ -167,11 +167,7 @@ class CustomDeckPanel(ttk.Frame):
         ]
         for sym, name, style in basics:
             btn = ttk.Button(
-                self.basics_frame,
-                text=f"{sym}: 0",
-                bootstyle=style,
-                width=5,
-                padding=5,
+                self.basics_frame, text=f"{sym}: 0", bootstyle=style, width=5, padding=5
             )
 
             # Standard Add (Left Click)
@@ -185,14 +181,13 @@ class CustomDeckPanel(ttk.Frame):
             btn.bind(
                 "<Control-Button-1>", lambda e, n=name: self._on_basic_remove(e, n)
             )
-            # Intercept Control-Release to stop it from cascading and adding the land back
             btn.bind("<Control-ButtonRelease-1>", lambda e: "break")
 
             btn.pack(side="left")
             self.basic_buttons[name] = btn
 
         self.btn_copy = ttk.Button(
-            self.header, text="Copy Deck", width=9, command=self._copy_to_clipboard
+            self.header, text="Copy Deck", width=10, command=self._copy_to_clipboard
         )
         self.btn_copy.pack(side="right", padx=5)
 
@@ -202,7 +197,7 @@ class CustomDeckPanel(ttk.Frame):
             bootstyle="success",
             command=self._run_simulation,
         )
-        self.btn_sim.pack(side="right", padx=10)
+        self.btn_sim.pack(side="right", padx=15)
 
         # --- TABBED LAYOUT ---
         self.notebook = ttk.Notebook(self)
@@ -288,6 +283,14 @@ class CustomDeckPanel(ttk.Frame):
             width=16,
         ).pack(side="left", padx=5)
 
+        self.btn_optimize = ttk.Button(
+            hand_control_bar,
+            text="🤖 Auto-Optimize Deck",
+            command=self._auto_optimize_deck,
+            bootstyle="info",
+        )
+        self.btn_optimize.pack(side="left", padx=10)
+
         self.hand_canvas_frame = ttk.Frame(self.hand_tab)
         self.hand_canvas_frame.grid(row=1, column=0, sticky="nsew", padx=(0, 15))
         self.hand_canvas_frame.rowconfigure(0, weight=1)
@@ -342,24 +345,285 @@ class CustomDeckPanel(ttk.Frame):
         self.sim_canvas_window = self.sim_canvas.create_window(
             (0, 0), window=self.sim_frame, anchor="nw"
         )
+
+        # Attach the dynamic label wrapper to the canvas resize event
+        def _on_sim_canvas_resize(event):
+            self.sim_canvas.itemconfig(self.sim_canvas_window, width=event.width)
+            wrap_w = max(200, event.width - 40)
+            for child in self.sim_frame.winfo_children():
+                if getattr(child, "is_dynamic_wrap", False):
+                    child.configure(wraplength=wrap_w)
+            self.sim_canvas.configure(scrollregion=self.sim_canvas.bbox("all"))
+
         self.sim_frame.bind(
             "<Configure>",
             lambda e: self.sim_canvas.configure(
                 scrollregion=self.sim_canvas.bbox("all")
             ),
         )
-        self.sim_canvas.bind(
-            "<Configure>",
-            lambda e: self.sim_canvas.itemconfig(self.sim_canvas_window, width=e.width),
-        )
+        self.sim_canvas.bind("<Configure>", _on_sim_canvas_resize)
+
         bind_scroll(self.sim_canvas, self.sim_canvas.yview_scroll)
         bind_scroll(self.sim_frame, self.sim_canvas.yview_scroll)
+
+        self.sim_label = ttk.Label(
+            self.sim_frame,
+            text="Generate a deck to run simulations.",
+            font=(Theme.FONT_FAMILY, 11),
+        )
+        self.sim_label.is_dynamic_wrap = True
+        self.sim_label.pack(pady=20)
 
         self.notebook.bind("<<NotebookTabChanged>>", self._on_tab_changed)
 
     def _on_tab_changed(self, event):
         if "SIMULATION" in self.notebook.tab(self.notebook.select(), "text"):
             self._draw_sample_hand()
+
+    # --- SIMULATION AND OPTIMIZATION TASKS ---
+    def _run_simulation(self):
+        """Entry point for clicking the 'Analyze' button in the toolbar."""
+        self.notebook.select(self.hand_tab)
+        self.sim_executor.submit(self._run_monte_carlo_task, self.deck_list)
+
+    def _run_monte_carlo_task(self, deck_list):
+        """Executes a Monte Carlo simulation in the background."""
+        self.after(
+            0,
+            lambda: self._show_sim_loading("Running 10,000 Monte Carlo Simulations..."),
+        )
+        try:
+            stats = self._simulate_deck(deck_list, iterations=10000)
+            self.after(0, lambda: self._show_sim_results(stats))
+        except Exception as e:
+            self.after(0, lambda err=str(e): self._show_sim_error(err))
+
+    def _auto_optimize_deck(self):
+        """Entry point for the AI Auto-Optimize button."""
+        self.sim_executor.submit(self._run_auto_optimize_task)
+
+    def _run_auto_optimize_task(self):
+        """Background task that brute-forces deck permutations to find the mathematically optimal build."""
+        self.after(
+            0,
+            lambda: self._show_sim_loading(
+                "AI Auto-Optimizing: Simulating thousands of deck permutations..."
+            ),
+        )
+        try:
+            base_deck = list(self.deck_list)
+            base_sb = list(self.sb_list)
+
+            total_cards = sum(c.get("count", 1) for c in base_deck)
+            if total_cards < 40:
+                raise Exception(
+                    f"Base deck must be at least 40 cards to optimize (currently {total_cards})."
+                )
+
+            spells = [c for c in base_deck if "Land" not in c.get("types", [])]
+            lands = [c for c in base_deck if "Land" in c.get("types", [])]
+            sb_spells = [c for c in base_sb if "Land" not in c.get("types", [])]
+
+            deck_colors = get_strict_colors(spells)
+            archetype_key = (
+                "".join(sorted(deck_colors[:2])) if deck_colors else "All Decks"
+            )
+            if not archetype_key:
+                archetype_key = "All Decks"
+
+            def get_wr(c):
+                return float(
+                    c.get("deck_colors", {}).get(archetype_key, {}).get("gihwr")
+                    or c.get("deck_colors", {}).get("All Decks", {}).get("gihwr", 0.0)
+                )
+
+            spells.sort(key=get_wr)
+            sb_spells.sort(key=get_wr, reverse=True)
+
+            worst_spell = spells[0] if spells else None
+            best_sb_spell = sb_spells[0] if sb_spells else None
+
+            highest_cmc_spell = (
+                max(spells, key=lambda c: int(c.get("cmc", 0))) if spells else None
+            )
+            cheap_sb_spells = [c for c in sb_spells if int(c.get("cmc", 0)) <= 2]
+            best_cheap_sb = cheap_sb_spells[0] if cheap_sb_spells else None
+
+            basic_lands = [
+                c
+                for c in lands
+                if "Basic" in c.get("types", [])
+                or c.get("name") in constants.BASIC_LANDS
+            ]
+            cuttable_land = basic_lands[0] if basic_lands else None
+
+            permutations = []
+            permutations.append(("Base Deck", base_deck, base_sb))
+
+            def swap_cards(deck, sb, out_card, in_card):
+                new_deck = []
+                new_sb = list(sb)
+                removed = False
+
+                for c in deck:
+                    if not removed and c["name"] == out_card["name"]:
+                        if c.get("count", 1) > 1:
+                            new_c = dict(c)
+                            new_c["count"] -= 1
+                            new_deck.append(new_c)
+                        removed = True
+                    else:
+                        new_deck.append(c)
+
+                if removed and in_card:
+                    added = False
+                    for c in new_deck:
+                        if c["name"] == in_card["name"]:
+                            new_c = dict(c)
+                            new_c["count"] += 1
+                            new_deck = [
+                                new_c if x["name"] == in_card["name"] else x
+                                for x in new_deck
+                            ]
+                            added = True
+                            break
+                    if not added:
+                        in_c = dict(in_card)
+                        in_c["count"] = 1
+                        new_deck.append(in_c)
+
+                    sb_removed = False
+                    final_sb = []
+                    for c in new_sb:
+                        if not sb_removed and c["name"] == in_card["name"]:
+                            if c.get("count", 1) > 1:
+                                new_c = dict(c)
+                                new_c["count"] -= 1
+                                final_sb.append(new_c)
+                            sb_removed = True
+                        else:
+                            final_sb.append(c)
+                    new_sb = final_sb
+
+                return new_deck, new_sb
+
+            if (
+                highest_cmc_spell
+                and best_cheap_sb
+                and highest_cmc_spell["name"] != best_cheap_sb["name"]
+            ):
+                d, s = swap_cards(base_deck, base_sb, highest_cmc_spell, best_cheap_sb)
+                permutations.append(
+                    (
+                        f"Curve Lower (-{highest_cmc_spell['name']}, +{best_cheap_sb['name']})",
+                        d,
+                        s,
+                    )
+                )
+
+            if (
+                worst_spell
+                and best_sb_spell
+                and worst_spell["name"] != best_sb_spell["name"]
+            ):
+                d, s = swap_cards(base_deck, base_sb, worst_spell, best_sb_spell)
+                permutations.append(
+                    (
+                        f"Power Up (-{worst_spell['name']}, +{best_sb_spell['name']})",
+                        d,
+                        s,
+                    )
+                )
+
+            if worst_spell and cuttable_land:
+                d, s = swap_cards(base_deck, base_sb, worst_spell, cuttable_land)
+                permutations.append((f"Play 18 Lands (-{worst_spell['name']})", d, s))
+
+            if cuttable_land and best_sb_spell:
+                d, s = swap_cards(base_deck, base_sb, cuttable_land, best_sb_spell)
+                permutations.append((f"Play 16 Lands (+{best_sb_spell['name']})", d, s))
+
+            best_score = -9999
+            best_perm = None
+
+            for desc, p_deck, p_sb in permutations:
+                stats = self._simulate_deck(p_deck, iterations=3000)
+                if not stats:
+                    continue
+                score = (
+                    stats["cast_t2"]
+                    + stats["cast_t3"]
+                    + stats["cast_t4"]
+                    + (stats["curve_out"] * 2)
+                    - stats["mulligans"]
+                    - stats["screw_t3"]
+                    - stats["color_screw_t3"]
+                )
+                if score > best_score:
+                    best_score = score
+                    best_perm = (desc, p_deck, p_sb)
+
+            if best_perm:
+                desc, final_deck, final_sb = best_perm
+                final_stats = self._simulate_deck(final_deck, iterations=10000)
+
+                def finalize():
+                    self.deck_list = final_deck
+                    self.sb_list = final_sb
+
+                    def card_sort_key(x):
+                        return (
+                            x.get(constants.DATA_FIELD_CMC, 0),
+                            x.get(constants.DATA_FIELD_NAME, ""),
+                        )
+
+                    self.deck_list.sort(key=card_sort_key)
+                    self.sb_list.sort(key=card_sort_key)
+
+                    self._update_tables()
+                    self._show_sim_results(
+                        final_stats, optimization_note=f"Optimized: {desc}"
+                    )
+                    self._render_deck_stats()
+                    self._draw_sample_hand()
+                    self._update_basics_toolbar()
+
+                self.after(0, finalize)
+            else:
+                raise Exception("Failed to optimize.")
+        except Exception as e:
+            self.after(0, lambda err=str(e): self._show_sim_error(err))
+
+    def _show_sim_loading(self, msg="Running 10,000 Monte Carlo Simulations..."):
+        for widget in self.sim_frame.winfo_children():
+            widget.destroy()
+
+        lbl = ttk.Label(
+            self.sim_frame,
+            text=msg,
+            font=(Theme.FONT_FAMILY, 10, "italic"),
+            bootstyle="secondary",
+            justify="center",
+            wraplength=300,
+        )
+        lbl.is_dynamic_wrap = True
+        lbl.pack(pady=20)
+
+        progress = ttk.Progressbar(self.sim_frame, mode="indeterminate")
+        progress.pack(fill="x", padx=20)
+        progress.start(15)
+
+    def _show_sim_error(self, error):
+        for widget in self.sim_frame.winfo_children():
+            widget.destroy()
+        lbl = ttk.Label(
+            self.sim_frame,
+            text=f"Simulation Error:\n{error}",
+            bootstyle="danger",
+            wraplength=300,
+        )
+        lbl.is_dynamic_wrap = True
+        lbl.pack(pady=20)
 
     # --- BASIC LAND HANDLERS ---
     def _on_basic_remove(self, event, color_name):
@@ -497,12 +761,10 @@ class CustomDeckPanel(ttk.Frame):
     # --- MANA BASE LOGIC ---
     def _apply_auto_lands(self):
         """Uses Frank Karsten logic to rebuild the basic mana base for the current spells."""
-        # 1. Remove all existing basics
         self.deck_list = [
             c for c in self.deck_list if c["name"] not in constants.BASIC_LANDS
         ]
 
-        # 2. Analyze current spells and non-basic lands
         spells = [c for c in self.deck_list if "Land" not in c.get("types", [])]
         non_basic_lands = [c for c in self.deck_list if "Land" in c.get("types", [])]
 
@@ -511,7 +773,6 @@ class CustomDeckPanel(ttk.Frame):
             self._update_basics_toolbar()
             return
 
-        # 3. Calculate strict colors and generate basics
         deck_colors = get_strict_colors(spells)
         if not deck_colors:
             deck_colors = ["W", "U", "B", "R", "G"]
@@ -523,7 +784,6 @@ class CustomDeckPanel(ttk.Frame):
             spells, non_basic_lands, deck_colors, forced_count=needed_basics
         )
 
-        # 4. Add them to the deck list
         for basic in basics_to_add:
             dest_card = next(
                 (c for c in self.deck_list if c["name"] == basic["name"]), None
@@ -876,39 +1136,180 @@ class CustomDeckPanel(ttk.Frame):
                 font=(constants.FONT_MONO_SPACE, 10),
             ).pack(anchor="w", pady=1)
 
-    def _run_simulation(self):
-        self.notebook.select(self.hand_tab)
-        for widget in self.sim_frame.winfo_children():
-            widget.destroy()
-        ttk.Label(
-            self.sim_frame,
-            text="Running 10,000 Monte Carlo Simulations...",
-            font=(Theme.FONT_FAMILY, 10, "italic"),
-        ).pack(pady=20)
+    def _simulate_deck(self, deck_list, iterations=10000):
+        flat_deck = []
+        for c in deck_list:
+            is_land = "Land" in c.get("types", [])
+            colors_produced = set()
+            if is_land:
+                colors_produced.update(c.get("colors", []))
+                text = str(c.get("text", "")).lower()
+                if "any color" in text or "fixing_ramp" in c.get("tags", []):
+                    colors_produced.update(["W", "U", "B", "R", "G"])
 
-        def _worker():
-            try:
-                stats = simulate_deck(self.deck_list, iterations=10000)
-                self.after(0, lambda: self._show_sim_results(stats))
-            except Exception as e:
-                self.after(
-                    0,
-                    lambda e=e: ttk.Label(
-                        self.sim_frame, text=f"Error: {e}", bootstyle="danger"
-                    ).pack(),
+            pips = {}
+            if not is_land:
+                cost = c.get("mana_cost", "")
+                matches = re.findall(r"\{(.*?)\}", cost)
+                for pip in matches:
+                    opts = [opt for opt in pip.split("/") if opt in "WUBRG"]
+                    if opts:
+                        p = opts[0]
+                        pips[p] = pips.get(p, 0) + 1
+
+            for _ in range(int(c.get("count", 1))):
+                flat_deck.append(
+                    {
+                        "is_land": is_land,
+                        "is_removal": "removal" in c.get("tags", []),
+                        "colors_produced": colors_produced,
+                        "cmc": int(c.get("cmc", 0)),
+                        "pips": pips,
+                    }
                 )
 
-        self.sim_executor.submit(_worker)
+        if len(flat_deck) < 40:
+            return None
 
-    def _show_sim_results(self, stats):
+        stats = {
+            "mulligans": 0,
+            "screw_t3": 0,
+            "screw_t4": 0,
+            "flood_t5": 0,
+            "cast_t2": 0,
+            "cast_t3": 0,
+            "cast_t4": 0,
+            "curve_out": 0,
+            "removal_t4": 0,
+            "color_screw_t3": 0,
+            "avg_hand_size": 0,
+        }
+
+        for _ in range(iterations):
+            random.shuffle(flat_deck)
+
+            # Pro-Level London Mulligan Heuristic
+            mull_count = 0
+            hand = flat_deck[0:7]
+            lands = sum(1 for c in hand if c["is_land"])
+
+            if lands < 2 or lands > 5:
+                mull_count = 1
+                hand = flat_deck[7:14]
+                lands = sum(1 for c in hand if c["is_land"])
+                if lands < 2 or lands > 4:
+                    mull_count = 2
+                    hand = flat_deck[14:21]
+
+            if mull_count > 0:
+                stats["mulligans"] += 1
+
+            kept_size = 7 - mull_count
+            stats["avg_hand_size"] += kept_size
+            start_idx = mull_count * 7
+
+            current_7 = flat_deck[start_idx : start_idx + 7]
+            if kept_size < 7:
+                current_7.sort(key=lambda x: x["cmc"])
+
+            kept_hand = current_7[:kept_size]
+            deck_rest = flat_deck[start_idx + 7 :]
+
+            game_state = kept_hand + deck_rest
+
+            t2_state = game_state[: kept_size + 1]
+            t3_state = game_state[: kept_size + 2]
+            t4_state = game_state[: kept_size + 3]
+            t5_state = game_state[: kept_size + 4]
+
+            lands_t3 = [c for c in t3_state if c["is_land"]]
+            if len(lands_t3) < 3:
+                stats["screw_t3"] += 1
+
+            lands_t4 = [c for c in t4_state if c["is_land"]]
+            if len(lands_t4) < 4:
+                stats["screw_t4"] += 1
+
+            lands_t5 = sum(1 for c in t5_state if c["is_land"])
+            if lands_t5 >= 6:
+                stats["flood_t5"] += 1
+
+            if any(c["is_removal"] for c in t4_state):
+                stats["removal_t4"] += 1
+
+            def can_cast(state, target_cmc):
+                available_lands = [c for c in state if c["is_land"]]
+                if len(available_lands) < target_cmc:
+                    return False
+
+                spells = [
+                    c for c in state if not c["is_land"] and c["cmc"] == target_cmc
+                ]
+                if not spells:
+                    return False
+
+                color_sources = {"W": 0, "U": 0, "B": 0, "R": 0, "G": 0}
+                for l in available_lands:
+                    for c in l["colors_produced"]:
+                        color_sources[c] += 1
+
+                for s in spells:
+                    castable = True
+                    for pip, count in s["pips"].items():
+                        if color_sources[pip] < count:
+                            castable = False
+                            break
+                    if castable:
+                        return True
+                return False
+
+            c2 = can_cast(t2_state, 2)
+            c3 = can_cast(t3_state, 3)
+            c4 = can_cast(t4_state, 4)
+
+            if c2:
+                stats["cast_t2"] += 1
+            if c3:
+                stats["cast_t3"] += 1
+            if c4:
+                stats["cast_t4"] += 1
+            if c2 and c3 and c4:
+                stats["curve_out"] += 1
+
+            if len(lands_t3) >= 3:
+                color_sources = {"W": 0, "U": 0, "B": 0, "R": 0, "G": 0}
+                for l in lands_t3:
+                    for c in l["colors_produced"]:
+                        color_sources[c] += 1
+
+                t3_spells = [c for c in t3_state if not c["is_land"] and c["cmc"] <= 3]
+                any_color_screw = False
+                for s in t3_spells:
+                    for pip, count in s["pips"].items():
+                        if color_sources.get(pip, 0) < count:
+                            any_color_screw = True
+                            break
+                if any_color_screw:
+                    stats["color_screw_t3"] += 1
+
+        stats["avg_hand_size"] = stats["avg_hand_size"] / iterations
+        for k in list(stats.keys()):
+            if k != "avg_hand_size":
+                stats[k] = (stats[k] / iterations) * 100.0
+
+        return stats
+
+    def _show_sim_results(self, stats, optimization_note=None):
         for widget in self.sim_frame.winfo_children():
             widget.destroy()
         if not stats:
-            ttk.Label(
+            lbl = ttk.Label(
                 self.sim_frame,
-                text="Deck must have exactly 40 cards to analyze correctly.",
+                text="Deck must have exactly 40 cards to run simulations.",
                 bootstyle="warning",
-            ).pack(pady=20)
+            )
+            lbl.is_dynamic_wrap = True
+            lbl.pack(pady=20)
             return
 
         def _add_stat(label, value, thresholds, reverse=False, is_percent=True):
@@ -989,6 +1390,16 @@ class CustomDeckPanel(ttk.Frame):
             font=(Theme.FONT_FAMILY, 10, "bold"),
         ).pack(anchor="w", pady=(0, 5))
 
+        if optimization_note:
+            lbl_opt = ttk.Label(
+                self.sim_frame,
+                text=optimization_note,
+                font=(Theme.FONT_FAMILY, 9, "bold"),
+                bootstyle="success",
+            )
+            lbl_opt.is_dynamic_wrap = True
+            lbl_opt.pack(anchor="w", pady=2)
+
         total_cards = sum(c.get("count", 1) for c in self.deck_list)
         lands = sum(
             c.get("count", 1) for c in self.deck_list if "Land" in c.get("types", [])
@@ -1029,17 +1440,17 @@ class CustomDeckPanel(ttk.Frame):
                 "⚠️ Interaction: You lack early removal. Consider prioritizing cheap interaction from your sideboard."
             )
 
-        if stats["color_screw_t3"] > 16.0:
+        if stats["color_screw_t3"] > 15:
             advice.append(
                 "⚠️ Mana Base: High color screw risk. Review your colored pips vs sources. You may need more dual lands or to cut a greedy splash."
             )
 
-        if stats["screw_t3"] > 22.0 and lands >= 16:
+        if stats["screw_t3"] > 20:
             advice.append(
                 "⚠️ Mana Screw: Frequently missing 3rd land drops. Consider running 17 or 18 lands, or adding card draw/cantrips."
             )
 
-        if stats["flood_t5"] > 27.0 and lands <= 17:
+        if stats["flood_t5"] > 25:
             advice.append(
                 "⚠️ Mana Flood: High flood risk. Consider cutting a land or adding more 'mana sinks' (cards with activated abilities)."
             )

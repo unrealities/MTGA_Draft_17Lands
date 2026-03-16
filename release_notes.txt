@@ -1,3 +1,9 @@
+===================== RELEASE NOTES 4.09 =====================
+* unrealities: [Major Feature] Unified Deck Builder. The automated "Deck Suggester" and manual "Custom Deck Builder" have been fused into a single, cohesive, and incredibly powerful "Deck Builder" tab.
+* unrealities: [Feature] On-Demand Optimization: Moved the intensive Monte Carlo AI Optimizer to an explicit button in the Simulation tab. Initial archetype generation is now lightning fast, and you can run the brute-force optimizer on your tweaked decks whenever you're ready.
+* unrealities: [UX/UI] Expanded the Stats & Analysis tab to count and display Top Creature Tribes (subtypes) to aid in tribal synergy evaluation.
+* unrealities: [Architecture] Refactored the underlying Monte Carlo simulation logic to be cleanly bound to the Deck Builder UI's background threads, reducing thread blocking and uncoupling heavy math from the core log-scanner loop.
+
 ===================== RELEASE NOTES 4.08 =====================
 * unrealities: [Major Feature] AI Monte Carlo Auto-Optimizer. Click the "Auto-Optimize Deck" button to unleash a background simulation engine that mathematically tests different deck permutations (16 lands vs 17 lands, swapping out expensive 5-drops for efficient 2-drops) across thousands of games to find the perfect 40-card configuration.
 * unrealities: [Feature] Added an AI Advisor Summary to the simulation tab. It translates raw simulation percentages into actionable advice and actively scans your sideboard to suggest specific 1-for-1 card swaps to fix curve or consistency issues.

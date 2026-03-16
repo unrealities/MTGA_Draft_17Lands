@@ -450,10 +450,7 @@ class DraftApp:
             self.notebook, self.orchestrator.scanner, self.configuration
         )
         self.panel_suggest = SuggestDeckPanel(
-            self.notebook,
-            self.orchestrator.scanner,
-            self.configuration,
-            on_export_custom=self._export_to_custom_builder,
+            self.notebook, self.orchestrator.scanner, self.configuration
         )
         self.panel_custom = CustomDeckPanel(
             self.notebook, self.orchestrator.scanner, self.configuration, self
@@ -473,8 +470,8 @@ class DraftApp:
 
         self.notebook.add(self.panel_data, text=" Datasets ")
         self.notebook.add(self.panel_taken, text=" Card Pool ")
-        self.notebook.add(self.panel_suggest, text=" Deck Suggestions ")
-        self.notebook.add(self.panel_custom, text=" Deck Builder ")
+        self.notebook.add(self.panel_suggest, text=" Deck Builder ")
+        self.notebook.add(self.panel_custom, text=" Custom Deck ")
         self.notebook.add(self.panel_compare, text=" Comparisons ")
         self.notebook.add(self.panel_tiers, text=" Tier Lists ")
 
@@ -710,7 +707,7 @@ class DraftApp:
 
         deck_metrics = get_deck_metrics(taken_cards)
         self.dashboard.update_stats(deck_metrics.distribution_all)
-        self.dashboard.update_deck_balance(taken_cards, history, metrics)
+        self.dashboard.update_deck_balance(taken_cards)
 
         if self.overlay_window:
             self.overlay_window.update_data(

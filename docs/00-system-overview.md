@@ -30,13 +30,13 @@ graph TD
 
 ## 3. Key Modules
 
-| Module             | Function                                                                                                                                                             | Dependencies           | Criticality                     |
-| :----------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :--------------------- | :------------------------------ |
-| **Log Scanner**    | Tails `Player.log`, executes Regex matching, manages state machine (Idle -> Drafting -> Game).                                                                       | OS File System         | **High** (App fails without it) |
-| **Data Manager**   | Downloads/Caches set data. Handles fallback (if Premier data missing, use Quick data).                                                                               | 17Lands API            | **High**                        |
-| **Advisor Engine** | The "Brain." Normalizes win-rates, calculates Z-Scores, applies "Lane Commitment" logic.                                                                             | None (Pure Math)       | **High**                        |
-| **OCR Service**    | **Edge Case:** Reads P1P1 (Pack 1 Pick 1) via screenshot because logs are delayed.                                                                                   | Google Cloud Functions | Medium                          |
-| **Deck Suggester** | Algorithmic deck builder. Employs a 10,000-game Monte Carlo simulation to evaluate curve and an AI Auto-Optimizer to perfect the mana base using Frank Karsten math. | Card Logic             | Medium                          |
+| Module             | Function                                                                                                                                                                   | Dependencies           | Criticality                     |
+| :----------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :--------------------- | :------------------------------ |
+| **Log Scanner**    | Tails `Player.log`, executes Regex matching, manages state machine (Idle -> Drafting -> Game).                                                                             | OS File System         | **High** (App fails without it) |
+| **Data Manager**   | Downloads/Caches set data. Handles fallback (if Premier data missing, use Quick data).                                                                                     | 17Lands API            | **High**                        |
+| **Advisor Engine** | The "Brain." Normalizes win-rates, calculates Z-Scores, applies "Lane Commitment" logic.                                                                                   | None (Pure Math)       | **High**                        |
+| **OCR Service**    | **Edge Case:** Reads P1P1 (Pack 1 Pick 1) via screenshot because logs are delayed.                                                                                         | Google Cloud Functions | Medium                          |
+| **Deck Builder**   | Interactive drag-and-drop deck construction environment. Generates base archetypes, applies 1-click "Auto-Lands" math, and features an on-demand AI Monte Carlo optimizer. | Card Logic             | Medium                          |
 
 ## 4. Operational Lifecycle
 
