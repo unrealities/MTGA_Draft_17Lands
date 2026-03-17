@@ -93,7 +93,7 @@ class CustomDeckPanel(ttk.Frame):
         for widget in self.sim_frame.winfo_children():
             widget.destroy()
         self._clear_sample_hand()
-        self.notebook.select(self.stats_tab)
+        self.notebook.select(self.builder_tab)
 
     def refresh(self):
         """Appends newly drafted cards to the sideboard."""
@@ -415,9 +415,9 @@ class CustomDeckPanel(ttk.Frame):
             base_sb = list(self.sb_list)
 
             total_cards = sum(c.get("count", 1) for c in base_deck)
-            if total_cards < 40:
+            if total_cards != 40:
                 raise Exception(
-                    f"Base deck must be at least 40 cards to optimize (currently {total_cards})."
+                    f"Base deck must be exactly 40 cards to optimize (currently {total_cards})."
                 )
 
             spells = [c for c in base_deck if "Land" not in c.get("types", [])]
@@ -504,6 +504,22 @@ class CustomDeckPanel(ttk.Frame):
                         else:
                             final_sb.append(c)
                     new_sb = final_sb
+
+                    sb_added = False
+                    for c in new_sb:
+                        if c["name"] == out_card["name"]:
+                            new_c = dict(c)
+                            new_c["count"] += 1
+                            new_sb = [
+                                new_c if x["name"] == out_card["name"] else x
+                                for x in new_sb
+                            ]
+                            sb_added = True
+                            break
+                    if not sb_added:
+                        out_c = dict(out_card)
+                        out_c["count"] = 1
+                        new_sb.append(out_c)
 
                 return new_deck, new_sb
 
@@ -631,6 +647,24 @@ class CustomDeckPanel(ttk.Frame):
         return "break"
 
     # --- DRAG AND DROP & SELECTION LOGIC ---
+    def _get_card_from_row(self, tree, row_id, is_sb):
+        manager = self.sb_manager if is_sb else self.deck_manager
+        item_vals = tree.item(row_id)["values"]
+        if not item_vals:
+            return None
+
+        try:
+            name_idx = manager.active_fields.index("name")
+            card_name = str(item_vals[name_idx])
+        except ValueError:
+            return None
+
+        source_list = self.sb_list if is_sb else self.deck_list
+        for c in source_list:
+            if c["name"] == card_name:
+                return c
+        return None
+
     def _bind_dnd(self, tree, is_sb=False):
         tree.bind(
             "<ButtonPress-1>", lambda e: self._on_drag_start(e, tree, is_sb), add="+"
@@ -655,14 +689,12 @@ class CustomDeckPanel(ttk.Frame):
             return
 
         tree.selection_set(row_id)
-        idx = int(row_id)
-        source_list = self.sb_list if is_sb else self.deck_list
-        if idx >= len(source_list):
+        card = self._get_card_from_row(tree, row_id, is_sb)
+        if not card:
             return
 
-        card_name = source_list[idx]["name"]
         self._drag_data = {
-            "name": card_name,
+            "name": card["name"],
             "x": event.x_root,
             "y": event.y_root,
             "is_sb": is_sb,
@@ -707,12 +739,12 @@ class CustomDeckPanel(ttk.Frame):
         if not row_id:
             return
         tree.selection_set(row_id)
-        idx = int(row_id)
-        source_list = self.sb_list if is_sb else self.deck_list
-        if idx < len(source_list):
+
+        card = self._get_card_from_row(tree, row_id, is_sb)
+        if card:
             CardToolTip.create(
                 tree,
-                source_list[idx],
+                card,
                 self.configuration.features.images_enabled,
                 constants.UI_SIZE_DICT.get(self.configuration.settings.ui_size, 1.0),
             )
@@ -778,6 +810,15 @@ class CustomDeckPanel(ttk.Frame):
             deck_colors = ["W", "U", "B", "R", "G"]
 
         total_lands_needed = 40 - len(spells)
+        if len(non_basic_lands) > total_lands_needed:
+            non_basic_lands.sort(
+                key=lambda x: float(
+                    x.get("deck_colors", {}).get("All Decks", {}).get("gihwr", 0.0)
+                ),
+                reverse=True,
+            )
+            non_basic_lands = non_basic_lands[:total_lands_needed]
+
         needed_basics = max(0, total_lands_needed - len(non_basic_lands))
 
         basics_to_add = calculate_dynamic_mana_base(

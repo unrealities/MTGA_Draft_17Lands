@@ -16,19 +16,24 @@ import urllib.parse
 import hashlib
 import os
 import io
-import re
 from concurrent.futures import ThreadPoolExecutor
 from PIL import Image, ImageTk
 
 from src import constants
-from src.card_logic import suggest_deck, copy_deck
+from src.card_logic import copy_deck
 from src.ui.styles import Theme
 from src.ui.components import DynamicTreeviewManager, CardToolTip, AutoScrollbar
 from src.utils import bind_scroll
 
 
 class SuggestDeckPanel(ttk.Frame):
-    def __init__(self, parent, draft_manager, configuration, on_export_custom=None):
+    def __init__(
+        self,
+        parent,
+        draft_manager,
+        configuration,
+        on_export_custom=None,
+    ):
         super().__init__(parent)
         self.draft = draft_manager
         self.configuration = configuration
@@ -66,9 +71,13 @@ class SuggestDeckPanel(ttk.Frame):
         self.header = ttk.Frame(self, style="Card.TFrame", padding=5)
         self.header.pack(fill="x", pady=(0, 0))
 
+        # --- Row 1: Archetype Controls ---
+        self.arch_frame = ttk.Frame(self.header, style="Card.TFrame")
+        self.arch_frame.pack(fill="x")
+
         self.lbl_archetype = ttk.Label(
-            self.header,
-            text="ARCHETYPE:",
+            self.arch_frame,
+            text="AI SUGGESTION:",
             font=(Theme.FONT_FAMILY, 8, "bold"),
             bootstyle="primary",
         )
@@ -77,7 +86,7 @@ class SuggestDeckPanel(ttk.Frame):
 
         self.var_archetype = tkinter.StringVar()
         self.om_archetype = ttk.OptionMenu(
-            self.header,
+            self.arch_frame,
             self.var_archetype,
             "",
             style="TMenubutton",
@@ -86,14 +95,14 @@ class SuggestDeckPanel(ttk.Frame):
         self.om_archetype.pack(side="left", padx=10, fill="x", expand=True)
 
         self.btn_copy = ttk.Button(
-            self.header, text="Copy Deck", width=12, command=self._copy_to_clipboard
+            self.arch_frame, text="Copy Deck", width=12, command=self._copy_to_clipboard
         )
         self.btn_copy.pack(side="right", padx=5)
 
         if self.on_export_custom:
             self.btn_export_builder = ttk.Button(
-                self.header,
-                text="Edit in Builder",
+                self.arch_frame,
+                text="Export to Custom Builder",
                 bootstyle="info-outline",
                 command=lambda: self.on_export_custom(
                     self.current_deck_list, self.current_sb_list
@@ -303,6 +312,42 @@ class SuggestDeckPanel(ttk.Frame):
 
         self.notebook.bind("<<NotebookTabChanged>>", self._on_tab_changed)
 
+    def _clear_table(self):
+        """Highly defensive UI clearing to prevent attribute errors during state transitions."""
+        table = getattr(self, "table", None)
+        if table:
+            for item in table.get_children():
+                table.delete(item)
+
+        sb_table = getattr(self, "sb_table", None)
+        if sb_table:
+            for item in sb_table.get_children():
+                sb_table.delete(item)
+
+        stats_frame = getattr(self, "stats_frame", None)
+        if stats_frame and stats_frame.winfo_exists():
+            for widget in stats_frame.winfo_children():
+                widget.destroy()
+
+        sim_frame = getattr(self, "sim_frame", None)
+        if sim_frame and sim_frame.winfo_exists():
+            for widget in sim_frame.winfo_children():
+                widget.destroy()
+
+        if hasattr(self, "_clear_sample_hand"):
+            self._clear_sample_hand()
+
+        self.current_deck_list = []
+        self.current_sb_list = []
+
+        notebook = getattr(self, "notebook", None)
+        deck_frame = getattr(self, "deck_frame", None)
+        if notebook and deck_frame:
+            try:
+                notebook.tab(deck_frame, text=" MAIN DECK (0) ")
+            except Exception:
+                pass
+
     def _on_tab_changed(self, event):
         current_tab = self.notebook.tab(self.notebook.select(), "text")
         if "SIMULATION & SAMPLE HAND" in current_tab:
@@ -320,11 +365,15 @@ class SuggestDeckPanel(ttk.Frame):
             self.after(0, lambda e=e: self._show_sim_error(str(e)))
 
     def _show_sim_loading(self, msg="Running 10,000 Monte Carlo Simulations..."):
-        for widget in self.sim_frame.winfo_children():
+        sim_frame = getattr(self, "sim_frame", None)
+        if not sim_frame or not sim_frame.winfo_exists():
+            return
+
+        for widget in sim_frame.winfo_children():
             widget.destroy()
 
         lbl = ttk.Label(
-            self.sim_frame,
+            sim_frame,
             text=msg,
             font=(Theme.FONT_FAMILY, 10, "italic"),
             bootstyle="secondary",
@@ -333,34 +382,42 @@ class SuggestDeckPanel(ttk.Frame):
         lbl.is_dynamic_wrap = True
         lbl.pack(pady=20)
 
-        progress = ttk.Progressbar(self.sim_frame, mode="indeterminate")
+        progress = ttk.Progressbar(sim_frame, mode="indeterminate")
         progress.pack(fill="x", padx=20)
         progress.start(15)
 
     def _show_sim_error(self, error):
-        for widget in self.sim_frame.winfo_children():
+        sim_frame = getattr(self, "sim_frame", None)
+        if not sim_frame or not sim_frame.winfo_exists():
+            return
+
+        for widget in sim_frame.winfo_children():
             widget.destroy()
         ttk.Label(
-            self.sim_frame,
+            sim_frame,
             text=f"Simulation Error:\n{error}",
             bootstyle="danger",
             wraplength=300,
         ).pack(pady=20)
 
     def _show_sim_results(self, stats, optimization_note=None):
-        for widget in self.sim_frame.winfo_children():
+        sim_frame = getattr(self, "sim_frame", None)
+        if not sim_frame or not sim_frame.winfo_exists():
+            return
+
+        for widget in sim_frame.winfo_children():
             widget.destroy()
 
         if not stats:
             ttk.Label(
-                self.sim_frame,
+                sim_frame,
                 text="Deck must have 40 cards to analyze.",
                 bootstyle="warning",
             ).pack(pady=20)
             return
 
         def _add_stat(label, value, thresholds, reverse=False, is_percent=True):
-            frame = ttk.Frame(self.sim_frame)
+            frame = ttk.Frame(sim_frame)
             frame.pack(fill="x", pady=2)
             ttk.Label(frame, text=label, font=(Theme.FONT_FAMILY, 10, "bold")).pack(
                 side="left"
@@ -405,7 +462,7 @@ class SuggestDeckPanel(ttk.Frame):
             ).pack(side="left")
 
         ttk.Label(
-            self.sim_frame,
+            sim_frame,
             text="CONSISTENCY METRICS",
             bootstyle="primary",
             font=(Theme.FONT_FAMILY, 10, "bold"),
@@ -417,10 +474,10 @@ class SuggestDeckPanel(ttk.Frame):
         _add_stat("Perfect Curve (T2-T4):", stats["curve_out"], (25, 15))
         _add_stat("Removal by Turn 4:", stats["removal_t4"], (60, 45))
 
-        ttk.Separator(self.sim_frame).pack(fill="x", pady=8)
+        ttk.Separator(sim_frame).pack(fill="x", pady=8)
 
         ttk.Label(
-            self.sim_frame,
+            sim_frame,
             text="RISK FACTORS",
             bootstyle="primary",
             font=(Theme.FONT_FAMILY, 10, "bold"),
@@ -437,11 +494,11 @@ class SuggestDeckPanel(ttk.Frame):
         )
         _add_stat("Mana Flooded (T5):", stats["flood_t5"], (20, 30), reverse=True)
 
-        ttk.Separator(self.sim_frame).pack(fill="x", pady=8)
+        ttk.Separator(sim_frame).pack(fill="x", pady=8)
 
         # --- ADVISOR SUMMARY LOGIC ---
         ttk.Label(
-            self.sim_frame,
+            sim_frame,
             text="ADVISOR SUMMARY",
             bootstyle="info",
             font=(Theme.FONT_FAMILY, 10, "bold"),
@@ -449,7 +506,7 @@ class SuggestDeckPanel(ttk.Frame):
 
         if optimization_note:
             lbl_opt = ttk.Label(
-                self.sim_frame,
+                sim_frame,
                 text=optimization_note,
                 font=(Theme.FONT_FAMILY, 9, "bold"),
                 bootstyle="success",
@@ -540,32 +597,41 @@ class SuggestDeckPanel(ttk.Frame):
             )
 
         for tip in advice:
-            lbl_tip = ttk.Label(self.sim_frame, text=tip, font=(Theme.FONT_FAMILY, 9))
+            lbl_tip = ttk.Label(sim_frame, text=tip, font=(Theme.FONT_FAMILY, 9))
             lbl_tip.is_dynamic_wrap = True
             lbl_tip.pack(anchor="w", pady=2)
 
             # Re-trigger a configure event on the parent container to format newly added labels instantly
-            self.sim_frame.event_generate("<Configure>")
-            # Force canvas to recalculate scroll region after all widgets are packed
+            sim_frame.event_generate("<Configure>")
+
+        sim_canvas = getattr(self, "sim_canvas", None)
+        if sim_canvas and sim_canvas.winfo_exists():
             self.after(
                 50,
-                lambda: self.sim_canvas.configure(
-                    scrollregion=self.sim_canvas.bbox("all")
-                ),
+                lambda: sim_canvas.configure(scrollregion=sim_canvas.bbox("all")),
             )
 
     def _clear_sample_hand(self):
-        for widget in self.hand_container.winfo_children():
-            widget.destroy()
-        self.hand_images.clear()
-        self.hand_frames = []
+        hand_container = getattr(self, "hand_container", None)
+        if hand_container and hand_container.winfo_exists():
+            for widget in hand_container.winfo_children():
+                widget.destroy()
+
+        if hasattr(self, "hand_images"):
+            self.hand_images.clear()
+        if hasattr(self, "hand_frames"):
+            self.hand_frames = []
 
     def _draw_sample_hand(self):
         self._clear_sample_hand()
 
+        hand_container = getattr(self, "hand_container", None)
+        if not hand_container or not hand_container.winfo_exists():
+            return
+
         if not self.current_deck_list:
             ttk.Label(
-                self.hand_container,
+                hand_container,
                 text="Generate a deck first.",
                 font=(Theme.FONT_FAMILY, 11),
             ).pack(pady=20)
@@ -577,7 +643,7 @@ class SuggestDeckPanel(ttk.Frame):
 
         if len(flat_deck) < 7:
             ttk.Label(
-                self.hand_container,
+                hand_container,
                 text="Deck has fewer than 7 cards.",
                 font=(Theme.FONT_FAMILY, 11),
             ).pack(pady=20)
@@ -622,14 +688,15 @@ class SuggestDeckPanel(ttk.Frame):
         # Calculate exact height to allow scrolling perfectly
         stack_h = img_h + (6 * offset_y) + 20
 
-        stack_container = ttk.Frame(self.hand_container, width=img_w, height=stack_h)
+        stack_container = ttk.Frame(hand_container, width=img_w, height=stack_h)
         stack_container.pack(expand=True, pady=15)
         stack_container.pack_propagate(False)
 
         def restore_z_order(event=None):
-            for f in self.hand_frames:
-                if f.winfo_exists():
-                    f.lift()
+            if hasattr(self, "hand_frames"):
+                for f in self.hand_frames:
+                    if f.winfo_exists():
+                        f.lift()
 
         for i, card in enumerate(hand):
             frame = ttk.Frame(
@@ -743,10 +810,13 @@ class SuggestDeckPanel(ttk.Frame):
             pass
 
     def _on_theme_change(self, event=None):
-        if hasattr(self, "stats_canvas") and self.stats_canvas.winfo_exists():
-            self.stats_canvas.configure(bg=Theme.BG_PRIMARY)
-        if hasattr(self, "hand_canvas") and self.hand_canvas.winfo_exists():
-            self.hand_canvas.configure(bg=Theme.BG_PRIMARY)
+        stats_canvas = getattr(self, "stats_canvas", None)
+        if stats_canvas and stats_canvas.winfo_exists():
+            stats_canvas.configure(bg=Theme.BG_PRIMARY)
+
+        hand_canvas = getattr(self, "hand_canvas", None)
+        if hand_canvas and hand_canvas.winfo_exists():
+            hand_canvas.configure(bg=Theme.BG_PRIMARY)
 
     def _calculate_suggestions(self):
         raw_pool = self.draft.retrieve_taken_cards()
@@ -866,39 +936,35 @@ class SuggestDeckPanel(ttk.Frame):
             self.var_archetype.set(label)
             self._render_deck(label)
 
-    def _clear_table(self):
-        if self.table:
-            for item in self.table.get_children():
-                self.table.delete(item)
-        if self.sb_table:
-            for item in self.sb_table.get_children():
-                self.sb_table.delete(item)
-        for widget in self.stats_frame.winfo_children():
-            widget.destroy()
-        for widget in self.sim_frame.winfo_children():
-            widget.destroy()
-
-        self._clear_sample_hand()
-
-        self.current_deck_list = []
-        self.current_sb_list = []
-        self.notebook.tab(self.deck_frame, text=" MAIN DECK (0) ")
-
     def _update_tables(self):
         """Helper to redraw tables after the Auto-Optimizer modifies the deck lists."""
         total_main_cards = sum(
             c.get(constants.DATA_FIELD_COUNT, 1) for c in self.current_deck_list
         )
-        self.notebook.tab(self.deck_frame, text=f" MAIN DECK ({total_main_cards}) ")
 
-        for item in self.table.get_children():
-            self.table.delete(item)
-        for item in self.sb_table.get_children():
-            self.sb_table.delete(item)
+        notebook = getattr(self, "notebook", None)
+        deck_frame = getattr(self, "deck_frame", None)
+        if notebook and deck_frame:
+            try:
+                notebook.tab(deck_frame, text=f" MAIN DECK ({total_main_cards}) ")
+            except Exception:
+                pass
+
+        table = getattr(self, "table", None)
+        if table:
+            for item in table.get_children():
+                table.delete(item)
+
+        sb_table = getattr(self, "sb_table", None)
+        if sb_table:
+            for item in sb_table.get_children():
+                sb_table.delete(item)
 
         from src.card_logic import row_color_tag
 
         def populate_tree(tree, source_list):
+            if not tree:
+                return
             for idx, card in enumerate(source_list):
                 name = card.get(constants.DATA_FIELD_NAME, "Unknown")
                 count = card.get(constants.DATA_FIELD_COUNT, 1)
@@ -928,11 +994,17 @@ class SuggestDeckPanel(ttk.Frame):
             if hasattr(tree, "reapply_sort"):
                 tree.reapply_sort()
 
-        populate_tree(self.table, self.current_deck_list)
-        populate_tree(self.sb_table, self.current_sb_list)
+        if table:
+            populate_tree(table, self.current_deck_list)
+        if sb_table:
+            populate_tree(sb_table, self.current_sb_list)
 
     def _render_deck_stats(self):
-        for widget in self.stats_frame.winfo_children():
+        stats_frame = getattr(self, "stats_frame", None)
+        if not stats_frame or not stats_frame.winfo_exists():
+            return
+
+        for widget in stats_frame.winfo_children():
             widget.destroy()
 
         if not self.current_deck_list:
@@ -977,7 +1049,7 @@ class SuggestDeckPanel(ttk.Frame):
 
         avg_cmc = cmc_sum / non_lands if non_lands else 0
 
-        comp_frame = ttk.Frame(self.stats_frame)
+        comp_frame = ttk.Frame(stats_frame)
         comp_frame.pack(fill="x", pady=5)
         ttk.Label(
             comp_frame,
@@ -990,9 +1062,9 @@ class SuggestDeckPanel(ttk.Frame):
             text=f"Total Cards: {total_cards}  |  Creatures: {creatures}  |  Non-Creatures: {spells}  |  Lands: {lands}",
         ).pack(anchor="w", pady=2)
 
-        ttk.Separator(self.stats_frame, orient="horizontal").pack(fill="x", pady=8)
+        ttk.Separator(stats_frame, orient="horizontal").pack(fill="x", pady=8)
 
-        color_frame = ttk.Frame(self.stats_frame)
+        color_frame = ttk.Frame(stats_frame)
         color_frame.pack(fill="x", pady=5)
         ttk.Label(
             color_frame,
@@ -1015,9 +1087,9 @@ class SuggestDeckPanel(ttk.Frame):
             color_frame, text="  |  ".join(pip_str) if pip_str else "Colorless"
         ).pack(anchor="w", pady=2)
 
-        ttk.Separator(self.stats_frame, orient="horizontal").pack(fill="x", pady=8)
+        ttk.Separator(stats_frame, orient="horizontal").pack(fill="x", pady=8)
 
-        tags_frame = ttk.Frame(self.stats_frame)
+        tags_frame = ttk.Frame(stats_frame)
         tags_frame.pack(fill="x", pady=5)
         ttk.Label(
             tags_frame,
@@ -1043,9 +1115,9 @@ class SuggestDeckPanel(ttk.Frame):
                 anchor="w", pady=2
             )
 
-        ttk.Separator(self.stats_frame, orient="horizontal").pack(fill="x", pady=8)
+        ttk.Separator(stats_frame, orient="horizontal").pack(fill="x", pady=8)
 
-        curve_frame = ttk.Frame(self.stats_frame)
+        curve_frame = ttk.Frame(stats_frame)
         curve_frame.pack(fill="x", pady=5)
         ttk.Label(
             curve_frame,
@@ -1090,7 +1162,8 @@ class SuggestDeckPanel(ttk.Frame):
         self.current_sb_list.sort(key=card_sort_key)
 
         breakdown = data.get("breakdown", "")
-        self.lbl_deck_notes.config(text=breakdown)
+        if hasattr(self, "lbl_deck_notes") and self.lbl_deck_notes.winfo_exists():
+            self.lbl_deck_notes.config(text=breakdown)
 
         self._render_deck_stats()
         self._update_tables()
@@ -1104,9 +1177,11 @@ class SuggestDeckPanel(ttk.Frame):
             self._show_sim_error("Simulation data missing.")
 
         # Draw sample hand seamlessly if the user is currently looking at the tab
-        current_tab = self.notebook.tab(self.notebook.select(), "text")
-        if "SIMULATION & SAMPLE HAND" in current_tab:
-            self.after(100, self._draw_sample_hand)
+        notebook = getattr(self, "notebook", None)
+        if notebook and notebook.winfo_exists():
+            current_tab = notebook.tab(notebook.select(), "text")
+            if "SIMULATION & SAMPLE HAND" in current_tab:
+                self.after(100, self._draw_sample_hand)
 
     def _copy_to_clipboard(self):
         selection = self.var_archetype.get()
@@ -1125,7 +1200,10 @@ class SuggestDeckPanel(ttk.Frame):
             )
 
     def _on_selection(self, event, is_sb=False):
-        tree = self.sb_table if is_sb else self.table
+        tree = getattr(self, "sb_table" if is_sb else "table", None)
+        if not tree:
+            return
+
         selection = tree.selection()
         if not selection:
             return

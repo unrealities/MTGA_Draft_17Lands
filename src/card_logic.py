@@ -510,12 +510,16 @@ def simulate_deck(deck_list, iterations=10000):
 GLOBAL_DECK_CACHE = {}
 
 
+def clear_deck_cache():
+    GLOBAL_DECK_CACHE.clear()
+
+
 def optimize_deck(base_deck, base_sb, archetype_key, colors):
     """
     Brute-forces deck permutations using Monte Carlo to ensure the optimal final 40.
     """
     total_cards = sum(c.get("count", 1) for c in base_deck)
-    if total_cards < 40:
+    if total_cards != 40:
         return base_deck, base_sb, None, ""
 
     spells = [c for c in base_deck if "Land" not in c.get("types", [])]
@@ -607,6 +611,21 @@ def optimize_deck(base_deck, base_sb, archetype_key, colors):
                 else:
                     final_sb.append(c)
             new_sb = final_sb
+
+            sb_added = False
+            for c in new_sb:
+                if c["name"] == out_card["name"]:
+                    new_c = dict(c)
+                    new_c["count"] += 1
+                    new_sb = [
+                        new_c if x["name"] == out_card["name"] else x for x in new_sb
+                    ]
+                    sb_added = True
+                    break
+            if not sb_added:
+                out_c = dict(out_card)
+                out_c["count"] = 1
+                new_sb.append(out_c)
 
         return new_deck, new_sb
 
@@ -1095,6 +1114,15 @@ def build_variant_consistency(pool, colors, metrics):
     non_basic_lands = select_useful_lands(pool, colors, metrics)
 
     total_lands_needed = 40 - len(spells)
+    if len(non_basic_lands) > total_lands_needed:
+        non_basic_lands.sort(
+            key=lambda x: float(
+                x.get("deck_colors", {}).get("All Decks", {}).get("gihwr", 0.0)
+            ),
+            reverse=True,
+        )
+        non_basic_lands = non_basic_lands[:total_lands_needed]
+
     needed_basics = max(0, total_lands_needed - len(non_basic_lands))
     basics = calculate_dynamic_mana_base(
         spells, non_basic_lands, colors, forced_count=needed_basics
@@ -1158,6 +1186,15 @@ def build_variant_greedy(pool, colors, metrics):
     non_basic_lands = select_useful_lands(pool, target_colors, metrics)
 
     total_lands_needed = 40 - len(deck_spells)
+    if len(non_basic_lands) > total_lands_needed:
+        non_basic_lands.sort(
+            key=lambda x: float(
+                x.get("deck_colors", {}).get("All Decks", {}).get("gihwr", 0.0)
+            ),
+            reverse=True,
+        )
+        non_basic_lands = non_basic_lands[:total_lands_needed]
+
     needed_basics = max(0, total_lands_needed - len(non_basic_lands))
     basics = calculate_dynamic_mana_base(
         deck_spells, non_basic_lands, target_colors, forced_count=needed_basics
@@ -1187,6 +1224,15 @@ def build_variant_curve(pool, colors, metrics):
     non_basic_lands = select_useful_lands(pool, colors, metrics)
 
     total_lands_needed = 40 - len(spells)
+    if len(non_basic_lands) > total_lands_needed:
+        non_basic_lands.sort(
+            key=lambda x: float(
+                x.get("deck_colors", {}).get("All Decks", {}).get("gihwr", 0.0)
+            ),
+            reverse=True,
+        )
+        non_basic_lands = non_basic_lands[:total_lands_needed]
+
     needed_basics = max(0, total_lands_needed - len(non_basic_lands))
     basics = calculate_dynamic_mana_base(
         spells, non_basic_lands, colors, forced_count=needed_basics
@@ -1277,6 +1323,15 @@ def build_variant_soup(pool, metrics):
     non_basic_lands = select_useful_lands(pool, soup_colors, metrics)
 
     total_lands_needed = 40 - len(spells)
+    if len(non_basic_lands) > total_lands_needed:
+        non_basic_lands.sort(
+            key=lambda x: float(
+                x.get("deck_colors", {}).get("All Decks", {}).get("gihwr", 0.0)
+            ),
+            reverse=True,
+        )
+        non_basic_lands = non_basic_lands[:total_lands_needed]
+
     needed_basics = max(0, total_lands_needed - len(non_basic_lands))
     basics = calculate_dynamic_mana_base(
         spells, non_basic_lands, soup_colors, forced_count=needed_basics

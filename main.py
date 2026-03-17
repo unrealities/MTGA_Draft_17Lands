@@ -93,7 +93,7 @@ def load_data(args, config, progress_callback):
         if pk > 0:
             progress_callback(f"Loading {e_set} - Pack {pk} Pick {pi}...")
     else:
-        # Fallback: Check if we successfully recovered a draft state from a previous session
+        # Fallback 1: Check if we successfully recovered a draft state from a previous session
         e_set, e_type = scanner.retrieve_current_limited_event()
         if e_set:
             progress_callback(f"Recovered Session: {e_set} {e_type}...")
@@ -110,20 +110,63 @@ def load_data(args, config, progress_callback):
             if pk > 0:
                 progress_callback(f"Loading {e_set} - Pack {pk} Pick {pi}...")
         else:
-            # Absolute fallback: load the most recently used dataset
-            last_dataset = config.card_data.latest_dataset
-            if last_dataset:
-                progress_callback(f"Indexing {last_dataset.split('_')[0]}...")
-                sources = scanner.retrieve_data_sources()
-                for label, path in sources.items():
-                    if os.path.basename(path) == last_dataset:
-                        scanner.retrieve_set_data(path)
-                        break
+            # Fallback 2: Look for the most recent log in Logs/ and load it automatically
+            progress_callback("Checking for past drafts...")
+            past_logs = []
+            if os.path.exists(constants.DRAFT_LOG_FOLDER):
+                for f in os.listdir(constants.DRAFT_LOG_FOLDER):
+                    if f.startswith("DraftLog_") and f.endswith(".log"):
+                        past_logs.append(os.path.join(constants.DRAFT_LOG_FOLDER, f))
+
+            if past_logs:
+                past_logs.sort(key=os.path.getmtime, reverse=True)
+                most_recent_log = past_logs[0]
+                progress_callback("Loading most recent draft...")
+
+                scanner.set_arena_file(most_recent_log)
+                if scanner.draft_start_search():
+                    e_set, e_type = scanner.retrieve_current_limited_event()
+                    sources = scanner.retrieve_data_sources()
+                    for label, path in sources.items():
+                        if f"[{e_set.upper()}]" in label.upper():
+                            scanner.retrieve_set_data(path)
+                            config.card_data.latest_dataset = os.path.basename(path)
+                            break
+                    scanner.draft_data_search()
+            else:
+                # Absolute fallback: load the most recently used dataset
+                last_dataset = config.card_data.latest_dataset
+                if last_dataset:
+                    progress_callback(f"Indexing {last_dataset.split('_')[0]}...")
+                    sources = scanner.retrieve_data_sources()
+                    for label, path in sources.items():
+                        if os.path.basename(path) == last_dataset:
+                            scanner.retrieve_set_data(path)
+                            break
 
     return {"scanner": scanner, "config": config}
 
 
 def main():
+    import time
+    from src import constants
+
+    # 30-day draft log cleanup
+    if os.path.exists(constants.DRAFT_LOG_FOLDER):
+        try:
+            now = time.time()
+            for f in os.listdir(constants.DRAFT_LOG_FOLDER):
+                if f.startswith("DraftLog_") and f.endswith(".log"):
+                    filepath = os.path.join(constants.DRAFT_LOG_FOLDER, f)
+                    try:
+                        # 30 days * 24h * 60m * 60s = 2592000 seconds
+                        if now - os.path.getmtime(filepath) > 2592000:
+                            os.remove(filepath)
+                    except Exception:
+                        pass
+        except Exception as e:
+            logger.error(f"Failed cleaning old draft logs: {e}")
+
     # CLI Argument Parsing
     parser = argparse.ArgumentParser()
     parser.add_argument("-f", "--file", help="Path to Player.log")

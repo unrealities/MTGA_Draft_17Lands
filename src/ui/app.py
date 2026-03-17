@@ -166,7 +166,7 @@ class DraftApp:
             # 2. START THE ENGINE
             self.orchestrator.start()
 
-            # 3. SYNC DROPDOWNS (CRITICAL FIX: Ensure this is called!)
+            # 3. SYNC DROPDOWNS
             try:
                 self._update_data_sources()
                 self._update_deck_filter_options()
@@ -201,6 +201,11 @@ class DraftApp:
 
         if not self.configuration.card_data.latest_dataset:
             self.notebook.select(self.panel_data)
+        elif os.path.basename(self.orchestrator.scanner.arena_file).startswith(
+            "DraftLog_"
+        ):
+            # A past draft was loaded on startup. Auto-show draft results.
+            self.notebook.select(self.panel_suggest)
 
         # Non-critical network tasks
         self.root.after(1500, self._background_update_checks)
@@ -352,6 +357,19 @@ class DraftApp:
         )
         self.btn_reload.pack(side="left", padx=2)
 
+        self.var_history = tkinter.StringVar()
+        self.combo_history = ttk.Combobox(
+            row2,
+            textvariable=self.var_history,
+            state="readonly",
+            width=32,
+        )
+        self.combo_history.pack(side="left", padx=5)
+        self.combo_history.bind("<<ComboboxSelected>>", self._on_history_select)
+        self.combo_history.bind("<Button-1>", lambda e: self._update_history_dropdown())
+
+        self._update_history_dropdown()
+
         self.btn_p1p1 = ttk.Button(
             row2,
             text="SCAN P1P1",
@@ -450,7 +468,10 @@ class DraftApp:
             self.notebook, self.orchestrator.scanner, self.configuration
         )
         self.panel_suggest = SuggestDeckPanel(
-            self.notebook, self.orchestrator.scanner, self.configuration
+            self.notebook,
+            self.orchestrator.scanner,
+            self.configuration,
+            on_export_custom=self._export_to_custom_builder,
         )
         self.panel_custom = CustomDeckPanel(
             self.notebook, self.orchestrator.scanner, self.configuration, self
@@ -494,6 +515,72 @@ class DraftApp:
         """Receives a deck from the SuggestDeckPanel and switches focus to CustomDeckPanel"""
         self.panel_custom.import_deck(deck, sb)
         self.notebook.select(self.panel_custom)
+
+    def _update_history_dropdown(self):
+        from datetime import datetime
+
+        self.history_files = {}
+        options = []
+
+        # 1. Live Option
+        live_path = self.configuration.settings.arena_log_location
+        if live_path and os.path.exists(live_path):
+            live_label = "🔴 Live Arena Draft"
+            self.history_files[live_label] = live_path
+            options.append(live_label)
+
+        # 2. Past Drafts
+        if os.path.exists(constants.DRAFT_LOG_FOLDER):
+            files = []
+            for f in os.listdir(constants.DRAFT_LOG_FOLDER):
+                if f.startswith("DraftLog_") and f.endswith(".log"):
+                    filepath = os.path.join(constants.DRAFT_LOG_FOLDER, f)
+                    try:
+                        mtime = os.path.getmtime(filepath)
+                        files.append((f, filepath, mtime))
+                    except Exception:
+                        pass
+            files.sort(key=lambda x: x[2], reverse=True)
+
+            for f, filepath, mtime in files:
+                parts = f.replace(".log", "").split("_")
+                if len(parts) >= 4:
+                    card_set = parts[1]
+                    event = parts[2]
+                else:
+                    card_set = "UNKNOWN"
+                    event = "Draft"
+
+                dt_str = datetime.fromtimestamp(mtime).strftime("%m-%d %H:%M")
+                display_str = f"[{card_set}] {event} ({dt_str})"
+                self.history_files[display_str] = filepath
+                options.append(display_str)
+
+        self.combo_history["values"] = options
+
+        # Maintain correct visual state
+        current_selection = self.var_history.get()
+        if current_selection not in options and options:
+            # Determine if we are live based on the scanner
+            if not os.path.basename(self.orchestrator.scanner.arena_file).startswith(
+                "DraftLog_"
+            ):
+                self.var_history.set(options[0])
+
+    def _on_history_select(self, event):
+        selection = self.var_history.get()
+        if selection in getattr(self, "history_files", {}):
+            filepath = self.history_files[selection]
+
+            self.vars["status_text"].set("Loading Draft...")
+            self.root.update_idletasks()
+
+            # Request background orchestrator to safely swap files
+            self.orchestrator.set_file_and_scan(filepath)
+
+            if self.tabs_visible and "🔴 Live" not in selection:
+                # Switch to Deck Suggester tab when reviewing old drafts
+                self.notebook.select(self.panel_suggest)
 
     def _toggle_tabs(self):
         if self.tabs_visible:
@@ -845,7 +932,6 @@ class DraftApp:
 
             if not current_set:
                 self.dataset_controls_frame.pack_forget()
-                self.vars["set_label"].set("")
                 self._set_dropdown_options(
                     self.om_event, self.vars["selected_event"], []
                 )
@@ -894,7 +980,7 @@ class DraftApp:
             # If no data is found for the event, clear dropdowns and alert the user
             if not available_events:
                 self.dataset_controls_frame.pack(side="right")
-                self.vars["set_label"].set(f"{display_name} (No Data)")
+                self.vars["set_label"].set(f"{display_name} (Missing Dataset)")
                 self._set_dropdown_options(
                     self.om_event, self.vars["selected_event"], []
                 )
@@ -904,6 +990,7 @@ class DraftApp:
                 return
 
             self.vars["set_label"].set(display_name)
+            self._update_history_dropdown()
             self._set_dropdown_options(
                 self.om_event, self.vars["selected_event"], available_events
             )
@@ -978,9 +1065,22 @@ class DraftApp:
             path = self.current_set_data_map[evt][grp]
             current_loaded = self.configuration.card_data.latest_dataset
             if os.path.basename(path) != current_loaded:
-                self.orchestrator.scanner.retrieve_set_data(path)
-                self.configuration.card_data.latest_dataset = os.path.basename(path)
-                write_configuration(self.configuration)
+                # Synchronous but fast. Prevents thread deadlock crashes!
+                self.vars["status_text"].set("Loading Dataset...")
+                self.root.update_idletasks()
+                try:
+                    self.orchestrator.scanner.retrieve_set_data(path)
+                    self.configuration.card_data.latest_dataset = os.path.basename(path)
+                    write_configuration(self.configuration)
+
+                    from src.card_logic import clear_deck_cache
+
+                    clear_deck_cache()
+                except Exception as e:
+                    logger.error(f"Dataset load error: {e}")
+
+                self.vars["status_text"].set("Ready")
+                self._update_data_sources()
                 self._update_deck_filter_options()
                 self.orchestrator.request_math_update()
                 self._refresh_ui_data()
@@ -1263,13 +1363,13 @@ class DraftApp:
     def _read_draft_log(self):
         f = filedialog.askopenfilename(filetypes=(("Log", "*.log"), ("All", "*.*")))
         if f:
-            self.orchestrator.scanner.set_arena_file(f)
+            self.orchestrator.set_file_and_scan(f)
             self._manual_refresh()
 
     def _read_player_log(self):
         f = filedialog.askopenfilename(filetypes=(("Log", "*.log"), ("All", "*.*")))
         if f:
-            self.orchestrator.scanner.set_arena_file(f)
+            self.orchestrator.set_file_and_scan(f)
             self._manual_refresh()
 
     def _export_csv(self):
@@ -1314,7 +1414,13 @@ class DraftApp:
 
             full_path = os.path.join(SETS_FOLDER, latest_file)
             if os.path.exists(full_path):
-                self.orchestrator.scanner.retrieve_set_data(full_path)
+                try:
+                    self.orchestrator.scanner.retrieve_set_data(full_path)
+                    from src.card_logic import clear_deck_cache
+
+                    clear_deck_cache()
+                except Exception:
+                    pass
 
         self._update_data_sources()
         self._update_deck_filter_options()
