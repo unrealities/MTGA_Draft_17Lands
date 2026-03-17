@@ -88,18 +88,87 @@ def json_find(key, obj):
     return result
 
 
+_LOCAL_SET_CACHE = {"mtime": 0.0, "files": []}
+
+
 def retrieve_local_set_list(codes=None, names=None):
-    """Scans the Sets folder and returns a list of valid set files"""
+    """Scans the Sets folder and returns a list of valid set files (Highly Cached)"""
+    global _LOCAL_SET_CACHE
     file_list = []
     error_list = []
-    for file in os.listdir(SETS_FOLDER):
-        try:
 
-            dataset_info = read_dataset_info(file, codes, names)
-            if dataset_info:
-                file_list.append(dataset_info)
-        except Exception as error:
-            error_list.append(error)
+    try:
+        current_mtime = os.path.getmtime(SETS_FOLDER)
+    except OSError:
+        current_mtime = 0.0
+
+    # CACHE HIT: Bypass the heavy JSON file reading entirely
+    if (
+        current_mtime != 0.0
+        and current_mtime == _LOCAL_SET_CACHE["mtime"]
+        and _LOCAL_SET_CACHE["files"]
+    ):
+        all_files = _LOCAL_SET_CACHE["files"]
+    else:
+        # CACHE MISS - Deep Scan (Runs only on boot or when a new dataset is downloaded)
+        all_files = []
+        if os.path.exists(SETS_FOLDER):
+            for file in os.listdir(SETS_FOLDER):
+                try:
+                    # Read without codes/names filter to cache the raw underlying data
+                    dataset_info = read_dataset_info(file, None, None)
+                    if dataset_info:
+                        all_files.append(dataset_info)
+                except Exception as error:
+                    error_list.append(error)
+        _LOCAL_SET_CACHE["mtime"] = current_mtime
+        _LOCAL_SET_CACHE["files"] = all_files
+
+    # APPLY FILTERS INSTANTLY
+    cleaned_codes = [clean_string(code) for code in codes] if codes else None
+
+    for f in all_files:
+        (
+            set_name,
+            event_type,
+            user_group,
+            start_date,
+            end_date,
+            game_count,
+            file_location,
+            collection_date,
+        ) = f
+        filename = os.path.basename(file_location)
+        name_segments = filename.split("_")
+        if not name_segments:
+            continue
+
+        set_code = name_segments[0].upper()
+
+        if cleaned_codes and set_code not in cleaned_codes:
+            continue
+
+        # If names are provided, map the set_code to the human-readable name
+        display_name = set_name
+        if names and cleaned_codes and set_code in cleaned_codes:
+            try:
+                display_name = list(names)[list(cleaned_codes).index(set_code)]
+            except ValueError:
+                pass
+
+        file_list.append(
+            (
+                display_name,
+                event_type,
+                user_group,
+                start_date,
+                end_date,
+                game_count,
+                file_location,
+                collection_date,
+            )
+        )
+
     return file_list, error_list
 
 
@@ -182,16 +251,23 @@ def detect_string(search_line: str, search_strings: List[str]) -> int:
     Robustly identifies the start of a JSON block in an Arena log line.
     Indifferent to underscores, spaces, or casing.
     """
-    # FAST PATH: If there's no JSON payload, immediately skip heavy string manipulation
+    # FAST PATH 1: If there's no JSON payload, immediately skip
     json_start = search_line.find("{")
     if json_start == -1:
         return -1
 
+    # FAST PATH 2: Exact substring match (Solves massive CPU freezing on huge logs)
+    for pattern in search_strings:
+        if pattern in search_line:
+            return json_start
+
+    # SLOW PATH: Fallback to heavily sanitized matching if WOTC changed formatting
     norm_line = search_line.upper().replace("_", "").replace(" ", "")
     for pattern in search_strings:
         norm_pattern = pattern.upper().replace("_", "").replace(" ", "")
         if norm_pattern in norm_line:
             return json_start
+
     return -1
 
 
@@ -300,10 +376,23 @@ def is_cache_stale(filepath: str, hours: int = 24) -> bool:
 
 def sanitize_card_name(name: str) -> str:
     from src.constants import CARD_NAME_CORRECTIONS
-    if not name: return name
+
+    if not name:
+        return name
+
+    # 1. Exact match (fast path)
+    if name in CARD_NAME_CORRECTIONS:
+        return CARD_NAME_CORRECTIONS[name]
+
+    # 2. Prevent recursive duplication if it's already fully corrected
+    if name in CARD_NAME_CORRECTIONS.values():
+        return name
+
+    # 3. Substring correction for weird encoding artifacts
     for bad, good in CARD_NAME_CORRECTIONS.items():
         if bad in name:
             name = name.replace(bad, good)
+
     return name
 
 
@@ -313,11 +402,18 @@ def bind_scroll(widget, scroll_command):
     Smoothly handles OS-specific Delta calculation quirks.
     """
     import sys
+
     if sys.platform == "darwin":
-        widget.bind("<MouseWheel>", lambda e: scroll_command(-1 * e.delta, "units"), add="+")
+        widget.bind(
+            "<MouseWheel>", lambda e: scroll_command(-1 * e.delta, "units"), add="+"
+        )
     elif sys.platform == "win32":
-        widget.bind("<MouseWheel>", lambda e: scroll_command(-1 * (int(e.delta) // 120), "units"), add="+")
-    else: 
+        widget.bind(
+            "<MouseWheel>",
+            lambda e: scroll_command(-1 * (int(e.delta) // 120), "units"),
+            add="+",
+        )
+    else:
         # Linux / X11
         widget.bind("<Button-4>", lambda e: scroll_command(-1, "units"), add="+")
         widget.bind("<Button-5>", lambda e: scroll_command(1, "units"), add="+")

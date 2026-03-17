@@ -334,14 +334,19 @@ class DraftApp:
             width=-10,
         ).pack(side="right", padx=5)
 
-        self.lbl_set_code = ttk.Label(
+        self.combo_history = ttk.Combobox(
             row1,
             textvariable=self.vars["set_label"],
+            state="readonly",
             font=(Theme.FONT_FAMILY, 10, "bold"),
-            bootstyle="primary",
-            padding=(5, 2),
+            width=36,
+            justify="right",
         )
-        self.lbl_set_code.pack(side="right", padx=10)
+        self.combo_history.pack(side="right", padx=10)
+        self.combo_history.bind("<<ComboboxSelected>>", self._on_history_select)
+        self.combo_history.bind("<Button-1>", lambda e: self._update_history_dropdown())
+
+        self._update_history_dropdown()
 
         # ROW 2: Controls
         row2 = ttk.Frame(header_frame)
@@ -356,19 +361,6 @@ class DraftApp:
             bootstyle="secondary-outline",
         )
         self.btn_reload.pack(side="left", padx=2)
-
-        self.var_history = tkinter.StringVar()
-        self.combo_history = ttk.Combobox(
-            row2,
-            textvariable=self.var_history,
-            state="readonly",
-            width=32,
-        )
-        self.combo_history.pack(side="left", padx=5)
-        self.combo_history.bind("<<ComboboxSelected>>", self._on_history_select)
-        self.combo_history.bind("<Button-1>", lambda e: self._update_history_dropdown())
-
-        self._update_history_dropdown()
 
         self.btn_p1p1 = ttk.Button(
             row2,
@@ -525,7 +517,18 @@ class DraftApp:
         # 1. Live Option
         live_path = self.configuration.settings.arena_log_location
         if live_path and os.path.exists(live_path):
-            live_label = "🔴 Live Arena Draft"
+            # Try to grab the human-readable set name for the live draft
+            set_display = getattr(self, "detected_set_code", "Arena")
+            if (
+                hasattr(self.orchestrator.scanner, "set_list")
+                and self.orchestrator.scanner.set_list.data
+            ):
+                for name, info in self.orchestrator.scanner.set_list.data.items():
+                    if info.set_code == set_display:
+                        set_display = name
+                        break
+
+            live_label = f"🔴 Live: {set_display}"
             self.history_files[live_label] = live_path
             options.append(live_label)
 
@@ -552,27 +555,35 @@ class DraftApp:
                     event = "Draft"
 
                 dt_str = datetime.fromtimestamp(mtime).strftime("%m-%d %H:%M")
-                display_str = f"[{card_set}] {event} ({dt_str})"
+                display_str = f"📂 {card_set} {event} ({dt_str})"
                 self.history_files[display_str] = filepath
                 options.append(display_str)
 
         self.combo_history["values"] = options
 
-        # Maintain correct visual state
-        current_selection = self.var_history.get()
-        if current_selection not in options and options:
-            # Determine if we are live based on the scanner
-            if not os.path.basename(self.orchestrator.scanner.arena_file).startswith(
-                "DraftLog_"
-            ):
-                self.var_history.set(options[0])
+        # Determine current state to prevent overwriting "Missing Dataset" label
+        current_selection = self.vars["set_label"].get()
+        if "Missing Dataset" in current_selection:
+            return
+
+        current_log = os.path.basename(self.orchestrator.scanner.arena_file)
+        target_option = options[0] if options else ""
+
+        for opt, path in self.history_files.items():
+            if os.path.basename(path) == current_log:
+                target_option = opt
+                break
+
+        self.vars["set_label"].set(target_option)
 
     def _on_history_select(self, event):
-        selection = self.var_history.get()
+        selection = self.vars["set_label"].get()
         if selection in getattr(self, "history_files", {}):
             filepath = self.history_files[selection]
 
-            self.vars["status_text"].set("Loading Draft...")
+            # Disable dropdown and provide UX feedback
+            self.combo_history.configure(state="disabled")
+            self.vars["status_text"].set("Queuing Draft...")
             self.root.update_idletasks()
 
             # Request background orchestrator to safely swap files
@@ -855,12 +866,20 @@ class DraftApp:
             update_detected = False
             while True:
                 try:
-                    self.orchestrator.update_queue.get_nowait()
-                    update_detected = True
+                    msg = self.orchestrator.update_queue.get_nowait()
+                    if isinstance(msg, dict) and "status" in msg:
+                        self.vars["status_text"].set(msg["status"])
+                        self.root.update_idletasks()
+                    elif msg == "REFRESH":
+                        update_detected = True
                 except queue.Empty:
                     break
 
             if update_detected:
+                # Re-enable the dropdown
+                if hasattr(self, "combo_history"):
+                    self.combo_history.configure(state="readonly")
+
                 # Check if event changed to update dropdowns
                 self._update_data_sources()
                 self._update_deck_filter_options()

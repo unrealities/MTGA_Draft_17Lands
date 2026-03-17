@@ -76,11 +76,18 @@ class DraftOrchestrator(threading.Thread):
                     pass
 
             # 1. Safely execute file swaps on the background thread
+            new_file = None
             try:
-                new_file = self._file_swap_queue.get_nowait()
+                # Flush the queue to only process the very LAST click (prevents queue buildup)
+                while not self._file_swap_queue.empty():
+                    new_file = self._file_swap_queue.get_nowait()
+            except queue.Empty:
+                pass
+
+            if new_file:
                 self.loading = True
+                self.update_queue.put({"status": "Scanning Log..."})
                 try:
-                    # Setup the new file
                     self.scanner.set_arena_file(new_file)
 
                     if new_file != getattr(self, "live_log_path", None):
@@ -88,17 +95,16 @@ class DraftOrchestrator(threading.Thread):
                     else:
                         self.scanner.log_enable(self.config.settings.draft_log_enabled)
 
-                    # Run a clean deep-scan immediately on the background thread
                     self.scanner.draft_start_search()
                     self.sync_dataset_to_event()
+
+                    self.update_queue.put({"status": "Parsing Picks..."})
                     self.scanner.draft_data_search(False, False)
                 except Exception as e:
                     logger.error(f"Error processing file swap: {e}")
                 finally:
                     self.loading = False
                     self.update_queue.put("REFRESH")
-            except queue.Empty:
-                pass
 
             # 2. Check if file changed OR if a manual event was triggered
             if not self.loading and (
@@ -187,6 +193,16 @@ class DraftOrchestrator(threading.Thread):
             sources = self.scanner.retrieve_data_sources()
             for label, path in sources.items():
                 if f"[{s_code.upper()}]" in label.upper():
+                    # CACHE HIT: Skip reading the massive 25MB JSON file!
+                    if (
+                        self.config.card_data.latest_dataset == os.path.basename(path)
+                        and self.scanner.set_data._dataset is not None
+                    ):
+                        return True
+
+                    # Notify UI of heavy operation
+                    self.update_queue.put({"status": f"Loading {s_code} Dataset..."})
+
                     self.scanner.retrieve_set_data(path)
                     self.config.card_data.latest_dataset = os.path.basename(path)
                     write_configuration(self.config)
