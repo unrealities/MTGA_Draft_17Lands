@@ -12,6 +12,7 @@ from typing import List, Dict, Any, Optional
 from src import constants
 from src.card_logic import field_process_sort, row_color_tag
 from src.ui.styles import Theme
+from src.utils import open_file
 from src.ui.components import (
     ModernTreeview,
     DynamicTreeviewManager,
@@ -288,12 +289,42 @@ class DashboardFrame(ttk.Frame):
 
         self.lbl_recovery_title = ttk.Label(
             center_box,
-            text="Draft Recovered",
-            font=(Theme.FONT_FAMILY, 14, "bold"),
-            bootstyle="info",
+            text="Draft Completed",
+            font=(Theme.FONT_FAMILY, 18, "bold"),
+            bootstyle="success",
             justify="center",
         )
         self.lbl_recovery_title.pack(pady=(0, 10), anchor="center")
+
+        # Container for the Grade and Stats
+        stats_box = ttk.Frame(center_box, padding=15, style="Card.TFrame")
+        stats_box.pack(pady=(0, 20), fill="x", expand=True)
+
+        self.lbl_recovery_grade = ttk.Label(
+            stats_box,
+            text="Pool Power Grade: --",
+            font=(Theme.FONT_FAMILY, 14, "bold"),
+            bootstyle="primary",
+            justify="center",
+        )
+        self.lbl_recovery_grade.pack(anchor="center", pady=(0, 5))
+
+        self.lbl_recovery_stats = ttk.Label(
+            stats_box,
+            text="Top 23 Cards Avg Win Rate: --%",
+            font=(Theme.FONT_FAMILY, 11),
+            justify="center",
+        )
+        self.lbl_recovery_stats.pack(anchor="center")
+
+        # 17Lands Personal Data (Hidden by default, shown if API returns data)
+        self.lbl_actual_record = ttk.Label(
+            stats_box, text="", font=(Theme.FONT_FAMILY, 12, "bold"), justify="center"
+        )
+
+        self.btn_17lands_link = ttk.Button(
+            stats_box, text="View Draft on 17Lands 🌐", bootstyle="secondary-outline"
+        )
 
         desc1 = ttk.Label(
             center_box,
@@ -313,6 +344,103 @@ class DashboardFrame(ttk.Frame):
         )
         desc2.pack(pady=(0, 0), anchor="center")
         self._dynamic_wrap_labels.append(desc2)
+
+    def update_pool_summary(self, taken_cards, metrics, draft_id=""):
+        """Calculates a heuristic letter grade for the completed pool and fetches real 17Lands results."""
+        if not taken_cards or len(taken_cards) < 40:
+            return
+
+        # Hide 17Lands elements initially in case we are cycling between drafts
+        if hasattr(self, "lbl_actual_record"):
+            self.lbl_actual_record.pack_forget()
+        if hasattr(self, "btn_17lands_link"):
+            self.btn_17lands_link.pack_forget()
+
+        def get_gihwr(c):
+            return float(
+                c.get("deck_colors", {}).get("All Decks", {}).get("gihwr", 0.0)
+            )
+
+        valid_cards = [
+            c
+            for c in taken_cards
+            if "Basic" not in c.get("types", [])
+            and c.get("name") not in constants.BASIC_LANDS
+        ]
+        valid_cards.sort(key=get_gihwr, reverse=True)
+
+        top_23 = valid_cards[:23]
+        if not top_23:
+            return
+
+        avg_gihwr = sum(get_gihwr(c) for c in top_23) / len(top_23)
+
+        from src.card_logic import format_win_rate
+
+        grade = format_win_rate(
+            avg_gihwr, "All Decks", "gihwr", metrics, constants.RESULT_FORMAT_GRADE
+        )
+        grade_str = str(grade)
+
+        # Apply specific styling based on grade
+        bootstyle = "primary"
+        if "A" in grade_str:
+            bootstyle = "success"
+        elif "B" in grade_str:
+            bootstyle = "info"
+        elif "C" in grade_str:
+            bootstyle = "warning"
+        elif "D" in grade_str or "F" in grade_str:
+            bootstyle = "danger"
+
+        if hasattr(self, "lbl_recovery_grade"):
+            self.lbl_recovery_grade.config(
+                text=f"Pool Power Grade: {grade_str}", bootstyle=bootstyle
+            )
+        if hasattr(self, "lbl_recovery_stats"):
+            self.lbl_recovery_stats.config(
+                text=f"Top 23 Cards Avg Win Rate: {avg_gihwr:.1f}%"
+            )
+
+        # Asynchronously fetch the real 17Lands result
+        if draft_id:
+            import threading
+
+            def fetch_17lands_record():
+                from src.seventeenlands import Seventeenlands
+
+                record = Seventeenlands().get_draft_record(draft_id)
+
+                if record and record.get("wins") is not None:
+
+                    def update_ui():
+                        wins = record["wins"]
+                        losses = record["losses"]
+                        record_style = (
+                            "success"
+                            if wins >= 3
+                            else ("warning" if wins >= 1 else "danger")
+                        )
+
+                        if hasattr(self, "lbl_actual_record"):
+                            self.lbl_actual_record.config(
+                                text=f"Actual 17Lands Record: {wins} Wins - {losses} Losses",
+                                bootstyle=record_style,
+                            )
+                            self.lbl_actual_record.pack(pady=(15, 5))
+
+                        if hasattr(self, "btn_17lands_link"):
+                            self.btn_17lands_link.config(
+                                command=lambda: open_file(record["url"])
+                            )
+                            self.btn_17lands_link.pack(pady=(0, 5))
+
+                    try:
+                        self.after(0, update_ui)
+                    except RuntimeError:
+                        pass
+
+            threading.Thread(target=fetch_17lands_record, daemon=True).start()
 
     def _build_active_state(self):
         """State 3: Active drafting / deckbuilding."""
@@ -561,9 +689,9 @@ class DashboardFrame(ttk.Frame):
         elif show_recovery:
             if self._current_event_set:
                 prefix = (
-                    "Pool Recovered"
+                    "Sealed Pool"
                     if "Sealed" in self._current_event_type
-                    else "Draft Recovered"
+                    else "Draft Completed"
                 )
                 self.lbl_recovery_title.config(
                     text=f"{prefix}: {self._current_event_set} {self._current_event_type}"

@@ -173,6 +173,33 @@ class Seventeenlands:
                 )
         return imgs
 
+    def get_draft_record(self, draft_id: str) -> Optional[Dict[str, Any]]:
+        """
+        Anonymously queries 17Lands using the MTGA Draft ID to fetch the user's actual match record.
+        """
+        if not draft_id:
+            return None
+
+        # 17Lands strips the hyphens from the MTGA UUID
+        clean_id = draft_id.replace("-", "")
+        url = f"{self.URL_BASE}/data/details?draft_id={clean_id}"
+
+        try:
+            response = self.session.get(url, timeout=5)
+            if response.status_code == 200:
+                data = response.json()
+                # If 'wins' is present, the draft was tracked by 17Lands
+                if data.get("wins") is not None:
+                    return {
+                        "wins": data.get("wins"),
+                        "losses": data.get("losses"),
+                        "url": f"{self.URL_BASE}/draft/{clean_id}",
+                    }
+        except Exception as e:
+            logger.debug(f"Failed to fetch 17Lands draft record for {clean_id}: {e}")
+
+        return None
+
     def download_color_ratings(
         self,
         set_code,

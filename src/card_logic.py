@@ -751,16 +751,17 @@ def suggest_deck(
         def process_variant(variant_name, deck, sb, colors, arch_key):
             if not deck:
                 return
-            opt_deck, opt_sb, opt_stats, opt_note = optimize_deck(
-                deck, sb, arch_key, colors
-            )
+
+            opt_deck, opt_sb = deck, sb
+            opt_note = ""
+            opt_stats = simulate_deck(opt_deck, iterations=10000)
+
             score, breakdown = calculate_holistic_score(
                 opt_deck, colors, pool_size, metrics
             )
 
             # --- MONTE CARLO REALITY CHECK ---
             # The heuristic score measures raw card power, but the simulator reveals if the mana base actually works.
-            # We heavily penalize the final rating if the deck mathematically defeats itself.
             if opt_stats:
                 mc_penalties = []
                 # Baseline color screw is ~10-15%. Punish severely if over 16%.

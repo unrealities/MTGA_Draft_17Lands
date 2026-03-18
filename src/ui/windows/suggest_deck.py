@@ -33,11 +33,13 @@ class SuggestDeckPanel(ttk.Frame):
         draft_manager,
         configuration,
         on_export_custom=None,
+        app_context=None,
     ):
         super().__init__(parent)
         self.draft = draft_manager
         self.configuration = configuration
         self.on_export_custom = on_export_custom
+        self.app_context = app_context
 
         self.suggestions: Dict[str, Any] = {}
         self.current_deck_list: List[Dict] = []
@@ -823,6 +825,10 @@ class SuggestDeckPanel(ttk.Frame):
         if not raw_pool:
             self._update_dropdown_options(["Not enough cards drafted yet."])
             self.var_archetype.set("Not enough cards drafted yet.")
+            if getattr(self, "app_context", None) and hasattr(
+                self.app_context, "loading_overlay"
+            ):
+                self.app_context.loading_overlay.hide()
             return
 
         if self.is_building:
@@ -853,6 +859,15 @@ class SuggestDeckPanel(ttk.Frame):
             if "status" in msg:
                 if not self.suggestions:
                     self.after(0, lambda: self.var_archetype.set(msg["status"]))
+                if getattr(self, "app_context", None) and hasattr(
+                    self.app_context, "loading_overlay"
+                ):
+                    self.after(
+                        0,
+                        lambda: self.app_context.loading_overlay.update_status(
+                            msg["status"]
+                        ),
+                    )
             elif "variant_label" in msg:
                 lbl = msg["variant_label"]
                 vd = msg["variant_data"]
@@ -887,6 +902,11 @@ class SuggestDeckPanel(ttk.Frame):
 
     def _finalize_build(self, sorted_decks):
         self.is_building = False
+        if getattr(self, "app_context", None) and hasattr(
+            self.app_context, "loading_overlay"
+        ):
+            self.app_context.loading_overlay.hide()
+
         if not sorted_decks:
             msg = "Not enough data or playables to suggest a deck"
             self.suggestions = {}
@@ -898,22 +918,16 @@ class SuggestDeckPanel(ttk.Frame):
         dropdown_labels = list(sorted_decks.keys())
         self._update_dropdown_options(dropdown_labels)
 
-        if self.var_archetype.get() not in dropdown_labels:
-            self._on_deck_selection_change(dropdown_labels[0])
-        else:
-            original = self.var_archetype.get()
-            self.var_archetype.set(original + " (Optimization Complete)")
-            self.after(
-                2000,
-                lambda: (
-                    self.var_archetype.set(original)
-                    if self.var_archetype.get().endswith("(Optimization Complete)")
-                    else None
-                ),
-            )
+        # Always snap to the mathematically strongest deck once analysis completes
+        self._on_deck_selection_change(dropdown_labels[0])
 
     def _handle_builder_error(self, error_msg):
         self.is_building = False
+        if getattr(self, "app_context", None) and hasattr(
+            self.app_context, "loading_overlay"
+        ):
+            self.app_context.loading_overlay.hide()
+
         msg = "Builder Error"
         self.suggestions = {}
         self._update_dropdown_options([msg])
