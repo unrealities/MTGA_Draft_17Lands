@@ -32,8 +32,54 @@ class DraftOrchestrator(threading.Thread):
         # Live tracking
         self.live_log_path = configuration.settings.arena_log_location
         self._last_live_file_size = -1
+        self._live_log_offset = 0
         if self.live_log_path and os.path.exists(self.live_log_path):
             self._last_live_file_size = os.path.getsize(self.live_log_path)
+            self._live_log_offset = self._last_live_file_size
+
+    def _check_live_log_for_draft(self):
+        """Peeks at the end of the active Player.log to see if a draft actually started."""
+        if not self.live_log_path or not os.path.exists(self.live_log_path):
+            return False
+
+        try:
+            current_size = os.path.getsize(self.live_log_path)
+            if current_size == self._last_live_file_size:
+                return False
+
+            if current_size < self._last_live_file_size:
+                # MTGA Restarted, log was truncated
+                self._live_log_offset = 0
+
+            self._last_live_file_size = current_size
+
+            found_draft = False
+            with open(self.live_log_path, "r", encoding="utf-8", errors="replace") as f:
+                f.seek(self._live_log_offset)
+                while True:
+                    line = f.readline()
+                    if not line:
+                        break
+
+                    # Fast check for draft initiation events or card pool dumps
+                    if any(
+                        kw in line
+                        for kw in [
+                            "Event_Join",
+                            "EventJoin",
+                            "BotDraft",
+                            '"CardPool":[',
+                        ]
+                    ):
+                        found_draft = True
+                        break
+
+                self._live_log_offset = f.tell()
+
+            return found_draft
+        except Exception as e:
+            logger.error(f"Error reading live log: {e}")
+            return False
 
     def set_file_and_scan(self, filepath):
         """Thread-safe way for the UI to request a log file change."""
@@ -53,27 +99,24 @@ class DraftOrchestrator(threading.Thread):
         logger.info("Background Watchdog started.")
         while not self._stop_event.is_set():
 
-            # Automatically snap back to the live draft log if activity is detected
+            # Automatically snap back to the live draft log ONLY if a draft event is detected
             if getattr(self, "live_log_path", None) and os.path.exists(
                 self.live_log_path
             ):
-                try:
-                    current_live_size = os.path.getsize(self.live_log_path)
-                    if self.scanner.arena_file != self.live_log_path:
-                        # We are looking at a past log. Check for live activity.
-                        if (
-                            self._last_live_file_size != -1
-                            and current_live_size != self._last_live_file_size
-                        ):
-                            logger.info(
-                                "Live log activity detected. Snapping back to live draft."
-                            )
-                            self._last_live_file_size = current_live_size
-                            self.set_file_and_scan(self.live_log_path)
-                    else:
-                        self._last_live_file_size = current_live_size
-                except Exception:
-                    pass
+                if self.scanner.arena_file != self.live_log_path:
+                    # We are looking at a past log. Check for actual live draft activity.
+                    if self._check_live_log_for_draft():
+                        logger.info(
+                            "Live draft activity detected. Going back to live draft."
+                        )
+                        self.set_file_and_scan(self.live_log_path)
+                else:
+                    # We are already on the live log. Keep our tracker up to date.
+                    try:
+                        self._last_live_file_size = os.path.getsize(self.live_log_path)
+                        self._live_log_offset = self._last_live_file_size
+                    except Exception:
+                        pass
 
             # 1. Safely execute file swaps on the background thread
             new_file = None

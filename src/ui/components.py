@@ -398,27 +398,35 @@ class CardToolTip(tkinter.Toplevel):
         if not hasattr(self, "winfo_exists") or not self.winfo_exists():
             return
 
-        self.update_idletasks()
-        ww = self.winfo_width()
-        wh = self.winfo_height()
+        try:
+            self.update_idletasks()
 
-        sw = self.winfo_screenwidth()
-        sh = self.winfo_screenheight()
+            # Re-verify existence after idle tasks in case a <Leave> event instantly destroyed it
+            if not self.winfo_exists():
+                return
 
-        # Offset aggressively to prevent cursor hovering over the tooltip immediately, causing a rapid <Leave> flicker
-        offset_x, offset_y = 35, 25
+            ww = self.winfo_width()
+            wh = self.winfo_height()
 
-        if self._mouse_x + offset_x + ww > sw:
-            tx = max(self._mouse_x - offset_x - ww - 10, 0)
-        else:
-            tx = max(self._mouse_x + offset_x, 0)
+            sw = self.winfo_screenwidth()
+            sh = self.winfo_screenheight()
 
-        if self._mouse_y + offset_y + wh > sh:
-            ty = max(self._mouse_y - offset_y - wh - 10, 0)
-        else:
-            ty = max(self._mouse_y + offset_y, 0)
+            # Offset aggressively to prevent cursor hovering over the tooltip immediately, causing a rapid <Leave> flicker
+            offset_x, offset_y = 35, 25
 
-        self.geometry(f"+{tx}+{ty}")
+            if self._mouse_x + offset_x + ww > sw:
+                tx = max(self._mouse_x - offset_x - ww - 10, 0)
+            else:
+                tx = max(self._mouse_x + offset_x, 0)
+
+            if self._mouse_y + offset_y + wh > sh:
+                ty = max(self._mouse_y - offset_y - wh - 10, 0)
+            else:
+                ty = max(self._mouse_y + offset_y, 0)
+
+            self.geometry(f"+{tx}+{ty}")
+        except tkinter.TclError:
+            pass
 
     def _load_image_async(self, u, s):
         if "scryfall" in u:
