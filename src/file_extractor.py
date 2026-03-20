@@ -235,6 +235,10 @@ class FileExtractor(UIProgress):
         self.deck_colors = constants.DECK_COLORS
         self.sets_17lands = []
         self.threshold = threshold
+        self.client_id = ""
+
+    def set_client_id(self, client_id):
+        self.client_id = client_id
 
     def clear_data(self):
         """Clear stored set information"""
@@ -360,6 +364,7 @@ class FileExtractor(UIProgress):
                 colors=target_colors,
                 user_group=self.user_group,
                 progress_callback=update_ui,
+                client_id=self.client_id,
             )
         except Exception as e:
             if "404" in str(e) or "400" in str(e):

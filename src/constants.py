@@ -208,6 +208,7 @@ COLUMN_FIELD_LABELS = {
     "colors": "COLORS: Card Colors",
     "count": "COUNT: Total Card Count",
     "value": "VALUE: Advisor Tactical Score",
+    "personal": "PERSONAL: Your GIH Win Rate",
     "tags": "TAGS: Card Roles",
 }
 LABEL_TO_COLUMN_FIELD = {v: k for k, v in COLUMN_FIELD_LABELS.items()}

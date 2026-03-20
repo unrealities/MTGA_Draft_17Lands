@@ -208,6 +208,14 @@ class TakenCardsPanel(ttk.Frame):
                         row_values.append(" ".join(icons_only))
                     else:
                         row_values.append("-")
+                elif field == "personal":
+                    p_stats = card.get("deck_colors", {}).get("Personal", {})
+                    val = p_stats.get("gihwr", 0.0)
+                    smp = p_stats.get("samples", 0)
+                    if smp > 0:
+                        row_values.append(f"{val:.1f}%")
+                    else:
+                        row_values.append("-")
                 elif "TIER" in field:
                     if tier_data and field in tier_data:
                         tier_obj = tier_data[field]

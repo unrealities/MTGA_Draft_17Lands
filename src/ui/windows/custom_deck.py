@@ -24,6 +24,7 @@ from src.card_logic import (
     stack_cards,
     calculate_dynamic_mana_base,
     get_strict_colors,
+    is_castable,
 )
 from src.ui.styles import Theme
 from src.ui.components import DynamicTreeviewManager, CardToolTip, AutoScrollbar
@@ -978,6 +979,14 @@ class CustomDeckPanel(ttk.Frame):
                             row_values.append(" ".join(icons))
                         else:
                             row_values.append("-")
+                    elif field == "personal":
+                        p_stats = card.get("deck_colors", {}).get("Personal", {})
+                        val = p_stats.get("gihwr", 0.0)
+                        smp = p_stats.get("samples", 0)
+                        if smp > 0:
+                            row_values.append(f"{val:.1f}%")
+                        else:
+                            row_values.append("-")
                     elif "TIER" in field:
                         if tier_data and field in tier_data:
                             tier_obj = tier_data[field]
@@ -1500,6 +1509,11 @@ class CustomDeckPanel(ttk.Frame):
         spells_list = [c for c in self.deck_list if "Land" not in c.get("types", [])]
         sb_spells = [c for c in self.sb_list if "Land" not in c.get("types", [])]
         if spells_list and sb_spells:
+            deck_colors = (
+                get_strict_colors(spells_list)
+                if spells_list
+                else ["W", "U", "B", "R", "G"]
+            )
 
             def get_wr(c):
                 return float(
@@ -1507,7 +1521,11 @@ class CustomDeckPanel(ttk.Frame):
                 )
 
             valid_main = [c for c in spells_list if get_wr(c) > 0]
-            valid_sb = [c for c in sb_spells if get_wr(c) > 0]
+            valid_sb = [
+                c
+                for c in sb_spells
+                if get_wr(c) > 0 and is_castable(c, deck_colors, strict=True)
+            ]
 
             if valid_main and valid_sb:
                 worst_main = min(valid_main, key=get_wr)

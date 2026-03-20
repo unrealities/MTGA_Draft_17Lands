@@ -202,6 +202,15 @@ class CardToolTip(tkinter.Toplevel):
 
     def __init__(self, parent, card, images_enabled, scale):
         super().__init__(parent)
+        try:
+            self._build_ui(parent, card, images_enabled, scale)
+        except Exception as e:
+            from src.logger import create_logger
+
+            create_logger().error(f"Error building tooltip UI: {e}", exc_info=True)
+            self.destroy()
+
+    def _build_ui(self, parent, card, images_enabled, scale):
         # --- 1. Basic Land Filter ---
         # Prevent tooltips from appearing for Basic Lands to reduce clutter
         card_types = card.get("types", [])
@@ -225,13 +234,12 @@ class CardToolTip(tkinter.Toplevel):
         except Exception:
             pass
 
-        name, stats, urls, tags, rarity = (
-            card.get("name", "Unknown"),
-            card.get("deck_colors", {}),
-            card.get("image", []),
-            card.get("tags", []),
-            card.get("rarity", "common").capitalize(),
-        )
+        name = card.get("name", "Unknown")
+        stats = card.get("deck_colors", {})
+        urls = card.get("image", [])
+        tags = card.get("tags", [])
+        rarity = str(card.get("rarity") or "common").capitalize()
+
         h = tb.Frame(self, bootstyle="secondary")
         h.pack(fill="x")
         rc = (
@@ -379,6 +387,44 @@ class CardToolTip(tkinter.Toplevel):
                 justify="left",
             ).pack(anchor="w")
 
+        # --- 3. Personal Stats ---
+        personal_stats = stats.get("Personal", {})
+        p_wr, p_smp = personal_stats.get("gihwr", 0.0), personal_stats.get("samples", 0)
+
+        if p_smp > 0:
+            tb.Label(
+                sf,
+                text="PERSONAL PERFORMANCE",
+                bootstyle="success",
+                font=(Theme.FONT_FAMILY, int(10 * scale), "bold"),
+            ).pack(anchor="w", pady=(12, 4))
+
+            pf = tb.Frame(sf)
+            pf.pack(anchor="w", fill="x")
+            tb.Label(
+                pf,
+                text="GIH WR:",
+                font=(Theme.FONT_FAMILY, int(9 * scale)),
+            ).grid(row=0, column=0, sticky="w", padx=(0, 6))
+            tb.Label(
+                pf,
+                text=fp(p_wr),
+                foreground=Theme.SUCCESS if p_wr >= 55.0 else Theme.TEXT_MAIN,
+                font=(Theme.FONT_FAMILY, int(9 * scale), "bold"),
+            ).grid(row=0, column=1, sticky="w", padx=(0, 20))
+
+            tb.Label(
+                pf,
+                text="Games:",
+                font=(Theme.FONT_FAMILY, int(9 * scale)),
+            ).grid(row=0, column=2, sticky="w", padx=(0, 6))
+            tb.Label(
+                pf,
+                text=fn(p_smp),
+                foreground=Theme.TEXT_MAIN,
+                font=(Theme.FONT_FAMILY, int(9 * scale), "bold"),
+            ).grid(row=0, column=3, sticky="w", padx=(0, 20))
+
         # Anchor to the mouse position AT THE TIME OF CREATION
         self._mouse_x = parent.winfo_pointerx()
         self._mouse_y = parent.winfo_pointery()
@@ -436,6 +482,8 @@ class CardToolTip(tkinter.Toplevel):
     def _fetch_and_apply_image(self, u, s):
         """Moved the core logic into a clean worker method"""
         try:
+            if not u:
+                return
             sn = hashlib.md5(u.encode("utf-8")).hexdigest() + ".jpg"
             cp = os.path.join(self.IMAGE_CACHE_DIR, sn)
             if os.path.exists(cp):
@@ -1120,7 +1168,7 @@ class ManaCurvePlot(tb.Frame):
         bw, gp = 14, 2
         tw = (len(self.current) * bw) + ((len(self.current) - 1) * gp)
         sx, sc = (w - tw) / 2, (self.canvas_height - 25) / max(
-            max(self.current), max(self.ideal), 5
+            max(self.current, default=0), max(self.ideal, default=0), 5
         )
         for i, c in enumerate(self.current):
             x, t = sx + (i * (bw + gp)), self.ideal[i] if i < len(self.ideal) else 0

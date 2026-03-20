@@ -856,6 +856,7 @@ class DraftApp:
         deck_metrics = get_deck_metrics(taken_cards)
         self.dashboard.update_stats(deck_metrics.distribution_all)
         self.dashboard.update_deck_balance(taken_cards)
+        self.dashboard.orchestrator = self.orchestrator
         self.dashboard.update_pool_summary(taken_cards, metrics, draft_id)
 
         if self.overlay_window:
@@ -1332,7 +1333,8 @@ class DraftApp:
 
     def _show_tooltip(self, card_name, widget, data_list):
         found = next(
-            (c for c in data_list if c[constants.DATA_FIELD_NAME] == card_name), None
+            (c for c in data_list if c.get(constants.DATA_FIELD_NAME) == card_name),
+            None,
         )
         if found:
             current_scale = constants.UI_SIZE_DICT.get(
@@ -1371,7 +1373,8 @@ class DraftApp:
             return
 
         found = next(
-            (c for c in data_list if c[constants.DATA_FIELD_NAME] == card_name), None
+            (c for c in data_list if c.get(constants.DATA_FIELD_NAME) == card_name),
+            None,
         )
         if not found:
             return

@@ -21,8 +21,10 @@ class TestSuggestDeckPanel:
     @pytest.fixture
     def mock_draft(self):
         draft = MagicMock()
-        # Must return at least one card to bypass the "Not enough cards drafted yet" check
-        draft.retrieve_taken_cards.return_value = [{"name": "Forest"}] * 15
+        # Must return at least 23 playable cards to bypass the "Not enough cards drafted yet" check
+        draft.retrieve_taken_cards.return_value = [
+            {"name": "Lightning Bolt", "types": ["Instant"]}
+        ] * 25
         draft.retrieve_set_metrics.return_value = MagicMock()
         draft.retrieve_current_limited_event.return_value = ("SET", "PremierDraft")
         return draft

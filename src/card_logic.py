@@ -728,7 +728,15 @@ def suggest_deck(
     pool_size = len(taken_cards)
     is_bo3 = "Trad" in event_type
 
-    if not taken_cards or len(taken_cards) < 12:
+    playable_cards = [
+        c
+        for c in taken_cards
+        if "Basic" not in c.get("types", [])
+        and c.get("name") not in constants.BASIC_LANDS
+    ]
+
+    # Don't waste CPU trying to mathematically solve for a deck if there are not enough playables to create one!
+    if not playable_cards or len(playable_cards) < 23:
         return sorted_decks
 
     try:

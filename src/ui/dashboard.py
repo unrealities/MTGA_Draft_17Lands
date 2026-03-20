@@ -51,6 +51,9 @@ class DashboardFrame(ttk.Frame):
         self.curve_plot: Optional[ManaCurvePlot] = None
         self.type_chart: Optional[TypePieChart] = None
 
+        self.recap_curve_plot: Optional[ManaCurvePlot] = None
+        self.recap_type_chart: Optional[TypePieChart] = None
+
         # Track counts for dynamic vertical splitting and State Evaluation
         self._pack_count = 0
         self._missing_count = 0
@@ -280,70 +283,145 @@ class DashboardFrame(ttk.Frame):
         desc2.pack(pady=(0, 0), anchor="center")
         self._dynamic_wrap_labels.append(desc2)
 
-    def _build_deck_recovery_state(self):
-        """State 2C: Draft recovered from logs, but no active pack data available."""
-        self.recovery_frame = ttk.Frame(self)
+    def _create_stat_box(self, parent, title, text_var_name):
+        """Helper to create cohesive stat boxes for the Post-Draft Recap."""
+        frame = ttk.Labelframe(parent, text=title, padding=8)
+        lbl = ttk.Label(frame, text="", font=(Theme.FONT_FAMILY, 9), justify="left")
+        lbl.pack(anchor="nw", fill="both", expand=True)
+        setattr(self, text_var_name, lbl)
+        self._dynamic_wrap_labels.append(lbl)
+        return frame
 
-        center_box = ttk.Frame(self.recovery_frame)
-        center_box.pack(expand=True)
+    def _build_deck_recovery_state(self):
+        """State 2C: Draft Completed. Shows Fantasy-style Recap."""
+        self.recovery_frame = ttk.Frame(self)
+        self.recovery_frame.columnconfigure(0, weight=1)
+        self.recovery_frame.rowconfigure(1, weight=1)
+
+        # HEADER
+        header_frame = ttk.Frame(self.recovery_frame, padding=10, style="Card.TFrame")
+        header_frame.grid(row=0, column=0, sticky="ew")
 
         self.lbl_recovery_title = ttk.Label(
-            center_box,
+            header_frame,
             text="Draft Completed",
             font=(Theme.FONT_FAMILY, 18, "bold"),
             bootstyle="success",
-            justify="center",
         )
-        self.lbl_recovery_title.pack(pady=(0, 10), anchor="center")
+        self.lbl_recovery_title.pack(side="left")
 
-        # Container for the Grade and Stats
-        stats_box = ttk.Frame(center_box, padding=15, style="Card.TFrame")
-        stats_box.pack(pady=(0, 20), fill="x", expand=True)
+        # 17Lands Button (Hidden by default)
+        self.btn_17lands_link = ttk.Button(
+            header_frame, text="View Draft on 17Lands 🌐", bootstyle="info-outline"
+        )
+
+        # TABBED CONTENT
+        self.recap_notebook = ttk.Notebook(self.recovery_frame)
+        self.recap_notebook.grid(row=1, column=0, sticky="nsew", padx=10, pady=(10, 0))
+
+        # --- TAB 1: DRAFT RECAP ---
+        tab_recap = ttk.Frame(self.recap_notebook, padding=15)
+        self.recap_notebook.add(tab_recap, text=" Draft Recap ")
+
+        top_recap = ttk.Frame(tab_recap)
+        top_recap.pack(fill="x", expand=True)
+        top_recap.columnconfigure(0, weight=1)
+        top_recap.columnconfigure(1, weight=1)
+
+        grade_frame = ttk.Frame(top_recap)
+        grade_frame.grid(row=0, column=0, sticky="nsew", padx=(0, 10))
 
         self.lbl_recovery_grade = ttk.Label(
-            stats_box,
+            grade_frame,
             text="Pool Power Grade: --",
             font=(Theme.FONT_FAMILY, 14, "bold"),
             bootstyle="primary",
-            justify="center",
         )
-        self.lbl_recovery_grade.pack(anchor="center", pady=(0, 5))
+        self.lbl_recovery_grade.pack(anchor="w", pady=(0, 5))
 
         self.lbl_recovery_stats = ttk.Label(
-            stats_box,
+            grade_frame,
             text="Top 23 Cards Avg Win Rate: --%",
             font=(Theme.FONT_FAMILY, 11),
-            justify="center",
         )
-        self.lbl_recovery_stats.pack(anchor="center")
+        self.lbl_recovery_stats.pack(anchor="w")
 
-        # 17Lands Personal Data (Hidden by default, shown if API returns data)
         self.lbl_actual_record = ttk.Label(
-            stats_box, text="", font=(Theme.FONT_FAMILY, 12, "bold"), justify="center"
+            grade_frame, text="", font=(Theme.FONT_FAMILY, 11, "bold")
         )
 
-        self.btn_17lands_link = ttk.Button(
-            stats_box, text="View Draft on 17Lands 🌐", bootstyle="secondary-outline"
+        # Best Archetypes Box
+        self._create_stat_box(top_recap, "TOP ARCHETYPES", "lbl_recap_archetypes").grid(
+            row=0, column=1, sticky="nsew"
         )
 
-        desc1 = ttk.Label(
-            center_box,
-            text="We successfully recovered your drafted cards from the MTGA logs.\nYour pool is available in the 'Card Pool' and 'Deck Builder' tabs below.",
+        # Grid for Highlights
+        grid_recap = ttk.Frame(tab_recap)
+        grid_recap.pack(fill="both", expand=True, pady=(15, 0))
+        grid_recap.columnconfigure((0, 1, 2), weight=1)
+
+        self._create_stat_box(grid_recap, "BEST CARDS DRAFTED", "lbl_recap_best").grid(
+            row=0, column=0, sticky="nsew", padx=(0, 5)
+        )
+        self._create_stat_box(
+            grid_recap, "BIGGEST STEALS (LATE PICKS)", "lbl_recap_steals"
+        ).grid(row=0, column=1, sticky="nsew", padx=5)
+        self._create_stat_box(
+            grid_recap, "BIGGEST REACHES (EARLY PICKS)", "lbl_recap_reaches"
+        ).grid(row=0, column=2, sticky="nsew", padx=(5, 0))
+
+        # --- TAB 2: POOL ANALYSIS ---
+        tab_analysis = ttk.Frame(self.recap_notebook, padding=15)
+        self.recap_notebook.add(tab_analysis, text=" Pool Analysis ")
+
+        tab_analysis.columnconfigure((0, 1), weight=1)
+        tab_analysis.rowconfigure(0, weight=1)
+
+        # --- TAB 3: LOCAL DB ---
+        tab_localdb = ttk.Frame(self.recap_notebook, padding=15)
+        self.recap_notebook.add(tab_localdb, text=" 17Lands DB Data ")
+
+        self.txt_localdb = tkinter.Text(
+            tab_localdb,
+            wrap="word",
+            bg=Theme.BG_SECONDARY,
+            fg=Theme.TEXT_MAIN,
             font=(Theme.FONT_FAMILY, 10),
-            justify="center",
         )
-        desc1.pack(pady=(0, 20), anchor="center")
-        self._dynamic_wrap_labels.append(desc1)
+        self.txt_localdb.pack(fill="both", expand=True)
 
-        desc2 = ttk.Label(
-            center_box,
-            text="Waiting for a new draft to begin...",
-            font=(Theme.FONT_FAMILY, 9),
-            bootstyle="secondary",
-            justify="center",
+        # Left Column: Charts
+        charts_frame = ttk.Frame(tab_analysis)
+        charts_frame.grid(row=0, column=0, sticky="nsew", padx=(0, 10))
+
+        ttk.Label(
+            charts_frame,
+            text="MANA CURVE",
+            font=(Theme.FONT_FAMILY, 10, "bold"),
+            bootstyle="primary",
+        ).pack(anchor="w", pady=(0, 5))
+        self.recap_curve_plot = ManaCurvePlot(charts_frame, ideal_distribution=[])
+        self.recap_curve_plot.pack(fill="x", pady=(0, 15))
+
+        ttk.Label(
+            charts_frame,
+            text="POOL BALANCE",
+            font=(Theme.FONT_FAMILY, 10, "bold"),
+            bootstyle="primary",
+        ).pack(anchor="w", pady=(0, 5))
+        self.recap_type_chart = TypePieChart(charts_frame)
+        self.recap_type_chart.pack(fill="x")
+
+        # Right Column: Stats
+        stats_col = ttk.Frame(tab_analysis)
+        stats_col.grid(row=0, column=1, sticky="nsew")
+
+        self._create_stat_box(stats_col, "RARES & MYTHICS", "lbl_recap_rares").pack(
+            fill="both", expand=True, pady=(0, 10)
         )
-        desc2.pack(pady=(0, 0), anchor="center")
-        self._dynamic_wrap_labels.append(desc2)
+        self._create_stat_box(
+            stats_col, "MUST-INCLUDE STAPLES", "lbl_recap_staples"
+        ).pack(fill="both", expand=True)
 
     def update_pool_summary(self, taken_cards, metrics, draft_id=""):
         """Calculates a heuristic letter grade for the completed pool and fetches real 17Lands results."""
@@ -361,17 +439,22 @@ class DashboardFrame(ttk.Frame):
                 c.get("deck_colors", {}).get("All Decks", {}).get("gihwr", 0.0)
             )
 
+        def get_ata(c):
+            return float(c.get("deck_colors", {}).get("All Decks", {}).get("ata", 0.0))
+
         valid_cards = [
             c
             for c in taken_cards
             if "Basic" not in c.get("types", [])
             and c.get("name") not in constants.BASIC_LANDS
         ]
-        valid_cards.sort(key=get_gihwr, reverse=True)
 
-        top_23 = valid_cards[:23]
-        if not top_23:
+        if not valid_cards:
             return
+
+        # --- 1. OVERALL GRADE ---
+        valid_cards.sort(key=get_gihwr, reverse=True)
+        top_23 = valid_cards[:23]
 
         avg_gihwr = sum(get_gihwr(c) for c in top_23) / len(top_23)
 
@@ -382,7 +465,6 @@ class DashboardFrame(ttk.Frame):
         )
         grade_str = str(grade)
 
-        # Apply specific styling based on grade
         bootstyle = "primary"
         if "A" in grade_str:
             bootstyle = "success"
@@ -402,18 +484,172 @@ class DashboardFrame(ttk.Frame):
                 text=f"Top 23 Cards Avg Win Rate: {avg_gihwr:.1f}%"
             )
 
-        # Asynchronously fetch the real 17Lands result
+        # --- 2. TOP ARCHETYPES ---
+        from src.card_logic import identify_top_pairs
+
+        top_pairs = identify_top_pairs(taken_cards, metrics)
+
+        arch_text = ""
+        for i, pair in enumerate(top_pairs[:3]):
+            lane = "".join(sorted(pair))
+            arch_text += f"• {lane}\n"
+
+        if hasattr(self, "lbl_recap_archetypes"):
+            self.lbl_recap_archetypes.config(
+                text=arch_text if arch_text else "None Identified"
+            )
+
+        # --- 3. BEST CARDS DRAFTED ---
+        best_text = ""
+        for c in top_23[:5]:
+            wr = get_gihwr(c)
+            name = c.get("name", "Unknown")
+            best_text += f"• {name} ({wr:.1f}%)\n"
+
+        if hasattr(self, "lbl_recap_best"):
+            self.lbl_recap_best.config(text=best_text)
+
+        # --- 4. STEALS & REACHES ---
+        history = getattr(self, "draft_history_reference", [])
+        steals = []
+        reaches = []
+        orchestrator = getattr(self, "orchestrator", None)
+        scanner = getattr(orchestrator, "scanner", None) if orchestrator else None
+
+        if scanner:
+            history = scanner.retrieve_draft_history()
+
+            # Build a map of card ID -> Pick Number
+            pick_map = {}
+            for entry in history:
+                pack = entry.get("Pack", 1)
+                pick = entry.get("Pick", 1)
+                absolute_pick = ((pack - 1) * 15) + pick
+                for cid in entry.get("Cards", []):
+                    pick_map[str(cid)] = absolute_pick
+
+            # Evaluate steals/reaches
+            for c in valid_cards:
+                name = c.get("name", "")
+                ata = get_ata(c)
+
+        # A "Steal" is a high win-rate card that we got late in a pack (ALSA > 5.0)
+        # A "Reach" is a low win-rate card that goes very early globally (ATA < 4.0) but we still took it.
+        potential_steals = [
+            c
+            for c in valid_cards
+            if get_gihwr(c) >= 56.0
+            and c.get("deck_colors", {}).get("All Decks", {}).get("alsa", 0.0) >= 6.0
+        ]
+        potential_steals.sort(
+            key=lambda x: x.get("deck_colors", {})
+            .get("All Decks", {})
+            .get("alsa", 0.0),
+            reverse=True,
+        )
+
+        steal_text = ""
+        for c in potential_steals[:5]:
+            alsa = c.get("deck_colors", {}).get("All Decks", {}).get("alsa", 0.0)
+            steal_text += f"• {c.get('name')} (ALSA: {alsa:.1f})\n"
+
+        if hasattr(self, "lbl_recap_steals"):
+            self.lbl_recap_steals.config(
+                text=steal_text if steal_text else "No major steals detected."
+            )
+
+        # Reach: GIHWR < 54.0 and ATA < 4.0 (A bad card that is highly contested globally)
+        potential_reaches = [
+            c
+            for c in valid_cards
+            if get_gihwr(c) <= 53.5
+            and c.get("deck_colors", {}).get("All Decks", {}).get("ata", 0.0) <= 4.0
+        ]
+        potential_reaches.sort(
+            key=lambda x: x.get("deck_colors", {}).get("All Decks", {}).get("ata", 0.0)
+        )
+
+        reach_text = ""
+        for c in potential_reaches[:5]:
+            ata = c.get("deck_colors", {}).get("All Decks", {}).get("ata", 0.0)
+            reach_text += f"• {c.get('name')} (ATA: {ata:.1f})\n"
+
+        if hasattr(self, "lbl_recap_reaches"):
+            self.lbl_recap_reaches.config(
+                text=reach_text if reach_text else "No major reaches detected."
+            )
+
+        # --- 5. RARES & MYTHICS ---
+        rares = [
+            c
+            for c in valid_cards
+            if str(c.get("rarity", "")).lower() in ["rare", "mythic"]
+        ]
+        rares.sort(key=get_gihwr, reverse=True)
+
+        rare_text = ""
+        for c in rares[:10]:
+            wr = get_gihwr(c)
+            rare_text += f"• {c.get('name')} ({wr:.1f}%)\n"
+
+        if hasattr(self, "lbl_recap_rares"):
+            self.lbl_recap_rares.config(
+                text=rare_text if rare_text else "No Rares or Mythics drafted."
+            )
+
+        # --- 6. STAPLES (High VOR / Archetype Glue) ---
+        staples = [
+            c
+            for c in valid_cards
+            if str(c.get("rarity", "")).lower() in ["common", "uncommon"]
+            and get_gihwr(c) >= 57.0
+        ]
+        staples.sort(key=get_gihwr, reverse=True)
+
+        staples_text = ""
+        for c in staples[:8]:
+            wr = get_gihwr(c)
+            staples_text += f"• {c.get('name')} ({wr:.1f}%)\n"
+
+        if hasattr(self, "lbl_recap_staples"):
+            self.lbl_recap_staples.config(
+                text=staples_text if staples_text else "No premium staples drafted."
+            )
+
+        # --- 7. CHARTS ---
+        from src.card_logic import get_deck_metrics
+
+        deck_metrics = get_deck_metrics(taken_cards)
+
+        if hasattr(self, "recap_curve_plot") and self.recap_curve_plot:
+            self.recap_curve_plot.update_curve(deck_metrics.distribution_all)
+
+        if hasattr(self, "recap_type_chart") and self.recap_type_chart:
+            c, n, l = 0, 0, 0
+            for card in taken_cards:
+                types = card.get(constants.DATA_FIELD_TYPES, [])
+                if constants.CARD_TYPE_LAND in types:
+                    l += 1
+                elif constants.CARD_TYPE_CREATURE in types:
+                    c += 1
+                else:
+                    n += 1
+            self.recap_type_chart.update_counts(c, n, l)
+
+        # --- 8. 17LANDS API FETCH & LOCAL DB ---
         if draft_id:
             import threading
 
             def fetch_17lands_record():
                 from src.seventeenlands import Seventeenlands
+                from src.seventeenlands_local import Local17LandsDB
+                import json
 
                 record = Seventeenlands().get_draft_record(draft_id)
+                db_data = Local17LandsDB().get_draft_data(draft_id)
 
-                if record and record.get("wins") is not None:
-
-                    def update_ui():
+                def update_ui():
+                    if record and record.get("wins") is not None:
                         wins = record["wins"]
                         losses = record["losses"]
                         record_style = (
@@ -433,12 +669,26 @@ class DashboardFrame(ttk.Frame):
                             self.btn_17lands_link.config(
                                 command=lambda: open_file(record["url"])
                             )
-                            self.btn_17lands_link.pack(pady=(0, 5))
+                            self.btn_17lands_link.pack(side="right", padx=(0, 10))
 
-                    try:
-                        self.after(0, update_ui)
-                    except RuntimeError:
-                        pass
+                    if db_data and hasattr(self, "txt_localdb"):
+                        self.txt_localdb.delete("1.0", "end")
+                        self.txt_localdb.insert("1.0", json.dumps(db_data, indent=4))
+                    elif hasattr(self, "txt_localdb"):
+                        self.txt_localdb.delete("1.0", "end")
+                        db_path = Local17LandsDB().db_path
+                        msg = (
+                            f"No local 17Lands database data found for this draft.\n\n"
+                            f"Searched MTGA Draft ID: {draft_id}\n"
+                            f"Searched 17Lands ID: {draft_id.replace('-', '')}\n"
+                            f"Searched DB Path: {db_path}"
+                        )
+                        self.txt_localdb.insert("1.0", msg)
+
+                try:
+                    self.after(0, update_ui)
+                except RuntimeError:
+                    pass
 
             threading.Thread(target=fetch_17lands_record, daemon=True).start()
 
@@ -653,14 +903,19 @@ class DashboardFrame(ttk.Frame):
             constants.LIMITED_TYPE_STRING_DRAFT_PICK_TWO_TRAD,
         ]
 
-        # Determine if we recovered a deck but have no active packs.
-        # Only show this static screen if the draft is fully COMPLETED (>= 40 cards).
-        # Otherwise, they are mid-draft and just waiting for the next pack to appear!
-        show_recovery = (
-            self._taken_count >= 40
-            and self._pack_count == 0
-            and self._missing_count == 0
+        # Determine if the draft is mathematically completed based on taken cards
+        is_bot = self._current_event_type in [
+            constants.LIMITED_TYPE_STRING_DRAFT_QUICK,
+            constants.LIMITED_TYPE_STRING_DRAFT_PICK_TWO_QUICK,
+            constants.LIMITED_TYPE_STRING_DRAFT_BOT,
+        ]
+
+        draft_complete = (is_human or is_bot) and self._taken_count >= 42
+        sealed_complete = (
+            "Sealed" in self._current_event_type and self._taken_count >= 40
         )
+
+        show_recovery = draft_complete or sealed_complete
 
         # Determine if we should show the explicit P1P1 OCR frame
         show_p1p1 = (
@@ -672,6 +927,7 @@ class DashboardFrame(ttk.Frame):
             and self._taken_count
             < 15  # Prevents overriding a recovered draft if pack=0
             and self.configuration.settings.p1p1_ocr_enabled
+            and not show_recovery  # Safety block
         )
 
         # Capture visibility BEFORE grid_remove() so was_hidden is accurate
@@ -697,6 +953,13 @@ class DashboardFrame(ttk.Frame):
                     text=f"{prefix}: {self._current_event_set} {self._current_event_type}"
                 )
             self.recovery_frame.grid(row=0, column=0, sticky="nsew")
+
+            # Force charts to render if they haven't yet
+            if hasattr(self, "recap_curve_plot") and self.recap_curve_plot:
+                self.recap_curve_plot.redraw()
+            if hasattr(self, "recap_type_chart") and self.recap_type_chart:
+                self.recap_type_chart.redraw()
+
         elif show_p1p1:
             self.p1p1_frame.grid(row=0, column=0, sticky="nsew")
         elif has_draft_data:
@@ -858,6 +1121,14 @@ class DashboardFrame(ttk.Frame):
                 elif field == "wheel":
                     if rec and rec.wheel_chance > 0:
                         row_values.append(f"{rec.wheel_chance:.0f}%")
+                    else:
+                        row_values.append("-")
+                elif field == "personal":
+                    p_stats = card.get("deck_colors", {}).get("Personal", {})
+                    val = p_stats.get("gihwr", 0.0)
+                    smp = p_stats.get("samples", 0)
+                    if smp > 0:
+                        row_values.append(f"{val:.1f}%")
                     else:
                         row_values.append("-")
                 elif "TIER" in field:

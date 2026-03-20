@@ -96,6 +96,21 @@ class DraftAdvisor:
             for i, c in enumerate(pack_cards_sorted)
         }
 
+        self.base_deck_score = 0.0
+        self.color_options = []
+        if pack_number >= 3 and len(self.pool) >= 23:
+            try:
+                from src.card_logic import identify_top_pairs
+
+                self.color_options = identify_top_pairs(self.pool, self.metrics)
+                self.base_deck_score = self._get_fast_best_deck_score(
+                    self.pool, self.color_options
+                )
+            except Exception as e:
+                logger.warning(f"Advisor base deck scoring error: {e}")
+                self.base_deck_score = 0.0
+                self.color_options = []
+
         recommendations = []
         for card in pack_cards:
             try:
@@ -200,6 +215,23 @@ class DraftAdvisor:
                 if role_reason:
                     reasons.append(role_reason)
 
+                # --- STEP 7.5: Late Draft Deck Improvement ---
+                deck_improvement_bonus = 0.0
+                if pack_number >= 3 and len(self.pool) >= 23:
+                    try:
+                        test_pool = self.pool + [card]
+                        new_score = self._get_fast_best_deck_score(
+                            test_pool, self.color_options
+                        )
+                        improvement = new_score - self.base_deck_score
+                        if improvement > 0.1:
+                            deck_improvement_bonus = improvement * 3.0
+                            reasons.append(
+                                f"Improves Best Deck (+{deck_improvement_bonus:.1f})"
+                            )
+                    except Exception as e:
+                        logger.warning(f"Advisor deck improvement scoring error: {e}")
+
                 # --- STEP 8: Wheel logic ---
                 rank_in_pack = pack_ranks.get(name, 99)
                 wheel_mult, _, wheel_pct = self._check_relative_wheel(
@@ -208,7 +240,7 @@ class DraftAdvisor:
 
                 # === MASTER ALGORITHM ===
                 final_score = (
-                    (base_score + power_bonus + synergy_bonus)
+                    (base_score + power_bonus + synergy_bonus + deck_improvement_bonus)
                     * cast_mult
                     * role_mult
                     * wheel_mult
@@ -487,3 +519,47 @@ class DraftAdvisor:
             return 1 if "landcycling" in str(card.get("text", "")).lower() else raw_cmc
         except:
             return 0
+
+    def _get_fast_best_deck_score(
+        self, pool: List[Dict], color_options: List[List[str]]
+    ) -> float:
+        from src.card_logic import (
+            build_variant_consistency,
+            build_variant_greedy,
+            build_variant_curve,
+            build_variant_soup,
+            calculate_holistic_score,
+        )
+
+        best_score = 0.0
+        for main_colors in color_options:
+            for builder in [build_variant_consistency, build_variant_curve]:
+                deck = builder(pool, main_colors, self.metrics)
+                if deck:
+                    score, _ = calculate_holistic_score(
+                        deck, main_colors, len(pool), self.metrics
+                    )
+                    if score > best_score:
+                        best_score = score
+
+            # greedy
+            deck, splash = build_variant_greedy(pool, main_colors, self.metrics)
+            if deck:
+                target_colors = main_colors + [splash] if splash else main_colors
+                score, _ = calculate_holistic_score(
+                    deck, target_colors, len(pool), self.metrics
+                )
+                if score > best_score:
+                    best_score = score
+
+        # soup
+        deck, soup_colors = build_variant_soup(pool, self.metrics)
+        if deck:
+            target_colors = soup_colors[:3] if soup_colors else ["All Decks"]
+            score, _ = calculate_holistic_score(
+                deck, target_colors, len(pool), self.metrics
+            )
+            if score > best_score:
+                best_score = score
+
+        return best_score

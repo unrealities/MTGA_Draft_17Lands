@@ -20,7 +20,7 @@ from concurrent.futures import ThreadPoolExecutor
 from PIL import Image, ImageTk
 
 from src import constants
-from src.card_logic import copy_deck
+from src.card_logic import copy_deck, get_strict_colors, is_castable
 from src.ui.styles import Theme
 from src.ui.components import DynamicTreeviewManager, CardToolTip, AutoScrollbar
 from src.utils import bind_scroll
@@ -565,6 +565,17 @@ class SuggestDeckPanel(ttk.Frame):
                     if int(c.get("cmc", 0)) >= 5 and "Land" not in c.get("types", [])
                 ]
                 if expensive_cards:
+                    deck_spells = [
+                        c
+                        for c in self.current_deck_list
+                        if "Land" not in c.get("types", [])
+                    ]
+                    deck_colors = (
+                        get_strict_colors(deck_spells)
+                        if deck_spells
+                        else ["W", "U", "B", "R", "G"]
+                    )
+
                     worst_expensive = min(
                         expensive_cards,
                         key=lambda x: float(
@@ -579,6 +590,7 @@ class SuggestDeckPanel(ttk.Frame):
                         if int(c.get("cmc", 0)) <= 3
                         and "Land" not in c.get("types", [])
                         and "Creature" in c.get("types", [])
+                        and is_castable(c, deck_colors, strict=True)
                     ]
                     if cheap_sb:
                         best_cheap = max(
@@ -592,11 +604,6 @@ class SuggestDeckPanel(ttk.Frame):
                         advice.append(
                             f"• Swap: Cut [{worst_expensive['name']}] for [{best_cheap['name']}] to lower curve."
                         )
-
-        if not advice and not optimization_note:
-            advice.append(
-                "• Your deck composition and mana base look statistically solid!"
-            )
 
         for tip in advice:
             lbl_tip = ttk.Label(sim_frame, text=tip, font=(Theme.FONT_FAMILY, 9))
@@ -822,9 +829,18 @@ class SuggestDeckPanel(ttk.Frame):
 
     def _calculate_suggestions(self):
         raw_pool = self.draft.retrieve_taken_cards()
-        if not raw_pool:
-            self._update_dropdown_options(["Not enough cards drafted yet."])
-            self.var_archetype.set("Not enough cards drafted yet.")
+
+        playable_cards = [
+            c
+            for c in (raw_pool or [])
+            if "Basic" not in c.get("types", [])
+            and c.get("name") not in constants.BASIC_LANDS
+        ]
+
+        if not playable_cards or len(playable_cards) < 23:
+            msg = "Not enough playable cards drafted yet (Need 23)."
+            self._update_dropdown_options([msg])
+            self.var_archetype.set(msg)
             if getattr(self, "app_context", None) and hasattr(
                 self.app_context, "loading_overlay"
             ):
@@ -976,23 +992,59 @@ class SuggestDeckPanel(ttk.Frame):
 
         from src.card_logic import row_color_tag
 
-        def populate_tree(tree, source_list):
-            if not tree:
+        def populate_tree(manager, source_list):
+            if not manager or not manager.tree:
                 return
+            tree = manager.tree
+
             for idx, card in enumerate(source_list):
                 name = card.get(constants.DATA_FIELD_NAME, "Unknown")
                 count = card.get(constants.DATA_FIELD_COUNT, 1)
                 cmc = card.get(constants.DATA_FIELD_CMC, 0)
                 types = " ".join(card.get(constants.DATA_FIELD_TYPES, []))
                 card_colors = "".join(card.get(constants.DATA_FIELD_COLORS, []))
-                stats = card.get("deck_colors", {})
 
-                arch_stats = stats.get(self.current_archetype_key, {})
-                if not arch_stats.get("gihwr"):
-                    arch_stats = stats.get("All Decks", {})
+                row_values = []
+                for field in manager.active_fields:
+                    if field == "name":
+                        row_values.append(name)
+                    elif field == "count":
+                        row_values.append(str(count))
+                    elif field == "cmc":
+                        row_values.append(str(cmc))
+                    elif field == "types":
+                        row_values.append(types)
+                    elif field == "colors":
+                        row_values.append(card_colors)
+                    elif field == "tags":
+                        raw_tags = card.get("tags", [])
+                        if raw_tags:
+                            icons = [
+                                constants.TAG_VISUALS.get(t, t).split(" ")[0]
+                                for t in raw_tags
+                            ]
+                            row_values.append(" ".join(icons))
+                        else:
+                            row_values.append("-")
+                    elif field == "personal":
+                        p_stats = card.get("deck_colors", {}).get("Personal", {})
+                        val = p_stats.get("gihwr", 0.0)
+                        smp = p_stats.get("samples", 0)
+                        if smp > 0:
+                            row_values.append(f"{val:.1f}%")
+                        else:
+                            row_values.append("-")
+                    else:
+                        stats = card.get("deck_colors", {})
+                        arch_stats = stats.get(self.current_archetype_key, {})
+                        if not arch_stats.get("gihwr"):
+                            arch_stats = stats.get("All Decks", {})
 
-                gihwr_val = arch_stats.get("gihwr", 0.0)
-                gihwr_str = f"{gihwr_val:.1f}%" if gihwr_val > 0 else "-"
+                        val = arch_stats.get(field, 0.0)
+                        if val > 0:
+                            row_values.append(f"{val:.1f}%")
+                        else:
+                            row_values.append("-")
 
                 tag = "bw_odd" if idx % 2 == 0 else "bw_even"
                 if self.configuration.settings.card_colors_enabled:
@@ -1001,17 +1053,17 @@ class SuggestDeckPanel(ttk.Frame):
                 tree.insert(
                     "",
                     "end",
-                    iid=idx,
-                    values=(name, count, cmc, types, card_colors, gihwr_str),
+                    iid=str(idx),
+                    values=row_values,
                     tags=(tag,),
                 )
             if hasattr(tree, "reapply_sort"):
                 tree.reapply_sort()
 
         if table:
-            populate_tree(table, self.current_deck_list)
+            populate_tree(self.table_manager, self.current_deck_list)
         if sb_table:
-            populate_tree(sb_table, self.current_sb_list)
+            populate_tree(self.sb_manager, self.current_sb_list)
 
     def _render_deck_stats(self):
         stats_frame = getattr(self, "stats_frame", None)

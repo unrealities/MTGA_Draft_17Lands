@@ -367,6 +367,48 @@ def normalize_color_string(color_string: str) -> str:
 
 
 def is_cache_stale(filepath: str, hours: int = 24) -> bool:
+    """Scans common directories for the 17Lands state.json to auto-detect the client_id."""
+    import os
+    import json
+    import sys
+
+    paths = []
+    home = os.path.expanduser("~")
+
+    if sys.platform == "win32":
+        appdata = os.environ.get("APPDATA", "")
+        localappdata = os.environ.get("LOCALAPPDATA", "")
+        if localappdata:
+            paths.append(os.path.join(localappdata, "17lands", "state.json"))
+        if appdata:
+            paths.append(os.path.join(appdata, "17lands", "state.json"))
+    elif sys.platform == "darwin":
+        paths.append(
+            os.path.join(
+                home, "Library", "Application Support", "17lands", "state.json"
+            )
+        )
+    else:
+        paths.append(os.path.join(home, ".config", "17lands", "state.json"))
+
+    paths.append(os.path.join(home, ".17lands", "state.json"))
+    paths.append(os.path.join(home, ".17lands", "config.json"))
+
+    for path in paths:
+        if os.path.exists(path):
+            try:
+                with open(path, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+                    if "client_id" in data:
+                        return data["client_id"]
+                    if "token" in data:
+                        return data["token"]
+            except Exception:
+                continue
+    return ""
+
+
+def is_cache_stale(filepath: str, hours: int = 24) -> bool:
     """Checks if a file is older than the specified hours."""
     if not os.path.exists(filepath):
         return True

@@ -36,6 +36,7 @@ class Seventeenlands:
         colors: List[str] = None,
         user_group: str = "All",
         progress_callback=None,
+        client_id: str = None,
     ) -> Dict[str, Any]:
         """
         Builds a full multi-archetype dataset.
@@ -77,17 +78,42 @@ class Seventeenlands:
             if not from_cache:
                 time.sleep(1.5)
 
+        if client_id:
+            if progress_callback:
+                progress_callback("Downloading Personal 17Lands Data...", 95)
+            try:
+                raw_personal, from_cache = self._fetch_archetype_with_cache(
+                    set_code, draft_format, "All", "player", client_id=client_id
+                )
+                self._process_archetype_data("Personal", raw_personal, master_card_map)
+                if not from_cache:
+                    time.sleep(1.5)
+            except Exception as e:
+                logger.error(f"Failed to fetch personal data: {e}")
+
         if progress_callback:
             progress_callback("Finalizing Dataset...", 100)
 
         return master_card_map
 
     def _fetch_archetype_with_cache(
-        self, set_code: str, draft_format: str, color: str, user_group: str = "All"
+        self,
+        set_code: str,
+        draft_format: str,
+        color: str,
+        user_group: str = "All",
+        client_id: str = None,
     ):
         """Retrieves data from 17Lands, prioritizing the local raw cache."""
         ug_label = user_group if user_group and user_group != "All" else "All"
-        cache_name = f"{set_code}_{draft_format}_{color}_{ug_label}.json".lower()
+
+        if client_id:
+            cache_name = (
+                f"{set_code}_{draft_format}_personal_{client_id[:8]}.json".lower()
+            )
+        else:
+            cache_name = f"{set_code}_{draft_format}_{color}_{ug_label}.json".lower()
+
         cache_path = os.path.join(self.CACHE_DIR, cache_name)
 
         if not is_cache_stale(cache_path, hours=12):
@@ -96,9 +122,7 @@ class Seventeenlands:
                     cached_data = json.load(f)
                     # Do not use cache if it's an empty array (meaning 17Lands had no data yesterday)
                     if cached_data and len(cached_data) > 0:
-                        logger.info(
-                            f"Using cached 17Lands data for {set_code}/{color}/{ug_label}"
-                        )
+                        logger.info(f"Using cached 17Lands data for {cache_name}")
                         return cached_data, True
             except json.JSONDecodeError:
                 pass  # Cache corrupt, fetch new
@@ -112,6 +136,8 @@ class Seventeenlands:
             url += f"&colors={color}"
         if user_group and user_group != "All":
             url += f"&user_group={user_group}"
+        if client_id:
+            url += f"&client_id={client_id}"
 
         response = self.session.get(url, timeout=30)
         response.raise_for_status()

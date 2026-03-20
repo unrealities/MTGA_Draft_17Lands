@@ -233,6 +233,7 @@ class DownloadWindow(ttk.Frame):
             "group": self.vars["group"].get(),
             "db_loc": self.configuration.settings.database_location,
             "threshold": threshold,
+            "client_id": self.configuration.settings.seventeenlands_client_id,
         }
 
         if self._download_thread and self._download_thread.is_alive():
@@ -254,6 +255,7 @@ class DownloadWindow(ttk.Frame):
                 threshold=ctx["threshold"],
             )
             ex.clear_data()
+            ex.set_client_id(ctx["client_id"])
             ex.select_sets(self.sets_data[ctx["set_key"]])
             ex.set_draft_type(ctx["event"])
             ex.set_start_date(ctx["start"])
