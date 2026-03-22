@@ -216,11 +216,8 @@ class Seventeenlands:
                 data = response.json()
                 # If 'wins' is present, the draft was tracked by 17Lands
                 if data.get("wins") is not None:
-                    return {
-                        "wins": data.get("wins"),
-                        "losses": data.get("losses"),
-                        "url": f"{self.URL_BASE}/draft/{clean_id}",
-                    }
+                    data["url"] = f"{self.URL_BASE}/draft/{clean_id}"
+                    return data
         except Exception as e:
             logger.debug(f"Failed to fetch 17Lands draft record for {clean_id}: {e}")
 

@@ -728,15 +728,10 @@ def suggest_deck(
     pool_size = len(taken_cards)
     is_bo3 = "Trad" in event_type
 
-    playable_cards = [
-        c
-        for c in taken_cards
-        if "Basic" not in c.get("types", [])
-        and c.get("name") not in constants.BASIC_LANDS
-    ]
+    playable_spells = [c for c in taken_cards if "Land" not in c.get("types", [])]
 
-    # Don't waste CPU trying to mathematically solve for a deck if there are not enough playables to create one!
-    if not playable_cards or len(playable_cards) < 23:
+    # Don't waste CPU trying to mathematically solve for a deck if there are not enough playables to create one
+    if not playable_spells or len(playable_spells) < 22:
         return sorted_decks
 
     try:
@@ -758,6 +753,11 @@ def suggest_deck(
 
         def process_variant(variant_name, deck, sb, colors, arch_key):
             if not deck:
+                return
+
+            spells = [c for c in deck if "Land" not in c.get("types", [])]
+            spell_count = sum(c.get("count", 1) for c in spells)
+            if spell_count < 22:
                 return
 
             opt_deck, opt_sb = deck, sb

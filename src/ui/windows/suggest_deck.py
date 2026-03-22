@@ -830,15 +830,14 @@ class SuggestDeckPanel(ttk.Frame):
     def _calculate_suggestions(self):
         raw_pool = self.draft.retrieve_taken_cards()
 
-        playable_cards = [
-            c
-            for c in (raw_pool or [])
-            if "Basic" not in c.get("types", [])
-            and c.get("name") not in constants.BASIC_LANDS
+        playable_spells = [
+            c for c in (raw_pool or []) if "Land" not in c.get("types", [])
         ]
 
-        if not playable_cards or len(playable_cards) < 23:
-            msg = "Not enough playable cards drafted yet (Need 23)."
+        if not playable_spells or len(playable_spells) < 22:
+            msg = (
+                f"Not enough spells drafted yet (Have {len(playable_spells)}, Need 22)."
+            )
             self._update_dropdown_options([msg])
             self.var_archetype.set(msg)
             if getattr(self, "app_context", None) and hasattr(
@@ -924,10 +923,11 @@ class SuggestDeckPanel(ttk.Frame):
             self.app_context.loading_overlay.hide()
 
         if not sorted_decks:
-            msg = "Not enough data or playables to suggest a deck"
+            msg = "Not enough on-color playables to form a 40-card deck (Need 22)."
             self.suggestions = {}
             self._update_dropdown_options([msg])
             self.var_archetype.set(msg)
+            self._clear_table()
             return
 
         self.suggestions = sorted_decks

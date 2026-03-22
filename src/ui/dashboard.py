@@ -379,7 +379,7 @@ class DashboardFrame(ttk.Frame):
 
         # --- TAB 3: LOCAL DB ---
         tab_localdb = ttk.Frame(self.recap_notebook, padding=15)
-        self.recap_notebook.add(tab_localdb, text=" 17Lands DB Data ")
+        self.recap_notebook.add(tab_localdb, text=" 17Lands Match Data ")
 
         self.txt_localdb = tkinter.Text(
             tab_localdb,
@@ -671,19 +671,27 @@ class DashboardFrame(ttk.Frame):
                             )
                             self.btn_17lands_link.pack(side="right", padx=(0, 10))
 
-                    if db_data and hasattr(self, "txt_localdb"):
+                    if hasattr(self, "txt_localdb"):
                         self.txt_localdb.delete("1.0", "end")
-                        self.txt_localdb.insert("1.0", json.dumps(db_data, indent=4))
-                    elif hasattr(self, "txt_localdb"):
-                        self.txt_localdb.delete("1.0", "end")
-                        db_path = Local17LandsDB().db_path
-                        msg = (
-                            f"No local 17Lands database data found for this draft.\n\n"
-                            f"Searched MTGA Draft ID: {draft_id}\n"
-                            f"Searched 17Lands ID: {draft_id.replace('-', '')}\n"
-                            f"Searched DB Path: {db_path}"
-                        )
-                        self.txt_localdb.insert("1.0", msg)
+                        output_text = ""
+
+                        if record:
+                            output_text += "====== 17LANDS API DATA ======\n"
+                            output_text += json.dumps(record, indent=4) + "\n\n"
+
+                        if db_data:
+                            output_text += "====== LOCAL DB DATA ======\n"
+                            output_text += json.dumps(db_data, indent=4) + "\n\n"
+
+                        if not record and not db_data:
+                            db_path = Local17LandsDB().db_path
+                            output_text = (
+                                f"No 17Lands data found for this draft on the API or Local Database.\n\n"
+                                f"Searched MTGA Draft ID: {draft_id}\n"
+                                f"Searched 17Lands ID: {draft_id.replace('-', '')}\n"
+                                f"Searched Local DB Path: {db_path}"
+                            )
+                        self.txt_localdb.insert("1.0", output_text)
 
                 try:
                     self.after(0, update_ui)

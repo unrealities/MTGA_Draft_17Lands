@@ -14,34 +14,52 @@ class Local17LandsDB:
         self.db_path = self._find_db_path()
 
     def _find_db_path(self):
-        paths = []
         home = os.path.expanduser("~")
+        dirs_to_check = [
+            os.path.join(home, ".17lands"),
+            os.path.join(home, ".17Lands"),
+            os.path.join(home, "17lands"),
+            os.path.join(home, "17Lands"),
+        ]
+
         if sys.platform == "win32":
             localappdata = os.environ.get("LOCALAPPDATA", "")
             appdata = os.environ.get("APPDATA", "")
             if localappdata:
-                paths.append(os.path.join(localappdata, "17lands", "17lands.db"))
-                paths.append(os.path.join(localappdata, "17lands", "data.sqlite"))
+                dirs_to_check.append(os.path.join(localappdata, "17lands"))
+                dirs_to_check.append(os.path.join(localappdata, "17Lands"))
             if appdata:
-                paths.append(os.path.join(appdata, "17lands", "17lands.db"))
+                dirs_to_check.append(os.path.join(appdata, "17lands"))
+                dirs_to_check.append(os.path.join(appdata, "17Lands"))
         elif sys.platform == "darwin":
-            paths.append(
-                os.path.join(
-                    home, "Library", "Application Support", "17lands", "17lands.db"
-                )
+            dirs_to_check.append(
+                os.path.join(home, "Library", "Application Support", "17lands")
             )
-            paths.append(
-                os.path.join(
-                    home, "Library", "Application Support", "17lands", "data.sqlite"
-                )
+            dirs_to_check.append(
+                os.path.join(home, "Library", "Application Support", "17Lands")
+            )
+            dirs_to_check.append(
+                os.path.join(home, "Library", "Application Support", "com.17lands.app")
+            )
+            dirs_to_check.append(
+                os.path.join(home, "Library", "Containers", "com.17lands.app", "Data")
             )
         else:
-            paths.append(os.path.join(home, ".17lands", "17lands.db"))
-            paths.append(os.path.join(home, ".17lands", "data.sqlite"))
+            dirs_to_check.append(os.path.join(home, ".config", "17lands"))
+            dirs_to_check.append(os.path.join(home, ".local", "share", "17lands"))
 
-        for p in paths:
-            if os.path.exists(p):
-                return p
+        for d in dirs_to_check:
+            if os.path.exists(d):
+                try:
+                    for f in os.listdir(d):
+                        if (
+                            f.endswith(".sqlite")
+                            or f.endswith(".db")
+                            or f.endswith(".sqlite3")
+                        ):
+                            return os.path.join(d, f)
+                except Exception:
+                    pass
         return None
 
     def get_draft_data(self, draft_id):
