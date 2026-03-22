@@ -91,6 +91,11 @@ def json_find(key, obj):
 _LOCAL_SET_CACHE = {"mtime": 0.0, "files": []}
 
 
+def invalidate_local_set_cache():
+    global _LOCAL_SET_CACHE
+    _LOCAL_SET_CACHE["mtime"] = 0.0
+
+
 def retrieve_local_set_list(codes=None, names=None):
     """Scans the Sets folder and returns a list of valid set files (Highly Cached)"""
     global _LOCAL_SET_CACHE

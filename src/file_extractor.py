@@ -1295,6 +1295,10 @@ class FileExtractor(UIProgress):
                 if os.path.exists(location):
                     os.remove(location)
                 output_file = ""
+            else:
+                from src.utils import invalidate_local_set_cache
+
+                invalidate_local_set_cache()
 
         except Exception as error:
             logger.error(error)

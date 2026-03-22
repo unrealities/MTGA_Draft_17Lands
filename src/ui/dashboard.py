@@ -8,6 +8,8 @@ Features built-in state management for onboarding UX and waiting screens.
 import tkinter
 from tkinter import ttk
 from typing import List, Dict, Any, Optional
+import threading
+import json
 
 from src import constants
 from src.card_logic import field_process_sort, row_color_tag
@@ -638,15 +640,21 @@ class DashboardFrame(ttk.Frame):
 
         # --- 8. 17LANDS API FETCH & LOCAL DB ---
         if draft_id:
-            import threading
 
             def fetch_17lands_record():
                 from src.seventeenlands import Seventeenlands
                 from src.seventeenlands_local import Local17LandsDB
-                import json
 
                 record = Seventeenlands().get_draft_record(draft_id)
                 db_data = Local17LandsDB().get_draft_data(draft_id)
+
+                def safe_dumps(obj):
+                    def _default(o):
+                        if isinstance(o, bytes):
+                            return "<bytes>"
+                        return str(o)
+
+                    return json.dumps(obj, indent=4, default=_default)
 
                 def update_ui():
                     if record and record.get("wins") is not None:
@@ -677,11 +685,11 @@ class DashboardFrame(ttk.Frame):
 
                         if record:
                             output_text += "====== 17LANDS API DATA ======\n"
-                            output_text += json.dumps(record, indent=4) + "\n\n"
+                            output_text += safe_dumps(record) + "\n\n"
 
                         if db_data:
                             output_text += "====== LOCAL DB DATA ======\n"
-                            output_text += json.dumps(db_data, indent=4) + "\n\n"
+                            output_text += safe_dumps(db_data) + "\n\n"
 
                         if not record and not db_data:
                             db_path = Local17LandsDB().db_path
