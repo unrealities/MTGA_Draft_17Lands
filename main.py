@@ -171,7 +171,14 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("-f", "--file", help="Path to Player.log")
     parser.add_argument("-d", "--data", help="Path to MTGA Data")
+    parser.add_argument("--version", action="store_true", help="Print version and exit")
     args, _ = parser.parse_known_args()
+
+    # --- CI/CD SMOKE TEST EXIT ---
+    # Instantly boots the app, validates all C-extension imports, and exits safely.
+    if args.version:
+        print(f"MTGA Draft Tool v{constants.APPLICATION_VERSION}")
+        sys.exit(0)
 
     # Load Config
     config, _ = read_configuration()

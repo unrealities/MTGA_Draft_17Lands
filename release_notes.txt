@@ -1,3 +1,6 @@
+===================== RELEASE NOTES 4.10 =====================
+* unrealities: [Bug] Fixed a fatal application crash because of requirements update
+
 ===================== RELEASE NOTES 4.09 =====================
 * unrealities: [Major Feature] Overhauled Post-Draft Dashboard. Replaced the legacy recap screen with a deep-dive, 3-tab layout (Draft Recap, Synergy & Roles, Mana & Curve). The dashboard now explicitly calculates your Biggest Steals and Reaches with exact Pack/Pick math, and displays Top Creature Tribes and Card Roles.
 * unrealities: [Major Feature] Unified Deck Builder. The automated "Deck Suggester" and manual "Custom Deck Builder" have been fused into a single, cohesive "Deck Builder" tab.

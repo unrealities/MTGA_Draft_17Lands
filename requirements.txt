@@ -1,7 +1,7 @@
-numpy==2.4.3
-Pillow==12.1.1
-pydantic==2.12.5
-pynput==1.8.1
-pytest==9.0.2
-Requests==2.32.5
-ttkbootstrap==1.20.2
+numpy==1.26.4
+Pillow==10.4.0
+pydantic==2.8.2
+pynput==1.7.6
+pytest==8.2.0
+Requests==2.32.3
+ttkbootstrap==1.10.1
