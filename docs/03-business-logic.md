@@ -112,3 +112,13 @@ Users can actively "brute-force" permutations of their current deck configuratio
 - It generates variations: **Play 18 Lands**, **Play 16 Lands**, **Curve Lower** (swap an expensive 5-drop for a cheap 2-drop from the sideboard), and **Power Up** (swap the weakest main deck card for the strongest sideboard card).
 - It simulates thousands of games for each variation simultaneously without freezing the UI.
 - It selects the deck configuration that mathematically maximizes Cast Rates and minimizes Screw Rates, then automatically updates the interactive tables.
+
+## 10. Post-Draft Analysis & Dashboard
+
+Upon completion of a draft (42+ cards for human drafts), the application transitions into a comprehensive Post-Draft Recap designed to get the user excited about deckbuilding.
+
+- **Holistic Pool Grading:** The entire drafted pool is evaluated using the exact same `75.0 + (Z-Score * 12.0)` Power Scale as the AI Deck Builder. This anchors an "average" deck at a realistic 75 (C grade) and an elite trophy deck at 90+ (A grade).
+- **Steals & Reaches:** The engine cross-references the exact Pack and Pick a card was taken against its global ALSA (Average Last Seen At) and ATA (Average Taken At).
+  - _Steal:_ Taken 1.5+ picks _after_ its ALSA and possesses a highly positive win rate (>= 55.0%).
+  - _Reach:_ Taken 1.5+ picks _before_ its ATA and possesses a subpar win rate (< 54.0%).
+- **Tribal Synergy:** Dynamically queries the MTGA SQLite database for `SubType` enumerators (e.g., Ninja, Mutant, Human) to strictly separate them from Base Types (e.g., Creature, Land). It aggregates and displays Top Creature Types that have 3+ members to highlight tribal synergies.

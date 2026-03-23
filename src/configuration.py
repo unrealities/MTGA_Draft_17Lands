@@ -99,7 +99,6 @@ class Settings(BaseModel):
     # System Paths (Restored)
     arena_log_location: str = ""
     database_location: str = ""
-    seventeenlands_client_id: str = ""
 
     @field_validator("deck_filter")
     @classmethod

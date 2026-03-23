@@ -20,7 +20,7 @@ from concurrent.futures import ThreadPoolExecutor
 from PIL import Image, ImageTk
 
 from src import constants
-from src.card_logic import copy_deck, get_strict_colors, is_castable
+from src.card_logic import copy_deck, get_strict_colors, is_castable, get_functional_cmc
 from src.ui.styles import Theme
 from src.ui.components import DynamicTreeviewManager, CardToolTip, AutoScrollbar
 from src.utils import bind_scroll
@@ -1006,6 +1006,7 @@ class SuggestDeckPanel(ttk.Frame):
 
                 row_values = []
                 for field in manager.active_fields:
+
                     if field == "name":
                         row_values.append(name)
                     elif field == "count":
@@ -1013,7 +1014,13 @@ class SuggestDeckPanel(ttk.Frame):
                     elif field == "cmc":
                         row_values.append(str(cmc))
                     elif field == "types":
-                        row_values.append(types)
+                        from src.card_logic import format_types_for_ui
+
+                        row_values.append(
+                            format_types_for_ui(
+                                card.get(constants.DATA_FIELD_TYPES, [])
+                            )
+                        )
                     elif field == "colors":
                         row_values.append(card_colors)
                     elif field == "tags":
@@ -1024,14 +1031,6 @@ class SuggestDeckPanel(ttk.Frame):
                                 for t in raw_tags
                             ]
                             row_values.append(" ".join(icons))
-                        else:
-                            row_values.append("-")
-                    elif field == "personal":
-                        p_stats = card.get("deck_colors", {}).get("Personal", {})
-                        val = p_stats.get("gihwr", 0.0)
-                        smp = p_stats.get("samples", 0)
-                        if smp > 0:
-                            row_values.append(f"{val:.1f}%")
                         else:
                             row_values.append("-")
                     else:
@@ -1099,7 +1098,7 @@ class SuggestDeckPanel(ttk.Frame):
             count = c.get("count", 1)
             if "Land" not in c.get("types", []):
                 non_lands += count
-                cmc = int(c.get("cmc", 0))
+                cmc = get_functional_cmc(c)
                 cmc_sum += cmc * count
                 idx = min(cmc, 6)
                 if idx == 0:

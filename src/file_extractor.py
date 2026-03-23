@@ -235,10 +235,6 @@ class FileExtractor(UIProgress):
         self.deck_colors = constants.DECK_COLORS
         self.sets_17lands = []
         self.threshold = threshold
-        self.client_id = ""
-
-    def set_client_id(self, client_id):
-        self.client_id = client_id
 
     def clear_data(self):
         """Clear stored set information"""
@@ -364,7 +360,6 @@ class FileExtractor(UIProgress):
                 colors=target_colors,
                 user_group=self.user_group,
                 progress_callback=update_ui,
-                client_id=self.client_id,
             )
         except Exception as e:
             if "404" in str(e) or "400" in str(e):
@@ -749,11 +744,19 @@ class FileExtractor(UIProgress):
                     card_data[card_set][group_id][constants.DATA_FIELD_TYPES].extend(
                         [
                             int(x)
-                            for x in card[constants.LOCAL_CARDS_KEY_TYPES].split(",")
+                            for x in str(card[constants.LOCAL_CARDS_KEY_TYPES]).split(
+                                ","
+                            )
                         ]
-                        if card[constants.LOCAL_CARDS_KEY_TYPES]
+                        if card.get(constants.LOCAL_CARDS_KEY_TYPES)
                         else []
                     )
+
+                    sub_val = card.get("subtypes", "")
+                    card_data[card_set][group_id]["subtypes"] = (
+                        [int(x) for x in str(sub_val).split(",")] if sub_val else []
+                    )
+
                     card_data[card_set][group_id][constants.DATA_FIELD_COLORS] = (
                         [
                             int(x)
@@ -918,7 +921,9 @@ class FileExtractor(UIProgress):
 
                 rows = [
                     dict(row)
-                    for row in cursor.execute(constants.LOCAL_DATABASE_ENUMERATOR_QUERY)
+                    for row in cursor.execute(
+                        "SELECT LocId, Type, Value FROM Enums WHERE Type IN ('Color', 'CardType', 'SubType')"
+                    )
                 ]
 
                 if not rows:
@@ -968,23 +973,20 @@ class FileExtractor(UIProgress):
         card_enumerators = {
             constants.DATA_FIELD_COLORS: {},
             constants.DATA_FIELD_TYPES: {},
+            "subtypes": {},
         }
         try:
             for row in data:
-                if (
-                    row[constants.LOCAL_DATABASE_ENUMERATOR_COLUMN_TYPE]
-                    == constants.LOCAL_DATABASE_ENUMERATOR_TYPE_CARD_TYPES
-                ):
-                    card_enumerators[constants.DATA_FIELD_TYPES][
-                        row[constants.LOCAL_DATABASE_ENUMERATOR_COLUMN_VALUE]
-                    ] = row[constants.LOCAL_DATABASE_ENUMERATOR_COLUMN_ID]
-                elif (
-                    row[constants.LOCAL_DATABASE_ENUMERATOR_COLUMN_TYPE]
-                    == constants.LOCAL_DATABASE_ENUMERATOR_TYPE_COLOR
-                ):
-                    card_enumerators[constants.DATA_FIELD_COLORS][
-                        row[constants.LOCAL_DATABASE_ENUMERATOR_COLUMN_VALUE]
-                    ] = row[constants.LOCAL_DATABASE_ENUMERATOR_COLUMN_ID]
+                col_type = str(row.get("Type", row.get("type", ""))).lower()
+                val = row.get("Value", row.get("value"))
+                loc_id = row.get("LocId", row.get("locid"))
+
+                if col_type == "cardtype":
+                    card_enumerators[constants.DATA_FIELD_TYPES][val] = loc_id
+                elif col_type == "subtype":
+                    card_enumerators["subtypes"][val] = loc_id
+                elif col_type == "color":
+                    card_enumerators[constants.DATA_FIELD_COLORS][val] = loc_id
 
         except Exception as error:
             result = False
@@ -999,26 +1001,56 @@ class FileExtractor(UIProgress):
             for card_set in card_data:
                 for card in card_data[card_set]:
                     try:
+                        # 1. MAP NAMES (Converts the ID list into a readable string)
                         card_data[card_set][card][constants.DATA_FIELD_NAME] = (
                             " // ".join(
                                 card_text[x]
                                 for x in card_data[card_set][card][
                                     constants.DATA_FIELD_NAME
                                 ]
+                                if x in card_text
                             )
                         )
-                        card_data[card_set][card][constants.DATA_FIELD_TYPES] = list(
-                            set(
-                                [
-                                    card_text[
-                                        card_enumerators[constants.DATA_FIELD_TYPES][x]
-                                    ]
-                                    for x in card_data[card_set][card][
-                                        constants.DATA_FIELD_TYPES
-                                    ]
-                                ]
-                            )
-                        )
+
+                        # 2. MAP CARD TYPES
+                        mapped_types = []
+                        type_enum = card_enumerators.get(constants.DATA_FIELD_TYPES, {})
+                        type_enum_str = {str(k): v for k, v in type_enum.items()}
+
+                        for x in card_data[card_set][card].get(
+                            constants.DATA_FIELD_TYPES, []
+                        ):
+                            x_str = str(x)
+                            if x_str in type_enum_str:
+                                loc_id = type_enum_str[x_str]
+                                if loc_id in card_text:
+                                    mapped_types.append(card_text[loc_id])
+
+                        mapped_types = list(set(mapped_types))
+
+                        if constants.CARD_TYPE_CREATURE in mapped_types:
+                            mapped_types.remove(constants.CARD_TYPE_CREATURE)
+                            mapped_types.insert(0, constants.CARD_TYPE_CREATURE)
+
+                        card_data[card_set][card][
+                            constants.DATA_FIELD_TYPES
+                        ] = mapped_types
+
+                        # 3. MAP SUBTYPES (Tribes like Ninja, Turtle, Human)
+                        mapped_subs = []
+                        sub_enum = card_enumerators.get("subtypes", {})
+                        sub_enum_str = {str(k): v for k, v in sub_enum.items()}
+
+                        for x in card_data[card_set][card].get("subtypes", []):
+                            x_str = str(x)
+                            if x_str in sub_enum_str:
+                                loc_id = sub_enum_str[x_str]
+                                if loc_id in card_text:
+                                    mapped_subs.append(card_text[loc_id])
+
+                        card_data[card_set][card]["subtypes"] = list(set(mapped_subs))
+
+                        # 4. MAP COLORS
                         card_data[card_set][card][constants.DATA_FIELD_COLORS] = [
                             constants.CARD_COLORS_DICT[
                                 card_text[
@@ -1028,24 +1060,14 @@ class FileExtractor(UIProgress):
                             for x in card_data[card_set][card][
                                 constants.DATA_FIELD_COLORS
                             ]
+                            if x in card_enumerators[constants.DATA_FIELD_COLORS]
+                            and card_enumerators[constants.DATA_FIELD_COLORS][x]
+                            in card_text
                         ]
-                        if (
-                            constants.CARD_TYPE_CREATURE
-                            in card_data[card_set][card][constants.DATA_FIELD_TYPES]
-                        ):
-                            index = card_data[card_set][card][
-                                constants.DATA_FIELD_TYPES
-                            ].index(constants.CARD_TYPE_CREATURE)
-                            card_data[card_set][card][
-                                constants.DATA_FIELD_TYPES
-                            ].insert(
-                                0,
-                                card_data[card_set][card][
-                                    constants.DATA_FIELD_TYPES
-                                ].pop(index),
-                            )
+
                         result = True
-                    except Exception:
+                    except Exception as e:
+                        logger.error(f"Error mapping data for {card}: {e}")
                         pass
 
             if result:

@@ -23,8 +23,10 @@ from src.card_logic import (
     copy_deck,
     stack_cards,
     calculate_dynamic_mana_base,
+    format_types_for_ui,
     get_strict_colors,
     is_castable,
+    get_functional_cmc,
 )
 from src.ui.styles import Theme
 from src.ui.components import DynamicTreeviewManager, CardToolTip, AutoScrollbar
@@ -445,9 +447,9 @@ class CustomDeckPanel(ttk.Frame):
             best_sb_spell = sb_spells[0] if sb_spells else None
 
             highest_cmc_spell = (
-                max(spells, key=lambda c: int(c.get("cmc", 0))) if spells else None
+                max(spells, key=lambda c: get_functional_cmc(c)) if spells else None
             )
-            cheap_sb_spells = [c for c in sb_spells if int(c.get("cmc", 0)) <= 2]
+            cheap_sb_spells = [c for c in sb_spells if get_functional_cmc(c) <= 2]
             best_cheap_sb = cheap_sb_spells[0] if cheap_sb_spells else None
 
             basic_lands = [
@@ -964,7 +966,7 @@ class CustomDeckPanel(ttk.Frame):
                     elif field == "cmc":
                         row_values.append(str(card.get("cmc", 0)))
                     elif field == "types":
-                        row_values.append(" ".join(card.get("types", [])))
+                        row_values.append(format_types_for_ui(card.get("types", [])))
                     elif field == "mana_cost":
                         row_values.append(card.get("mana_cost", ""))
                     elif field == "colors":
@@ -977,14 +979,6 @@ class CustomDeckPanel(ttk.Frame):
                                 for t in raw_tags
                             ]
                             row_values.append(" ".join(icons))
-                        else:
-                            row_values.append("-")
-                    elif field == "personal":
-                        p_stats = card.get("deck_colors", {}).get("Personal", {})
-                        val = p_stats.get("gihwr", 0.0)
-                        smp = p_stats.get("samples", 0)
-                        if smp > 0:
-                            row_values.append(f"{val:.1f}%")
                         else:
                             row_values.append("-")
                     elif "TIER" in field:
@@ -1071,7 +1065,7 @@ class CustomDeckPanel(ttk.Frame):
             count = c.get("count", 1)
             if "Land" not in c.get("types", []):
                 non_lands += count
-                cmc = int(c.get("cmc", 0))
+                cmc = get_functional_cmc(c)
                 cmc_sum += cmc * count
                 idx = min(cmc, 6)
                 if idx == 0:
@@ -1213,7 +1207,7 @@ class CustomDeckPanel(ttk.Frame):
                         "is_land": is_land,
                         "is_removal": "removal" in c.get("tags", []),
                         "colors_produced": colors_produced,
-                        "cmc": int(c.get("cmc", 0)),
+                        "cmc": get_functional_cmc(c),
                         "pips": pips,
                     }
                 )

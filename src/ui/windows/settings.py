@@ -115,29 +115,6 @@ class SettingsWindow(tkinter.Toplevel):
                 row=r + 1 + i, column=0, columnspan=2, sticky="w", padx=10, pady=2
             )
 
-        # --- SECTION: 17LANDS INTEGRATION ---
-        r += len(features) + 1
-        ttk.Label(
-            container, text="17LANDS INTEGRATION", font=(Theme.FONT_FAMILY, 9, "bold")
-        ).grid(row=r, column=0, columnspan=2, sticky="w", pady=(20, 10))
-
-        ttk.Label(container, text="Client ID:").grid(
-            row=r + 1, column=0, sticky="e", padx=5
-        )
-
-        id_frame = ttk.Frame(container)
-        id_frame.grid(row=r + 1, column=1, sticky="w")
-
-        self.vars["seventeenlands_client_id"] = tkinter.StringVar()
-        ttk.Entry(
-            id_frame, textvariable=self.vars["seventeenlands_client_id"], width=35
-        ).pack(side="left", padx=(0, 5))
-        ttk.Button(
-            id_frame,
-            text="Auto-Detect",
-            bootstyle="info-outline",
-            command=self._auto_detect_client_id,
-        ).pack(side="left")
 
         # --- FOOTER ---
         footer = ttk.Frame(container)
@@ -148,19 +125,6 @@ class SettingsWindow(tkinter.Toplevel):
         )
         ttk.Button(footer, text="Done", command=self._on_close).pack(side="right")
 
-    def _auto_detect_client_id(self):
-        from src.utils import find_17lands_client_id
-
-        client_id = find_17lands_client_id()
-        if client_id:
-            self.vars["seventeenlands_client_id"].set(client_id)
-            self._on_setting_changed("seventeenlands_client_id")
-            messagebox.showinfo("Success", "17Lands Client ID automatically detected!")
-        else:
-            messagebox.showinfo(
-                "Not Found",
-                "Could not automatically detect the 17Lands client_id. You can find it on your 17Lands Account page.",
-            )
 
     def _load_settings(self):
         """Populates UI from the configuration object."""
@@ -171,7 +135,6 @@ class SettingsWindow(tkinter.Toplevel):
         self.vars["result_format"].set(s.result_format)
         self.vars["filter_format"].set(s.filter_format)
         self.vars["ui_size"].set(s.ui_size)
-        self.vars["seventeenlands_client_id"].set(s.seventeenlands_client_id)
 
         # Checkbox logic
         checkbox_keys = [

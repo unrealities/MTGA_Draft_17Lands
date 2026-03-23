@@ -387,44 +387,6 @@ class CardToolTip(tkinter.Toplevel):
                 justify="left",
             ).pack(anchor="w")
 
-        # --- 3. Personal Stats ---
-        personal_stats = stats.get("Personal", {})
-        p_wr, p_smp = personal_stats.get("gihwr", 0.0), personal_stats.get("samples", 0)
-
-        if p_smp > 0:
-            tb.Label(
-                sf,
-                text="PERSONAL PERFORMANCE",
-                bootstyle="success",
-                font=(Theme.FONT_FAMILY, int(10 * scale), "bold"),
-            ).pack(anchor="w", pady=(12, 4))
-
-            pf = tb.Frame(sf)
-            pf.pack(anchor="w", fill="x")
-            tb.Label(
-                pf,
-                text="GIH WR:",
-                font=(Theme.FONT_FAMILY, int(9 * scale)),
-            ).grid(row=0, column=0, sticky="w", padx=(0, 6))
-            tb.Label(
-                pf,
-                text=fp(p_wr),
-                foreground=Theme.SUCCESS if p_wr >= 55.0 else Theme.TEXT_MAIN,
-                font=(Theme.FONT_FAMILY, int(9 * scale), "bold"),
-            ).grid(row=0, column=1, sticky="w", padx=(0, 20))
-
-            tb.Label(
-                pf,
-                text="Games:",
-                font=(Theme.FONT_FAMILY, int(9 * scale)),
-            ).grid(row=0, column=2, sticky="w", padx=(0, 6))
-            tb.Label(
-                pf,
-                text=fn(p_smp),
-                foreground=Theme.TEXT_MAIN,
-                font=(Theme.FONT_FAMILY, int(9 * scale), "bold"),
-            ).grid(row=0, column=3, sticky="w", padx=(0, 20))
-
         # Anchor to the mouse position AT THE TIME OF CREATION
         self._mouse_x = parent.winfo_pointerx()
         self._mouse_y = parent.winfo_pointery()
@@ -1219,9 +1181,9 @@ class ManaCurvePlot(tb.Frame):
 class TypePieChart(tb.Frame):
     def __init__(self, parent, **kwargs):
         super().__init__(parent, **kwargs)
-        self.counts = {"Creatures": 0, "Non-Creatures": 0, "Lands": 0}
-        self.canvas_height = 80
-        self.pie_size = 76  # Slightly smaller to fit bounds cleanly
+        self.counts = {}
+        self.canvas_height = 130
+        self.pie_size = 80
 
         self.canvas = tb.Canvas(
             self, height=self.canvas_height, bg=Theme.BG_PRIMARY, highlightthickness=0
@@ -1235,39 +1197,37 @@ class TypePieChart(tb.Frame):
             self.canvas.configure(bg=Theme.BG_PRIMARY)
             self.redraw()
 
-    def update_counts(self, c, n, l):
-        self.counts["Creatures"] = c
-        self.counts["Non-Creatures"] = n
-        self.counts["Lands"] = l
+    def update_counts(self, counts_dict):
+        self.counts = {k: v for k, v in counts_dict.items() if v > 0}
         self.redraw()
 
     def redraw(self):
         self.canvas.delete("all")
         w = self.canvas.winfo_width()
-        if w < 10:
+        if w < 10 or not self.counts:
             return
 
-        c_col = Theme.SUCCESS
-        n_col = Theme.ACCENT
-        l_col = Theme.BG_TERTIARY
+        color_map = {
+            "Creature": Theme.SUCCESS,
+            "Instant": Theme.ACCENT,
+            "Sorcery": Theme.ERROR,
+            "Enchantment": "#a855f7",
+            "Artifact": Theme.WARNING,
+            "Planeswalker": "#14b8a6",
+            "Battle": "#ec4899",
+            "Land": Theme.BG_TERTIARY,
+        }
 
-        items = [
-            ("Crea", self.counts["Creatures"], c_col),
-            ("Spell", self.counts["Non-Creatures"], n_col),
-            ("Land", self.counts["Lands"], l_col),
-        ]
-
-        # Geometry Math to center both elements dynamically
-        legend_w = 60
+        legend_w = 85
         gap = 20
         pie_r = self.pie_size / 2
         total_w = legend_w + gap + self.pie_size
-
         sx = max(0, (w - total_w) / 2)
 
         # 1. Draw Legend on the Left
-        ly = (self.canvas_height - (3 * 18)) / 2 + 9
-        for lb, count, cl in items:
+        ly = max(5, (self.canvas_height - (len(self.counts) * 16)) / 2)
+        for lb, count in self.counts.items():
+            cl = color_map.get(lb, Theme.TEXT_MUTED)
             self.canvas.create_text(
                 sx, ly, text="●", fill=cl, font=(None, 10), anchor="w"
             )
@@ -1276,35 +1236,19 @@ class TypePieChart(tb.Frame):
                 ly,
                 text=f"{lb}: {count}",
                 fill=Theme.TEXT_MAIN,
-                font=(Theme.FONT_FAMILY, 10),
+                font=(Theme.FONT_FAMILY, 9),
                 anchor="w",
             )
-            ly += 18
+            ly += 16
 
         # 2. Draw Pie Chart on the Right
         cx = sx + legend_w + gap + pie_r
         cy = self.canvas_height / 2
         tl = sum(self.counts.values())
 
-        if tl == 0:
-            self.canvas.create_oval(
-                cx - pie_r,
-                cy - pie_r,
-                cx + pie_r,
-                cy + pie_r,
-                fill=Theme.BG_SECONDARY,
-                outline="",
-            )
-            return
-
         a = 90
-        for c, cl in [
-            (self.counts["Creatures"], c_col),
-            (self.counts["Non-Creatures"], n_col),
-            (self.counts["Lands"], l_col),
-        ]:
-            if c == 0:
-                continue
+        for lb, c in self.counts.items():
+            cl = color_map.get(lb, Theme.TEXT_MUTED)
             ex = (c / tl) * 360
             self.canvas.create_arc(
                 cx - pie_r,

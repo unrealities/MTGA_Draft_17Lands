@@ -323,76 +323,78 @@ class DashboardFrame(ttk.Frame):
 
         # --- TAB 1: DRAFT RECAP ---
         tab_recap = ttk.Frame(self.recap_notebook, padding=15)
-        self.recap_notebook.add(tab_recap, text=" Draft Recap ")
+        self.recap_notebook.add(tab_recap, text=" 🏆 Draft Recap ")
 
         top_recap = ttk.Frame(tab_recap)
-        top_recap.pack(fill="x", expand=True)
-        top_recap.columnconfigure(0, weight=1)
-        top_recap.columnconfigure(1, weight=1)
-
-        grade_frame = ttk.Frame(top_recap)
-        grade_frame.grid(row=0, column=0, sticky="nsew", padx=(0, 10))
+        top_recap.pack(fill="x", pady=(0, 10))
 
         self.lbl_recovery_grade = ttk.Label(
-            grade_frame,
+            top_recap,
             text="Pool Power Grade: --",
-            font=(Theme.FONT_FAMILY, 14, "bold"),
+            font=(Theme.FONT_FAMILY, 16, "bold"),
             bootstyle="primary",
         )
-        self.lbl_recovery_grade.pack(anchor="w", pady=(0, 5))
+        self.lbl_recovery_grade.pack(anchor="center", pady=(0, 2))
 
         self.lbl_recovery_stats = ttk.Label(
-            grade_frame,
+            top_recap,
             text="Top 23 Cards Avg Win Rate: --%",
             font=(Theme.FONT_FAMILY, 11),
         )
-        self.lbl_recovery_stats.pack(anchor="w")
+        self.lbl_recovery_stats.pack(anchor="center")
 
         self.lbl_actual_record = ttk.Label(
-            grade_frame, text="", font=(Theme.FONT_FAMILY, 11, "bold")
-        )
-
-        # Best Archetypes Box
-        self._create_stat_box(top_recap, "TOP ARCHETYPES", "lbl_recap_archetypes").grid(
-            row=0, column=1, sticky="nsew"
+            top_recap, text="", font=(Theme.FONT_FAMILY, 11, "bold")
         )
 
         # Grid for Highlights
         grid_recap = ttk.Frame(tab_recap)
-        grid_recap.pack(fill="both", expand=True, pady=(15, 0))
-        grid_recap.columnconfigure((0, 1, 2), weight=1)
+        grid_recap.pack(fill="both", expand=True)
+        grid_recap.columnconfigure((0, 1), weight=1)
+        grid_recap.rowconfigure((0, 1), weight=1)
 
+        self._create_stat_box(
+            grid_recap, "TOP ARCHETYPES", "lbl_recap_archetypes"
+        ).grid(row=0, column=0, sticky="nsew", padx=5, pady=5)
         self._create_stat_box(grid_recap, "BEST CARDS DRAFTED", "lbl_recap_best").grid(
-            row=0, column=0, sticky="nsew", padx=(0, 5)
+            row=0, column=1, sticky="nsew", padx=5, pady=5
         )
         self._create_stat_box(
             grid_recap, "BIGGEST STEALS (LATE PICKS)", "lbl_recap_steals"
-        ).grid(row=0, column=1, sticky="nsew", padx=5)
+        ).grid(row=1, column=0, sticky="nsew", padx=5, pady=5)
         self._create_stat_box(
             grid_recap, "BIGGEST REACHES (EARLY PICKS)", "lbl_recap_reaches"
-        ).grid(row=0, column=2, sticky="nsew", padx=(5, 0))
+        ).grid(row=1, column=1, sticky="nsew", padx=5, pady=5)
 
-        # --- TAB 2: POOL ANALYSIS ---
+        # --- TAB 2: SYNERGY & ROLES ---
+        tab_synergy = ttk.Frame(self.recap_notebook, padding=15)
+        self.recap_notebook.add(tab_synergy, text=" 🧩 Synergy & Roles ")
+
+        grid_synergy = ttk.Frame(tab_synergy)
+        grid_synergy.pack(fill="both", expand=True)
+        grid_synergy.columnconfigure((0, 1), weight=1)
+        grid_synergy.rowconfigure((0, 1), weight=1)
+
+        self._create_stat_box(
+            grid_synergy, "TOP CREATURE TYPES", "lbl_synergy_tribes"
+        ).grid(row=0, column=0, sticky="nsew", padx=5, pady=5)
+        self._create_stat_box(grid_synergy, "CARD ROLES", "lbl_synergy_roles").grid(
+            row=0, column=1, sticky="nsew", padx=5, pady=5
+        )
+        self._create_stat_box(
+            grid_synergy, "PREMIUM STAPLES", "lbl_synergy_staples"
+        ).grid(row=1, column=0, sticky="nsew", padx=5, pady=5)
+        self._create_stat_box(
+            grid_synergy, "NON-BASIC LANDS", "lbl_synergy_lands"
+        ).grid(row=1, column=1, sticky="nsew", padx=5, pady=5)
+
+        # --- TAB 3: MANA & CURVE ---
         tab_analysis = ttk.Frame(self.recap_notebook, padding=15)
-        self.recap_notebook.add(tab_analysis, text=" Pool Analysis ")
+        self.recap_notebook.add(tab_analysis, text=" 📊 Mana & Curve ")
 
         tab_analysis.columnconfigure((0, 1), weight=1)
         tab_analysis.rowconfigure(0, weight=1)
 
-        # --- TAB 3: LOCAL DB ---
-        tab_localdb = ttk.Frame(self.recap_notebook, padding=15)
-        self.recap_notebook.add(tab_localdb, text=" 17Lands Match Data ")
-
-        self.txt_localdb = tkinter.Text(
-            tab_localdb,
-            wrap="word",
-            bg=Theme.BG_SECONDARY,
-            fg=Theme.TEXT_MAIN,
-            font=(Theme.FONT_FAMILY, 10),
-        )
-        self.txt_localdb.pack(fill="both", expand=True)
-
-        # Left Column: Charts
         charts_frame = ttk.Frame(tab_analysis)
         charts_frame.grid(row=0, column=0, sticky="nsew", padx=(0, 10))
 
@@ -414,16 +416,12 @@ class DashboardFrame(ttk.Frame):
         self.recap_type_chart = TypePieChart(charts_frame)
         self.recap_type_chart.pack(fill="x")
 
-        # Right Column: Stats
         stats_col = ttk.Frame(tab_analysis)
         stats_col.grid(row=0, column=1, sticky="nsew")
 
         self._create_stat_box(stats_col, "RARES & MYTHICS", "lbl_recap_rares").pack(
             fill="both", expand=True, pady=(0, 10)
         )
-        self._create_stat_box(
-            stats_col, "MUST-INCLUDE STAPLES", "lbl_recap_staples"
-        ).pack(fill="both", expand=True)
 
     def update_pool_summary(self, taken_cards, metrics, draft_id=""):
         """Calculates a heuristic letter grade for the completed pool and fetches real 17Lands results."""
@@ -441,9 +439,6 @@ class DashboardFrame(ttk.Frame):
                 c.get("deck_colors", {}).get("All Decks", {}).get("gihwr", 0.0)
             )
 
-        def get_ata(c):
-            return float(c.get("deck_colors", {}).get("All Decks", {}).get("ata", 0.0))
-
         valid_cards = [
             c
             for c in taken_cards
@@ -454,47 +449,78 @@ class DashboardFrame(ttk.Frame):
         if not valid_cards:
             return
 
-        # --- 1. OVERALL GRADE ---
+        # --- 1. OVERALL GRADE (Aligned to Deck Power Scale) ---
+
         valid_cards.sort(key=get_gihwr, reverse=True)
         top_23 = valid_cards[:23]
-
         avg_gihwr = sum(get_gihwr(c) for c in top_23) / len(top_23)
 
-        from src.card_logic import format_win_rate
+        global_mean, global_std = metrics.get_metrics("All Decks", "gihwr")
+        if global_mean <= 0:
+            global_mean = 54.5
+        if global_std <= 0:
+            global_std = 3.5
 
-        grade = format_win_rate(
-            avg_gihwr, "All Decks", "gihwr", metrics, constants.RESULT_FORMAT_GRADE
-        )
-        grade_str = str(grade)
+        z_score = (avg_gihwr - global_mean) / global_std
 
-        bootstyle = "primary"
-        if "A" in grade_str:
+        # Standardize against Deck Builder power formula (75 + Z * 12)
+        pool_power = max(0, min(100, 75.0 + (z_score * 12.0)))
+
+        if pool_power >= 90:
+            grade_str = "S (God Tier)"
             bootstyle = "success"
-        elif "B" in grade_str:
+        elif pool_power >= 85:
+            grade_str = "A (Amazing)"
+            bootstyle = "success"
+        elif pool_power >= 80:
+            grade_str = "B+ (Great)"
             bootstyle = "info"
-        elif "C" in grade_str:
+        elif pool_power >= 75:
+            grade_str = "B (Good)"
+            bootstyle = "info"
+        elif pool_power >= 70:
+            grade_str = "C (Average)"
             bootstyle = "warning"
-        elif "D" in grade_str or "F" in grade_str:
+        elif pool_power >= 60:
+            grade_str = "D (Below Average)"
+            bootstyle = "danger"
+        else:
+            grade_str = "F (Trainwreck)"
             bootstyle = "danger"
 
         if hasattr(self, "lbl_recovery_grade"):
             self.lbl_recovery_grade.config(
-                text=f"Pool Power Grade: {grade_str}", bootstyle=bootstyle
+                text=f"Pool Quality: {pool_power:.0f}/100 [{grade_str}]",
+                bootstyle=bootstyle,
             )
         if hasattr(self, "lbl_recovery_stats"):
             self.lbl_recovery_stats.config(
-                text=f"Top 23 Cards Avg Win Rate: {avg_gihwr:.1f}%"
+                text=f"Top 23 Avg Win Rate: {avg_gihwr:.1f}% (Format Avg: {global_mean:.1f}%)"
             )
 
         # --- 2. TOP ARCHETYPES ---
         from src.card_logic import identify_top_pairs
+        from src.utils import normalize_color_string
 
         top_pairs = identify_top_pairs(taken_cards, metrics)
 
+        arch_data = []
+        for pair in top_pairs:
+            raw_lane = "".join(pair)
+            lane = normalize_color_string(raw_lane)
+            wr, _ = metrics.get_metrics(lane, "gihwr")
+            name = constants.COLOR_NAMES_DICT.get(lane, lane)
+            arch_data.append((name, wr))
+
+        # Sort from highest win rate to lowest
+        arch_data.sort(key=lambda x: x[1], reverse=True)
+
         arch_text = ""
-        for i, pair in enumerate(top_pairs[:3]):
-            lane = "".join(sorted(pair))
-            arch_text += f"• {lane}\n"
+        for name, wr in arch_data[:3]:
+            if wr > 0.0:
+                arch_text += f"• {name} ({wr:.1f}%)\n"
+            else:
+                arch_text += f"• {name}\n"
 
         if hasattr(self, "lbl_recap_archetypes"):
             self.lbl_recap_archetypes.config(
@@ -503,7 +529,7 @@ class DashboardFrame(ttk.Frame):
 
         # --- 3. BEST CARDS DRAFTED ---
         best_text = ""
-        for c in top_23[:5]:
+        for c in top_23[:6]:
             wr = get_gihwr(c)
             name = c.get("name", "Unknown")
             best_text += f"• {name} ({wr:.1f}%)\n"
@@ -511,77 +537,143 @@ class DashboardFrame(ttk.Frame):
         if hasattr(self, "lbl_recap_best"):
             self.lbl_recap_best.config(text=best_text)
 
-        # --- 4. STEALS & REACHES ---
-        history = getattr(self, "draft_history_reference", [])
+        # --- 4. STEALS & REACHES (WITH EXACT PACK/PICK) ---
+        total_cards = len(taken_cards)
+        if total_cards >= 45:
+            cards_per_pack = 15
+        elif total_cards >= 42:
+            cards_per_pack = 14
+        else:
+            cards_per_pack = total_cards // 3 if total_cards >= 3 else 14
+        if cards_per_pack == 0:
+            cards_per_pack = 14
+
         steals = []
         reaches = []
-        orchestrator = getattr(self, "orchestrator", None)
-        scanner = getattr(orchestrator, "scanner", None) if orchestrator else None
 
-        if scanner:
-            history = scanner.retrieve_draft_history()
+        for i, c in enumerate(taken_cards):
+            name = c.get("name", "")
+            if "Basic" in c.get("types", []) or name in constants.BASIC_LANDS:
+                continue
 
-            # Build a map of card ID -> Pick Number
-            pick_map = {}
-            for entry in history:
-                pack = entry.get("Pack", 1)
-                pick = entry.get("Pick", 1)
-                absolute_pick = ((pack - 1) * 15) + pick
-                for cid in entry.get("Cards", []):
-                    pick_map[str(cid)] = absolute_pick
+            pack = (i // cards_per_pack) + 1
+            pick = (i % cards_per_pack) + 1
 
-            # Evaluate steals/reaches
-            for c in valid_cards:
-                name = c.get("name", "")
-                ata = get_ata(c)
+            gihwr = get_gihwr(c)
+            alsa = float(c.get("deck_colors", {}).get("All Decks", {}).get("alsa", 0.0))
+            ata = float(c.get("deck_colors", {}).get("All Decks", {}).get("ata", 0.0))
 
-        # A "Steal" is a high win-rate card that we got late in a pack (ALSA > 5.0)
-        # A "Reach" is a low win-rate card that goes very early globally (ATA < 4.0) but we still took it.
-        potential_steals = [
-            c
-            for c in valid_cards
-            if get_gihwr(c) >= 56.0
-            and c.get("deck_colors", {}).get("All Decks", {}).get("alsa", 0.0) >= 6.0
-        ]
-        potential_steals.sort(
-            key=lambda x: x.get("deck_colors", {})
-            .get("All Decks", {})
-            .get("alsa", 0.0),
-            reverse=True,
-        )
+            # Steal: Taken 1.5+ picks later than average, and actually a good card.
+            if alsa > 0 and pick > alsa + 1.5 and gihwr >= 55.0:
+                steals.append((c, pack, pick, alsa, pick - alsa))
+
+            # Reach: Taken 1.5+ picks earlier than average, and statistically subpar.
+            if ata > 0 and ata > pick + 1.5 and gihwr < 54.0:
+                reaches.append((c, pack, pick, ata, ata - pick))
+
+        steals.sort(key=lambda x: x[4], reverse=True)
+        reaches.sort(key=lambda x: x[4], reverse=True)
 
         steal_text = ""
-        for c in potential_steals[:5]:
-            alsa = c.get("deck_colors", {}).get("All Decks", {}).get("alsa", 0.0)
-            steal_text += f"• {c.get('name')} (ALSA: {alsa:.1f})\n"
+        for c, pack, pick, alsa, diff in steals[:6]:
+            steal_text += (
+                f"• {c.get('name')} (P{pack}P{pick} | ALSA {alsa:.1f} | +{diff:.1f})\n"
+            )
 
         if hasattr(self, "lbl_recap_steals"):
             self.lbl_recap_steals.config(
                 text=steal_text if steal_text else "No major steals detected."
             )
 
-        # Reach: GIHWR < 54.0 and ATA < 4.0 (A bad card that is highly contested globally)
-        potential_reaches = [
-            c
-            for c in valid_cards
-            if get_gihwr(c) <= 53.5
-            and c.get("deck_colors", {}).get("All Decks", {}).get("ata", 0.0) <= 4.0
-        ]
-        potential_reaches.sort(
-            key=lambda x: x.get("deck_colors", {}).get("All Decks", {}).get("ata", 0.0)
-        )
-
         reach_text = ""
-        for c in potential_reaches[:5]:
-            ata = c.get("deck_colors", {}).get("All Decks", {}).get("ata", 0.0)
-            reach_text += f"• {c.get('name')} (ATA: {ata:.1f})\n"
+        for c, pack, pick, ata, diff in reaches[:6]:
+            reach_text += (
+                f"• {c.get('name')} (P{pack}P{pick} | ATA {ata:.1f} | -{diff:.1f})\n"
+            )
 
         if hasattr(self, "lbl_recap_reaches"):
             self.lbl_recap_reaches.config(
                 text=reach_text if reach_text else "No major reaches detected."
             )
 
-        # --- 5. RARES & MYTHICS ---
+        # --- 5. SYNERGY & ROLES (TAB 2) ---
+        subtypes_counts = {}
+        tags_count = {}
+        non_basics = []
+
+        for c in taken_cards:
+            name = c.get("name", "")
+            types = c.get("types", [])
+            subs = c.get("subtypes", [])
+
+            if "Basic" in types or name in constants.BASIC_LANDS:
+                continue
+
+            if "Land" in types:
+                non_basics.append(c)
+
+            # Only count subtypes if the card is actually a creature (ignores Food, Treasure, etc.)
+            if "Creature" in types:
+                for sub in subs:
+                    subtypes_counts[sub] = subtypes_counts.get(sub, 0) + 1
+
+            for tag in c.get("tags", []):
+                tags_count[tag] = tags_count.get(tag, 0) + 1
+
+        # 1. Tribes
+        top_tribes = sorted(subtypes_counts.items(), key=lambda x: x[1], reverse=True)
+        tribe_text = ""
+        for t, count in top_tribes[:6]:
+            if count >= 3:
+                tribe_text += f"• {t} ({count})\n"
+
+        if hasattr(self, "lbl_synergy_tribes"):
+            self.lbl_synergy_tribes.config(
+                text=tribe_text if tribe_text else "No creature types with 3+ cards."
+            )
+
+        # 2. Roles
+        role_text = ""
+        for tag, count in sorted(tags_count.items(), key=lambda x: x[1], reverse=True)[
+            :6
+        ]:
+            ui_name = constants.TAG_VISUALS.get(tag, tag.capitalize())
+            role_text += f"• {ui_name} ({count})\n"
+
+        if hasattr(self, "lbl_synergy_roles"):
+            self.lbl_synergy_roles.config(
+                text=role_text if role_text else "No Scryfall tags matched."
+            )
+
+        # 3. Staples
+        staples = [
+            c
+            for c in valid_cards
+            if str(c.get("rarity", "")).lower() in ["common", "uncommon"]
+            and get_gihwr(c) >= 57.0
+        ]
+        staples.sort(key=get_gihwr, reverse=True)
+        staples_text = ""
+        for c in staples[:6]:
+            staples_text += f"• {c.get('name')} ({get_gihwr(c):.1f}%)\n"
+
+        if hasattr(self, "lbl_synergy_staples"):
+            self.lbl_synergy_staples.config(
+                text=staples_text if staples_text else "No premium staples drafted."
+            )
+
+        # 4. Non-Basic Lands
+        non_basics.sort(key=get_gihwr, reverse=True)
+        non_basic_text = ""
+        for c in non_basics[:6]:
+            non_basic_text += f"• {c.get('name')} ({get_gihwr(c):.1f}%)\n"
+
+        if hasattr(self, "lbl_synergy_lands"):
+            self.lbl_synergy_lands.config(
+                text=non_basic_text if non_basic_text else "No non-basic lands drafted."
+            )
+
+        # --- 6. RARES & MYTHICS ---
         rares = [
             c
             for c in valid_cards
@@ -591,31 +683,11 @@ class DashboardFrame(ttk.Frame):
 
         rare_text = ""
         for c in rares[:10]:
-            wr = get_gihwr(c)
-            rare_text += f"• {c.get('name')} ({wr:.1f}%)\n"
+            rare_text += f"• {c.get('name')} ({get_gihwr(c):.1f}%)\n"
 
         if hasattr(self, "lbl_recap_rares"):
             self.lbl_recap_rares.config(
                 text=rare_text if rare_text else "No Rares or Mythics drafted."
-            )
-
-        # --- 6. STAPLES (High VOR / Archetype Glue) ---
-        staples = [
-            c
-            for c in valid_cards
-            if str(c.get("rarity", "")).lower() in ["common", "uncommon"]
-            and get_gihwr(c) >= 57.0
-        ]
-        staples.sort(key=get_gihwr, reverse=True)
-
-        staples_text = ""
-        for c in staples[:8]:
-            wr = get_gihwr(c)
-            staples_text += f"• {c.get('name')} ({wr:.1f}%)\n"
-
-        if hasattr(self, "lbl_recap_staples"):
-            self.lbl_recap_staples.config(
-                text=staples_text if staples_text else "No premium staples drafted."
             )
 
         # --- 7. CHARTS ---
@@ -627,34 +699,49 @@ class DashboardFrame(ttk.Frame):
             self.recap_curve_plot.update_curve(deck_metrics.distribution_all)
 
         if hasattr(self, "recap_type_chart") and self.recap_type_chart:
-            c, n, l = 0, 0, 0
+            type_counts = {
+                "Creature": 0,
+                "Planeswalker": 0,
+                "Battle": 0,
+                "Instant": 0,
+                "Sorcery": 0,
+                "Enchantment": 0,
+                "Artifact": 0,
+                "Land": 0,
+            }
             for card in taken_cards:
-                types = card.get(constants.DATA_FIELD_TYPES, [])
-                if constants.CARD_TYPE_LAND in types:
-                    l += 1
-                elif constants.CARD_TYPE_CREATURE in types:
-                    c += 1
-                else:
-                    n += 1
-            self.recap_type_chart.update_counts(c, n, l)
+                name = card.get("name", "")
+                types = card.get("types", [])
 
-        # --- 8. 17LANDS API FETCH & LOCAL DB ---
+                # EXCLUDE BASIC LANDS
+                if "Basic" in types or name in constants.BASIC_LANDS:
+                    continue
+
+                if "Creature" in types:
+                    type_counts["Creature"] += 1
+                elif "Planeswalker" in types:
+                    type_counts["Planeswalker"] += 1
+                elif "Battle" in types:
+                    type_counts["Battle"] += 1
+                elif "Instant" in types:
+                    type_counts["Instant"] += 1
+                elif "Sorcery" in types:
+                    type_counts["Sorcery"] += 1
+                elif "Enchantment" in types:
+                    type_counts["Enchantment"] += 1
+                elif "Artifact" in types:
+                    type_counts["Artifact"] += 1
+                elif "Land" in types:
+                    type_counts["Land"] += 1
+            self.recap_type_chart.update_counts(type_counts)
+
+        # --- 8. 17LANDS API FETCH ---
         if draft_id:
 
             def fetch_17lands_record():
                 from src.seventeenlands import Seventeenlands
-                from src.seventeenlands_local import Local17LandsDB
 
                 record = Seventeenlands().get_draft_record(draft_id)
-                db_data = Local17LandsDB().get_draft_data(draft_id)
-
-                def safe_dumps(obj):
-                    def _default(o):
-                        if isinstance(o, bytes):
-                            return "<bytes>"
-                        return str(o)
-
-                    return json.dumps(obj, indent=4, default=_default)
 
                 def update_ui():
                     if record and record.get("wins") is not None:
@@ -671,35 +758,13 @@ class DashboardFrame(ttk.Frame):
                                 text=f"Actual 17Lands Record: {wins} Wins - {losses} Losses",
                                 bootstyle=record_style,
                             )
-                            self.lbl_actual_record.pack(pady=(15, 5))
+                            self.lbl_actual_record.pack(anchor="center", pady=(5, 0))
 
                         if hasattr(self, "btn_17lands_link"):
                             self.btn_17lands_link.config(
                                 command=lambda: open_file(record["url"])
                             )
                             self.btn_17lands_link.pack(side="right", padx=(0, 10))
-
-                    if hasattr(self, "txt_localdb"):
-                        self.txt_localdb.delete("1.0", "end")
-                        output_text = ""
-
-                        if record:
-                            output_text += "====== 17LANDS API DATA ======\n"
-                            output_text += safe_dumps(record) + "\n\n"
-
-                        if db_data:
-                            output_text += "====== LOCAL DB DATA ======\n"
-                            output_text += safe_dumps(db_data) + "\n\n"
-
-                        if not record and not db_data:
-                            db_path = Local17LandsDB().db_path
-                            output_text = (
-                                f"No 17Lands data found for this draft on the API or Local Database.\n\n"
-                                f"Searched MTGA Draft ID: {draft_id}\n"
-                                f"Searched 17Lands ID: {draft_id.replace('-', '')}\n"
-                                f"Searched Local DB Path: {db_path}"
-                            )
-                        self.txt_localdb.insert("1.0", output_text)
 
                 try:
                     self.after(0, update_ui)
@@ -1139,14 +1204,6 @@ class DashboardFrame(ttk.Frame):
                         row_values.append(f"{rec.wheel_chance:.0f}%")
                     else:
                         row_values.append("-")
-                elif field == "personal":
-                    p_stats = card.get("deck_colors", {}).get("Personal", {})
-                    val = p_stats.get("gihwr", 0.0)
-                    smp = p_stats.get("samples", 0)
-                    if smp > 0:
-                        row_values.append(f"{val:.1f}%")
-                    else:
-                        row_values.append("-")
                 elif "TIER" in field:
                     if tier_data and field in tier_data:
                         tier_obj = tier_data[field]
@@ -1203,23 +1260,48 @@ class DashboardFrame(ttk.Frame):
             self.curve_plot.update_curve(distribution)
 
     def update_deck_balance(self, taken_cards):
-        # Determine if we have a pool loaded to enforce the "Active" state
         self._taken_count = len(taken_cards) if taken_cards else 0
         self._update_dashboard_state()
 
         if not self.type_chart:
             return
 
-        c, n, l = 0, 0, 0
+        type_counts = {
+            "Creature": 0,
+            "Planeswalker": 0,
+            "Battle": 0,
+            "Instant": 0,
+            "Sorcery": 0,
+            "Enchantment": 0,
+            "Artifact": 0,
+            "Land": 0,
+        }
         for card in taken_cards:
-            types = card.get(constants.DATA_FIELD_TYPES, [])
-            if constants.CARD_TYPE_LAND in types:
-                l += 1
-            elif constants.CARD_TYPE_CREATURE in types:
-                c += 1
-            else:
-                n += 1
-        self.type_chart.update_counts(c, n, l)
+            name = card.get("name", "")
+            types = card.get("types", [])
+
+            if "Basic" in types or name in constants.BASIC_LANDS:
+                continue
+
+            count = card.get("count", 1)
+            if "Creature" in types:
+                type_counts["Creature"] += count
+            elif "Planeswalker" in types:
+                type_counts["Planeswalker"] += count
+            elif "Battle" in types:
+                type_counts["Battle"] += count
+            elif "Instant" in types:
+                type_counts["Instant"] += count
+            elif "Sorcery" in types:
+                type_counts["Sorcery"] += count
+            elif "Enchantment" in types:
+                type_counts["Enchantment"] += count
+            elif "Artifact" in types:
+                type_counts["Artifact"] += count
+            elif "Land" in types:
+                type_counts["Land"] += count
+
+        self.type_chart.update_counts(type_counts)
 
     def update_recommendations(self, recs):
         if hasattr(self, "advisor_panel"):

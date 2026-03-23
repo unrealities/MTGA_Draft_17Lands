@@ -249,7 +249,8 @@ class ArenaScanner:
                         os.remove(self.state_file)
                     except:
                         pass
-            self.set_data.clear()
+                self.set_data.clear()
+
             self.draft_type = constants.LIMITED_TYPE_UNKNOWN
             self.pick_offset = 0
             self.pack_offset = 0
@@ -731,28 +732,27 @@ class ArenaScanner:
             if not self._load_state(str_draft_id) and self.taken_cards:
                 wipe = True
 
-        # 2. Time-Travel Protection (When Draft ID is missing or new)
-        if not wipe:
-            if pack < self.current_pack or (
-                pack == self.current_pack and pick < self.current_pick
-            ):
-                # We are seeing an older pack/pick.
-                # Is it historical catch-up (app restart), or did the user start a new draft?
-                is_historical = False
-                if not current_cards:
-                    is_historical = True
-                elif self.draft_history:
-                    # Find the history entry for this pack/pick
-                    for entry in self.draft_history:
-                        if entry["Pack"] == pack and entry["Pick"] == pick:
-                            # If ANY card overlaps, we confidently assume it's history.
-                            # (Subset check in case MTGA truncates the array differently on restart)
-                            if any(c in entry["Cards"] for c in current_cards):
-                                is_historical = True
-                            break
-
-                if not is_historical:
+            # 2. Time-Travel Protection (When Draft ID is missing or new)
+            if not wipe:
+                if pack == 1 and pick == 1 and len(self.taken_cards) > 0:
+                    # STRICT WIPE: It is P1P1, but we have cards from an old draft.
                     wipe = True
+                elif pack < self.current_pack or (
+                    pack == self.current_pack and pick < self.current_pick
+                ):
+                    # We are seeing an older pack/pick.
+                    is_historical = False
+                    if not current_cards:
+                        is_historical = True
+                    elif self.draft_history:
+                        for entry in self.draft_history:
+                            if entry["Pack"] == pack and entry["Pick"] == pick:
+                                if any(c in entry["Cards"] for c in current_cards):
+                                    is_historical = True
+                                break
+
+                    if not is_historical:
+                        wipe = True
 
             elif pack == 1 and pick == 1 and self.taken_cards:
                 # If we see P1P1 and we already have a massive pool, we missed the end of the last draft.
@@ -1093,26 +1093,31 @@ class ArenaScanner:
 
                 # Check root first
                 if "CardPool" in data and "InternalEventName" in data:
+                    detected_event_name = data.get("InternalEventName")
                     if (
                         not current_event_string
-                        or data.get("InternalEventName") == current_event_string
+                        or detected_event_name == current_event_string
                     ):
                         pool.extend(data.get("CardPool", []))
                 else:
                     course = data.get("Course", data.get("Courses", {}))
                     if isinstance(course, list):
                         for c in course:
-                            if (
-                                not current_event_string
-                                or c.get("InternalEventName") == current_event_string
-                            ):
+                            name = c.get("InternalEventName")
+                            if not current_event_string or name == current_event_string:
+                                detected_event_name = name
                                 pool.extend(c.get("CardPool", []))
+                                break
                     elif isinstance(course, dict):
-                        if (
-                            not current_event_string
-                            or course.get("InternalEventName") == current_event_string
-                        ):
+                        name = course.get("InternalEventName")
+                        if not current_event_string or name == current_event_string:
+                            detected_event_name = name
                             pool.extend(course.get("CardPool", []))
+
+                # RECOVERY: If we found a pool but didn't have an event registered, register it now
+                if pool and not current_event_string and detected_event_name:
+                    dummy_payload = {"EventName": detected_event_name}
+                    self.__check_event(dummy_payload)
 
                 if pool:
                     pool_strs = [str(x) for x in pool]

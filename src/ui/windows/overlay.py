@@ -373,16 +373,42 @@ class CompactOverlay(tb.Toplevel):
         if taken_cards:
             deck_metrics = get_deck_metrics(taken_cards)
             self.curve_plot.update_curve(deck_metrics.distribution_all)
-            c, n, l = 0, 0, 0
+
+            type_counts = {
+                "Creature": 0,
+                "Planeswalker": 0,
+                "Battle": 0,
+                "Instant": 0,
+                "Sorcery": 0,
+                "Enchantment": 0,
+                "Artifact": 0,
+                "Land": 0,
+            }
             for card in taken_cards:
-                t = card.get(constants.DATA_FIELD_TYPES, [])
-                if constants.CARD_TYPE_LAND in t:
-                    l += 1
-                elif constants.CARD_TYPE_CREATURE in t:
-                    c += 1
-                else:
-                    n += 1
-            self.type_chart.update_counts(c, n, l)
+                name = card.get("name", "")
+                types = card.get("types", [])
+
+                # EXCLUDE BASIC LANDS
+                if "Basic" in types or name in constants.BASIC_LANDS:
+                    continue
+
+                if "Creature" in types:
+                    type_counts["Creature"] += 1
+                elif "Planeswalker" in types:
+                    type_counts["Planeswalker"] += 1
+                elif "Battle" in types:
+                    type_counts["Battle"] += 1
+                elif "Instant" in types:
+                    type_counts["Instant"] += 1
+                elif "Sorcery" in types:
+                    type_counts["Sorcery"] += 1
+                elif "Enchantment" in types:
+                    type_counts["Enchantment"] += 1
+                elif "Artifact" in types:
+                    type_counts["Artifact"] += 1
+                elif "Land" in types:
+                    type_counts["Land"] += 1
+            self.type_chart.update_counts(type_counts)
         else:
             self.curve_plot.update_curve([0] * 8)
             self.type_chart.update_counts(0, 0, 0)

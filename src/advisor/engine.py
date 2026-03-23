@@ -12,7 +12,7 @@ import re
 from typing import List, Dict, Any, Tuple
 from src.advisor.schema import Recommendation
 from src import constants
-from src.card_logic import count_fixing
+from src.card_logic import count_fixing, get_functional_cmc
 
 logger = logging.getLogger(__name__)
 
@@ -179,7 +179,7 @@ class DraftAdvisor:
                     texture = getattr(self.metrics, "format_texture", {}).get(c, {})
                     if texture and raw_gihwr >= (self.global_mean - self.global_std):
                         tags = card.get("tags", [])
-                        cmc = self._get_functional_cmc(card)
+                        cmc = get_functional_cmc(card)
 
                         roles_to_check = []
                         if "Creature" in card.get("types", []) and cmc <= 2:
@@ -268,7 +268,7 @@ class DraftAdvisor:
                         z_score=round(z_score, 2),
                         cast_probability=cast_mult,
                         wheel_chance=wheel_pct,
-                        functional_cmc=self._get_functional_cmc(card),
+                        functional_cmc=get_functional_cmc(card),
                         reasoning=reasons,
                         is_elite=(
                             (z_score >= self.BOMB_Z_SCORE and cast_mult > 0.4)
@@ -338,7 +338,7 @@ class DraftAdvisor:
         early_plays, hard_removal_count, fixing_count, splash_targets = 0, 0, 0, set()
         for c in self.pool:
             try:
-                cmc, tags = self._get_functional_cmc(c), c.get("tags", [])
+                cmc, tags = get_functional_cmc(c), c.get("tags", [])
                 if "Creature" in c.get("types", []) and cmc <= 2:
                     early_plays += 1
                 if "removal" in tags:
@@ -366,7 +366,7 @@ class DraftAdvisor:
         }
 
     def _calculate_composition_bonus(self, card: Dict, pack: int) -> Tuple[float, str]:
-        tags, cmc = card.get("tags", []), self._get_functional_cmc(card)
+        tags, cmc = card.get("tags", []), get_functional_cmc(card)
         if "Land" in card.get("types", []) or "fixing_ramp" in tags:
             if any(
                 c in self.pool_metrics["splash_targets"] for c in card.get("colors", [])
@@ -512,13 +512,6 @@ class DraftAdvisor:
             )
         except:
             return 0.0
-
-    def _get_functional_cmc(self, card: Dict) -> int:
-        try:
-            raw_cmc = int(card.get("cmc", 0))
-            return 1 if "landcycling" in str(card.get("text", "")).lower() else raw_cmc
-        except:
-            return 0
 
     def _get_fast_best_deck_score(
         self, pool: List[Dict], color_options: List[List[str]]

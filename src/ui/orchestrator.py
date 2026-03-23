@@ -211,6 +211,10 @@ class DraftOrchestrator(threading.Thread):
         if self.scanner.draft_data_search(use_ocr=False, save_screenshot=False):
             changed = True
 
+            # Failsafe: If we recovered cards from the log but the dataset is missing in memory, load it!
+            if not self.scanner.set_data._dataset and self.scanner.draft_sets:
+                self.sync_dataset_to_event()
+
         # MOCK-SAFE FIRST RUN CHECK:
         # We use try/except to handle MagicMocks in unit tests
         if first_run:

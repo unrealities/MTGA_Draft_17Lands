@@ -22,6 +22,91 @@ logger = create_logger()
 # --- HELPER CLASSES ---
 
 
+def get_functional_cmc(card: dict) -> int:
+    """
+    Determines the practical mana cost of a card by checking for cost-reduction
+    mechanics, alternate casting costs (Disguise/Morph/Evoke), and channel abilities.
+    Prevents expensive but highly playable cards from being falsely penalized as 'clunky'.
+    """
+    try:
+        raw_cmc = int(card.get("cmc", 0))
+        text = str(card.get("text", "")).lower()
+
+        if not text:
+            return raw_cmc
+
+        if "landcycling" in text or "bloodrush" in text:
+            return min(raw_cmc, 2)
+
+        # Mechanics that let you play the card face down for 3
+        if "disguise {" in text or "morph {" in text or "face down as a 2/2" in text:
+            return min(raw_cmc, 3)
+
+        # Channel abilities (act as spells)
+        if "channel \u2014" in text or "channel —" in text or "channel -" in text:
+            return min(raw_cmc, 2)
+
+        # Generic cost reduction: e.g., "costs {3} less" or "costs 3 less"
+        # We use a non-greedy wildcard .*? to catch any spacing/formatting artifacts
+        reduction_match = re.search(r"costs?.*?(\{?(\d+)\}?).*?less", text)
+        if reduction_match:
+            try:
+                # group(2) contains the actual digits inside the curly braces if they exist
+                reduction = int(reduction_match.group(2))
+                return max(1, raw_cmc - reduction)
+            except (ValueError, TypeError):
+                pass
+
+        # Alternate cost keywords that typically mean it's castable for much cheaper
+        alt_keywords = [
+            "evoke {",
+            "prototype {",
+            "spectacle {",
+            "surge {",
+            "cleave {",
+            "blitz {",
+            "prowl {",
+            "madness {",
+            "miracle {",
+            "convoke",
+            "affinity for",
+            "improvise",
+            "spree",
+            "sneak {",
+        ]
+        if raw_cmc > 3 and any(kw in text for kw in alt_keywords):
+            # Generically treat these as 2 mana cheaper for curve/simulation purposes
+            return max(2, raw_cmc - 2)
+
+        return raw_cmc
+    except Exception:
+        return 0
+
+
+def format_types_for_ui(types_array):
+    """Extracts supertypes from a raw types array, guaranteeing 'Creature' is always first."""
+    if not types_array:
+        return ""
+
+    allowed = {
+        "Creature",
+        "Enchantment",
+        "Land",
+        "Artifact",
+        "Planeswalker",
+        "Instant",
+        "Sorcery",
+        "Battle",
+    }
+    filtered = [t for t in types_array if t in allowed]
+
+    if "Creature" in filtered:
+        filtered.remove("Creature")
+        filtered.insert(0, "Creature")
+
+    return " ".join(filtered)
+
+
 @dataclass
 class DeckMetrics:
     cmc_average: float = 0.0
@@ -81,7 +166,7 @@ def get_deck_metrics(deck):
         metrics.total_cards = len(deck)
         for card in deck:
             c_types = card.get(constants.DATA_FIELD_TYPES, [])
-            c_cmc = int(card.get(constants.DATA_FIELD_CMC, 0))
+            c_cmc = get_functional_cmc(card)
 
             if constants.CARD_TYPE_LAND not in c_types:
                 cmc_total += c_cmc
@@ -354,7 +439,7 @@ def simulate_deck(deck_list, iterations=10000):
                     "is_land": is_land,
                     "is_removal": "removal" in c.get("tags", []),
                     "colors_produced": colors_produced,
-                    "cmc": int(c.get("cmc", 0)),
+                    "cmc": get_functional_cmc(c),
                     "pips": pips,
                 }
             )
@@ -543,9 +628,9 @@ def optimize_deck(base_deck, base_sb, archetype_key, colors):
     best_sb_spell = sb_spells[0] if sb_spells else None
 
     highest_cmc_spell = (
-        max(spells, key=lambda c: int(c.get("cmc", 0))) if spells else None
+        max(spells, key=lambda c: get_functional_cmc(c)) if spells else None
     )
-    cheap_sb_spells = [c for c in sb_spells if int(c.get("cmc", 0)) <= 2]
+    cheap_sb_spells = [c for c in sb_spells if get_functional_cmc(c) <= 2]
     best_cheap_sb = cheap_sb_spells[0] if cheap_sb_spells else None
 
     basic_lands = [
@@ -973,13 +1058,14 @@ def calculate_holistic_score(deck, colors, pool_size, metrics):
         avg_gihwr = sum(valid_ratings) / len(valid_ratings)
 
     z_score = (avg_gihwr - global_mean) / global_std
-    power_level = 60.0 + (z_score * 16.67)
+
+    power_level = 75.0 + (z_score * 12.0)
     breakdown_notes = []
 
     # 2. FLUID CURVE & MANA VELOCITY
     cmcs = []
     for c in spells:
-        cmcs.extend([int(c.get("cmc", 0))] * c.get("count", 1))
+        cmcs.extend([get_functional_cmc(c)] * c.get("count", 1))
 
     avg_cmc = sum(cmcs) / spell_count
 
@@ -1092,19 +1178,19 @@ def calculate_holistic_score(deck, colors, pool_size, metrics):
 def estimate_record(power_level, is_bo3=False):
     """Maps the unbounded Power Level to an expected record."""
     if is_bo3:
-        if power_level < 50:
+        if power_level < 65:
             return "0-2 / 1-2"
-        if power_level < 75:
+        if power_level < 78:
             return "2-1"
         return "3-0 (Trophy!)"
     else:
-        if power_level < 40:
+        if power_level < 60:
             return "0-3 / 1-3"
-        if power_level < 55:
+        if power_level < 70:
             return "2-3 / 3-3"
-        if power_level < 75:
+        if power_level < 80:
             return "4-3 / 5-3"
-        if power_level < 90:
+        if power_level < 88:
             return "6-3"
         return "7-x (Trophy!)"
 
@@ -1221,7 +1307,7 @@ def build_variant_curve(pool, colors, metrics):
 
     def tempo_rating(card):
         base = get_card_rating(card, colors, metrics)
-        cmc = int(card.get("cmc", 0))
+        cmc = get_functional_cmc(card)
         if cmc <= 2:
             return base + 4.0
         if cmc >= 5:
