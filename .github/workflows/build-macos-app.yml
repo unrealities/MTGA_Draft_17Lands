@@ -22,11 +22,16 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-          pip install pyinstaller==6.7.0
+          pip install pyinstaller==6.19.0
           pip install jaraco.text platformdirs importlib-metadata zipp
 
       - name: Build executable and App Bundle
         run: python -m PyInstaller main.spec --clean
+
+      - name: Smoke Test Executable
+        run: |
+          echo "Launching executable to verify C-extension imports..."
+          ./dist/MTGA_Draft_Tool.app/Contents/MacOS/MTGA_Draft_Tool --version
 
       - name: Package to ZIP and Checksum
         run: |
