@@ -31,9 +31,9 @@ def get_resource_dir():
 BASE_DIR = get_base_dir()
 RESOURCE_DIR = get_resource_dir()
 
-APPLICATION_VERSION = 4.08
+APPLICATION_VERSION = 4.09
 OLD_APPLICATION_VERSION = "3.2"
-PREVIOUS_APPLICATION_VERSION = "0407"
+PREVIOUS_APPLICATION_VERSION = "0408"
 
 FONT_SANS_SERIF = "Arial"
 FONT_MONO_SPACE = "Courier"
@@ -208,7 +208,6 @@ COLUMN_FIELD_LABELS = {
     "colors": "COLORS: Card Colors",
     "count": "COUNT: Total Card Count",
     "value": "VALUE: Advisor Tactical Score",
-    "personal": "PERSONAL: Your GIH Win Rate",
     "tags": "TAGS: Card Roles",
 }
 LABEL_TO_COLUMN_FIELD = {v: k for k, v in COLUMN_FIELD_LABELS.items()}
@@ -366,7 +365,8 @@ LOCAL_DATABASE_ENUMERATOR_QUERY = f"""SELECT
                                       FROM {LOCAL_DATABASE_TABLE_ENUMERATOR}
                                       WHERE {LOCAL_DATABASE_ENUMERATOR_COLUMN_TYPE} 
                                       IN ('{LOCAL_DATABASE_ENUMERATOR_TYPE_COLOR}', 
-                                          '{LOCAL_DATABASE_ENUMERATOR_TYPE_CARD_TYPES}')"""
+                                          '{LOCAL_DATABASE_ENUMERATOR_TYPE_CARD_TYPES}', 
+                                          'SubType')"""
 
 LOCAL_DATABASE_CARDS_QUERY = f"SELECT * FROM {LOCAL_DATABASE_TABLE_CARDS}"
 
