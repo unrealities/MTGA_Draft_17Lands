@@ -22,7 +22,7 @@ def write_file(path, content):
 
 def format_version_code(version_float):
     # Converts 3.37 -> "0337", 4.0 -> "0400"
-    return f"{int(version_float * 100):04d}"
+    return f"{int(round(version_float * 100)):04d}"
 
 
 def calculate_new_version(current_ver, mode, manual_ver=None):
