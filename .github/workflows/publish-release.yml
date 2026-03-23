@@ -27,7 +27,7 @@ jobs:
         run: python -m PyInstaller main.spec --clean
       - name: Package to ZIP and Checksum
         run: |
-          VER_CODE=$(python -c "import re; val = re.search(r'APPLICATION_VERSION\s*=\s*[^0-9]*([0-9.]+)', open('src/constants.py').read()).group(1); print('%04d' % int(float(val) * 100))")
+          VER_CODE=$(python -c "import re; val = re.search(r'APPLICATION_VERSION\s*=\s*[^0-9]*([0-9.]+)', open('src/constants.py').read()).group(1); print('%04d' % int(round(float(val) * 100)))")
           FILE_NAME="MTGA_Draft_Tool_macOS_${VER_CODE}.zip"
           cd dist
           zip -r "../$FILE_NAME" MTGA_Draft_Tool.app
@@ -61,7 +61,7 @@ jobs:
         run: python -m PyInstaller main.spec --clean
       - name: Package to Tarball and Checksum
         run: |
-          VER_CODE=$(python -c "import re; val = re.search(r'APPLICATION_VERSION\s*=\s*[^0-9]*([0-9.]+)', open('src/constants.py').read()).group(1); print('%04d' % int(float(val) * 100))")
+          VER_CODE=$(python -c "import re; val = re.search(r'APPLICATION_VERSION\s*=\s*[^0-9]*([0-9.]+)', open('src/constants.py').read()).group(1); print('%04d' % int(round(float(val) * 100)))")
           FILE_NAME="MTGA_Draft_Tool_Linux_${VER_CODE}.tar.gz"
           cd dist
           tar -czvf "../$FILE_NAME" MTGA_Draft_Tool
