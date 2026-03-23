@@ -120,6 +120,7 @@ jobs:
           path: release_assets
           merge-multiple: true
       - name: Generate Release Body
+        id: prep_release
         run: |
           python -c "
           import os, re
@@ -186,10 +187,10 @@ jobs:
           with open('release_body.md', 'w', encoding='utf-8') as f:
               f.write(body)
           "
-      - name: Publish GitHub Release
+      - name: Publish Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ steps.prep.outputs.tag_name }}
+          tag_name: ${{ steps.prep_release.outputs.tag_name }}
           target_commitish: ${{ github.sha }}
           files: |
             release_assets/*.exe
@@ -197,3 +198,4 @@ jobs:
             release_assets/*.tar.gz
           body_path: release_body.md
           generate_release_notes: true
+          overwrite_files: true
