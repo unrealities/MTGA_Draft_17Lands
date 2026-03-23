@@ -119,15 +119,15 @@ jobs:
         with:
           path: release_assets
           merge-multiple: true
-      - name: Generate Release Body & Tag
-        id: prep
+      - name: Generate Release Body
         run: |
           python -c "
           import os, re
 
           # Parse version to generate Tag Name
           with open('src/constants.py', 'r', encoding='utf-8') as f:
-              ver_float = float(re.search(r'APPLICATION_VERSION\s*=\s*([0-9.]+)', f.read()).group(1))
+            # Changed this line to use [^0-9]* to bypass the quotes safely!
+            ver_float = float(re.search(r'APPLICATION_VERSION\s*=\s*[^0-9]*([0-9.]+)', f.read()).group(1))
           tag_name = f'MTGA_Draft_Tool_V{int(ver_float * 100):04d}'
 
           # Output tag to GitHub Actions environment
