@@ -31,7 +31,7 @@ def get_resource_dir():
 BASE_DIR = get_base_dir()
 RESOURCE_DIR = get_resource_dir()
 
-APPLICATION_VERSION = 4.10
+APPLICATION_VERSION = "4.10"
 OLD_APPLICATION_VERSION = "3.2"
 PREVIOUS_APPLICATION_VERSION = "0409"
 
