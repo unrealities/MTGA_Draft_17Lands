@@ -202,6 +202,15 @@ class CardToolTip(tkinter.Toplevel):
 
     def __init__(self, parent, card, images_enabled, scale):
         super().__init__(parent)
+        try:
+            self._build_ui(parent, card, images_enabled, scale)
+        except Exception as e:
+            from src.logger import create_logger
+
+            create_logger().error(f"Error building tooltip UI: {e}", exc_info=True)
+            self.destroy()
+
+    def _build_ui(self, parent, card, images_enabled, scale):
         # --- 1. Basic Land Filter ---
         # Prevent tooltips from appearing for Basic Lands to reduce clutter
         card_types = card.get("types", [])
@@ -225,13 +234,12 @@ class CardToolTip(tkinter.Toplevel):
         except Exception:
             pass
 
-        name, stats, urls, tags, rarity = (
-            card.get("name", "Unknown"),
-            card.get("deck_colors", {}),
-            card.get("image", []),
-            card.get("tags", []),
-            card.get("rarity", "common").capitalize(),
-        )
+        name = card.get("name", "Unknown")
+        stats = card.get("deck_colors", {})
+        urls = card.get("image", [])
+        tags = card.get("tags", [])
+        rarity = str(card.get("rarity") or "common").capitalize()
+
         h = tb.Frame(self, bootstyle="secondary")
         h.pack(fill="x")
         rc = (
@@ -398,27 +406,35 @@ class CardToolTip(tkinter.Toplevel):
         if not hasattr(self, "winfo_exists") or not self.winfo_exists():
             return
 
-        self.update_idletasks()
-        ww = self.winfo_width()
-        wh = self.winfo_height()
+        try:
+            self.update_idletasks()
 
-        sw = self.winfo_screenwidth()
-        sh = self.winfo_screenheight()
+            # Re-verify existence after idle tasks in case a <Leave> event instantly destroyed it
+            if not self.winfo_exists():
+                return
 
-        # Offset aggressively to prevent cursor hovering over the tooltip immediately, causing a rapid <Leave> flicker
-        offset_x, offset_y = 35, 25
+            ww = self.winfo_width()
+            wh = self.winfo_height()
 
-        if self._mouse_x + offset_x + ww > sw:
-            tx = max(self._mouse_x - offset_x - ww - 10, 0)
-        else:
-            tx = max(self._mouse_x + offset_x, 0)
+            sw = self.winfo_screenwidth()
+            sh = self.winfo_screenheight()
 
-        if self._mouse_y + offset_y + wh > sh:
-            ty = max(self._mouse_y - offset_y - wh - 10, 0)
-        else:
-            ty = max(self._mouse_y + offset_y, 0)
+            # Offset aggressively to prevent cursor hovering over the tooltip immediately, causing a rapid <Leave> flicker
+            offset_x, offset_y = 35, 25
 
-        self.geometry(f"+{tx}+{ty}")
+            if self._mouse_x + offset_x + ww > sw:
+                tx = max(self._mouse_x - offset_x - ww - 10, 0)
+            else:
+                tx = max(self._mouse_x + offset_x, 0)
+
+            if self._mouse_y + offset_y + wh > sh:
+                ty = max(self._mouse_y - offset_y - wh - 10, 0)
+            else:
+                ty = max(self._mouse_y + offset_y, 0)
+
+            self.geometry(f"+{tx}+{ty}")
+        except tkinter.TclError:
+            pass
 
     def _load_image_async(self, u, s):
         if "scryfall" in u:
@@ -428,6 +444,8 @@ class CardToolTip(tkinter.Toplevel):
     def _fetch_and_apply_image(self, u, s):
         """Moved the core logic into a clean worker method"""
         try:
+            if not u:
+                return
             sn = hashlib.md5(u.encode("utf-8")).hexdigest() + ".jpg"
             cp = os.path.join(self.IMAGE_CACHE_DIR, sn)
             if os.path.exists(cp):
@@ -1112,7 +1130,7 @@ class ManaCurvePlot(tb.Frame):
         bw, gp = 14, 2
         tw = (len(self.current) * bw) + ((len(self.current) - 1) * gp)
         sx, sc = (w - tw) / 2, (self.canvas_height - 25) / max(
-            max(self.current), max(self.ideal), 5
+            max(self.current, default=0), max(self.ideal, default=0), 5
         )
         for i, c in enumerate(self.current):
             x, t = sx + (i * (bw + gp)), self.ideal[i] if i < len(self.ideal) else 0
@@ -1163,9 +1181,9 @@ class ManaCurvePlot(tb.Frame):
 class TypePieChart(tb.Frame):
     def __init__(self, parent, **kwargs):
         super().__init__(parent, **kwargs)
-        self.counts = {"Creatures": 0, "Non-Creatures": 0, "Lands": 0}
-        self.canvas_height = 80
-        self.pie_size = 76  # Slightly smaller to fit bounds cleanly
+        self.counts = {}
+        self.canvas_height = 130
+        self.pie_size = 80
 
         self.canvas = tb.Canvas(
             self, height=self.canvas_height, bg=Theme.BG_PRIMARY, highlightthickness=0
@@ -1179,39 +1197,37 @@ class TypePieChart(tb.Frame):
             self.canvas.configure(bg=Theme.BG_PRIMARY)
             self.redraw()
 
-    def update_counts(self, c, n, l):
-        self.counts["Creatures"] = c
-        self.counts["Non-Creatures"] = n
-        self.counts["Lands"] = l
+    def update_counts(self, counts_dict):
+        self.counts = {k: v for k, v in counts_dict.items() if v > 0}
         self.redraw()
 
     def redraw(self):
         self.canvas.delete("all")
         w = self.canvas.winfo_width()
-        if w < 10:
+        if w < 10 or not self.counts:
             return
 
-        c_col = Theme.SUCCESS
-        n_col = Theme.ACCENT
-        l_col = Theme.BG_TERTIARY
+        color_map = {
+            "Creature": Theme.SUCCESS,
+            "Instant": Theme.ACCENT,
+            "Sorcery": Theme.ERROR,
+            "Enchantment": "#a855f7",
+            "Artifact": Theme.WARNING,
+            "Planeswalker": "#14b8a6",
+            "Battle": "#ec4899",
+            "Land": Theme.BG_TERTIARY,
+        }
 
-        items = [
-            ("Crea", self.counts["Creatures"], c_col),
-            ("Spell", self.counts["Non-Creatures"], n_col),
-            ("Land", self.counts["Lands"], l_col),
-        ]
-
-        # Geometry Math to center both elements dynamically
-        legend_w = 60
+        legend_w = 85
         gap = 20
         pie_r = self.pie_size / 2
         total_w = legend_w + gap + self.pie_size
-
         sx = max(0, (w - total_w) / 2)
 
         # 1. Draw Legend on the Left
-        ly = (self.canvas_height - (3 * 18)) / 2 + 9
-        for lb, count, cl in items:
+        ly = max(5, (self.canvas_height - (len(self.counts) * 16)) / 2)
+        for lb, count in self.counts.items():
+            cl = color_map.get(lb, Theme.TEXT_MUTED)
             self.canvas.create_text(
                 sx, ly, text="●", fill=cl, font=(None, 10), anchor="w"
             )
@@ -1220,35 +1236,19 @@ class TypePieChart(tb.Frame):
                 ly,
                 text=f"{lb}: {count}",
                 fill=Theme.TEXT_MAIN,
-                font=(Theme.FONT_FAMILY, 10),
+                font=(Theme.FONT_FAMILY, 9),
                 anchor="w",
             )
-            ly += 18
+            ly += 16
 
         # 2. Draw Pie Chart on the Right
         cx = sx + legend_w + gap + pie_r
         cy = self.canvas_height / 2
         tl = sum(self.counts.values())
 
-        if tl == 0:
-            self.canvas.create_oval(
-                cx - pie_r,
-                cy - pie_r,
-                cx + pie_r,
-                cy + pie_r,
-                fill=Theme.BG_SECONDARY,
-                outline="",
-            )
-            return
-
         a = 90
-        for c, cl in [
-            (self.counts["Creatures"], c_col),
-            (self.counts["Non-Creatures"], n_col),
-            (self.counts["Lands"], l_col),
-        ]:
-            if c == 0:
-                continue
+        for lb, c in self.counts.items():
+            cl = color_map.get(lb, Theme.TEXT_MUTED)
             ex = (c / tl) * 360
             self.canvas.create_arc(
                 cx - pie_r,

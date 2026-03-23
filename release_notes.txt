@@ -1,3 +1,12 @@
+===================== RELEASE NOTES 4.09 =====================
+* unrealities: [Major Feature] Overhauled Post-Draft Dashboard. Replaced the legacy recap screen with a deep-dive, 3-tab layout (Draft Recap, Synergy & Roles, Mana & Curve). The dashboard now explicitly calculates your Biggest Steals and Reaches with exact Pack/Pick math, and displays Top Creature Tribes and Card Roles.
+* unrealities: [Major Feature] Unified Deck Builder. The automated "Deck Suggester" and manual "Custom Deck Builder" have been fused into a single, cohesive "Deck Builder" tab.
+* unrealities: [Feature] Recalibrated Deck & Pool Scoring. The 'Power Level' and 'Pool Quality' metrics have been normalized to a realistic 100-point scale (75 = Average, 90+ = Elite) to provide much more accurate and rewarding feedback, properly aligning with expected win-loss records.
+* unrealities: [Feature] On-Demand Optimization: Moved the intensive Monte Carlo AI Optimizer to an explicit button in the Simulation tab. Initial archetype generation is now lightning fast, and you can run the brute-force optimizer on your tweaked decks whenever you're ready.
+* unrealities: [Bug] Fixed a critical MTG Arena database mapping bug where Subtypes (e.g., 'Ninja', 'Human') were accidentally overwriting Base Types (e.g., 'Creature', 'Land'). This fixes issues where Swamps were categorized as Creatures and completely broke the mana curve simulator.
+* unrealities: [Bug] Fixed a severe state-tracking bug where starting consecutive drafts, or the app catching up on missed picks, would cause the app to fail to wipe the previous card pool and merge multiple drafts together.
+* unrealities: [Bug] Fixed a fatal application crash that could occur on startup when using the "System (Native)" theme on macOS or Windows.
+
 ===================== RELEASE NOTES 4.08 =====================
 * unrealities: [Major Feature] AI Monte Carlo Auto-Optimizer. Click the "Auto-Optimize Deck" button to unleash a background simulation engine that mathematically tests different deck permutations (16 lands vs 17 lands, swapping out expensive 5-drops for efficient 2-drops) across thousands of games to find the perfect 40-card configuration.
 * unrealities: [Feature] Added an AI Advisor Summary to the simulation tab. It translates raw simulation percentages into actionable advice and actively scans your sideboard to suggest specific 1-for-1 card swaps to fix curve or consistency issues.

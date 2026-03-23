@@ -20,9 +20,6 @@ logger = logging.getLogger(__name__)
 import tkinter.ttk as tk_ttk
 
 # --- MONKEY PATCH TKINTER.TTK TO PREVENT TTKBOOTSTRAP NATIVE THEME CRASH ---
-# When switching to the "System" (Native) theme, ttkbootstrap incorrectly attempts
-# to recreate layout elements (like Horizontal.Progressbar.pbar) that already exist
-# in the underlying Tcl interpreter, causing a fatal application crash on startup.
 _orig_element_create = tk_ttk.Style.element_create
 
 
@@ -105,7 +102,6 @@ class Theme:
                 is_custom_loaded = True
             except Exception as e:
                 error_msg = str(e)
-                # If the script failed because the theme is already in memory, catch it and activate it!
                 if "already exists" in error_msg:
                     match = re.search(r"Theme (\w+) already exists", error_msg)
                     theme_name = (
@@ -125,7 +121,6 @@ class Theme:
 
         # 2. Extract Colors & Set Engine
         if is_custom_loaded:
-            # Dynamically scrape the colors that the TCL file applied to the style engine
             sys_bg = style.lookup("TFrame", "background") or "#2b2b2b"
             sys_fg = style.lookup("TLabel", "foreground") or "#ffffff"
             sys_input = style.lookup("TEntry", "fieldbackground") or "#404040"
@@ -136,15 +131,12 @@ class Theme:
             cls.BG_PRIMARY = sys_bg
             cls.BG_SECONDARY = sys_bg
             cls.BG_TERTIARY = sys_input
-
             cls.TEXT_MAIN = sys_fg
             cls.TEXT_MUTED = "gray"
-
             cls.ACCENT = sys_select_bg
             cls.SUCCESS = "#00bc8c"
             cls.ERROR = "#e74c3c"
             cls.WARNING = "#f39c12"
-            cls.INFO = "#3b82f6"
 
         else:
             target_theme = cls.THEME_MAPPING.get(palette, "cyborg")
@@ -166,23 +158,23 @@ class Theme:
 
                 # Extract True Native Colors (Dynamic Light/Dark mode support)
                 if sys.platform == "darwin":
-                    cls.BG_PRIMARY = "systemWindowBackgroundColor"
-                    cls.BG_SECONDARY = "systemWindowBackgroundColor"
-                    cls.BG_TERTIARY = "systemTextBackgroundColor"
+                    cls.BG_PRIMARY = "systemTextBackgroundColor"
+                    cls.BG_SECONDARY = "systemAlternatingContentBackgroundColor"
+                    cls.BG_TERTIARY = "systemWindowBackgroundColor"
                     cls.TEXT_MAIN = "systemTextColor"
                     cls.TEXT_MUTED = "systemPlaceholderTextColor"
                     cls.ACCENT = "systemControlAccentColor"
                 elif sys.platform == "win32":
-                    cls.BG_PRIMARY = "SystemButtonFace"
-                    cls.BG_SECONDARY = "SystemWindow"
-                    cls.BG_TERTIARY = "SystemWindow"
+                    cls.BG_PRIMARY = "SystemWindow"
+                    cls.BG_SECONDARY = "#f0f0f0"  # Subtle grey for windows
+                    cls.BG_TERTIARY = "SystemButtonFace"
                     cls.TEXT_MAIN = "SystemWindowText"
                     cls.TEXT_MUTED = "SystemGrayText"
                     cls.ACCENT = "SystemHighlight"
                 else:
-                    cls.BG_PRIMARY = style.lookup("TFrame", "background") or "#f0f0f0"
-                    cls.BG_SECONDARY = cls.BG_PRIMARY
-                    cls.BG_TERTIARY = "#ffffff"
+                    cls.BG_PRIMARY = style.lookup("TFrame", "background") or "#ffffff"
+                    cls.BG_SECONDARY = "#f5f5f5"  # Subtle grey fallback
+                    cls.BG_TERTIARY = "#e0e0e0"
                     cls.TEXT_MAIN = style.lookup("TLabel", "foreground") or "#000000"
                     cls.TEXT_MUTED = "gray"
                     cls.ACCENT = (
@@ -193,7 +185,6 @@ class Theme:
                 cls.SUCCESS = "#10b981"
                 cls.ERROR = "#ef4444"
                 cls.WARNING = "#f59e0b"
-                cls.INFO = "#3b82f6"
 
             else:
                 # --- BOOTSTRAP MODE ---
@@ -206,7 +197,13 @@ class Theme:
                 colors = style.colors
 
                 cls.BG_PRIMARY = sys_bg if sys_bg else colors.bg
-                cls.BG_SECONDARY = colors.secondary
+
+                # Ensure zebra striping uses a highly subtle background tint
+                if getattr(style.theme, "type", "dark") == "light":
+                    cls.BG_SECONDARY = colors.light
+                else:
+                    cls.BG_SECONDARY = colors.dark
+
                 cls.BG_TERTIARY = colors.inputbg
 
                 cls.TEXT_MAIN = colors.fg
@@ -216,26 +213,18 @@ class Theme:
                 cls.SUCCESS = colors.success
                 cls.ERROR = colors.danger
                 cls.WARNING = colors.warning
-                cls.INFO = colors.info
 
-        # 3. Global Configuration (Applies regardless of theme engine)
+        # 3. Global Configuration
         main_font_size = max(5, int(cls.FONT_SIZE_MAIN * scale))
 
         try:
-            # Dynamically ask the OS for the exact bounding box height of the font
             test_font = tkfont.Font(
                 root=root, family=cls.FONT_FAMILY, size=main_font_size
             )
             linespace = test_font.metrics("linespace")
-
-            # Windows needs more padding to prevent "g/y/p" descender clipping due to Segoe UI rendering.
-            # Mac needs tighter padding to look correct for Helvetica.
             padding = 8 if sys.platform == "darwin" else 14
-
             row_height = linespace + int(padding * scale)
         except Exception as e:
-            logger.warning(f"Dynamic font measurement failed: {e}")
-            # Fallback if font isn't loaded by the OS yet
             base_row_height = 26 if sys.platform == "darwin" else 32
             row_height = max(10, int(base_row_height * scale))
 
@@ -249,21 +238,16 @@ class Theme:
             safe_style = tk_ttk.Style(root)
 
             if not is_custom_loaded:
-                # TPanedwindow controls the background of the container
                 safe_style.configure(
                     "TPanedwindow", background=cls.BG_PRIMARY, borderwidth=0
                 )
 
-                # Fix for macOS 'aqua' theme stubbornly drawing a 3D grey sash.
                 if sys.platform == "darwin" and target_theme == "native":
                     try:
                         safe_style.element_create("Sash", "from", "default")
                     except Exception:
                         pass
 
-                # THE ULTIMATE SASH FIX FOR TTKBOOTSTRAP THEMES:
-                # Neutral/Light themes use hardcoded image files for their splitters.
-                # We command Tcl to overwrite those images with primitive flat rectangles.
                 if target_theme != "native":
                     try:
                         safe_style.element_create(
@@ -273,7 +257,6 @@ class Theme:
                     except Exception:
                         pass
 
-                # Color the primitive rectangles perfectly flat against the background
                 for sash in ["Sash", "Horizontal.Sash", "Vertical.Sash"]:
                     safe_style.configure(
                         sash,
@@ -294,7 +277,6 @@ class Theme:
                         darkcolor=[("active", cls.ACCENT)],
                     )
 
-                # Erase static separator line above the tabs so it doesn't look like a stuck rail
                 safe_style.configure("TSeparator", background=cls.BG_PRIMARY)
 
         except Exception as e:
@@ -306,7 +288,6 @@ class Theme:
                 "Treeview.Heading", font=(cls.FONT_FAMILY, main_font_size, "bold")
             )
 
-            # --- UNIFIED NOTEBOOK TAB STYLING ---
             style.configure(
                 "TNotebook.Tab",
                 padding=[12, 6],

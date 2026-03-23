@@ -117,12 +117,18 @@ if __name__ == "__main__":
     unittest.main()
 
 
-@patch("os.listdir")
+@patch("src.utils.os.path.exists")
+@patch("src.utils.os.listdir")
 @patch("src.utils.check_file_integrity")
-def test_retrieve_local_set_list_skip_old(mock_integrity, mock_listdir):
+def test_retrieve_local_set_list_skip_old(mock_integrity, mock_listdir, mock_exists):
     """
     Verify that the function ignores old datasets
     """
+    import src.utils
+
+    src.utils._LOCAL_SET_CACHE = {"mtime": 0.0, "files": []}
+
+    mock_exists.return_value = True
     mock_listdir.return_value = MOCKED_DATASETS
     mock_integrity.return_value = (Result.VALID, MOCKED_DATASET_JSON)
 

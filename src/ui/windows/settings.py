@@ -115,6 +115,7 @@ class SettingsWindow(tkinter.Toplevel):
                 row=r + 1 + i, column=0, columnspan=2, sticky="w", padx=10, pady=2
             )
 
+
         # --- FOOTER ---
         footer = ttk.Frame(container)
         footer.grid(row=50, column=0, columnspan=2, pady=(25, 0), sticky="ew")
@@ -123,6 +124,7 @@ class SettingsWindow(tkinter.Toplevel):
             side="left"
         )
         ttk.Button(footer, text="Done", command=self._on_close).pack(side="right")
+
 
     def _load_settings(self):
         """Populates UI from the configuration object."""
