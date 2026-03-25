@@ -1,35 +1,19 @@
 """
 server/report.py
 
-Collects and persists a structured run-report for each ETL pipeline execution.
-
-Usage (in main.py):
-    report = PipelineReport()
-    report.attach_log_handler()   # Auto-captures all WARNING/ERROR log records
-    ...
-    report.record_dataset(set_code, draft_format, file_info, card_count)
-    report.record_skipped(set_code, draft_format, reason)
-    ...
-    report.finalize(api_client)
-    save_report(report)
+Collects and persists a highly structured, professional run-report
+for each ETL pipeline execution.
 """
 
 import json
 import logging
-import os
-import time
 from datetime import datetime, timezone
-from server import config
 
 logger = logging.getLogger(__name__)
 
 
-# ---------------------------------------------------------------------------
-# Log handler — passively captures WARNING+ records from the whole pipeline
-# ---------------------------------------------------------------------------
-
 class _ReportLogHandler(logging.Handler):
-    """Appends WARNING and ERROR records to the report's internal lists."""
+    """Passively captures WARNING and ERROR log records across the pipeline."""
 
     def __init__(self, report: "PipelineReport"):
         super().__init__(level=logging.WARNING)
@@ -48,29 +32,34 @@ class _ReportLogHandler(logging.Handler):
             self._report._warnings.append(entry)
 
 
-# ---------------------------------------------------------------------------
-# Main report class
-# ---------------------------------------------------------------------------
-
 class PipelineReport:
     def __init__(self):
         self._started_at: datetime = datetime.now(timezone.utc)
         self._completed_at: datetime | None = None
+
+        # Intent (What we tried to do)
+        self._intended_schedule: dict = {}
+        self._intended_archetypes: list = []
+        self._intended_user_types: list = [
+            "All Users"
+        ]  # Default for 17Lands unless specified
+
+        # Execution (What actually happened)
         self._datasets: list[dict] = []
         self._skipped: list[dict] = []
         self._errors: list[dict] = []
         self._warnings: list[dict] = []
+
+        # Warehouse State (What is available now)
+        self._warehouse_datasets: dict = {}
+
         self._handler: _ReportLogHandler | None = None
 
     # ------------------------------------------------------------------
-    # Setup
+    # Setup & Logging Hooks
     # ------------------------------------------------------------------
 
     def attach_log_handler(self):
-        """
-        Installs a handler on the root logger so all WARNING/ERROR messages
-        emitted anywhere in the pipeline are automatically captured.
-        """
         self._handler = _ReportLogHandler(self)
         self._handler.setFormatter(logging.Formatter("%(message)s"))
         logging.getLogger().addHandler(self._handler)
@@ -81,17 +70,18 @@ class PipelineReport:
             self._handler = None
 
     # ------------------------------------------------------------------
-    # Explicit data collection hooks
+    # Data Collection Methods
     # ------------------------------------------------------------------
 
+    def record_intent(self, active_sets: dict, archetypes: list):
+        """Records what the pipeline is scheduled to process."""
+        self._intended_schedule = active_sets
+        self._intended_archetypes = archetypes
+
     def record_dataset(
-        self,
-        set_code: str,
-        draft_format: str,
-        file_info: dict,
-        card_count: int,
+        self, set_code: str, draft_format: str, file_info: dict, card_count: int
     ):
-        """Call after a dataset file is successfully written."""
+        """Records a successfully updated dataset."""
         self._datasets.append(
             {
                 "set": set_code,
@@ -105,7 +95,7 @@ class PipelineReport:
         )
 
     def record_skipped(self, set_code: str, draft_format: str | None, reason: str):
-        """Call whenever a set or format is skipped without generating a file."""
+        """Records a dataset that was intentionally skipped or failed gracefully."""
         self._skipped.append(
             {
                 "set": set_code,
@@ -114,48 +104,38 @@ class PipelineReport:
             }
         )
 
+    def record_warehouse_state(self, manifest: dict):
+        """Records the final state of the manifest (all available historical data)."""
+        self._warehouse_datasets = manifest.get("datasets", {})
+
     # ------------------------------------------------------------------
-    # Finalization
+    # Finalization & Output
     # ------------------------------------------------------------------
 
     def finalize(self, api_client=None) -> dict:
-        """
-        Locks in the completion timestamp and builds the final report dict.
-        Optionally accepts the APIClient to pull request counters.
-        """
         self._completed_at = datetime.now(timezone.utc)
         self.detach_log_handler()
 
-        duration_sec = round(
-            (self._completed_at - self._started_at).total_seconds(), 1
-        )
-
+        duration_sec = round((self._completed_at - self._started_at).total_seconds(), 1)
         error_count = len(self._errors)
-        warning_count = len(self._warnings)
         skipped_count = len(self._skipped)
 
         if error_count == 0 and skipped_count == 0:
-            status = "success"
+            status = "SUCCESS"
         elif len(self._datasets) == 0:
-            status = "failed"
+            status = "FAILED"
         else:
-            status = "partial"
+            status = "PARTIAL_SUCCESS"
 
         api_stats = {}
-        if api_client and hasattr(api_client, "request_count"):
+        if api_client:
             api_stats = {
-                "total_requests": api_client.request_count,
-                "failed_requests": api_client.failed_request_count,
+                "total_requests": getattr(api_client, "request_count", 0),
+                "failed_requests": getattr(api_client, "failed_request_count", 0),
+                "cached_requests": getattr(api_client, "cached_request_count", 0),
             }
 
-        total_output_kb = sum(d["size_kb"] for d in self._datasets)
-        total_cards = sum(d["card_count"] for d in self._datasets)
-
-        # Deduplicate sets/formats counts
-        sets_processed = len({d["set"] for d in self._datasets})
-        formats_processed = len(self._datasets)
-
-        report = {
+        return {
             "pipeline_run": {
                 "started_at": self._started_at.isoformat(),
                 "completed_at": self._completed_at.isoformat(),
@@ -163,55 +143,127 @@ class PipelineReport:
                 "status": status,
             },
             "api_stats": api_stats,
-            "summary": {
-                "sets_processed": sets_processed,
-                "formats_processed": formats_processed,
-                "formats_skipped": skipped_count,
-                "files_generated": len(self._datasets),
-                "total_output_kb": total_output_kb,
-                "total_cards_rated": total_cards,
-                "total_errors": error_count,
-                "total_warnings": warning_count,
+            "intent": {
+                "scheduled_events": self._intended_schedule,
+                "archetypes_targeted": self._intended_archetypes,
+                "user_types_targeted": self._intended_user_types,
             },
-            "datasets": self._datasets,
-            "skipped": self._skipped,
+            "execution_summary": {
+                "formats_updated": len(self._datasets),
+                "formats_skipped": skipped_count,
+                "total_output_kb": sum(d["size_kb"] for d in self._datasets),
+                "total_cards_rated": sum(d["card_count"] for d in self._datasets),
+                "total_errors": error_count,
+                "total_warnings": len(self._warnings),
+            },
+            "warehouse_state": {
+                "total_available_datasets": len(self._warehouse_datasets),
+                "available_keys": list(self._warehouse_datasets.keys()),
+            },
+            "datasets_updated": self._datasets,
+            "datasets_skipped": self._skipped,
             "errors": self._errors,
             "warnings": self._warnings,
         }
-        return report
 
     def log_summary(self, report: dict):
-        """Prints a human-readable summary to the pipeline log."""
-        run = report["pipeline_run"]
-        s = report["summary"]
-        logger.info("=" * 60)
-        logger.info(f"  PIPELINE REPORT — {run['status'].upper()}")
-        logger.info("=" * 60)
-        logger.info(f"  Duration        : {run['duration_sec']}s")
-        logger.info(f"  Sets processed  : {s['sets_processed']}")
-        logger.info(f"  Formats done    : {s['formats_processed']}")
-        logger.info(f"  Formats skipped : {s['formats_skipped']}")
-        logger.info(f"  Files generated : {s['files_generated']}")
-        logger.info(f"  Total output    : {s['total_output_kb']} KB")
-        logger.info(f"  Cards rated     : {s['total_cards_rated']}")
+        """Prints a highly professional, formatted summary to the pipeline log."""
+        r = report["pipeline_run"]
+        api = report.get("api_stats", {})
+        intent = report["intent"]
+        exec_sum = report["execution_summary"]
+        wh_state = report["warehouse_state"]
 
-        if report.get("api_stats"):
-            api = report["api_stats"]
-            logger.info(
-                f"  API requests    : {api['total_requests']} "
-                f"({api['failed_requests']} failed)"
-            )
+        logger.info("")
+        logger.info(
+            "======================================================================"
+        )
+        logger.info("                  ETL PIPELINE EXECUTION REPORT")
+        logger.info(
+            "======================================================================"
+        )
+        logger.info(f" STATUS       : {r['status']}")
+        logger.info(f" START TIME   : {r['started_at']}")
+        logger.info(f" DURATION     : {r['duration_sec']} seconds")
+        logger.info(
+            f" API REQUESTS : {api.get('total_requests', 0)} made "
+            f"({api.get('failed_requests', 0)} failed, {api.get('cached_requests', 0)} cached)"
+        )
+        logger.info(
+            "----------------------------------------------------------------------"
+        )
+        logger.info(" [1] PIPELINE INTENT (CALENDAR SCOPE)")
+        logger.info(
+            "----------------------------------------------------------------------"
+        )
 
-        logger.info(f"  Errors          : {s['total_errors']}")
-        logger.info(f"  Warnings        : {s['total_warnings']}")
+        if not intent["scheduled_events"]:
+            logger.info("   No active events scheduled for today.")
+        else:
+            for set_code, formats in intent["scheduled_events"].items():
+                logger.info(f"   Target Set : {set_code:<6} -> {', '.join(formats)}")
 
-        for d in report["datasets"]:
-            logger.info(
-                f"    ✓ {d['set']} {d['format']:20s} "
-                f"{d['card_count']:4d} cards  {d['size_kb']:5d} KB"
-            )
-        for sk in report["skipped"]:
-            fmt = sk.get("format") or "—"
-            logger.info(f"    ✗ {sk['set']} {fmt:20s} SKIPPED — {sk['reason']}")
+        logger.info(
+            f"   Archetypes : {len(intent['archetypes_targeted'])} configured (e.g. {', '.join(intent['archetypes_targeted'][:5])}...)"
+        )
+        logger.info(f"   User Types : {', '.join(intent['user_types_targeted'])}")
 
-        logger.info("=" * 60)
+        logger.info(
+            "----------------------------------------------------------------------"
+        )
+        logger.info(" [2] EXECUTION RESULTS")
+        logger.info(
+            "----------------------------------------------------------------------"
+        )
+        logger.info(f"   Updates    : {exec_sum['formats_updated']} formats updated.")
+        logger.info(
+            f"   Output     : {exec_sum['total_output_kb']} KB across {exec_sum['total_cards_rated']} total cards."
+        )
+        logger.info(
+            f"   Issues     : {exec_sum['formats_skipped']} skipped | {exec_sum['total_errors']} errors | {exec_sum['total_warnings']} warnings."
+        )
+
+        if report["datasets_updated"]:
+            logger.info("\n   UPDATED DATASETS:")
+            for d in report["datasets_updated"]:
+                logger.info(
+                    f"     ✓ {d['set']:<5} - {d['format']:<18} ({d['card_count']:>4} cards | {d['size_kb']:>5} KB )"
+                )
+
+        if report["datasets_skipped"]:
+            logger.info("\n   SKIPPED DATASETS:")
+            for s in report["datasets_skipped"]:
+                fmt = s.get("format") or "Entire Set"
+                logger.info(
+                    f"     ✗ {s['set']:<5} - {fmt:<18} ( Reason: {s['reason']} )"
+                )
+
+        logger.info(
+            "----------------------------------------------------------------------"
+        )
+        logger.info(" [3] WAREHOUSE STATE (MANIFEST STATE)")
+        logger.info(
+            "----------------------------------------------------------------------"
+        )
+        logger.info(f"   Total Hosted Datasets: {wh_state['total_available_datasets']}")
+
+        # Group warehouse data by Set for clean logging
+        wh_sets = {}
+        for key in wh_state["available_keys"]:
+            set_code, _, fmt = key.partition("_")
+            if set_code not in wh_sets:
+                wh_sets[set_code] = []
+            if fmt:
+                wh_sets[set_code].append(fmt)
+
+        if wh_sets:
+            logger.info("   Currently Serving:")
+            for set_code, formats in sorted(wh_sets.items()):
+                logger.info(f"     • {set_code:<5}: {', '.join(formats)}")
+        else:
+            logger.info("   Warehouse is currently empty.")
+
+        logger.info(
+            "======================================================================"
+        )
+        logger.info("")

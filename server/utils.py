@@ -63,8 +63,8 @@ class APIClient:
     def _read_cache(self, url):
         path = self._get_cache_path(url)
         if os.path.exists(path):
-            # 24-hour TTL for the local cache
-            if time.time() - os.path.getmtime(path) < 86400:
+            # 12-hour TTL for the local HTTP cache
+            if time.time() - os.path.getmtime(path) < 43200:
                 try:
                     with open(path, "r", encoding="utf-8") as f:
                         data = json.load(f)
@@ -77,7 +77,8 @@ class APIClient:
         try:
             json_data = response.json()
         except Exception:
-            json_data = None
+            # Prevent Cache Poisoning: Do not cache non-JSON payloads
+            return
 
         data = {"status_code": response.status_code, "json_data": json_data}
         path = self._get_cache_path(url)
@@ -97,24 +98,23 @@ class APIClient:
             cached_resp.raise_for_status()
             return cached_resp
 
-        # 2. Domain-aware rate limiter logic calculation
         parsed_url = urlparse(url)
         domain = parsed_url.netloc
-
-        last_time = self._last_request_time.get(domain, 0.0)
         delay = self._domain_delays.get(domain, 0.0)
 
-        now = time.time()
-        elapsed = now - last_time
-        if elapsed < delay:
-            time.sleep(delay - elapsed)
-
-        # 3. Request loop with Backoff
+        # 2. Request loop with Backoff
         for attempt in range(config.MAX_ATTEMPTS):
+
+            # Domain-aware rate limiter logic (Checked inside the loop for retries)
+            last_time = self._last_request_time.get(domain, 0.0)
+            elapsed = time.time() - last_time
+            if elapsed < delay:
+                time.sleep(delay - elapsed)
+
             try:
                 self.request_count += 1
                 resp = self.session.get(url, timeout=timeout)
-                self._last_request_time[domain] = time.time()  # Track real hit
+                self._last_request_time[domain] = time.time()
 
                 if resp.status_code == 429:
                     wait = config.RETRY_BASE_DELAY_SEC * (2**attempt)

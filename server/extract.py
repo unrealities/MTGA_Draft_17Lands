@@ -1,89 +1,87 @@
+import os
 import json
 import time
 import requests
 import logging
-from datetime import datetime, timezone, timedelta
 from server import config
 from server.transform import parse_scryfall_types
 
 logger = logging.getLogger(__name__)
 
+# Ensure our persistent Scryfall cache directory exists
+SCRYFALL_CACHE_DIR = os.path.join(config.OUTPUT_DIR, "scryfall_cache")
+os.makedirs(SCRYFALL_CACHE_DIR, exist_ok=True)
 
-def extract_active_events(client) -> dict:
-    logger.info("Detecting active formats and Flashback drafts...")
-    url = "https://www.17lands.com/data/filters"
-    data = client.respectful_get(url).json()
 
-    active_events = {}
-    formats_map = data.get("formats_by_expansion", {})
-    sorted_dates = sorted(
-        data.get("start_dates", {}).items(), key=lambda x: x[1], reverse=True
-    )
+def get_scheduled_events(calendar_path="calendar.json") -> dict:
+    """
+    Reads the manual calendar JSON and returns a dictionary of active events for TODAY.
+    Format: { "TMNT": ["PremierDraft", "TradDraft"], "BLB": ["PremierDraft"] }
+    """
+    logger.info(f"Loading calendar from {calendar_path}...")
 
-    always_fetch = [s[0] for s in sorted_dates[:3]]
-    for s in formats_map.keys():
-        if "Cube" in s and s not in always_fetch:
-            always_fetch.append(s)
+    try:
+        with open(calendar_path, "r") as f:
+            calendar = json.load(f)
+    except FileNotFoundError:
+        logger.error("calendar.json not found! Cannot determine active events.")
+        return {}
 
-    for s in always_fetch:
-        active_events[s] = [f for f in formats_map.get(s, [])]
+    today_str = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    active_sets = {}
 
-    seven_days_ago = (datetime.now(timezone.utc) - timedelta(days=7)).strftime(
-        "%Y-%m-%d"
-    )
-    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
-    older_sets = [s[0] for s in sorted_dates[3:] if "Cube" not in s[0]]
+    for event in calendar.get("events", []):
+        start = event.get("start_date")
+        end = event.get("end_date")
 
-    no_activity_streak = 0
-    for s in older_sets:
-        if no_activity_streak >= 5:
-            break
+        # String comparison works perfectly for YYYY-MM-DD
+        if start <= today_str <= end:
+            set_code = event["set_code"]
+            formats = event["formats"]
 
-        formats_to_check = [
-            f for f in formats_map.get(s, []) if "Draft" in f or "Sealed" in f
-        ]
-        active_formats_for_old_set = []
+            if set_code not in active_sets:
+                active_sets[set_code] = set()
 
-        for fmt in formats_to_check:
-            check_url = (
-                f"https://www.17lands.com/color_ratings/data?"
-                f"expansion={s}&event_type={fmt}&start_date={seven_days_ago}"
-                f"&end_date={today}&combine_splash=true"
-            )
-            try:
-                rating_data = client.respectful_get(check_url).json()
-                for entry in rating_data:
-                    if entry.get("is_summary") and entry.get("games", 0) > 500:
-                        active_formats_for_old_set.append(fmt)
-                        break
-            except Exception as e:
-                logger.warning(f"Failed to check activity for {s} {fmt}: {e}")
+            active_sets[set_code].update(formats)
 
-        if active_formats_for_old_set:
-            logger.info(
-                f"Detected Active Flashback Event: {s} - {active_formats_for_old_set}"
-            )
-            active_events[s] = active_formats_for_old_set
-            no_activity_streak = 0
-        else:
-            no_activity_streak += 1
-
-    return active_events
+    # Convert sets back to lists for downstream compatibility
+    return {k: list(v) for k, v in active_sets.items()}
 
 
 def extract_scryfall_data(client, set_code: str) -> dict:
-    logger.info(f"Fetching Scryfall base data for {set_code}...")
+    """
+    Fetches base card data. Cards don't change, so this is fetched ONCE
+    and cached permanently on disk.
+    """
+    if "CUBE" in set_code.upper():
+        return {}
+
+    cache_filepath = os.path.join(SCRYFALL_CACHE_DIR, f"{set_code}_cards.json")
+
+    # 1. Check if we already have this set permanently cached
+    if os.path.exists(cache_filepath):
+        logger.info(
+            f"   [Scryfall] Loading {set_code} base cards from local repository (0 API calls)."
+        )
+        try:
+            with open(cache_filepath, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except json.JSONDecodeError:
+            logger.warning(
+                f"   [Scryfall] Cache corrupted for {set_code}. Re-fetching."
+            )
+
+    # 2. If not cached, fetch from Scryfall
+    logger.info(f"   [Scryfall] Fetching {set_code} base cards from API...")
     cards = {}
     query = f"set:{set_code} is:booster"
-    if "CUBE" in set_code.upper():
-        return cards
-
     url = f"https://api.scryfall.com/cards/search?q={requests.utils.quote(query)}"
 
     while url:
         resp = client.respectful_get(url, allow_404=True)
         if resp.status_code == 404:
             break
+
         try:
             data = resp.json()
         except json.JSONDecodeError as e:
@@ -138,14 +136,43 @@ def extract_scryfall_data(client, set_code: str) -> dict:
 
         url = data.get("next_page")
 
+    # 3. Save permanently to disk
+    if cards:
+        with open(cache_filepath, "w", encoding="utf-8") as f:
+            json.dump(cards, f, indent=2)
+
     return cards
 
 
 def extract_scryfall_tags(client, set_code: str) -> dict:
-    logger.info(f"Harvesting Scryfall tags for {set_code}...")
-    tags_map = {}
+    """
+    Fetches community tags. Tags change, so we cache this with a 7-day TTL (Time To Live).
+    """
     if "CUBE" in set_code.upper():
-        return tags_map
+        return {}
+
+    cache_filepath = os.path.join(SCRYFALL_CACHE_DIR, f"{set_code}_tags.json")
+
+    # 1. Check if we have tags cached AND they are less than 7 days old
+    if os.path.exists(cache_filepath):
+        file_age_days = (time.time() - os.path.getmtime(cache_filepath)) / 86400
+        if file_age_days < 7.0:
+            logger.info(
+                f"   [Scryfall] Loading {set_code} tags from local repository (Age: {file_age_days:.1f} days)."
+            )
+            try:
+                with open(cache_filepath, "r", encoding="utf-8") as f:
+                    return json.load(f)
+            except json.JSONDecodeError:
+                pass  # Corrupted, fall through to re-fetch
+        else:
+            logger.info(
+                f"   [Scryfall] {set_code} tags are {file_age_days:.1f} days old. Refreshing from API..."
+            )
+
+    # 2. If missing or expired, fetch from Scryfall
+    logger.info(f"   [Scryfall] Harvesting Scryfall tags for {set_code}...")
+    tags_map = {}
 
     for tag_key, query_str in config.O_TAGS.items():
         query = f"set:{set_code} ({query_str})"
@@ -156,10 +183,13 @@ def extract_scryfall_tags(client, set_code: str) -> dict:
                 resp = client.respectful_get(url, allow_404=True)
                 if resp.status_code == 404:
                     break
+
                 try:
                     data = resp.json()
                 except json.JSONDecodeError as e:
-                    logger.warning(f"Non-JSON Scryfall response for tag '{tag_key}' ({set_code}): {e}")
+                    logger.warning(
+                        f"Non-JSON Scryfall response for tag '{tag_key}' ({set_code}): {e}"
+                    )
                     break
 
                 for c in data.get("data", []):
@@ -170,7 +200,14 @@ def extract_scryfall_tags(client, set_code: str) -> dict:
 
                 url = data.get("next_page")
         except Exception as e:
-            logger.warning(f"Failed to fetch tag '{tag_key}' for {set_code}: {e}. Skipping tag.")
+            logger.warning(
+                f"Failed to fetch tag '{tag_key}' for {set_code}: {e}. Skipping tag."
+            )
+
+    # 3. Save to disk with updated modified time
+    if tags_map:
+        with open(cache_filepath, "w", encoding="utf-8") as f:
+            json.dump(tags_map, f, indent=2)
 
     return tags_map
 
@@ -187,7 +224,9 @@ def extract_17lands_data(client, set_code: str, draft_format: str) -> dict:
             data = client.respectful_get(url).json()
 
             if color == "All Decks" and not data:
-                logger.warning(f"No baseline data for {set_code} {draft_format}. Aborting archetype fetch.")
+                logger.warning(
+                    f"No baseline data for {set_code} {draft_format}. Aborting archetype fetch."
+                )
                 break
 
             archetype_data[color] = {}

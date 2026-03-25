@@ -73,3 +73,15 @@ def save_report(report_data: dict):
 
     atomic_write(filepath, _write_json)
     logger.info(f"Run report saved → {filepath}")
+
+
+def load_existing_manifest() -> dict:
+    filepath = os.path.join(config.OUTPUT_DIR, "manifest.json")
+    if os.path.exists(filepath):
+        try:
+            with open(filepath, "r") as f:
+                return json.load(f)
+        except Exception as e:
+            logger.warning(f"Could not load existing manifest, creating new one: {e}")
+
+    return {"datasets": {}}
