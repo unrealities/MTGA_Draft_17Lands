@@ -32,24 +32,24 @@ class ComparePanel(ttk.Frame):
         self._update_content()
 
     def _build_ui(self):
-        bar = ttk.Frame(self, style="Card.TFrame", padding=5)
-        bar.pack(fill="x", pady=(0, 5))
+        bar = ttk.Frame(self, style="Card.TFrame", padding=Theme.scaled_val(5))
+        bar.pack(fill="x", pady=Theme.scaled_val((0, 5)))
 
         ttk.Label(
             bar,
             text="SEARCH:",
-            font=(Theme.FONT_FAMILY, 8, "bold"),
+            font=Theme.scaled_font(8, "bold"),
             bootstyle="primary",
-        ).pack(side="left", padx=5)
+        ).pack(side="left", padx=Theme.scaled_val(5))
         self.entry_card = AutocompleteEntry(bar, completion_list=[], width=40)
-        self.entry_card.pack(side="left", fill="x", expand=True, padx=5)
+        self.entry_card.pack(side="left", fill="x", expand=True, padx=Theme.scaled_val(5))
         self.entry_card.bind("<Return>", self._add_card)
 
         ttk.Button(bar, text="Add", width=8, command=self._add_card).pack(
-            side="left", padx=2
+            side="left", padx=Theme.scaled_val(2)
         )
         ttk.Button(bar, text="Clear", command=self._clear_list).pack(
-            side="right", padx=5
+            side="right", padx=Theme.scaled_val(5)
         )
 
         self.table_manager = DynamicTreeviewManager(
@@ -177,5 +177,5 @@ class ComparePanel(ttk.Frame):
                 self.table,
                 card,
                 self.configuration.features.images_enabled,
-                constants.UI_SIZE_DICT.get(self.configuration.settings.ui_size, 1.0),
+                Theme.current_scale,
             )

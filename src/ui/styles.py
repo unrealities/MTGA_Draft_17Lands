@@ -12,6 +12,7 @@ import sys
 import os
 import re
 import logging
+from typing import Any, Optional
 from tkinter import font as tkfont
 from src.constants import RESOURCE_DIR
 
@@ -44,6 +45,26 @@ class Theme:
     )
     FONT_SIZE_MAIN = 10
     FONT_SIZE_SMALL = 9
+    current_scale: float = 1.0
+
+    @classmethod
+    def scaled_font(cls, size: int, weight: Optional[str] = None, family: Optional[str] = None) -> tuple:
+        """Returns a scaled font tuple."""
+        f_family = family if family else cls.FONT_FAMILY
+        f_size = max(4, int(size * cls.current_scale))
+        if weight:
+            return (f_family, f_size, weight)
+        return (f_family, f_size)
+
+    @classmethod
+    def scaled_val(cls, val: Any) -> Any:
+        """Returns a scaled integer value or sequence of values."""
+        if isinstance(val, (list, tuple)):
+            return type(val)(int(v * cls.current_scale) for v in val)
+        try:
+            return int(val * cls.current_scale)
+        except (TypeError, ValueError):
+            return val
 
     # --- BRIDGE VARIABLES ---
     BG_PRIMARY = "#0f172a"
@@ -92,6 +113,7 @@ class Theme:
 
     @classmethod
     def apply(cls, root, palette="Neutral", engine=None, custom_path="", scale=1.0):
+        cls.current_scale = scale
         style = ttk.Style()
         is_custom_loaded = False
 
@@ -290,7 +312,7 @@ class Theme:
 
             style.configure(
                 "TNotebook.Tab",
-                padding=[12, 6],
+                padding=cls.scaled_val([12, 6]),
                 font=(cls.FONT_FAMILY, main_font_size, "bold"),
             )
             style.map(

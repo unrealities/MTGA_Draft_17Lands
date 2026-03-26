@@ -24,12 +24,12 @@ class TierListWindow(ttk.Frame):
         self._update_history_table()
 
     def _build_ui(self):
-        container = ttk.Frame(self, padding=10)
+        container = ttk.Frame(self, padding=Theme.scaled_val(10))
         container.pack(fill="both", expand=True)
 
         # --- 1. MANAGEMENT BAR ---
         top_bar = ttk.Frame(container)
-        top_bar.pack(fill="x", pady=(0, 5))
+        top_bar.pack(fill="x", pady=Theme.scaled_val((0, 5)))
 
         ttk.Label(top_bar, text="IMPORTED TIER LISTS", bootstyle="secondary").pack(
             side="left"
@@ -41,7 +41,7 @@ class TierListWindow(ttk.Frame):
             bootstyle="danger-outline",
             command=self._delete_selected,
         )
-        self.btn_delete.pack(side="right", padx=(5, 0))
+        self.btn_delete.pack(side="right", padx=Theme.scaled_val((5, 0)))
 
         self.var_filter = tkinter.StringVar(value="All Sets")
         self.combo_filter = ttk.Combobox(
@@ -51,7 +51,7 @@ class TierListWindow(ttk.Frame):
         self.combo_filter.bind("<<ComboboxSelected>>", lambda e: self.refresh())
 
         ttk.Label(top_bar, text="Filter:", bootstyle="secondary").pack(
-            side="right", padx=5
+            side="right", padx=Theme.scaled_val(5)
         )
 
         # --- 2. HISTORY TABLE ---
@@ -63,18 +63,18 @@ class TierListWindow(ttk.Frame):
             static_columns=["Set", "Label", "Date"],
             height=4,
         )
-        self.table_manager.pack(fill="both", expand=True, pady=(0, 15))
+        self.table_manager.pack(fill="both", expand=True, pady=Theme.scaled_val((0, 15)))
         self.table = self.table_manager.tree
 
         # --- 3. IMPORT FORM ---
-        form_frame = ttk.Frame(container, style="Card.TFrame", padding=15)
+        form_frame = ttk.Frame(container, style="Card.TFrame", padding=Theme.scaled_val(15))
         form_frame.pack(fill="x")
         ttk.Label(
             form_frame,
             text="IMPORT NEW TIER LIST",
-            font=(Theme.FONT_FAMILY, 9, "bold"),
+            font=Theme.scaled_font(9, "bold"),
             bootstyle="primary",
-        ).pack(anchor="w", pady=(0, 10))
+        ).pack(anchor="w", pady=Theme.scaled_val((0, 10)))
         ttk.Label(form_frame, text="17LANDS URL:", bootstyle="secondary").pack(
             anchor="w"
         )
@@ -82,13 +82,13 @@ class TierListWindow(ttk.Frame):
             value="https://www.17lands.com/tier_list/..."
         )
         self.entry_url = ttk.Entry(form_frame, textvariable=self.vars["url"])
-        self.entry_url.pack(fill="x", pady=(2, 10))
+        self.entry_url.pack(fill="x", pady=Theme.scaled_val((2, 10)))
         ttk.Label(
             form_frame, text="CUSTOM LABEL (e.g. 'Pro Review'):", bootstyle="secondary"
         ).pack(anchor="w")
         self.vars["label"] = tkinter.StringVar()
         self.entry_label = ttk.Entry(form_frame, textvariable=self.vars["label"])
-        self.entry_label.pack(fill="x", pady=(2, 15))
+        self.entry_label.pack(fill="x", pady=Theme.scaled_val((2, 15)))
         self.btn_import = ttk.Button(
             form_frame, text="Download & Index Tier List", command=self._start_import
         )
@@ -96,7 +96,7 @@ class TierListWindow(ttk.Frame):
         self.vars["status"] = tkinter.StringVar(value="Ready")
         ttk.Label(
             form_frame, textvariable=self.vars["status"], bootstyle="secondary"
-        ).pack(pady=(5, 0))
+        ).pack(pady=Theme.scaled_val((5, 0)))
 
     def _update_history_table(self):
         for item in self.table.get_children():

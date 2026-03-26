@@ -70,8 +70,8 @@ class SuggestDeckPanel(ttk.Frame):
         self._calculate_suggestions()
 
     def _build_ui(self):
-        self.header = ttk.Frame(self, style="Card.TFrame", padding=5)
-        self.header.pack(fill="x", pady=(0, 0))
+        self.header = ttk.Frame(self, style="Card.TFrame", padding=Theme.scaled_val(5))
+        self.header.pack(fill="x", pady=Theme.scaled_val((0, 0)))
 
         # --- Row 1: Archetype Controls ---
         self.arch_frame = ttk.Frame(self.header, style="Card.TFrame")
@@ -80,10 +80,10 @@ class SuggestDeckPanel(ttk.Frame):
         self.lbl_archetype = ttk.Label(
             self.arch_frame,
             text="AI SUGGESTION:",
-            font=(Theme.FONT_FAMILY, 8, "bold"),
+            font=Theme.scaled_font(8, "bold"),
             bootstyle="primary",
         )
-        self.lbl_archetype.pack(side="left", padx=5)
+        self.lbl_archetype.pack(side="left", padx=Theme.scaled_val(5))
         self.bind_all("<<ThemeChanged>>", self._on_theme_change, add="+")
 
         self.var_archetype = tkinter.StringVar()
@@ -94,12 +94,12 @@ class SuggestDeckPanel(ttk.Frame):
             style="TMenubutton",
             command=self._on_deck_selection_change,
         )
-        self.om_archetype.pack(side="left", padx=10, fill="x", expand=True)
+        self.om_archetype.pack(side="left", padx=Theme.scaled_val(10), fill="x", expand=True)
 
         self.btn_copy = ttk.Button(
             self.arch_frame, text="Copy Deck", width=12, command=self._copy_to_clipboard
         )
-        self.btn_copy.pack(side="right", padx=5)
+        self.btn_copy.pack(side="right", padx=Theme.scaled_val(5))
 
         if self.on_export_custom:
             self.btn_export_builder = ttk.Button(
@@ -110,24 +110,24 @@ class SuggestDeckPanel(ttk.Frame):
                     self.current_deck_list, self.current_sb_list
                 ),
             )
-            self.btn_export_builder.pack(side="right", padx=5)
+            self.btn_export_builder.pack(side="right", padx=Theme.scaled_val(5))
 
-        self.notes_frame = ttk.Frame(self, style="Card.TFrame", padding=(10, 0, 5, 5))
-        self.notes_frame.pack(fill="x", pady=(0, 5))
+        self.notes_frame = ttk.Frame(self, style="Card.TFrame", padding=Theme.scaled_val((10, 0, 5, 5)))
+        self.notes_frame.pack(fill="x", pady=Theme.scaled_val((0, 5)))
         self.lbl_deck_notes = ttk.Label(
             self.notes_frame,
             text="",
-            font=(Theme.FONT_FAMILY, 9),
+            font=Theme.scaled_font(9),
             bootstyle="info",
         )
-        self.lbl_deck_notes.pack(side="left", padx=5)
+        self.lbl_deck_notes.pack(side="left", padx=Theme.scaled_val(5))
 
         # Replaced PanedWindow with a Notebook to give the tables maximum vertical space
         self.notebook = ttk.Notebook(self)
         self.notebook.pack(fill="both", expand=True)
 
         # Main Deck Tab
-        self.deck_frame = ttk.Frame(self.notebook, padding=2)
+        self.deck_frame = ttk.Frame(self.notebook, padding=Theme.scaled_val(2))
         self.notebook.add(self.deck_frame, text=" MAIN DECK (0) ")
 
         cols = ["name", "count", "cmc", "types", "colors", "gihwr"]
@@ -144,7 +144,7 @@ class SuggestDeckPanel(ttk.Frame):
         )
 
         # Sideboard Tab
-        self.sb_frame = ttk.Frame(self.notebook, padding=2)
+        self.sb_frame = ttk.Frame(self.notebook, padding=Theme.scaled_val(2))
         self.notebook.add(self.sb_frame, text=" SIDEBOARD ")
 
         self.sb_manager = DynamicTreeviewManager(
@@ -177,7 +177,7 @@ class SuggestDeckPanel(ttk.Frame):
         self.stats_scrollbar.grid(row=0, column=1, sticky="ns")
         self.stats_canvas.configure(yscrollcommand=self.stats_scrollbar.set)
 
-        self.stats_frame = ttk.Frame(self.stats_canvas, padding=15)
+        self.stats_frame = ttk.Frame(self.stats_canvas, padding=Theme.scaled_val(15))
         self.stats_canvas_window = self.stats_canvas.create_window(
             (0, 0), window=self.stats_frame, anchor="nw"
         )
@@ -199,7 +199,7 @@ class SuggestDeckPanel(ttk.Frame):
         )
 
         # --- SIMULATION & SAMPLE HAND TAB ---
-        self.hand_tab = ttk.Frame(self.notebook, padding=15)
+        self.hand_tab = ttk.Frame(self.notebook, padding=Theme.scaled_val(15))
         self.notebook.add(self.hand_tab, text=" SIMULATION & SAMPLE HAND ")
 
         # Two Columns: 0 = Hand Canvas, 1 = Monte Carlo
@@ -208,7 +208,7 @@ class SuggestDeckPanel(ttk.Frame):
         self.hand_tab.rowconfigure(1, weight=1)
 
         hand_control_bar = ttk.Frame(self.hand_tab)
-        hand_control_bar.grid(row=0, column=0, columnspan=2, sticky="ew", pady=(0, 15))
+        hand_control_bar.grid(row=0, column=0, columnspan=2, sticky="ew", pady=Theme.scaled_val((0, 15)))
 
         self.btn_draw = ttk.Button(
             hand_control_bar,
@@ -217,11 +217,11 @@ class SuggestDeckPanel(ttk.Frame):
             bootstyle="success-outline",
             width=16,
         )
-        self.btn_draw.pack(side="left", padx=5)
+        self.btn_draw.pack(side="left", padx=Theme.scaled_val(5))
 
         # Left Column: Scrollable Canvas for Sample Hand
         self.hand_canvas_frame = ttk.Frame(self.hand_tab)
-        self.hand_canvas_frame.grid(row=1, column=0, sticky="nsew", padx=(0, 15))
+        self.hand_canvas_frame.grid(row=1, column=0, sticky="nsew", padx=Theme.scaled_val((0, 15)))
         self.hand_canvas_frame.rowconfigure(0, weight=1)
         self.hand_canvas_frame.columnconfigure(0, weight=1)
 
@@ -258,7 +258,7 @@ class SuggestDeckPanel(ttk.Frame):
 
         # Right Column: Scrollable Monte Carlo Simulation
         self.sim_outer_frame = ttk.Labelframe(
-            self.hand_tab, text=" MONTE CARLO SIMULATION (10,000 Games) ", padding=5
+            self.hand_tab, text=" MONTE CARLO SIMULATION (10,000 Games) ", padding=Theme.scaled_val(5)
         )
         self.sim_outer_frame.grid(row=1, column=1, sticky="nsew")
 
@@ -275,7 +275,7 @@ class SuggestDeckPanel(ttk.Frame):
 
         self.sim_canvas.configure(yscrollcommand=self.sim_scrollbar.set)
 
-        self.sim_frame = ttk.Frame(self.sim_canvas, padding=15)
+        self.sim_frame = ttk.Frame(self.sim_canvas, padding=Theme.scaled_val(15))
         self.sim_canvas_window = self.sim_canvas.create_window(
             (0, 0), window=self.sim_frame, anchor="nw"
         )
@@ -286,7 +286,7 @@ class SuggestDeckPanel(ttk.Frame):
         def _on_sim_canvas_resize(event):
             self.sim_canvas.itemconfig(self.sim_canvas_window, width=event.width)
             # Guarantee wrapped labels fit without clipping
-            wrap_w = max(200, event.width - 40)
+            wrap_w = max(Theme.scaled_val(200), event.width - Theme.scaled_val(40))
             for child in self.sim_frame.winfo_children():
                 if isinstance(child, ttk.Label) and getattr(
                     child, "is_dynamic_wrap", False
@@ -307,10 +307,10 @@ class SuggestDeckPanel(ttk.Frame):
         self.sim_label = ttk.Label(
             self.sim_frame,
             text="Generate a deck to analyze.",
-            font=(Theme.FONT_FAMILY, 11),
+            font=Theme.scaled_font(11),
         )
         self.sim_label.is_dynamic_wrap = True
-        self.sim_label.pack(pady=20)
+        self.sim_label.pack(pady=Theme.scaled_val(20))
 
         self.notebook.bind("<<NotebookTabChanged>>", self._on_tab_changed)
 
@@ -377,15 +377,15 @@ class SuggestDeckPanel(ttk.Frame):
         lbl = ttk.Label(
             sim_frame,
             text=msg,
-            font=(Theme.FONT_FAMILY, 10, "italic"),
+            font=Theme.scaled_font(10, "italic"),
             bootstyle="secondary",
             justify="center",
         )
         lbl.is_dynamic_wrap = True
-        lbl.pack(pady=20)
+        lbl.pack(pady=Theme.scaled_val(20))
 
         progress = ttk.Progressbar(sim_frame, mode="indeterminate")
-        progress.pack(fill="x", padx=20)
+        progress.pack(fill="x", padx=Theme.scaled_val(20))
         progress.start(15)
 
     def _show_sim_error(self, error):
@@ -399,8 +399,8 @@ class SuggestDeckPanel(ttk.Frame):
             sim_frame,
             text=f"Simulation Error:\n{error}",
             bootstyle="danger",
-            wraplength=300,
-        ).pack(pady=20)
+            wraplength=Theme.scaled_val(300),
+        ).pack(pady=Theme.scaled_val(20))
 
     def _show_sim_results(self, stats, optimization_note=None):
         sim_frame = getattr(self, "sim_frame", None)
@@ -415,13 +415,13 @@ class SuggestDeckPanel(ttk.Frame):
                 sim_frame,
                 text="Deck must have 40 cards to analyze.",
                 bootstyle="warning",
-            ).pack(pady=20)
+            ).pack(pady=Theme.scaled_val(20))
             return
 
         def _add_stat(label, value, thresholds, reverse=False, is_percent=True):
             frame = ttk.Frame(sim_frame)
-            frame.pack(fill="x", pady=2)
-            ttk.Label(frame, text=label, font=(Theme.FONT_FAMILY, 10, "bold")).pack(
+            frame.pack(fill="x", pady=Theme.scaled_val(2))
+            ttk.Label(frame, text=label, font=Theme.scaled_font(10, "bold")).pack(
                 side="left"
             )
 
@@ -450,15 +450,15 @@ class SuggestDeckPanel(ttk.Frame):
             ttk.Label(
                 right_frame,
                 text=val_str,
-                font=(Theme.FONT_FAMILY, 10, "bold"),
+                font=Theme.scaled_font(10, "bold"),
                 width=6,
                 anchor="e",
-            ).pack(side="left", padx=(0, 6))
+            ).pack(side="left", padx=Theme.scaled_val((0, 6)))
 
             ttk.Label(
                 right_frame,
                 text=icon,
-                font=(Theme.FONT_FAMILY, 10, "bold"),
+                font=Theme.scaled_font(10, "bold"),
                 bootstyle=color,
                 anchor="w",
             ).pack(side="left")
@@ -467,8 +467,8 @@ class SuggestDeckPanel(ttk.Frame):
             sim_frame,
             text="CONSISTENCY METRICS",
             bootstyle="primary",
-            font=(Theme.FONT_FAMILY, 10, "bold"),
-        ).pack(anchor="w", pady=(0, 5))
+            font=Theme.scaled_font(10, "bold"),
+        ).pack(anchor="w", pady=Theme.scaled_val((0, 5)))
 
         _add_stat("T2 Play (2-Drop):", stats["cast_t2"], (65, 50))
         _add_stat("T3 Play (3-Drop):", stats["cast_t3"], (65, 50))
@@ -476,14 +476,14 @@ class SuggestDeckPanel(ttk.Frame):
         _add_stat("Perfect Curve (T2-T4):", stats["curve_out"], (25, 15))
         _add_stat("Removal by Turn 4:", stats["removal_t4"], (60, 45))
 
-        ttk.Separator(sim_frame).pack(fill="x", pady=8)
+        ttk.Separator(sim_frame).pack(fill="x", pady=Theme.scaled_val(8))
 
         ttk.Label(
             sim_frame,
             text="RISK FACTORS",
             bootstyle="primary",
-            font=(Theme.FONT_FAMILY, 10, "bold"),
-        ).pack(anchor="w", pady=(0, 5))
+            font=Theme.scaled_font(10, "bold"),
+        ).pack(anchor="w", pady=Theme.scaled_val((0, 5)))
 
         _add_stat("Mulligan Rate:", stats["mulligans"], (15, 25), reverse=True)
         _add_stat(
@@ -496,25 +496,25 @@ class SuggestDeckPanel(ttk.Frame):
         )
         _add_stat("Mana Flooded (T5):", stats["flood_t5"], (20, 30), reverse=True)
 
-        ttk.Separator(sim_frame).pack(fill="x", pady=8)
+        ttk.Separator(sim_frame).pack(fill="x", pady=Theme.scaled_val(8))
 
         # --- ADVISOR SUMMARY LOGIC ---
         ttk.Label(
             sim_frame,
             text="ADVISOR SUMMARY",
             bootstyle="info",
-            font=(Theme.FONT_FAMILY, 10, "bold"),
-        ).pack(anchor="w", pady=(0, 5))
+            font=Theme.scaled_font(10, "bold"),
+        ).pack(anchor="w", pady=Theme.scaled_val((0, 5)))
 
         if optimization_note:
             lbl_opt = ttk.Label(
                 sim_frame,
                 text=optimization_note,
-                font=(Theme.FONT_FAMILY, 9, "bold"),
+                font=Theme.scaled_font(9, "bold"),
                 bootstyle="success",
             )
             lbl_opt.is_dynamic_wrap = True
-            lbl_opt.pack(anchor="w", pady=2)
+            lbl_opt.pack(anchor="w", pady=Theme.scaled_val(2))
 
         advice = []
         if stats["cast_t2"] < 50:
@@ -606,9 +606,9 @@ class SuggestDeckPanel(ttk.Frame):
                         )
 
         for tip in advice:
-            lbl_tip = ttk.Label(sim_frame, text=tip, font=(Theme.FONT_FAMILY, 9))
+            lbl_tip = ttk.Label(sim_frame, text=tip, font=Theme.scaled_font(9))
             lbl_tip.is_dynamic_wrap = True
-            lbl_tip.pack(anchor="w", pady=2)
+            lbl_tip.pack(anchor="w", pady=Theme.scaled_val(2))
 
             # Re-trigger a configure event on the parent container to format newly added labels instantly
             sim_frame.event_generate("<Configure>")
@@ -642,8 +642,8 @@ class SuggestDeckPanel(ttk.Frame):
             ttk.Label(
                 hand_container,
                 text="Generate a deck first.",
-                font=(Theme.FONT_FAMILY, 11),
-            ).pack(pady=20)
+                font=Theme.scaled_font(11),
+            ).pack(pady=Theme.scaled_val(20))
             return
 
         flat_deck = []
@@ -654,8 +654,8 @@ class SuggestDeckPanel(ttk.Frame):
             ttk.Label(
                 hand_container,
                 text="Deck has fewer than 7 cards.",
-                font=(Theme.FONT_FAMILY, 11),
-            ).pack(pady=20)
+                font=Theme.scaled_font(11),
+            ).pack(pady=Theme.scaled_val(20))
             return
 
         # Draw 7 random cards
@@ -688,17 +688,17 @@ class SuggestDeckPanel(ttk.Frame):
 
         hand.sort(key=hand_sort_key)
 
-        scale = constants.UI_SIZE_DICT.get(self.configuration.settings.ui_size, 1.0)
+        scale = Theme.current_scale
         # Reduced size for scrollability and sleeker look
-        img_w = int(180 * scale)
-        img_h = int(252 * scale)
-        offset_y = int(32 * scale)
+        img_w = Theme.scaled_val(180)
+        img_h = Theme.scaled_val(252)
+        offset_y = Theme.scaled_val(32)
 
         # Calculate exact height to allow scrolling perfectly
         stack_h = img_h + (6 * offset_y) + 20
 
         stack_container = ttk.Frame(hand_container, width=img_w, height=stack_h)
-        stack_container.pack(expand=True, pady=15)
+        stack_container.pack(expand=True, pady=Theme.scaled_val(15))
         stack_container.pack_propagate(False)
 
         def restore_z_order(event=None):
@@ -720,8 +720,8 @@ class SuggestDeckPanel(ttk.Frame):
             name_lbl = ttk.Label(
                 frame,
                 text=card.get("name", "Unknown"),
-                font=(Theme.FONT_FAMILY, 9),
-                wraplength=img_w - 10,
+                font=Theme.scaled_font(9),
+                wraplength=img_w - Theme.scaled_val(10),
                 justify="center",
                 bootstyle="inverse-secondary",
             )

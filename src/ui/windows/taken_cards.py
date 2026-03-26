@@ -97,19 +97,19 @@ class TakenCardsPanel(ttk.Frame):
 
     def _build_ui(self):
         # --- Control Bar ---
-        self.filter_frame = ttk.Frame(self, style="Card.TFrame", padding=5)
-        self.filter_frame.pack(fill="x", pady=(0, 5))
+        self.filter_frame = ttk.Frame(self, style="Card.TFrame", padding=Theme.scaled_val(5))
+        self.filter_frame.pack(fill="x", pady=Theme.scaled_val((0, 5)))
 
         type_grp = ttk.Frame(self.filter_frame, style="Card.TFrame")
-        type_grp.pack(side="left", padx=5)
+        type_grp.pack(side="left", padx=Theme.scaled_val(5))
 
         self.lbl_filter = ttk.Label(
             type_grp,
             text="FILTER:",
-            font=(Theme.FONT_FAMILY, 8, "bold"),
+            font=Theme.scaled_font(8, "bold"),
             bootstyle="primary",
         )
-        self.lbl_filter.pack(side="left", padx=5)
+        self.lbl_filter.pack(side="left", padx=Theme.scaled_val(5))
         self.bind_all("<<ThemeChanged>>", self._on_theme_change, add="+")
 
         self.vars = {}
@@ -123,7 +123,7 @@ class TakenCardsPanel(ttk.Frame):
             self.vars[key] = var
             ttk.Checkbutton(
                 type_grp, text=lbl, variable=var, command=self.refresh
-            ).pack(side="left", padx=3)
+            ).pack(side="left", padx=Theme.scaled_val(3))
 
         # View Toggle & Export
         btn_frame = ttk.Frame(self.filter_frame, style="Card.TFrame")
@@ -135,12 +135,12 @@ class TakenCardsPanel(ttk.Frame):
             command=self._toggle_view,
             bootstyle="info-outline",
         )
-        self.btn_view.pack(side="left", padx=5)
+        self.btn_view.pack(side="left", padx=Theme.scaled_val(5))
 
         self.btn_export = ttk.Button(
             btn_frame, text="Export Pool", command=self._copy_to_clipboard
         )
-        self.btn_export.pack(side="left", padx=5)
+        self.btn_export.pack(side="left", padx=Theme.scaled_val(5))
 
         # --- Content Container ---
         self.content_area = ttk.Frame(self)
@@ -300,7 +300,7 @@ class TakenCardsPanel(ttk.Frame):
 
             # Create Column
             pile_frame = ttk.Frame(self.visual_scroller.scrollable_frame)
-            pile_frame.pack(side="left", fill="y", padx=5, pady=5, anchor="n")
+            pile_frame.pack(side="left", fill="y", padx=Theme.scaled_val(5), pady=Theme.scaled_val(5), anchor="n")
 
             # Use the CardPile component
             pile = CardPile(pile_frame, title=f"CMC {key}", app_instance=self)
@@ -348,5 +348,5 @@ class TakenCardsPanel(ttk.Frame):
                 self.table,
                 card,
                 self.configuration.features.images_enabled,
-                constants.UI_SIZE_DICT.get(self.configuration.settings.ui_size, 1.0),
+                Theme.current_scale,
             )

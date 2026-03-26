@@ -139,26 +139,26 @@ class CustomDeckPanel(ttk.Frame):
 
     def _build_ui(self):
         # --- CONTROL BAR ---
-        self.header = ttk.Frame(self, style="Card.TFrame", padding=5)
-        self.header.pack(fill="x", pady=(0, 5))
+        self.header = ttk.Frame(self, style="Card.TFrame", padding=Theme.scaled_val(5))
+        self.header.pack(fill="x", pady=Theme.scaled_val((0, 5)))
 
         ttk.Button(
             self.header,
             text="Clear",
             bootstyle="danger-outline",
             command=self._clear_deck,
-        ).pack(side="left", padx=5)
+        ).pack(side="left", padx=Theme.scaled_val(5))
 
         ttk.Button(
             self.header,
             text="Auto-Lands",
             bootstyle="info",
             command=self._apply_auto_lands,
-        ).pack(side="left", padx=5)
+        ).pack(side="left", padx=Theme.scaled_val(5))
 
         # Smart Basics Toolbar (Left Click = Add, Right Click = Remove)
         self.basics_frame = ttk.Frame(self.header, style="Card.TFrame")
-        self.basics_frame.pack(side="left", padx=(15, 2))
+        self.basics_frame.pack(side="left", padx=Theme.scaled_val((15, 2)))
 
         self.basic_buttons = {}
         basics = [
@@ -170,7 +170,7 @@ class CustomDeckPanel(ttk.Frame):
         ]
         for sym, name, style in basics:
             btn = ttk.Button(
-                self.basics_frame, text=f"{sym}: 0", bootstyle=style, width=5, padding=5
+                self.basics_frame, text=f"{sym}: 0", bootstyle=style, width=5, padding=Theme.scaled_val(5)
             )
 
             # Standard Add (Left Click)
@@ -192,7 +192,7 @@ class CustomDeckPanel(ttk.Frame):
         self.btn_copy = ttk.Button(
             self.header, text="Copy Deck", width=10, command=self._copy_to_clipboard
         )
-        self.btn_copy.pack(side="right", padx=5)
+        self.btn_copy.pack(side="right", padx=Theme.scaled_val(5))
 
         self.btn_sim = ttk.Button(
             self.header,
@@ -200,7 +200,7 @@ class CustomDeckPanel(ttk.Frame):
             bootstyle="success",
             command=self._run_simulation,
         )
-        self.btn_sim.pack(side="right", padx=15)
+        self.btn_sim.pack(side="right", padx=Theme.scaled_val(15))
 
         # --- TABBED LAYOUT ---
         self.notebook = ttk.Notebook(self)
@@ -211,10 +211,10 @@ class CustomDeckPanel(ttk.Frame):
         self.notebook.add(self.builder_tab, text=" DECK BUILDER ")
 
         self.v_split = ttk.PanedWindow(self.builder_tab, orient=tkinter.VERTICAL)
-        self.v_split.pack(fill="both", expand=True, padx=2, pady=2)
+        self.v_split.pack(fill="both", expand=True, padx=Theme.scaled_val(2), pady=Theme.scaled_val(2))
 
         self.deck_frame = ttk.Labelframe(
-            self.v_split, text=" MAIN DECK (0) ", padding=2
+            self.v_split, text=" MAIN DECK (0) ", padding=Theme.scaled_val(2)
         )
         self.v_split.add(self.deck_frame, weight=3)
         self.deck_manager = DynamicTreeviewManager(
@@ -225,7 +225,7 @@ class CustomDeckPanel(ttk.Frame):
         )
         self.deck_manager.pack(fill="both", expand=True)
 
-        self.sb_frame = ttk.Labelframe(self.v_split, text=" SIDEBOARD (0) ", padding=2)
+        self.sb_frame = ttk.Labelframe(self.v_split, text=" SIDEBOARD (0) ", padding=Theme.scaled_val(2))
         self.v_split.add(self.sb_frame, weight=2)
         self.sb_manager = DynamicTreeviewManager(
             self.sb_frame,
@@ -249,7 +249,7 @@ class CustomDeckPanel(ttk.Frame):
         self.stats_tab.rowconfigure(0, weight=1)
         self.stats_tab.columnconfigure(0, weight=1)
         self.stats_canvas.configure(yscrollcommand=self.stats_scrollbar.set)
-        self.stats_frame = ttk.Frame(self.stats_canvas, padding=15)
+        self.stats_frame = ttk.Frame(self.stats_canvas, padding=Theme.scaled_val(15))
         self.stats_canvas_window = self.stats_canvas.create_window(
             (0, 0), window=self.stats_frame, anchor="nw"
         )
@@ -270,21 +270,21 @@ class CustomDeckPanel(ttk.Frame):
         bind_scroll(self.stats_frame, self.stats_canvas.yview_scroll)
 
         # 3. Sim & Hand Tab
-        self.hand_tab = ttk.Frame(self.notebook, padding=15)
+        self.hand_tab = ttk.Frame(self.notebook, padding=Theme.scaled_val(15))
         self.notebook.add(self.hand_tab, text=" SIMULATION & SAMPLE HAND ")
         self.hand_tab.columnconfigure(0, weight=3)
         self.hand_tab.columnconfigure(1, weight=5)
         self.hand_tab.rowconfigure(1, weight=1)
 
         hand_control_bar = ttk.Frame(self.hand_tab)
-        hand_control_bar.grid(row=0, column=0, columnspan=2, sticky="ew", pady=(0, 15))
+        hand_control_bar.grid(row=0, column=0, columnspan=2, sticky="ew", pady=Theme.scaled_val((0, 15)))
         ttk.Button(
             hand_control_bar,
             text="Draw New Hand",
             command=self._draw_sample_hand,
             bootstyle="success-outline",
             width=16,
-        ).pack(side="left", padx=5)
+        ).pack(side="left", padx=Theme.scaled_val(5))
 
         self.btn_optimize = ttk.Button(
             hand_control_bar,
@@ -292,10 +292,10 @@ class CustomDeckPanel(ttk.Frame):
             command=self._auto_optimize_deck,
             bootstyle="info",
         )
-        self.btn_optimize.pack(side="left", padx=10)
+        self.btn_optimize.pack(side="left", padx=Theme.scaled_val(10))
 
         self.hand_canvas_frame = ttk.Frame(self.hand_tab)
-        self.hand_canvas_frame.grid(row=1, column=0, sticky="nsew", padx=(0, 15))
+        self.hand_canvas_frame.grid(row=1, column=0, sticky="nsew", padx=Theme.scaled_val((0, 15)))
         self.hand_canvas_frame.rowconfigure(0, weight=1)
         self.hand_canvas_frame.columnconfigure(0, weight=1)
 
@@ -329,7 +329,7 @@ class CustomDeckPanel(ttk.Frame):
         bind_scroll(self.hand_container, self.hand_canvas.yview_scroll)
 
         self.sim_outer_frame = ttk.Labelframe(
-            self.hand_tab, text=" MONTE CARLO SIMULATION (10,000 Games) ", padding=5
+            self.hand_tab, text=" MONTE CARLO SIMULATION (10,000 Games) ", padding=Theme.scaled_val(5)
         )
         self.sim_outer_frame.grid(row=1, column=1, sticky="nsew")
         self.sim_canvas = tkinter.Canvas(
@@ -344,7 +344,7 @@ class CustomDeckPanel(ttk.Frame):
         self.sim_outer_frame.columnconfigure(0, weight=1)
 
         self.sim_canvas.configure(yscrollcommand=self.sim_scrollbar.set)
-        self.sim_frame = ttk.Frame(self.sim_canvas, padding=15)
+        self.sim_frame = ttk.Frame(self.sim_canvas, padding=Theme.scaled_val(15))
         self.sim_canvas_window = self.sim_canvas.create_window(
             (0, 0), window=self.sim_frame, anchor="nw"
         )
@@ -352,7 +352,7 @@ class CustomDeckPanel(ttk.Frame):
         # Attach the dynamic label wrapper to the canvas resize event
         def _on_sim_canvas_resize(event):
             self.sim_canvas.itemconfig(self.sim_canvas_window, width=event.width)
-            wrap_w = max(200, event.width - 40)
+            wrap_w = max(Theme.scaled_val(200), event.width - Theme.scaled_val(40))
             for child in self.sim_frame.winfo_children():
                 if getattr(child, "is_dynamic_wrap", False):
                     child.configure(wraplength=wrap_w)
@@ -372,10 +372,10 @@ class CustomDeckPanel(ttk.Frame):
         self.sim_label = ttk.Label(
             self.sim_frame,
             text="Generate a deck to run simulations.",
-            font=(Theme.FONT_FAMILY, 11),
+            font=Theme.scaled_font(11),
         )
         self.sim_label.is_dynamic_wrap = True
-        self.sim_label.pack(pady=20)
+        self.sim_label.pack(pady=Theme.scaled_val(20))
 
         self.notebook.bind("<<NotebookTabChanged>>", self._on_tab_changed)
 
@@ -620,16 +620,16 @@ class CustomDeckPanel(ttk.Frame):
         lbl = ttk.Label(
             self.sim_frame,
             text=msg,
-            font=(Theme.FONT_FAMILY, 10, "italic"),
+            font=Theme.scaled_font(10, "italic"),
             bootstyle="secondary",
             justify="center",
-            wraplength=300,
+            wraplength=Theme.scaled_val(300),
         )
         lbl.is_dynamic_wrap = True
-        lbl.pack(pady=20)
+        lbl.pack(pady=Theme.scaled_val(20))
 
         progress = ttk.Progressbar(self.sim_frame, mode="indeterminate")
-        progress.pack(fill="x", padx=20)
+        progress.pack(fill="x", padx=Theme.scaled_val(20))
         progress.start(15)
 
     def _show_sim_error(self, error):
@@ -639,10 +639,10 @@ class CustomDeckPanel(ttk.Frame):
             self.sim_frame,
             text=f"Simulation Error:\n{error}",
             bootstyle="danger",
-            wraplength=300,
+            wraplength=Theme.scaled_val(300),
         )
         lbl.is_dynamic_wrap = True
-        lbl.pack(pady=20)
+        lbl.pack(pady=Theme.scaled_val(20))
 
     # --- BASIC LAND HANDLERS ---
     def _on_basic_remove(self, event, color_name):
@@ -1088,26 +1088,26 @@ class CustomDeckPanel(ttk.Frame):
         top_tribes = sorted(subtypes.items(), key=lambda x: x[1], reverse=True)[:5]
 
         comp_frame = ttk.Frame(self.stats_frame)
-        comp_frame.pack(fill="x", pady=5)
+        comp_frame.pack(fill="x", pady=Theme.scaled_val(5))
         ttk.Label(
             comp_frame,
             text="DECK COMPOSITION",
-            font=(Theme.FONT_FAMILY, 10, "bold"),
+            font=Theme.scaled_font(10, "bold"),
             bootstyle="primary",
         ).pack(anchor="w")
         ttk.Label(
             comp_frame,
             text=f"Total Cards: {total_cards}  |  Creatures: {creatures}  |  Non-Creatures: {spells}  |  Lands: {lands}",
-        ).pack(anchor="w", pady=2)
+        ).pack(anchor="w", pady=Theme.scaled_val(2))
 
-        ttk.Separator(self.stats_frame, orient="horizontal").pack(fill="x", pady=8)
+        ttk.Separator(self.stats_frame, orient="horizontal").pack(fill="x", pady=Theme.scaled_val(8))
 
         color_frame = ttk.Frame(self.stats_frame)
-        color_frame.pack(fill="x", pady=5)
+        color_frame.pack(fill="x", pady=Theme.scaled_val(5))
         ttk.Label(
             color_frame,
             text="COLOR REQUIREMENTS (PIPS)",
-            font=(Theme.FONT_FAMILY, 10, "bold"),
+            font=Theme.scaled_font(10, "bold"),
             bootstyle="primary",
         ).pack(anchor="w")
 
@@ -1123,16 +1123,16 @@ class CustomDeckPanel(ttk.Frame):
                 pip_str.append(f"{name} ({symbol}): {pips[symbol]}")
         ttk.Label(
             color_frame, text="  |  ".join(pip_str) if pip_str else "Colorless"
-        ).pack(anchor="w", pady=2)
+        ).pack(anchor="w", pady=Theme.scaled_val(2))
 
-        ttk.Separator(self.stats_frame, orient="horizontal").pack(fill="x", pady=8)
+        ttk.Separator(self.stats_frame, orient="horizontal").pack(fill="x", pady=Theme.scaled_val(8))
 
         tags_frame = ttk.Frame(self.stats_frame)
-        tags_frame.pack(fill="x", pady=5)
+        tags_frame.pack(fill="x", pady=Theme.scaled_val(5))
         ttk.Label(
             tags_frame,
             text="ROLES & SYNERGIES",
-            font=(Theme.FONT_FAMILY, 10, "bold"),
+            font=Theme.scaled_font(10, "bold"),
             bootstyle="primary",
         ).pack(anchor="w")
 
@@ -1146,29 +1146,29 @@ class CustomDeckPanel(ttk.Frame):
 
             for i in range(0, len(tag_str), 4):
                 ttk.Label(tags_frame, text="    ".join(tag_str[i : i + 4])).pack(
-                    anchor="w", pady=2
+                    anchor="w", pady=Theme.scaled_val(2)
                 )
         else:
             ttk.Label(
                 tags_frame,
                 text="No Scryfall tags found for this set.",
                 bootstyle="secondary",
-            ).pack(anchor="w", pady=2)
+            ).pack(anchor="w", pady=Theme.scaled_val(2))
 
         if top_tribes:
             tribe_str = "  |  ".join([f"{t}: {c}" for t, c in top_tribes])
             ttk.Label(
-                tags_frame, text=f"Top Tribes: {tribe_str}", font=(Theme.FONT_FAMILY, 9)
-            ).pack(anchor="w", pady=4)
+                tags_frame, text=f"Top Tribes: {tribe_str}", font=Theme.scaled_font(9)
+            ).pack(anchor="w", pady=Theme.scaled_val(4))
 
-        ttk.Separator(self.stats_frame, orient="horizontal").pack(fill="x", pady=8)
+        ttk.Separator(self.stats_frame, orient="horizontal").pack(fill="x", pady=Theme.scaled_val(8))
 
         curve_frame = ttk.Frame(self.stats_frame)
-        curve_frame.pack(fill="x", pady=5)
+        curve_frame.pack(fill="x", pady=Theme.scaled_val(5))
         ttk.Label(
             curve_frame,
             text=f"MANA CURVE (Avg CMC: {avg_cmc:.2f})",
-            font=(Theme.FONT_FAMILY, 10, "bold"),
+            font=Theme.scaled_font(10, "bold"),
             bootstyle="primary",
         ).pack(anchor="w")
         for i in range(1, 7):
@@ -1177,8 +1177,8 @@ class CustomDeckPanel(ttk.Frame):
             ttk.Label(
                 curve_frame,
                 text=f"{lbl:<8} {'█'*cnt} ({cnt})",
-                font=(constants.FONT_MONO_SPACE, 10),
-            ).pack(anchor="w", pady=1)
+                font=Theme.scaled_font(10, family=constants.FONT_MONO_SPACE),
+            ).pack(anchor="w", pady=Theme.scaled_val(1))
 
     def _simulate_deck(self, deck_list, iterations=10000):
         flat_deck = []
@@ -1353,13 +1353,13 @@ class CustomDeckPanel(ttk.Frame):
                 bootstyle="warning",
             )
             lbl.is_dynamic_wrap = True
-            lbl.pack(pady=20)
+            lbl.pack(pady=Theme.scaled_val(20))
             return
 
         def _add_stat(label, value, thresholds, reverse=False, is_percent=True):
             frame = ttk.Frame(self.sim_frame)
-            frame.pack(fill="x", pady=2)
-            ttk.Label(frame, text=label, font=(Theme.FONT_FAMILY, 10, "bold")).pack(
+            frame.pack(fill="x", pady=Theme.scaled_val(2))
+            ttk.Label(frame, text=label, font=Theme.scaled_font(10, "bold")).pack(
                 side="left"
             )
             g, f = thresholds
@@ -1383,10 +1383,10 @@ class CustomDeckPanel(ttk.Frame):
             ttk.Label(
                 rf,
                 text=val_str,
-                font=(Theme.FONT_FAMILY, 10, "bold"),
+                font=Theme.scaled_font(10, "bold"),
                 width=6,
                 anchor="e",
-            ).pack(side="left", padx=(0, 6))
+            ).pack(side="left", padx=Theme.scaled_val((0, 6)))
             ttk.Label(
                 rf, text=icon, font=(Theme.FONT_FAMILY, 10, "bold"), bootstyle=color
             ).pack(side="left")
@@ -1402,7 +1402,7 @@ class CustomDeckPanel(ttk.Frame):
         _add_stat("T4 Play (4-Drop):", stats["cast_t4"], (55, 40))
         _add_stat("Perfect Curve (T2-T4):", stats["curve_out"], (25, 15))
         _add_stat("Removal by Turn 4:", stats["removal_t4"], (60, 45))
-        ttk.Separator(self.sim_frame).pack(fill="x", pady=8)
+        ttk.Separator(self.sim_frame).pack(fill="x", pady=Theme.scaled_val(8))
 
         ttk.Label(
             self.sim_frame,
@@ -1425,7 +1425,7 @@ class CustomDeckPanel(ttk.Frame):
         )
         _add_stat("Mana Flooded (T5):", stats["flood_t5"], (20, 30), reverse=True)
 
-        ttk.Separator(self.sim_frame).pack(fill="x", pady=8)
+        ttk.Separator(self.sim_frame).pack(fill="x", pady=Theme.scaled_val(8))
 
         ttk.Label(
             self.sim_frame,
@@ -1539,9 +1539,9 @@ class CustomDeckPanel(ttk.Frame):
             )
 
         for tip in advice:
-            lbl_tip = ttk.Label(self.sim_frame, text=tip, font=(Theme.FONT_FAMILY, 9))
+            lbl_tip = ttk.Label(self.sim_frame, text=tip, font=Theme.scaled_font(9))
             lbl_tip.is_dynamic_wrap = True
-            lbl_tip.pack(anchor="w", pady=2)
+            lbl_tip.pack(anchor="w", pady=Theme.scaled_val(2))
 
         self.after(
             50,
@@ -1572,12 +1572,11 @@ class CustomDeckPanel(ttk.Frame):
             )
         )
 
-        scale = constants.UI_SIZE_DICT.get(self.configuration.settings.ui_size, 1.0)
-        img_w, img_h, offset_y = int(180 * scale), int(252 * scale), int(32 * scale)
+        img_w, img_h, offset_y = Theme.scaled_val(180), Theme.scaled_val(252), Theme.scaled_val(32)
         stack_container = ttk.Frame(
-            self.hand_container, width=img_w, height=img_h + (6 * offset_y) + 20
+            self.hand_container, width=img_w, height=img_h + (6 * offset_y) + Theme.scaled_val(20)
         )
-        stack_container.pack(expand=True, pady=15)
+        stack_container.pack(expand=True, pady=Theme.scaled_val(15))
         stack_container.pack_propagate(False)
 
         for i, card in enumerate(hand):
@@ -1591,8 +1590,8 @@ class CustomDeckPanel(ttk.Frame):
             name_lbl = ttk.Label(
                 frame,
                 text=card.get("name", "Unknown"),
-                font=(Theme.FONT_FAMILY, 9),
-                wraplength=img_w - 10,
+                font=Theme.scaled_font(9),
+                wraplength=img_w - Theme.scaled_val(10),
                 justify="center",
                 bootstyle="inverse-secondary",
             )
