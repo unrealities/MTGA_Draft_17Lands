@@ -270,18 +270,16 @@ class CardToolTip(tkinter.Toplevel):
             lbl_rarity.configure(foreground=rc)
         lbl_rarity.pack(side="right")
 
-        b = tb.Frame(self, padding=12)
+        b = tb.Frame(self, padding=Theme.scaled_val(12))
         b.pack(fill="both", expand=True)
 
-        # --- 2. Image Container ---
-        # Reserves space immediately so the tooltip doesn't expand/jump when the image loads
         if images_enabled:
             img_w = int(240 * scale)
             img_h = int(335 * scale)
 
             self.img_frame = tb.Frame(b, width=img_w, height=img_h)
             self.img_frame.pack_propagate(False)
-            self.img_frame.pack(side="left", padx=(0, 15), anchor="n")
+            self.img_frame.pack(side="left", padx=Theme.scaled_val((0, 15)), anchor="n")
 
             self.img_label = tb.Label(self.img_frame)
             self.img_label.pack(fill="both", expand=True)
@@ -331,13 +329,13 @@ class CardToolTip(tkinter.Toplevel):
                     gf,
                     text=lbl,
                     font=(Theme.FONT_FAMILY, int(9 * scale)),
-                ).grid(row=ri, column=ci * 2, sticky="w", padx=(0, 6))
+                ).grid(row=ri, column=ci * 2, sticky="w", padx=Theme.scaled_val((0, 6)))
                 tb.Label(
                     gf,
                     text=val,
                     foreground=col,
                     font=(Theme.FONT_FAMILY, int(9 * scale), "bold"),
-                ).grid(row=ri, column=ci * 2 + 1, sticky="w", padx=(0, 20))
+                ).grid(row=ri, column=ci * 2 + 1, sticky="w", padx=Theme.scaled_val((0, 20)))
         va = sorted(
             [
                 k
@@ -607,7 +605,7 @@ class ModernTreeview(ttk.Treeview):
             if i == "add_btn":
                 self.heading(i, text="+")
                 self.column(
-                    i, width=20, minwidth=20, stretch=False, anchor=tkinter.CENTER
+                    i, width=Theme.scaled_val(20), minwidth=Theme.scaled_val(20), stretch=False, anchor=tkinter.CENTER
                 )
                 continue
             l = (
@@ -617,7 +615,6 @@ class ModernTreeview(ttk.Treeview):
             )
             self.base_labels[i] = l
 
-            # Immediately draw the sort indicator (arrow) if a sort state was inherited
             if i == self.active_sort_column:
                 rev = self.column_sort_state.get(i, False)
                 display_text = f"{l} {'▼' if rev else '▲'}"
@@ -627,8 +624,8 @@ class ModernTreeview(ttk.Treeview):
             self.heading(i, text=display_text)
             self.column(
                 i,
-                width=140 if i == "name" else 50,
-                minwidth=70 if i == "name" else 30,
+                width=Theme.scaled_val(140) if i == "name" else Theme.scaled_val(50),
+                minwidth=Theme.scaled_val(70) if i == "name" else Theme.scaled_val(30),
                 stretch=True,
                 anchor=tkinter.W if i == "name" else tkinter.CENTER,
             )
@@ -1017,7 +1014,7 @@ class DynamicTreeviewManager(ttk.Frame):
         try:
             t = self.winfo_toplevel()
             cw = t.winfo_width()
-            rw = 140 + (len(self.active_fields) * 40) + 40
+            rw = Theme.scaled_val(140) + (len(self.active_fields) * Theme.scaled_val(40)) + Theme.scaled_val(40)
             if cw < rw:
                 t.geometry(f"{rw}x{t.winfo_height()}")
         except:
@@ -1225,14 +1222,14 @@ class TypePieChart(tb.Frame):
         sx = max(0, (w - total_w) / 2)
 
         # 1. Draw Legend on the Left
-        ly = max(5, (self.canvas_height - (len(self.counts) * 16)) / 2)
+        ly = max(Theme.scaled_val(5), (self.canvas_height - (len(self.counts) * Theme.scaled_val(16))) / 2)
         for lb, count in self.counts.items():
             cl = color_map.get(lb, Theme.TEXT_MUTED)
             self.canvas.create_text(
                 sx, ly, text="●", fill=cl, font=(None, Theme.scaled_val(10)), anchor="w"
             )
             self.canvas.create_text(
-                sx + 12,
+                sx + Theme.scaled_val(12),
                 ly,
                 text=f"{lb}: {count}",
                 fill=Theme.TEXT_MAIN,

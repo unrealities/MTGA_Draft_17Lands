@@ -104,7 +104,7 @@ class DashboardFrame(ttk.Frame):
             text="✨ Personalize Your Experience",
             font=Theme.scaled_font(11, "bold"),
             bootstyle="primary",
-        ).pack(anchor="w", pady=(0, 8))
+        ).pack(anchor="w", pady=(0, Theme.scaled_val(8)))
 
         tips = [
             (
@@ -123,7 +123,7 @@ class DashboardFrame(ttk.Frame):
 
         for title, desc in tips:
             row = ttk.Frame(tips_frame)
-            row.pack(fill="x", pady=3)
+            row.pack(fill="x", Theme.scaled_val(3))
 
             ttk.Label(
                 row,
@@ -184,7 +184,7 @@ class DashboardFrame(ttk.Frame):
             ).pack(anchor="w", pady=Theme.scaled_val(2))
 
         expl_frame = ttk.Frame(center_box)
-        expl_frame.pack(pady=(15, 0), anchor="center")
+        expl_frame.pack(pady=(Theme.scaled_val(15), 0), anchor="center")
 
         ttk.Label(
             expl_frame,
@@ -212,7 +212,7 @@ class DashboardFrame(ttk.Frame):
         self._dynamic_wrap_labels.append(lbl_mg)
 
         tips = self._build_customization_tips(center_box)
-        tips.pack(pady=(20, 0), anchor="center")
+        tips.pack(pady=(Theme.scaled_val(20), 0), anchor="center")
 
     def _build_waiting_state(self):
         """State 2: Data downloaded, but no draft is active."""
@@ -301,7 +301,7 @@ class DashboardFrame(ttk.Frame):
         self.recovery_frame.rowconfigure(1, weight=1)
 
         # HEADER
-        header_frame = ttk.Frame(self.recovery_frame, padding=10, style="Card.TFrame")
+        header_frame = ttk.Frame(self.recovery_frame, padding=Theme.scaled_val(10), style="Card.TFrame")
         header_frame.grid(row=0, column=0, sticky="ew")
 
         self.lbl_recovery_title = ttk.Label(
@@ -312,21 +312,20 @@ class DashboardFrame(ttk.Frame):
         )
         self.lbl_recovery_title.pack(side="left")
 
-        # 17Lands Button (Hidden by default)
         self.btn_17lands_link = ttk.Button(
             header_frame, text="View Draft on 17Lands 🌐", bootstyle="info-outline"
         )
 
         # TABBED CONTENT
         self.recap_notebook = ttk.Notebook(self.recovery_frame)
-        self.recap_notebook.grid(row=1, column=0, sticky="nsew", padx=10, pady=(10, 0))
+        self.recap_notebook.grid(row=1, column=0, sticky="nsew", padx=Theme.scaled_val(10), pady=Theme.scaled_val((10, 0)))
 
         # --- TAB 1: DRAFT RECAP ---
-        tab_recap = ttk.Frame(self.recap_notebook, padding=15)
+        tab_recap = ttk.Frame(self.recap_notebook, padding=Theme.scaled_val(15))
         self.recap_notebook.add(tab_recap, text=" 🏆 Draft Recap ")
 
         top_recap = ttk.Frame(tab_recap)
-        top_recap.pack(fill="x", pady=(0, 10))
+        top_recap.pack(fill="x", pady=Theme.scaled_val((0, 10)))
 
         self.lbl_recovery_grade = ttk.Label(
             top_recap,
@@ -334,7 +333,7 @@ class DashboardFrame(ttk.Frame):
             font=Theme.scaled_font(16, "bold"),
             bootstyle="primary",
         )
-        self.lbl_recovery_grade.pack(anchor="center", pady=(0, Theme.scaled_val(2)))
+        self.lbl_recovery_grade.pack(anchor="center", pady=Theme.scaled_val((0, 2)))
 
         self.lbl_recovery_stats = ttk.Label(
             top_recap,
@@ -355,19 +354,19 @@ class DashboardFrame(ttk.Frame):
 
         self._create_stat_box(
             grid_recap, "TOP ARCHETYPES", "lbl_recap_archetypes"
-        ).grid(row=0, column=0, sticky="nsew", padx=5, pady=5)
+        ).grid(row=0, column=0, sticky="nsew", padx=Theme.scaled_val(5), pady=Theme.scaled_val(5))
         self._create_stat_box(grid_recap, "BEST CARDS DRAFTED", "lbl_recap_best").grid(
-            row=0, column=1, sticky="nsew", padx=5, pady=5
+            row=0, column=1, sticky="nsew", padx=Theme.scaled_val(5), pady=Theme.scaled_val(5)
         )
         self._create_stat_box(
             grid_recap, "BIGGEST STEALS (LATE PICKS)", "lbl_recap_steals"
-        ).grid(row=1, column=0, sticky="nsew", padx=5, pady=5)
+        ).grid(row=1, column=0, sticky="nsew", padx=Theme.scaled_val(5), pady=Theme.scaled_val(5))
         self._create_stat_box(
             grid_recap, "BIGGEST REACHES (EARLY PICKS)", "lbl_recap_reaches"
-        ).grid(row=1, column=1, sticky="nsew", padx=5, pady=5)
+        ).grid(row=1, column=1, sticky="nsew", padx=Theme.scaled_val(5), pady=Theme.scaled_val(5))
 
         # --- TAB 2: SYNERGY & ROLES ---
-        tab_synergy = ttk.Frame(self.recap_notebook, padding=15)
+        tab_synergy = ttk.Frame(self.recap_notebook, padding=Theme.scaled_val(15))
         self.recap_notebook.add(tab_synergy, text=" 🧩 Synergy & Roles ")
 
         grid_synergy = ttk.Frame(tab_synergy)
@@ -377,42 +376,42 @@ class DashboardFrame(ttk.Frame):
 
         self._create_stat_box(
             grid_synergy, "TOP CREATURE TYPES", "lbl_synergy_tribes"
-        ).grid(row=0, column=0, sticky="nsew", padx=5, pady=5)
+        ).grid(row=0, column=0, sticky="nsew", padx=Theme.scaled_val(5), pady=Theme.scaled_val(5))
         self._create_stat_box(grid_synergy, "CARD ROLES", "lbl_synergy_roles").grid(
-            row=0, column=1, sticky="nsew", padx=5, pady=5
+            row=0, column=1, sticky="nsew", padx=Theme.scaled_val(5), pady=Theme.scaled_val(5)
         )
         self._create_stat_box(
             grid_synergy, "PREMIUM STAPLES", "lbl_synergy_staples"
-        ).grid(row=1, column=0, sticky="nsew", padx=5, pady=5)
+        ).grid(row=1, column=0, sticky="nsew", padx=Theme.scaled_val(5), pady=Theme.scaled_val(5))
         self._create_stat_box(
             grid_synergy, "NON-BASIC LANDS", "lbl_synergy_lands"
-        ).grid(row=1, column=1, sticky="nsew", padx=5, pady=5)
+        ).grid(row=1, column=1, sticky="nsew", padx=Theme.scaled_val(5), pady=Theme.scaled_val(5))
 
         # --- TAB 3: MANA & CURVE ---
-        tab_analysis = ttk.Frame(self.recap_notebook, padding=15)
+        tab_analysis = ttk.Frame(self.recap_notebook, padding=Theme.scaled_val(15))
         self.recap_notebook.add(tab_analysis, text=" 📊 Mana & Curve ")
 
         tab_analysis.columnconfigure((0, 1), weight=1)
         tab_analysis.rowconfigure(0, weight=1)
 
         charts_frame = ttk.Frame(tab_analysis)
-        charts_frame.grid(row=0, column=0, sticky="nsew", padx=(0, 10))
+        charts_frame.grid(row=0, column=0, sticky="nsew", padx=Theme.scaled_val((0, 10)))
 
         ttk.Label(
             charts_frame,
             text="MANA CURVE",
             font=Theme.scaled_font(10, "bold"),
             bootstyle="primary",
-        ).pack(anchor="w", pady=(0, Theme.scaled_val(5)))
+        ).pack(anchor="w", pady=Theme.scaled_val((0, 5)))
         self.recap_curve_plot = ManaCurvePlot(charts_frame, ideal_distribution=[])
-        self.recap_curve_plot.pack(fill="x", pady=(0, 15))
+        self.recap_curve_plot.pack(fill="x", pady=Theme.scaled_val((0, 15)))
 
         ttk.Label(
             charts_frame,
             text="POOL BALANCE",
             font=Theme.scaled_font(10, "bold"),
             bootstyle="primary",
-        ).pack(anchor="w", pady=(0, Theme.scaled_val(5)))
+        ).pack(anchor="w", pady=Theme.scaled_val((0, 5)))
         self.recap_type_chart = TypePieChart(charts_frame)
         self.recap_type_chart.pack(fill="x")
 
@@ -420,7 +419,7 @@ class DashboardFrame(ttk.Frame):
         stats_col.grid(row=0, column=1, sticky="nsew")
 
         self._create_stat_box(stats_col, "RARES & MYTHICS", "lbl_recap_rares").pack(
-            fill="both", expand=True, pady=(0, 10)
+            fill="both", expand=True, pady=Theme.scaled_val((0, 10))
         )
 
     def update_pool_summary(self, taken_cards, metrics, draft_id=""):
@@ -758,14 +757,13 @@ class DashboardFrame(ttk.Frame):
                                 text=f"Actual 17Lands Record: {wins} Wins - {losses} Losses",
                                 bootstyle=record_style,
                             )
-                            self.lbl_actual_record.pack(anchor="center", pady=(5, 0))
+                            self.lbl_actual_record.pack(anchor="center", pady=Theme.scaled_val((5, 0)))
 
                         if hasattr(self, "btn_17lands_link"):
                             self.btn_17lands_link.config(
                                 command=lambda: open_file(record["url"])
                             )
-                            self.btn_17lands_link.pack(side="right", padx=(0, 10))
-
+                            self.btn_17lands_link.pack(side="right", padx=Theme.scaled_val((0, 10)))
                 try:
                     self.after(0, update_ui)
                 except RuntimeError:

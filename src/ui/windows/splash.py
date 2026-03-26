@@ -73,17 +73,17 @@ class SplashWindow:
             text="MTGA DRAFT TOOL",
             font=(Theme.FONT_FAMILY, 14, "bold"),
             foreground=Theme.ACCENT,
-        ).pack(pady=(0, 5))
+        ).pack(pady=(0, Theme.scaled_val(5)))
 
         ttk.Label(
             container,
             textvariable=self.status_var,
             font=(Theme.FONT_FAMILY, 9),
             foreground=Theme.TEXT_MAIN,
-        ).pack(pady=(0, 15))
+        ).pack(pady=(0, Theme.scaled_val(15)))
 
         self.progress = ttk.Progressbar(container, mode="indeterminate", length=250)
-        self.progress.pack(pady=(0, 10))
+        self.progress.pack(pady=(0, Theme.scaled_val(10)))
         self.progress.start(15)
 
     def _center_window(self) -> None:

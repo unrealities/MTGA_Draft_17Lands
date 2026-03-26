@@ -174,7 +174,7 @@ class DraftApp:
                 if geom and "x" in geom and not geom.startswith("1x1"):
                     self.root.geometry(geom)
                 else:
-                    self.root.geometry("1200x800")
+                    self.root.geometry(f"{Theme.scaled_val(1200)}x{Theme.scaled_val(800)}")
 
                 self.root.update_idletasks()
 

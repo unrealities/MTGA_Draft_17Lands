@@ -70,19 +70,18 @@ class AdvisorPanel(tb.Frame):
 
         for i, rec in enumerate(recs[:limit]):
             item_frame = tb.Frame(self.container)
-            item_frame.pack(fill="x", side="top", anchor="nw", padx=20, pady=(0, 12))
+            item_frame.pack(fill="x", side="top", anchor="nw", padx=Theme.scaled_val(20), pady=Theme.scaled_val((0, 12)))
 
             is_elite = rec.is_elite
             badge_bg = Theme.SUCCESS if is_elite else Theme.ACCENT
 
             # 1. Left Accent Line (Using tk.Frame for a guaranteed solid color block across all OSs)
-            accent = tkinter.Frame(item_frame, width=4)
+            accent = tkinter.Frame(item_frame, width=Theme.scaled_val(4))
             try:
                 accent.configure(bg=badge_bg)
             except tkinter.TclError:
-                # Safe fallback if native semantic colors fail in older Tkinter versions
                 accent.configure(bg="#10b981" if is_elite else "#3b82f6")
-            accent.pack(side="left", fill="y", padx=(2, 8))
+            accent.pack(side="left", fill="y", padx=Theme.scaled_val((2, 8)))
 
             # 2. Content Body
             content_frame = tb.Frame(item_frame)
@@ -96,7 +95,7 @@ class AdvisorPanel(tb.Frame):
             lbl_score = tb.Label(
                 header_frame,
                 text=f"{score_prefix}{rec.contextual_score:.0f}",
-                font=(Theme.FONT_FAMILY, name_font_size + 2, "bold"),
+                font=Theme.scaled_font(name_font_size + 2, "bold"),
             )
             try:
                 lbl_score.configure(foreground=badge_bg)
@@ -108,21 +107,21 @@ class AdvisorPanel(tb.Frame):
             lbl_sep = tb.Label(
                 header_frame,
                 text=" | ",
-                font=(Theme.FONT_FAMILY, name_font_size, "bold"),
+                font=Theme.scaled_font(name_font_size, "bold"),
             )
             try:
                 lbl_sep.configure(foreground=Theme.TEXT_MUTED)
             except tkinter.TclError:
                 pass
-            lbl_sep.pack(side="left", anchor="nw", padx=4, pady=1)
+            lbl_sep.pack(side="left", anchor="nw", padx=Theme.scaled_val(4), pady=Theme.scaled_val(1))
 
             # 4. The Card Name
             font_weight = "bold" if is_elite else "normal"
             lbl_name = tb.Label(
                 header_frame,
                 text=rec.card_name.upper(),
-                font=(Theme.FONT_FAMILY, name_font_size, font_weight),
-                wraplength=180 if self.mini_mode else 160,
+                font=Theme.scaled_font(name_font_size, font_weight),
+                wraplength=Theme.scaled_val(180 if self.mini_mode else 160),
                 justify="left",
             )
             if is_elite:
@@ -130,7 +129,7 @@ class AdvisorPanel(tb.Frame):
                     lbl_name.configure(foreground=Theme.SUCCESS)
                 except tkinter.TclError:
                     lbl_name.configure(foreground="#10b981")
-            lbl_name.pack(side="left", anchor="nw", pady=2)
+            lbl_name.pack(side="left", anchor="nw", pady=Theme.scaled_val(2))
 
             # --- Body: Reasoning Description & Tags ---
             reason_text = ""
@@ -150,11 +149,11 @@ class AdvisorPanel(tb.Frame):
             lbl_reason = tb.Label(
                 content_frame,
                 text=reason_text,
-                font=(Theme.FONT_FAMILY, reason_font_size),
-                wraplength=250 if self.mini_mode else 220,
+                font=Theme.scaled_font(reason_font_size),
+                wraplength=Theme.scaled_val(250 if self.mini_mode else 220),
                 justify="left",
             )
-            lbl_reason.pack(anchor="nw", pady=(2, 0))
+            lbl_reason.pack(anchor="nw", pady=Theme.scaled_val((2, 0)))
 
             if self.on_click_callback:
                 for w in [
@@ -169,9 +168,7 @@ class AdvisorPanel(tb.Frame):
                     w.configure(cursor="hand2")
                     w.bind(
                         "<Button-1>",
-                        lambda e, n=rec.card_name, wdg=item_frame: self.on_click_callback(
-                            n, wdg
-                        ),
+                        lambda e, n=rec.card_name, wdg=item_frame: self.on_click_callback(n, wdg),
                     )
 
     def _on_theme_change(self, event=None):

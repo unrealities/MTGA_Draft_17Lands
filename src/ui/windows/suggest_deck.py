@@ -1115,7 +1115,7 @@ class SuggestDeckPanel(ttk.Frame):
         avg_cmc = cmc_sum / non_lands if non_lands else 0
 
         comp_frame = ttk.Frame(stats_frame)
-        comp_frame.pack(fill="x", pady=5)
+        comp_frame.pack(fill="x", pady=Theme.scaled_val(5))
         ttk.Label(
             comp_frame,
             text="DECK COMPOSITION",
@@ -1125,12 +1125,12 @@ class SuggestDeckPanel(ttk.Frame):
         ttk.Label(
             comp_frame,
             text=f"Total Cards: {total_cards}  |  Creatures: {creatures}  |  Non-Creatures: {spells}  |  Lands: {lands}",
-        ).pack(anchor="w", pady=2)
+        ).pack(anchor="w", pady=Theme.scaled_val(2))
 
-        ttk.Separator(stats_frame, orient="horizontal").pack(fill="x", pady=8)
+        ttk.Separator(stats_frame, orient="horizontal").pack(fill="x", pady=Theme.scaled_val(8))
 
         color_frame = ttk.Frame(stats_frame)
-        color_frame.pack(fill="x", pady=5)
+        color_frame.pack(fill="x", pady=Theme.scaled_val(5))
         ttk.Label(
             color_frame,
             text="COLOR REQUIREMENTS (PIPS)",
@@ -1150,12 +1150,12 @@ class SuggestDeckPanel(ttk.Frame):
                 pip_str.append(f"{name} ({symbol}): {pips[symbol]}")
         ttk.Label(
             color_frame, text="  |  ".join(pip_str) if pip_str else "Colorless"
-        ).pack(anchor="w", pady=2)
+        ).pack(anchor="w", pady=Theme.scaled_val(2))
 
-        ttk.Separator(stats_frame, orient="horizontal").pack(fill="x", pady=8)
+        ttk.Separator(stats_frame, orient="horizontal").pack(fill="x", pady=Theme.scaled_val(8))
 
         tags_frame = ttk.Frame(stats_frame)
-        tags_frame.pack(fill="x", pady=5)
+        tags_frame.pack(fill="x", pady=Theme.scaled_val(5))
         ttk.Label(
             tags_frame,
             text="ROLES & SYNERGIES",
@@ -1173,17 +1173,17 @@ class SuggestDeckPanel(ttk.Frame):
 
             for i in range(0, len(tag_str), 4):
                 ttk.Label(tags_frame, text="    ".join(tag_str[i : i + 4])).pack(
-                    anchor="w", pady=2
+                    anchor="w", pady=Theme.scaled_val(2)
                 )
         else:
             ttk.Label(tags_frame, text="No Scryfall tags found for this set.").pack(
-                anchor="w", pady=2
+                anchor="w", pady=Theme.scaled_val(2)
             )
 
-        ttk.Separator(stats_frame, orient="horizontal").pack(fill="x", pady=8)
+        ttk.Separator(stats_frame, orient="horizontal").pack(fill="x", pady=Theme.scaled_val(8))
 
         curve_frame = ttk.Frame(stats_frame)
-        curve_frame.pack(fill="x", pady=5)
+        curve_frame.pack(fill="x", pady=Theme.scaled_val(5))
         ttk.Label(
             curve_frame,
             text=f"MANA CURVE (Avg CMC: {avg_cmc:.2f})",
@@ -1199,7 +1199,7 @@ class SuggestDeckPanel(ttk.Frame):
                 curve_frame,
                 text=f"{label:<8} {bar} ({count})",
                 font=(constants.FONT_MONO_SPACE, 10),
-            ).pack(anchor="w", pady=1)
+            ).pack(anchor="w", pady=Theme.scaled_val(1))
 
     def _render_deck(self, label: str):
         self._clear_table()

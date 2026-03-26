@@ -48,7 +48,7 @@ class DownloadWindow(ttk.Frame):
         scrollbar.grid(row=0, column=1, sticky="ns")
         canvas.configure(yscrollcommand=scrollbar.set)
 
-        container = ttk.Frame(canvas, padding=10)
+        container = ttk.Frame(canvas, padding=Theme.scaled_val(10))
         canvas_window = canvas.create_window((0, 0), window=container, anchor="nw")
 
         def _on_content_resize(event):
@@ -81,15 +81,14 @@ class DownloadWindow(ttk.Frame):
             ],
             height=4,
         )
-        self.table_manager.pack(fill="x", pady=(0, 10))
+        self.table_manager.pack(fill="x", pady=Theme.scaled_val((0, 10)))
         self.table = self.table_manager.tree
-        form = ttk.Frame(container, style="Card.TFrame", padding=12)
+        form = ttk.Frame(container, style="Card.TFrame", padding=Theme.scaled_val(12))
         form.pack(fill="x")
         form.columnconfigure(1, weight=1)
         form.columnconfigure(3, weight=1)
         set_options = list(self.sets_data.keys())
 
-        # Force the most recent 17Lands set to the top of the dropdown
         latest_key = None
         for k, v in self.sets_data.items():
             if v.set_code == self.latest_set_code:
@@ -103,7 +102,7 @@ class DownloadWindow(ttk.Frame):
         self.vars["set"] = tkinter.StringVar(
             value=set_options[0] if set_options else ""
         )
-        ttk.Label(form, text="SET:").grid(row=0, column=0, sticky="e", padx=5)
+        ttk.Label(form, text="SET:").grid(row=0, column=0, sticky="e", padx=Theme.scaled_val(5))
         self.om_set = ttk.OptionMenu(
             form,
             self.vars["set"],
@@ -111,42 +110,42 @@ class DownloadWindow(ttk.Frame):
             *set_options,
             command=self._on_set_change
         )
-        self.om_set.grid(row=0, column=1, sticky="ew", pady=2)
+        self.om_set.grid(row=0, column=1, sticky="ew", pady=Theme.scaled_val(2))
         self.vars["event"] = tkinter.StringVar(value="PremierDraft")
-        ttk.Label(form, text="EVENT:").grid(row=0, column=2, sticky="e", padx=5)
+        ttk.Label(form, text="EVENT:").grid(row=0, column=2, sticky="e", padx=Theme.scaled_val(5))
         self.om_event = ttk.OptionMenu(
             form,
             self.vars["event"],
             "PremierDraft",
             *sorted(constants.LIMITED_TYPE_LIST)
         )
-        self.om_event.grid(row=0, column=3, sticky="ew", pady=2)
+        self.om_event.grid(row=0, column=3, sticky="ew", pady=Theme.scaled_val(2))
         self.vars["group"] = tkinter.StringVar(value="All")
-        ttk.Label(form, text="USERS:").grid(row=1, column=0, sticky="e", padx=5)
+        ttk.Label(form, text="USERS:").grid(row=1, column=0, sticky="e", padx=Theme.scaled_val(5))
         ttk.OptionMenu(
             form, self.vars["group"], "All", *constants.LIMITED_GROUPS_LIST
-        ).grid(row=1, column=1, sticky="ew", pady=2)
+        ).grid(row=1, column=1, sticky="ew", pady=Theme.scaled_val(2))
         self.vars["threshold"] = tkinter.StringVar(value="500")
-        ttk.Label(form, text="MIN GAMES:").grid(row=1, column=2, sticky="e", padx=5)
+        ttk.Label(form, text="MIN GAMES:").grid(row=1, column=2, sticky="e", padx=Theme.scaled_val(5))
         ttk.Entry(form, textvariable=self.vars["threshold"]).grid(
-            row=1, column=3, sticky="ew", pady=2
+            row=1, column=3, sticky="ew", pady=Theme.scaled_val(2)
         )
         self.vars["start"] = tkinter.StringVar(value="2019-01-01")
-        ttk.Label(form, text="START DATE:").grid(row=2, column=0, sticky="e", padx=5)
+        ttk.Label(form, text="START DATE:").grid(row=2, column=0, sticky="e", padx=Theme.scaled_val(5))
         ttk.Entry(form, textvariable=self.vars["start"]).grid(
-            row=2, column=1, sticky="ew", pady=2
+            row=2, column=1, sticky="ew", pady=Theme.scaled_val(2)
         )
         self.vars["end"] = tkinter.StringVar(value=str(date.today()))
-        ttk.Label(form, text="END DATE:").grid(row=2, column=2, sticky="e", padx=5)
+        ttk.Label(form, text="END DATE:").grid(row=2, column=2, sticky="e", padx=Theme.scaled_val(5))
         ttk.Entry(form, textvariable=self.vars["end"]).grid(
-            row=2, column=3, sticky="ew", pady=2
+            row=2, column=3, sticky="ew", pady=Theme.scaled_val(2)
         )
         self.btn_dl = ttk.Button(
             form, text="Download Selected Dataset", command=self._manual_download
         )
-        self.btn_dl.grid(row=3, column=0, columnspan=4, pady=(10, 0), sticky="ew")
+        self.btn_dl.grid(row=3, column=0, columnspan=4, pady=Theme.scaled_val((10, 0)), sticky="ew")
         self.progress = ttk.Progressbar(container, mode="determinate")
-        self.progress.pack(fill="x", pady=5)
+        self.progress.pack(fill="x", pady=Theme.scaled_val(5))
         self.vars["status"] = tkinter.StringVar(value="Ready")
         ttk.Label(
             container, textvariable=self.vars["status"], bootstyle="secondary"

@@ -1087,7 +1087,7 @@ class CustomDeckPanel(ttk.Frame):
         avg_cmc = cmc_sum / non_lands if non_lands else 0
         top_tribes = sorted(subtypes.items(), key=lambda x: x[1], reverse=True)[:5]
 
-        comp_frame = ttk.Frame(self.stats_frame)
+         comp_frame = ttk.Frame(target_frame)
         comp_frame.pack(fill="x", pady=Theme.scaled_val(5))
         ttk.Label(
             comp_frame,
@@ -1100,9 +1100,9 @@ class CustomDeckPanel(ttk.Frame):
             text=f"Total Cards: {total_cards}  |  Creatures: {creatures}  |  Non-Creatures: {spells}  |  Lands: {lands}",
         ).pack(anchor="w", pady=Theme.scaled_val(2))
 
-        ttk.Separator(self.stats_frame, orient="horizontal").pack(fill="x", pady=Theme.scaled_val(8))
+        ttk.Separator(target_frame, orient="horizontal").pack(fill="x", pady=Theme.scaled_val(8))
 
-        color_frame = ttk.Frame(self.stats_frame)
+        color_frame = ttk.Frame(target_frame)
         color_frame.pack(fill="x", pady=Theme.scaled_val(5))
         ttk.Label(
             color_frame,
@@ -1125,9 +1125,9 @@ class CustomDeckPanel(ttk.Frame):
             color_frame, text="  |  ".join(pip_str) if pip_str else "Colorless"
         ).pack(anchor="w", pady=Theme.scaled_val(2))
 
-        ttk.Separator(self.stats_frame, orient="horizontal").pack(fill="x", pady=Theme.scaled_val(8))
+        ttk.Separator(target_frame, orient="horizontal").pack(fill="x", pady=Theme.scaled_val(8))
 
-        tags_frame = ttk.Frame(self.stats_frame)
+        tags_frame = ttk.Frame(target_frame)
         tags_frame.pack(fill="x", pady=Theme.scaled_val(5))
         ttk.Label(
             tags_frame,
@@ -1161,9 +1161,9 @@ class CustomDeckPanel(ttk.Frame):
                 tags_frame, text=f"Top Tribes: {tribe_str}", font=Theme.scaled_font(9)
             ).pack(anchor="w", pady=Theme.scaled_val(4))
 
-        ttk.Separator(self.stats_frame, orient="horizontal").pack(fill="x", pady=Theme.scaled_val(8))
+        ttk.Separator(target_frame, orient="horizontal").pack(fill="x", pady=Theme.scaled_val(8))
 
-        curve_frame = ttk.Frame(self.stats_frame)
+        curve_frame = ttk.Frame(target_frame)
         curve_frame.pack(fill="x", pady=Theme.scaled_val(5))
         ttk.Label(
             curve_frame,
@@ -1357,7 +1357,7 @@ class CustomDeckPanel(ttk.Frame):
             return
 
         def _add_stat(label, value, thresholds, reverse=False, is_percent=True):
-            frame = ttk.Frame(self.sim_frame)
+            frame = ttk.Frame(self.sim_frame if hasattr(self, 'sim_frame') else sim_frame)
             frame.pack(fill="x", pady=Theme.scaled_val(2))
             ttk.Label(frame, text=label, font=Theme.scaled_font(10, "bold")).pack(
                 side="left"
@@ -1388,7 +1388,7 @@ class CustomDeckPanel(ttk.Frame):
                 anchor="e",
             ).pack(side="left", padx=Theme.scaled_val((0, 6)))
             ttk.Label(
-                rf, text=icon, font=(Theme.FONT_FAMILY, 10, "bold"), bootstyle=color
+                rf, text=icon, font=Theme.scaled_font(10, "bold"), bootstyle=color
             ).pack(side="left")
 
         ttk.Label(
@@ -1396,7 +1396,7 @@ class CustomDeckPanel(ttk.Frame):
             text="CONSISTENCY METRICS",
             bootstyle="primary",
             font=(Theme.FONT_FAMILY, 10, "bold"),
-        ).pack(anchor="w", pady=(0, 5))
+        ).pack(anchor="w", pady=(0, Theme.scaled_val(5)))
         _add_stat("T2 Play (2-Drop):", stats["cast_t2"], (65, 50))
         _add_stat("T3 Play (3-Drop):", stats["cast_t3"], (65, 50))
         _add_stat("T4 Play (4-Drop):", stats["cast_t4"], (55, 40))
@@ -1409,7 +1409,7 @@ class CustomDeckPanel(ttk.Frame):
             text="RISK FACTORS",
             bootstyle="primary",
             font=(Theme.FONT_FAMILY, 10, "bold"),
-        ).pack(anchor="w", pady=(0, 5))
+        ).pack(anchor="w", pady=(0, Theme.scaled_val(5)))
         _add_stat("Mulligan Rate:", stats["mulligans"], (15, 25), reverse=True)
         _add_stat(
             "Avg. Hand Size:",
@@ -1432,7 +1432,7 @@ class CustomDeckPanel(ttk.Frame):
             text="ADVISOR SUMMARY",
             bootstyle="info",
             font=(Theme.FONT_FAMILY, 10, "bold"),
-        ).pack(anchor="w", pady=(0, 5))
+        ).pack(anchor="w", pady=(0, Theme.scaled_val(5)))
 
         if optimization_note:
             lbl_opt = ttk.Label(
@@ -1442,7 +1442,7 @@ class CustomDeckPanel(ttk.Frame):
                 bootstyle="success",
             )
             lbl_opt.is_dynamic_wrap = True
-            lbl_opt.pack(anchor="w", pady=2)
+            lbl_opt.pack(anchor="w", pady=Theme.scaled_val(2))
 
         total_cards = sum(c.get("count", 1) for c in self.deck_list)
         lands = sum(
