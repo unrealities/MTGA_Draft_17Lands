@@ -2,6 +2,7 @@ import os
 import json
 import hashlib
 import time
+import random
 import logging
 import requests
 from requests.adapters import HTTPAdapter
@@ -31,12 +32,10 @@ class APIClient:
         self.session = requests.Session()
         self.session.headers.update(config.HEADERS)
 
-        # Optimize underlying TCP connections
         adapter = HTTPAdapter(pool_connections=10, pool_maxsize=10, max_retries=0)
         self.session.mount("https://", adapter)
         self.session.mount("http://", adapter)
 
-        # Rate limiter setup
         self._last_request_time = {
             "api.scryfall.com": 0.0,
             "www.17lands.com": 0.0,
@@ -46,25 +45,21 @@ class APIClient:
             "www.17lands.com": config.DELAY_17LANDS_SEC,
         }
 
-        # Cache setup
         self._cache_dir = os.path.join(config.OUTPUT_DIR, ".cache")
-        if not os.path.exists(self._cache_dir):
-            os.makedirs(self._cache_dir, exist_ok=True)
+        os.makedirs(self._cache_dir, exist_ok=True)
 
-        # Counters exposed to the run-report
         self.request_count: int = 0
         self.failed_request_count: int = 0
         self.cached_request_count: int = 0
 
-    def _get_cache_path(self, url):
-        url_hash = hashlib.md5(url.encode("utf-8")).hexdigest()
+    def _get_cache_path(self, full_url):
+        url_hash = hashlib.md5(full_url.encode("utf-8")).hexdigest()
         return os.path.join(self._cache_dir, f"{url_hash}.json")
 
-    def _read_cache(self, url):
-        path = self._get_cache_path(url)
+    def _read_cache(self, full_url):
+        path = self._get_cache_path(full_url)
         if os.path.exists(path):
-            # 12-hour TTL for the local HTTP cache
-            if time.time() - os.path.getmtime(path) < 43200:
+            if time.time() - os.path.getmtime(path) < 43200:  # 12-hour TTL
                 try:
                     with open(path, "r", encoding="utf-8") as f:
                         data = json.load(f)
@@ -73,24 +68,28 @@ class APIClient:
                     pass
         return None
 
-    def _write_cache(self, url, response):
+    def _write_cache(self, full_url, response):
         try:
             json_data = response.json()
         except Exception:
-            # Prevent Cache Poisoning: Do not cache non-JSON payloads
-            return
+            return  # Don't cache non-JSON
 
         data = {"status_code": response.status_code, "json_data": json_data}
-        path = self._get_cache_path(url)
+        path = self._get_cache_path(full_url)
         try:
             with open(path, "w", encoding="utf-8") as f:
                 json.dump(data, f)
         except Exception:
             pass
 
-    def respectful_get(self, url, timeout=config.REQUEST_TIMEOUT_SEC, allow_404=False):
-        # 1. Check disk cache first. Instant return if found!
-        cached_resp = self._read_cache(url)
+    def respectful_get(
+        self, url, params=None, timeout=config.REQUEST_TIMEOUT_SEC, allow_404=False
+    ):
+        # Prepare the full URL so our cache key perfectly matches the parameters
+        req = requests.Request("GET", url, params=params).prepare()
+        full_url = req.url
+
+        cached_resp = self._read_cache(full_url)
         if cached_resp:
             self.cached_request_count += 1
             if cached_resp.status_code == 404 and allow_404:
@@ -100,36 +99,43 @@ class APIClient:
 
         parsed_url = urlparse(url)
         domain = parsed_url.netloc
-        delay = self._domain_delays.get(domain, 0.0)
+        base_delay = self._domain_delays.get(domain, 0.0)
 
-        # 2. Request loop with Backoff
         for attempt in range(config.MAX_ATTEMPTS):
-
-            # Domain-aware rate limiter logic (Checked inside the loop for retries)
             last_time = self._last_request_time.get(domain, 0.0)
             elapsed = time.time() - last_time
-            if elapsed < delay:
-                time.sleep(delay - elapsed)
+
+            # Anti-Bot Jitter: Add 0.5 to 2.5s of random delay so we don't look like a metronome
+            jitter = random.uniform(0.5, 2.5) if base_delay > 0 else 0.0
+            total_delay = base_delay + jitter
+
+            if elapsed < total_delay:
+                time.sleep(total_delay - elapsed)
 
             try:
                 self.request_count += 1
-                resp = self.session.get(url, timeout=timeout)
+                resp = self.session.get(url, params=params, timeout=timeout)
                 self._last_request_time[domain] = time.time()
 
-                if resp.status_code == 429:
-                    wait = config.RETRY_BASE_DELAY_SEC * (2**attempt)
+                # Handle WAF Blocks (403) and Rate Limits (429) gracefully
+                if resp.status_code in (403, 429):
+                    wait = (
+                        config.WAF_COOLDOWN_SEC
+                        if resp.status_code == 403
+                        else config.RETRY_BASE_DELAY_SEC * (2**attempt)
+                    )
                     logger.warning(
-                        f"HTTP 429 (Rate Limit) on {url}. Backing off {wait}s..."
+                        f"HTTP {resp.status_code} on {domain}. Backing off {wait}s to cool down IP..."
                     )
                     time.sleep(wait)
                     continue
 
                 if resp.status_code == 404 and allow_404:
-                    self._write_cache(url, resp)
+                    self._write_cache(full_url, resp)
                     return resp
 
                 resp.raise_for_status()
-                self._write_cache(url, resp)
+                self._write_cache(full_url, resp)
                 return resp
 
             except (
@@ -138,7 +144,9 @@ class APIClient:
             ) as e:
                 self._last_request_time[domain] = time.time()
                 wait = config.RETRY_BASE_DELAY_SEC * (2**attempt)
-                logger.warning(f"Network error on {url}: {e}. Retrying in {wait}s...")
+                logger.warning(
+                    f"Network error on {full_url}: {e}. Retrying in {wait}s..."
+                )
                 time.sleep(wait)
 
             except requests.exceptions.HTTPError as e:
@@ -147,14 +155,14 @@ class APIClient:
                 if attempt < config.MAX_ATTEMPTS - 1 and status >= 500:
                     wait = config.RETRY_BASE_DELAY_SEC * (2**attempt)
                     logger.warning(
-                        f"Server error {status} on {url}. Retrying in {wait}s..."
+                        f"Server error {status} on {full_url}. Retrying in {wait}s..."
                     )
                     time.sleep(wait)
                 else:
                     self.failed_request_count += 1
-                    logger.error(f"Fatal HTTP error on {url}: {e}")
+                    logger.error(f"Fatal HTTP error on {full_url}: {e}")
                     raise
 
         self.failed_request_count += 1
-        logger.error(f"FAILED after {config.MAX_ATTEMPTS} attempts: {url}.")
-        raise Exception(f"Max retries ({config.MAX_ATTEMPTS}) exceeded for {url}")
+        logger.error(f"FAILED after {config.MAX_ATTEMPTS} attempts: {full_url}.")
+        raise Exception(f"Max retries ({config.MAX_ATTEMPTS}) exceeded for {full_url}")

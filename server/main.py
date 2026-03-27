@@ -22,13 +22,8 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
-def get_scheduled_events(calendar_path="calendar.json") -> dict:
-    """
-    Reads the manual calendar JSON and returns a dictionary of active events for TODAY.
-    Format: { "TMNT": ["PremierDraft", "TradDraft"], "BLB": ["PremierDraft"] }
-    """
+def get_scheduled_events(calendar_path="server/calendar.json") -> dict:
     logger.info(f"Loading scheduled events from {calendar_path}...")
-
     if not os.path.exists(calendar_path):
         logger.error(f"'{calendar_path}' not found! Cannot determine active events.")
         return {}
@@ -47,25 +42,16 @@ def get_scheduled_events(calendar_path="calendar.json") -> dict:
         start = event.get("start_date")
         end = event.get("end_date")
 
-        # Check if today falls within the active window
         if start and end and (start <= today_str <= end):
             set_code = event["set_code"]
-            formats = event["formats"]
-
             if set_code not in active_sets:
                 active_sets[set_code] = set()
+            active_sets[set_code].update(event["formats"])
 
-            active_sets[set_code].update(formats)
-
-    # Convert sets back to lists
     return {k: list(v) for k, v in active_sets.items()}
 
 
 def load_existing_manifest() -> dict:
-    """
-    Loads the existing manifest so we don't delete historical/inactive formats
-    when saving today's active formats.
-    """
     filepath = os.path.join(config.OUTPUT_DIR, "manifest.json")
     if os.path.exists(filepath):
         try:
@@ -73,7 +59,6 @@ def load_existing_manifest() -> dict:
                 return json.load(f)
         except Exception as e:
             logger.warning(f"Could not load existing manifest, starting fresh: {e}")
-
     return {"datasets": {}}
 
 
@@ -84,8 +69,7 @@ def run_pipeline():
     report = PipelineReport()
     report.attach_log_handler()
 
-    # 1. Determine exactly what needs to be fetched today
-    active_sets = get_scheduled_events("calendar.json")
+    active_sets = get_scheduled_events("server/calendar.json")
     report.record_intent(active_sets, config.ARCHETYPES)
 
     if not active_sets:
@@ -95,81 +79,109 @@ def run_pipeline():
         report.log_summary(final_report)
         return
 
-    # 2. Load historical manifest to preserve older dataset entries
     manifest = load_existing_manifest()
     manifest["updated_at"] = datetime.now(timezone.utc).isoformat()
     if "datasets" not in manifest:
         manifest["datasets"] = {}
 
-    # 3. Process the active scheduled sets
+    # Define the generic historical "All-Time" magic arena window
+    start_date_str = "2019-01-01"
+    end_date_str = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+
+    jobs = []
     for set_code, formats in active_sets.items():
-        logger.info(f"==== PROCESSING SCHEDULED SET: {set_code} ====")
+        for draft_format in formats:
+            for user_group in ["All", "Top"]:
+                jobs.append((set_code, draft_format, user_group))
+
+    scryfall_cache_mem = {}
+    tags_cache_mem = {}
+
+    for set_code, draft_format, user_group in jobs:
+        logger.info(
+            f"==== Processing {set_code} | {draft_format} | {user_group} Players ===="
+        )
 
         try:
-            scryfall_cards = extract_scryfall_data(client, set_code)
+            if set_code not in scryfall_cache_mem:
+                scryfall_cache_mem[set_code] = extract_scryfall_data(client, set_code)
+                tags_cache_mem[set_code] = extract_scryfall_tags(client, set_code)
+
+            scryfall_cards = scryfall_cache_mem[set_code]
+            card_tags = tags_cache_mem[set_code]
+
             if not scryfall_cards and set_code != "CUBE":
                 logger.info(f"No Scryfall base cards found for {set_code}. Skipping.")
-                report.record_skipped(set_code, None, "No Scryfall base cards found")
+                report.record_skipped(set_code, draft_format, "No Scryfall base cards")
                 continue
 
-            card_tags = extract_scryfall_tags(client, set_code)
+            color_ratings, games_played = extract_color_ratings(
+                client, set_code, draft_format, user_group, start_date_str, end_date_str
+            )
 
-            for draft_format in formats:
-                try:
-                    logger.info(f"Processing Format: {draft_format}...")
+            valid_archetypes = ["All Decks"]
+            skipped_count = 0
+            for arch in config.ARCHETYPES:
+                if arch == "All Decks":
+                    continue
 
-                    seventeenlands_data = extract_17lands_data(
-                        client, set_code, draft_format
-                    )
-                    if not seventeenlands_data.get("All Decks"):
-                        logger.warning(
-                            f"No baseline 17Lands data for {set_code} {draft_format}. Skipping format."
-                        )
-                        report.record_skipped(
-                            set_code, draft_format, "No baseline 17Lands data yet"
-                        )
-                        continue
+                # Verify using the blank mapping string
+                games_played_key = "" if arch == "All Decks" else arch
+                if games_played.get(games_played_key, 0) >= config.MIN_GAMES_THRESHOLD:
+                    valid_archetypes.append(arch)
+                else:
+                    skipped_count += 1
 
-                    color_ratings = extract_color_ratings(
-                        client, set_code, draft_format
-                    )
+            if skipped_count > 0:
+                logger.info(
+                    f"   Filtered out {skipped_count} archetypes ( < {config.MIN_GAMES_THRESHOLD} games)."
+                )
 
-                    final_dataset = transform_payload(
-                        set_code,
-                        draft_format,
-                        scryfall_cards,
-                        seventeenlands_data,
-                        card_tags,
-                        color_ratings,
-                    )
+            seventeenlands_data = extract_17lands_data(
+                client,
+                set_code,
+                draft_format,
+                valid_archetypes,
+                user_group,
+                start_date_str,
+                end_date_str,
+            )
 
-                    # Save dataset to disk
-                    file_info = save_dataset(set_code, draft_format, final_dataset)
+            if not seventeenlands_data.get("All Decks"):
+                logger.warning(
+                    f"No baseline data for {set_code} {draft_format} ({user_group})."
+                )
+                report.record_skipped(
+                    set_code, draft_format, f"No baseline data for {user_group}"
+                )
+                continue
 
-                    # 4. Safely update the manifest with today's run, leaving historical intact
-                    manifest_key = f"{set_code}_{draft_format}"
-                    manifest["datasets"][manifest_key] = file_info
+            final_dataset = transform_payload(
+                set_code,
+                draft_format,
+                scryfall_cards,
+                seventeenlands_data,
+                card_tags,
+                color_ratings,
+                start_date_str,
+                end_date_str,
+            )
 
-                    card_count = len(final_dataset.get("card_ratings", {}))
-                    report.record_dataset(set_code, draft_format, file_info, card_count)
+            file_info = save_dataset(set_code, draft_format, user_group, final_dataset)
 
-                except Exception as e:
-                    logger.error(
-                        f"Failed processing format {draft_format} for {set_code}: {e}"
-                    )
-                    logger.debug(traceback.format_exc())
-                    report.record_skipped(
-                        set_code, draft_format, f"Format processing failed: {e}"
-                    )
-                    # Continue to next format instead of crashing pipeline
+            manifest_key = f"{set_code}_{draft_format}_{user_group}"
+            manifest["datasets"][manifest_key] = file_info
+
+            card_count = len(final_dataset.get("card_ratings", {}))
+            report.record_dataset(set_code, draft_format, file_info, card_count)
 
         except Exception as e:
-            logger.error(f"Failed processing set {set_code}: {e}")
+            logger.error(
+                f"Failed processing {set_code} {draft_format} ({user_group}): {e}"
+            )
             logger.debug(traceback.format_exc())
-            report.record_skipped(set_code, None, f"Set processing failed: {e}")
-            # Continue to next set instead of crashing pipeline
+            report.record_skipped(set_code, draft_format, f"Processing failed: {e}")
 
-    # 5. Save the combined manifest
     try:
         save_manifest(manifest)
         report.record_warehouse_state(manifest)

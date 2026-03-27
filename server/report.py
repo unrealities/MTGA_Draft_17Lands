@@ -8,6 +8,7 @@ for each ETL pipeline execution.
 import json
 import logging
 from datetime import datetime, timezone
+from typing import Optional, List, Dict
 
 logger = logging.getLogger(__name__)
 
@@ -35,7 +36,7 @@ class _ReportLogHandler(logging.Handler):
 class PipelineReport:
     def __init__(self):
         self._started_at: datetime = datetime.now(timezone.utc)
-        self._completed_at: datetime | None = None
+        self._completed_at: Optional[datetime] = None
 
         # Intent (What we tried to do)
         self._intended_schedule: dict = {}
@@ -45,15 +46,15 @@ class PipelineReport:
         ]  # Default for 17Lands unless specified
 
         # Execution (What actually happened)
-        self._datasets: list[dict] = []
-        self._skipped: list[dict] = []
-        self._errors: list[dict] = []
-        self._warnings: list[dict] = []
+        self._datasets: List[Dict] = []
+        self._skipped: List[Dict] = []
+        self._errors: List[Dict] = []
+        self._warnings: List[Dict] = []
 
         # Warehouse State (What is available now)
         self._warehouse_datasets: dict = {}
 
-        self._handler: _ReportLogHandler | None = None
+        self._handler: Optional[_ReportLogHandler] = None
 
     # ------------------------------------------------------------------
     # Setup & Logging Hooks
@@ -94,7 +95,7 @@ class PipelineReport:
             }
         )
 
-    def record_skipped(self, set_code: str, draft_format: str | None, reason: str):
+    def record_skipped(self, set_code: str, draft_format: Optional[str], reason: str):
         """Records a dataset that was intentionally skipped or failed gracefully."""
         self._skipped.append(
             {

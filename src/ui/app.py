@@ -269,7 +269,7 @@ class DraftApp:
                 from src.app_update import AppUpdate
 
                 v, _ = AppUpdate().retrieve_file_version()
-                if v and float(v) > constants.APPLICATION_VERSION:
+                if v and float(v) > float(constants.APPLICATION_VERSION):
                     self.root.after(0, lambda: self.notify_app_update(v))
             except Exception as e:
                 logger.error(f"App update check failed: {e}")

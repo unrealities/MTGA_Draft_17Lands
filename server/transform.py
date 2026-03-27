@@ -6,7 +6,6 @@ logger = logging.getLogger(__name__)
 
 
 def parse_scryfall_types(type_line: str):
-    """Utility to clean up Scryfall type lines."""
     if not type_line:
         return [], []
 
@@ -41,8 +40,9 @@ def transform_payload(
     seventeenlands_data,
     card_tags,
     color_ratings,
+    start_date,
+    end_date,
 ) -> dict:
-    """Merges all sources into a highly optimized JSON payload for the client."""
     logger.info(f"Transforming payload for {set_code} {draft_format}...")
 
     max_games = max(
@@ -55,45 +55,77 @@ def transform_payload(
 
     payload = {
         "meta": {
-            "set": set_code,
-            "format": draft_format,
-            "game_count": max_games,
-            "updated_at": datetime.now(timezone.utc).isoformat(),
+            "collection_date": datetime.now(timezone.utc).strftime(
+                "%Y-%m-%d %H:%M:%S.%f"
+            ),
+            "start_date": start_date,
+            "end_date": end_date,
             "version": 3.0,
+            "game_count": max_games,
         },
+        "color_ratings": color_ratings or {},
         "card_ratings": {},
     }
 
-    for name, base_stats in seventeenlands_data.get("All Decks", {}).items():
-        sf_card = scryfall_cards.get(name, {})
-        arena_id = (
-            str(sf_card.get("arena_id", "")) or f"UNKNOWN_{name.replace(' ', '')}"
-        )
+    # CRITICAL FIX: Iterate over Scryfall so Basic Lands and unplayed cards aren't dropped!
+    for name, sf_card in scryfall_cards.items():
+        arena_id = sf_card.get("arena_id")
+        if not arena_id:
+            arena_id = f"UNKNOWN_{name.replace(' ', '')}"
+
+        arena_id = str(arena_id)
+
+        # Safely pull 17lands stats if they exist for this card
+        all_decks_stats = seventeenlands_data.get("All Decks", {}).get(name, {})
 
         card_obj = {
             "name": name,
-            "arena_id": arena_id,
             "cmc": sf_card.get("cmc", 0),
             "mana_cost": sf_card.get("mana_cost", ""),
+            "isprimarycard": 1,
+            "linkedfacetype": 0,
             "types": sf_card.get("types", ["Creature"]),
+            "rarity": sf_card.get("rarity", "Common").lower(),
+            "image": sf_card.get("image", [])
+            or all_decks_stats.get("17lands_images", []),
             "subtypes": sf_card.get("subtypes", []),
             "colors": sf_card.get("colors", []),
-            "color_identity": sf_card.get("color_identity", []),
-            "rarity": sf_card.get("rarity", "Common"),
-            "tags": card_tags.get(name, []),
-            "keywords": sf_card.get("keywords", []),
-            "oracle_text": sf_card.get("oracle_text", ""),
-            "image": sf_card.get("image", []) or base_stats.get("17lands_images", []),
+            "set": set_code,
             "deck_colors": {},
+            "tags": card_tags.get(name, []),
+        }
+
+        # Extra metadata injection
+        for extra_key in ["color_identity", "keywords", "oracle_text"]:
+            if val := sf_card.get(extra_key):
+                card_obj[extra_key] = val
+
+        # ------------------------------------------------------------------------
+        # CRITICAL FIX 2: Inject the empty string "" dictionary fallback for the UI.
+        # It requires the ALSA and ATA stats to be cloned from "All Decks".
+        # ------------------------------------------------------------------------
+        alsa = all_decks_stats.get("alsa", 0.0)
+        ata = all_decks_stats.get("ata", 0.0)
+        card_obj["deck_colors"][""] = {
+            "gihwr": 0.0,
+            "ohwr": 0.0,
+            "gpwr": 0.0,
+            "gnswr": 0.0,
+            "gdwr": 0.0,
+            "alsa": alsa,
+            "ata": ata,
+            "iwd": 0.0,
+            "samples": 0,
         }
 
         for arch in config.ARCHETYPES:
             if arch_stats := seventeenlands_data.get(arch, {}).get(name):
                 card_obj["deck_colors"][arch] = {
-                    k: v for k, v in arch_stats.items() if k != "17lands_images"
+                    k: v
+                    for k, v in arch_stats.items()
+                    if k not in ("17lands_images", "arena_id")
                 }
 
         payload["card_ratings"][arena_id] = card_obj
 
-    payload["color_ratings"] = color_ratings or {}
     return payload

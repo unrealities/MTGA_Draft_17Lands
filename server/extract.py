@@ -1,123 +1,86 @@
 import os
 import json
-import time
-import requests
 import logging
+from datetime import datetime, timezone, timedelta
 from server import config
 from server.transform import parse_scryfall_types
 
 logger = logging.getLogger(__name__)
 
-# Ensure our persistent Scryfall cache directory exists
 SCRYFALL_CACHE_DIR = os.path.join(config.OUTPUT_DIR, "scryfall_cache")
 os.makedirs(SCRYFALL_CACHE_DIR, exist_ok=True)
 
 
-def get_scheduled_events(calendar_path="calendar.json") -> dict:
-    """
-    Reads the manual calendar JSON and returns a dictionary of active events for TODAY.
-    Format: { "TMNT": ["PremierDraft", "TradDraft"], "BLB": ["PremierDraft"] }
-    """
-    logger.info(f"Loading calendar from {calendar_path}...")
-
-    try:
-        with open(calendar_path, "r") as f:
-            calendar = json.load(f)
-    except FileNotFoundError:
-        logger.error("calendar.json not found! Cannot determine active events.")
-        return {}
-
-    today_str = datetime.now(timezone.utc).strftime("%Y-%m-%d")
-    active_sets = {}
-
-    for event in calendar.get("events", []):
-        start = event.get("start_date")
-        end = event.get("end_date")
-
-        # String comparison works perfectly for YYYY-MM-DD
-        if start <= today_str <= end:
-            set_code = event["set_code"]
-            formats = event["formats"]
-
-            if set_code not in active_sets:
-                active_sets[set_code] = set()
-
-            active_sets[set_code].update(formats)
-
-    # Convert sets back to lists for downstream compatibility
-    return {k: list(v) for k, v in active_sets.items()}
-
-
 def extract_scryfall_data(client, set_code: str) -> dict:
-    """
-    Fetches base card data. Cards don't change, so this is fetched ONCE
-    and cached permanently on disk.
-    """
     if "CUBE" in set_code.upper():
         return {}
 
     cache_filepath = os.path.join(SCRYFALL_CACHE_DIR, f"{set_code}_cards.json")
 
-    # 1. Check if we already have this set permanently cached
     if os.path.exists(cache_filepath):
-        logger.info(
-            f"   [Scryfall] Loading {set_code} base cards from local repository (0 API calls)."
+        file_mod_time = datetime.fromtimestamp(
+            os.path.getmtime(cache_filepath), tz=timezone.utc
         )
-        try:
-            with open(cache_filepath, "r", encoding="utf-8") as f:
-                return json.load(f)
-        except json.JSONDecodeError:
-            logger.warning(
-                f"   [Scryfall] Cache corrupted for {set_code}. Re-fetching."
+        age = datetime.now(timezone.utc) - file_mod_time
+
+        if age < timedelta(days=7):
+            logger.info(
+                f"   [Scryfall] Loading {set_code} base cards from local repository."
+            )
+            try:
+                with open(cache_filepath, "r", encoding="utf-8") as f:
+                    return json.load(f)
+            except json.JSONDecodeError:
+                pass
+        else:
+            logger.info(
+                f"   [Scryfall] {set_code} base cards expired. Refreshing from API..."
             )
 
-    # 2. If not cached, fetch from Scryfall
     logger.info(f"   [Scryfall] Fetching {set_code} base cards from API...")
     cards = {}
-    query = f"set:{set_code} is:booster"
-    url = f"https://api.scryfall.com/cards/search?q={requests.utils.quote(query)}"
+    url = "https://api.scryfall.com/cards/search"
+    params = {"q": f"set:{set_code}"}
 
     while url:
-        resp = client.respectful_get(url, allow_404=True)
+        resp = client.respectful_get(url, params=params, allow_404=True)
         if resp.status_code == 404:
             break
 
         try:
             data = resp.json()
         except json.JSONDecodeError as e:
-            logger.warning(f"Non-JSON Scryfall response for {set_code} (page): {e}")
+            logger.warning(f"Non-JSON Scryfall response for {set_code}: {e}")
             break
 
         for c in data.get("data", []):
-            arena_id = c.get("arena_id")
-            if not arena_id:
+            name = c.get("name", "").replace("///", "//")
+            if not name:
                 continue
 
-            name = c.get("name", "").replace("///", "//")
+            arena_id = c.get("arena_id", "")
             types, subtypes = parse_scryfall_types(c.get("type_line", ""))
 
             colors = c.get("colors", [])
-            if not colors and "card_faces" in c:
-                colors = c["card_faces"][0].get("colors", [])
-
             mana_cost = c.get("mana_cost", "")
-            if not mana_cost and "card_faces" in c:
-                mana_cost = c["card_faces"][0].get("mana_cost", "")
-
+            oracle_text = c.get("oracle_text", "")
             images = []
-            if "image_uris" in c:
-                if img := c["image_uris"].get("large", ""):
-                    images.append(img)
-            elif "card_faces" in c:
+
+            if "card_faces" in c:
+                if not colors:
+                    colors = c["card_faces"][0].get("colors", [])
+                if not mana_cost:
+                    mana_cost = c["card_faces"][0].get("mana_cost", "")
+                if not oracle_text:
+                    oracle_text = " // ".join(
+                        face.get("oracle_text", "") for face in c["card_faces"]
+                    )
                 for face in c["card_faces"]:
                     if img := face.get("image_uris", {}).get("large", ""):
                         images.append(img)
-
-            oracle_text = c.get("oracle_text", "")
-            if not oracle_text and "card_faces" in c:
-                oracle_text = " // ".join(
-                    face.get("oracle_text", "") for face in c["card_faces"]
-                )
+            elif "image_uris" in c:
+                if img := c["image_uris"].get("large", ""):
+                    images.append(img)
 
             cards[name] = {
                 "arena_id": arena_id,
@@ -135,8 +98,8 @@ def extract_scryfall_data(client, set_code: str) -> dict:
             }
 
         url = data.get("next_page")
+        params = None
 
-    # 3. Save permanently to disk
     if cards:
         with open(cache_filepath, "w", encoding="utf-8") as f:
             json.dump(cards, f, indent=2)
@@ -145,53 +108,38 @@ def extract_scryfall_data(client, set_code: str) -> dict:
 
 
 def extract_scryfall_tags(client, set_code: str) -> dict:
-    """
-    Fetches community tags. Tags change, so we cache this with a 7-day TTL (Time To Live).
-    """
     if "CUBE" in set_code.upper():
         return {}
 
     cache_filepath = os.path.join(SCRYFALL_CACHE_DIR, f"{set_code}_tags.json")
 
-    # 1. Check if we have tags cached AND they are less than 7 days old
     if os.path.exists(cache_filepath):
-        file_age_days = (time.time() - os.path.getmtime(cache_filepath)) / 86400
-        if file_age_days < 7.0:
-            logger.info(
-                f"   [Scryfall] Loading {set_code} tags from local repository (Age: {file_age_days:.1f} days)."
-            )
+        file_mod_time = datetime.fromtimestamp(
+            os.path.getmtime(cache_filepath), tz=timezone.utc
+        )
+        age = datetime.now(timezone.utc) - file_mod_time
+
+        if age < timedelta(days=7):
             try:
                 with open(cache_filepath, "r", encoding="utf-8") as f:
                     return json.load(f)
             except json.JSONDecodeError:
-                pass  # Corrupted, fall through to re-fetch
-        else:
-            logger.info(
-                f"   [Scryfall] {set_code} tags are {file_age_days:.1f} days old. Refreshing from API..."
-            )
+                pass
 
-    # 2. If missing or expired, fetch from Scryfall
-    logger.info(f"   [Scryfall] Harvesting Scryfall tags for {set_code}...")
+    logger.info(f"   [Scryfall] Harvesting tags for {set_code}...")
     tags_map = {}
 
     for tag_key, query_str in config.O_TAGS.items():
-        query = f"set:{set_code} ({query_str})"
-        url = f"https://api.scryfall.com/cards/search?q={requests.utils.quote(query)}"
+        url = "https://api.scryfall.com/cards/search"
+        params = {"q": f"set:{set_code} ({query_str})"}
 
         try:
             while url:
-                resp = client.respectful_get(url, allow_404=True)
+                resp = client.respectful_get(url, params=params, allow_404=True)
                 if resp.status_code == 404:
                     break
 
-                try:
-                    data = resp.json()
-                except json.JSONDecodeError as e:
-                    logger.warning(
-                        f"Non-JSON Scryfall response for tag '{tag_key}' ({set_code}): {e}"
-                    )
-                    break
-
+                data = resp.json()
                 for c in data.get("data", []):
                     name = c.get("name", "").replace("///", "//")
                     tags_map.setdefault(name, [])
@@ -199,12 +147,10 @@ def extract_scryfall_tags(client, set_code: str) -> dict:
                         tags_map[name].append(tag_key)
 
                 url = data.get("next_page")
+                params = None
         except Exception as e:
-            logger.warning(
-                f"Failed to fetch tag '{tag_key}' for {set_code}: {e}. Skipping tag."
-            )
+            logger.warning(f"Failed to fetch tag '{tag_key}' for {set_code}: {e}")
 
-    # 3. Save to disk with updated modified time
     if tags_map:
         with open(cache_filepath, "w", encoding="utf-8") as f:
             json.dump(tags_map, f, indent=2)
@@ -212,21 +158,37 @@ def extract_scryfall_tags(client, set_code: str) -> dict:
     return tags_map
 
 
-def extract_17lands_data(client, set_code: str, draft_format: str) -> dict:
+def extract_17lands_data(
+    client,
+    set_code: str,
+    draft_format: str,
+    valid_archetypes: list,
+    user_group: str,
+    start_date: str,
+    end_date: str,
+) -> dict:
     archetype_data = {}
-    for i, color in enumerate(config.ARCHETYPES):
-        logger.info(f"   [{i+1}/{len(config.ARCHETYPES)}] Fetching {color} stats...")
-        url = f"https://www.17lands.com/card_ratings/data?expansion={set_code}&format={draft_format}"
+    base_url = "https://www.17lands.com/card_ratings/data"
+
+    for i, color in enumerate(valid_archetypes):
+        logger.info(
+            f"   [{i+1}/{len(valid_archetypes)}] Fetching {color} stats ({user_group})..."
+        )
+
+        params = {
+            "expansion": set_code,
+            "format": draft_format,
+            "start_date": start_date,
+            "end_date": end_date,
+        }
         if color != "All Decks":
-            url += f"&colors={color}"
+            params["colors"] = color
+        if user_group != "All":
+            params["user_group"] = user_group.lower()
 
         try:
-            data = client.respectful_get(url).json()
-
+            data = client.respectful_get(base_url, params=params).json()
             if color == "All Decks" and not data:
-                logger.warning(
-                    f"No baseline data for {set_code} {draft_format}. Aborting archetype fetch."
-                )
                 break
 
             archetype_data[color] = {}
@@ -253,11 +215,7 @@ def extract_17lands_data(client, set_code: str, draft_format: str) -> dict:
                     "seen_count": card.get("seen_count", 0),
                     "pick_count": card.get("pick_count", 0),
                     "game_count": card.get("game_count", 0),
-                    "pool_count": card.get("pool_count", 0),
                     "play_rate": round(float(card.get("play_rate") or 0) * 100, 2),
-                    "opening_hand_game_count": card.get("opening_hand_game_count", 0),
-                    "drawn_game_count": card.get("drawn_game_count", 0),
-                    "never_drawn_game_count": card.get("never_drawn_game_count", 0),
                 }
 
                 if color == "All Decks":
@@ -277,21 +235,43 @@ def extract_17lands_data(client, set_code: str, draft_format: str) -> dict:
     return archetype_data
 
 
-def extract_color_ratings(client, set_code: str, draft_format: str) -> dict:
-    logger.info(f"Fetching color ratings for {set_code} {draft_format}...")
-    url = f"https://www.17lands.com/color_ratings/data?expansion={set_code}&event_type={draft_format}&combine_splash=true"
-    ratings = {}
-    try:
-        data = client.respectful_get(url).json()
-        for entry in data:
-            color_key = entry.get("short_name") or (
-                "All Decks" if "All" in entry.get("color_name", "") else None
-            )
-            if color_key and (games := entry.get("games", 0)) > 0:
-                ratings[color_key] = round((entry.get("wins", 0) / games) * 100, 1)
-    except Exception as e:
-        logger.warning(
-            f"Failed to fetch color ratings for {set_code} {draft_format}: {e}"
-        )
+def extract_color_ratings(
+    client,
+    set_code: str,
+    draft_format: str,
+    user_group: str,
+    start_date: str,
+    end_date: str,
+) -> tuple[dict, dict]:
+    logger.info(
+        f"Fetching color ratings for {set_code} {draft_format} ({user_group})..."
+    )
 
-    return ratings
+    params = {
+        "expansion": set_code,
+        "event_type": draft_format,
+        "start_date": start_date,
+        "end_date": end_date,
+        "combine_splash": "true",
+    }
+    if user_group != "All":
+        params["user_group"] = user_group.lower()
+
+    url = "https://www.17lands.com/color_ratings/data"
+    ratings, games_played = {}, {}
+
+    try:
+        data = client.respectful_get(url, params=params).json()
+        for entry in data:
+            color_name = entry.get("color_name", "")
+            short_name = entry.get("short_name", "")
+
+            color_key = "" if "All" in color_name else short_name
+
+            if color_key is not None and (games := entry.get("games", 0)) > 0:
+                ratings[color_key] = round((entry.get("wins", 0) / games) * 100, 1)
+                games_played[color_key] = games
+    except Exception as e:
+        logger.warning(f"Failed to fetch color ratings: {e}")
+
+    return ratings, games_played

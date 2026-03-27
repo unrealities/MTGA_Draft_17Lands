@@ -18,16 +18,17 @@ def atomic_write(filepath, write_func):
     tmp_filepath = f"{filepath}.tmp"
     try:
         write_func(tmp_filepath)
-        os.replace(tmp_filepath, filepath)  # Atomic on POSIX systems
+        os.replace(tmp_filepath, filepath)
     except BaseException as e:
         if os.path.exists(tmp_filepath):
             os.remove(tmp_filepath)
         raise
 
 
-def save_dataset(set_code, draft_format, dataset) -> dict:
+def save_dataset(set_code, draft_format, user_group, dataset) -> dict:
     ensure_output_dir()
-    filename = f"{set_code}_{draft_format}.json.gz"
+    # Restored the "_Data" suffix to match exact client expectations
+    filename = f"{set_code}_{draft_format}_{user_group}_Data.json.gz"
     filepath = os.path.join(config.OUTPUT_DIR, filename)
 
     json_str = json.dumps(dataset, separators=(",", ":"))
@@ -73,15 +74,3 @@ def save_report(report_data: dict):
 
     atomic_write(filepath, _write_json)
     logger.info(f"Run report saved → {filepath}")
-
-
-def load_existing_manifest() -> dict:
-    filepath = os.path.join(config.OUTPUT_DIR, "manifest.json")
-    if os.path.exists(filepath):
-        try:
-            with open(filepath, "r") as f:
-                return json.load(f)
-        except Exception as e:
-            logger.warning(f"Could not load existing manifest, creating new one: {e}")
-
-    return {"datasets": {}}

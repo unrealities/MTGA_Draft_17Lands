@@ -1,23 +1,30 @@
 import os
 
 # --- PATHS ---
-# Allows CI/CD pipelines (like GitHub Actions) to define where the build goes
 OUTPUT_DIR = os.getenv(
     "ETL_OUTPUT_DIR", os.path.join(os.path.dirname(os.path.dirname(__file__)), "build")
 )
 
 # --- API ETIQUETTE & CONFIG ---
-USER_AGENT = "MTGADraftTool-ETL/2.0 (https://github.com/unrealities/MTGA_Draft_17Lands)"
-HEADERS = {"User-Agent": USER_AGENT, "Accept": "application/json"}
+USER_AGENT = "MTGADraftTool-ETL/2.1 (https://github.com/unrealities/MTGA_Draft_17Lands)"
+HEADERS = {
+    "User-Agent": USER_AGENT,
+    "Accept": "application/json",
+    "Accept-Encoding": "gzip, deflate",
+}
 
 # Delays explicitly requested by community API guidelines
 DELAY_17LANDS_SEC = 3.0
 DELAY_SCRYFALL_SEC = 0.2
 
-# Reliability config
+# Reliability & Anti-Bot config
 REQUEST_TIMEOUT_SEC = int(os.getenv("ETL_TIMEOUT", 30))
 MAX_ATTEMPTS = 4
 RETRY_BASE_DELAY_SEC = 5.0
+WAF_COOLDOWN_SEC = 180.0  # 3 minutes of sleep if we get a 403/WAF block
+
+# Statistical Thresholds
+MIN_GAMES_THRESHOLD = 500  # Increased to reduce API spam and filter out noisy data
 
 # --- DATA TARGETS ---
 ARCHETYPES = [
