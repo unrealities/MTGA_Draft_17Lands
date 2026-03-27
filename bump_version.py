@@ -38,15 +38,12 @@ def calculate_new_version(current_ver, mode, manual_ver=None):
 
 
 def bump_constants(content, new_ver):
-    # Regex to find APPLICATION_VERSION = 3.37
-    ver_match = re.search(r"APPLICATION_VERSION\s*=\s*(\d+\.\d+)", content)
+    # Regex to find APPLICATION_VERSION = "3.37"
+    ver_match = re.search(r"APPLICATION_VERSION\s*=\s*[\"']?(\d+\.\d+)[\"']?", content)
     if not ver_match:
         raise ValueError("Could not find APPLICATION_VERSION in constants.py")
 
     current_ver = float(ver_match.group(1))
-
-    # If we haven't calculated new_ver yet (logic separation), this helps validate
-    # But here we pass new_ver in. We still need current_ver for the "PREVIOUS" field.
 
     # Format versions for PREVIOUS_APPLICATION_VERSION (e.g., "0337")
     current_ver_code = format_version_code(current_ver)
@@ -55,8 +52,8 @@ def bump_constants(content, new_ver):
 
     # 1. Update APPLICATION_VERSION
     new_content = re.sub(
-        r"APPLICATION_VERSION\s*=\s*\d+\.\d+",
-        f"APPLICATION_VERSION = {new_ver}",
+        r"APPLICATION_VERSION\s*=\s*[\"']?\d+\.\d+[\"']?",
+        f'APPLICATION_VERSION = "{new_ver}"',
         content,
     )
 
@@ -102,7 +99,8 @@ def prepend_release_notes(path, new_ver):
 
 def get_current_version_from_file():
     content = read_file(CONSTANTS_PATH)
-    ver_match = re.search(r"APPLICATION_VERSION\s*=\s*(\d+\.\d+)", content)
+    # Added [\"']? to handle quotes
+    ver_match = re.search(r"APPLICATION_VERSION\s*=\s*[\"']?(\d+\.\d+)[\"']?", content)
     if not ver_match:
         raise ValueError("Could not find current version.")
     return float(ver_match.group(1)), content

@@ -357,6 +357,8 @@ class FileExtractor(UIProgress):
             deep_ratings = sl.download_set_data(
                 set_code,
                 self.draft,
+                self.start_date,
+                self.end_date,
                 colors=target_colors,
                 user_group=self.user_group,
                 progress_callback=update_ui,

@@ -1,0 +1,52 @@
+name: Daily Dataset ETL Pipeline
+
+on:
+  schedule:
+    # Runs at 10:00 AM UTC every day (Adjust as needed)
+    - cron: "0 10 * * *"
+  workflow_dispatch: # Allows manual triggering from the GitHub UI
+
+permissions:
+  contents: write # Required to push to the gh-pages branch
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Main Code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r server/requirements-server.txt
+
+      - name: Checkout Historical Data (gh-pages)
+        # We checkout the gh-pages branch into the build directory.
+        # This allows server/main.py to read the old manifest.json and preserve inactive sets!
+        uses: actions/checkout@v4
+        continue-on-error: true # Will fail on the very first run if gh-pages doesn't exist yet, which is fine
+        with:
+          ref: gh-pages
+          path: build
+
+      - name: Run ETL Pipeline
+        env:
+          ETL_OUTPUT_DIR: build # Matches your config.py
+        run: |
+          # If the gh-pages branch didn't exist yet, ensure the build dir exists
+          mkdir -p build
+          python -m server.main
+
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./build
+          publish_branch: gh-pages
+          commit_message: "Automated ETL update: ${{ github.event.head_commit.message }}"

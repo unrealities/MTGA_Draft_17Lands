@@ -1,0 +1,94 @@
+{
+    "events": [
+        {
+            "set_code": "TMT",
+            "formats": [
+                "PremierDraft",
+                "PickTwoDraft",
+                "TradDraft"
+            ],
+            "start_date": "2026-03-03",
+            "end_date": "2026-04-21"
+        },
+        {
+            "set_code": "TMT",
+            "formats": [
+                "QuickDraft"
+            ],
+            "start_date": "2026-04-07",
+            "end_date": "2026-04-21"
+        },
+        {
+            "set_code": "TMT",
+            "formats": [
+                "Sealed"
+            ],
+            "start_date": "2026-03-03",
+            "end_date": "2026-03-27"
+        },
+        {
+            "set_code": "TMT",
+            "formats": [
+                "TradSealed"
+            ],
+            "start_date": "2026-03-03",
+            "end_date": "2026-03-18"
+        },
+        {
+            "set_code": "BLB",
+            "formats": [
+                "PremierDraft"
+            ],
+            "start_date": "2026-03-31",
+            "end_date": "2026-04-07"
+        },
+        {
+            "set_code": "FDN",
+            "formats": [
+                "PremierDraft"
+            ],
+            "start_date": "2026-04-07",
+            "end_date": "2026-04-14"
+        },
+        {
+            "set_code": "FDN",
+            "formats": [
+                "QuickDraft"
+            ],
+            "start_date": "2026-03-23",
+            "end_date": "2026-04-07"
+        },
+        {
+            "set_code": "MAT",
+            "formats": [
+                "PremierDraft"
+            ],
+            "start_date": "2026-03-17",
+            "end_date": "2026-03-24"
+        },
+        {
+            "set_code": "Remix - Artifacts",
+            "formats": [
+                "PremierDraft"
+            ],
+            "start_date": "2026-03-24",
+            "end_date": "2026-03-31"
+        },
+        {
+            "set_code": "NEO",
+            "formats": [
+                "PremierDraft"
+            ],
+            "start_date": "2026-04-14",
+            "end_date": "2026-04-21"
+        },
+        {
+            "set_code": "CUBE-POWERED",
+            "formats": [
+                "Cube"
+            ],
+            "start_date": "2026-03-31",
+            "end_date": "2026-04-21"
+        }
+    ]
+}

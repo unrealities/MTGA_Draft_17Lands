@@ -6,7 +6,7 @@ Validation for Tier List UI.
 import pytest
 import tkinter
 from unittest.mock import MagicMock, patch
-from src.ui.windows.tier_list import TierListWindow
+from src.ui.windows.tier_list_panel import TierListWindow
 from src.tier_list import TierList, Meta
 from src.configuration import Configuration
 
@@ -59,7 +59,7 @@ class TestTierListWindow:
             panel._start_import()
             mock_warn.assert_called_once()
 
-    @patch("src.ui.windows.tier_list.threading.Thread", new=MockSyncThread)
+    @patch("src.ui.windows.tier_list_panel.threading.Thread", new=MockSyncThread)
     @patch("src.tier_list.TierList.from_api")
     def test_successful_import_lifecycle(self, mock_from_api, root):
         """Verify full import updates the UI and notifies the dashboard."""
@@ -84,7 +84,7 @@ class TestTierListWindow:
             callback.assert_called_once()
             assert panel.vars["status"].get() == "IMPORT SUCCESSFUL"
 
-    @patch("src.ui.windows.tier_list.threading.Thread", new=MockSyncThread)
+    @patch("src.ui.windows.tier_list_panel.threading.Thread", new=MockSyncThread)
     def test_import_error_handling(self, root):
         """Verify UI stability during network/API failures."""
         panel = TierListWindow(root, Configuration(), MagicMock())

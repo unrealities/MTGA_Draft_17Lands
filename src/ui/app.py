@@ -34,7 +34,7 @@ from src.ui.windows.suggest_deck import SuggestDeckPanel
 from src.ui.windows.custom_deck import CustomDeckPanel
 from src.ui.windows.compare import ComparePanel
 from src.ui.windows.download import DownloadWindow
-from src.ui.windows.tier_list import TierListWindow
+from src.ui.windows.tier_list_panel import TierListWindow
 from src.ui.windows.settings import SettingsWindow
 
 
@@ -43,24 +43,24 @@ class LoadingOverlay(ttk.Frame):
         super().__init__(parent)
         self.configure(style="TFrame")
 
-        self.center_box = ttk.Frame(self, padding=40, style="Card.TFrame")
+        self.center_box = ttk.Frame(self, padding=Theme.scaled_val(40), style="Card.TFrame")
         self.center_box.place(relx=0.5, rely=0.45, anchor="center")
 
         self.title_lbl = ttk.Label(
             self.center_box,
             text="Loading Draft",
-            font=(Theme.FONT_FAMILY, 16, "bold"),
+            font=Theme.scaled_font(16, "bold"),
             bootstyle="primary",
         )
-        self.title_lbl.pack(pady=(0, 10))
+        self.title_lbl.pack(pady=(0, Theme.scaled_val(10)))
 
         self.status_lbl = ttk.Label(
-            self.center_box, text="Initializing...", font=(Theme.FONT_FAMILY, 11)
+            self.center_box, text="Initializing...", font=Theme.scaled_font(11)
         )
-        self.status_lbl.pack(pady=(0, 20))
+        self.status_lbl.pack(pady=(0, Theme.scaled_val(20)))
 
         self.progress = ttk.Progressbar(
-            self.center_box, mode="indeterminate", length=300
+            self.center_box, mode="indeterminate", length=Theme.scaled_val(300)
         )
         self.progress.pack()
 
@@ -113,29 +113,7 @@ class DraftApp:
             scanner, configuration, self._refresh_ui_data
         )
 
-        # 3. BUILD UI SHELL (Widget Creation Only)
-        # These calls create the Tkinter objects but do not perform math/IO
-        self._setup_variables()
-        self._build_layout()
-        self._setup_menu()
-
-        self.loading_overlay = LoadingOverlay(self.root)
-
-        # 4. ATTACH INFRASTRUCTURE SERVICES
-        # Notifications requires self.panel_data (created in _build_layout)
-        self.notifications = Notifications(
-            self.root, scanner.set_list, configuration, self.panel_data
-        )
-
-        # 5. VIRTUAL EVENT BINDINGS
-        self.root.bind(
-            "<<ShowDataTab>>",
-            lambda e: self._ensure_tabs_visible()
-            or self.notebook.select(self.panel_data),
-        )
-
-        # 6. INITIAL THEME APPLICATION
-        # Apply theme based on config so widgets aren't the default "Grey" on flicker
+        # 3. INITIAL THEME APPLICATION (Must happen before UI widget construction)
         current_scale = constants.UI_SIZE_DICT.get(
             self.configuration.settings.ui_size, 1.0
         )
@@ -145,6 +123,27 @@ class DraftApp:
             engine=getattr(self.configuration.settings, "theme_base", "clam"),
             custom_path=getattr(self.configuration.settings, "theme_custom_path", ""),
             scale=current_scale,
+        )
+
+        # 4. BUILD UI SHELL (Widget Creation Only)
+        # These calls create the Tkinter objects but do not perform math/IO
+        self._setup_variables()
+        self._build_layout()
+        self._setup_menu()
+
+        self.loading_overlay = LoadingOverlay(self.root)
+
+        # 5. ATTACH INFRASTRUCTURE SERVICES
+        # Notifications requires self.panel_data (created in _build_layout)
+        self.notifications = Notifications(
+            self.root, scanner.set_list, configuration, self.panel_data
+        )
+
+        # 6. VIRTUAL EVENT BINDINGS
+        self.root.bind(
+            "<<ShowDataTab>>",
+            lambda e: self._ensure_tabs_visible()
+            or self.notebook.select(self.panel_data),
         )
 
         # 7. FINAL WINDOW PROTOCOL & METADATA
@@ -174,7 +173,7 @@ class DraftApp:
                 if geom and "x" in geom and not geom.startswith("1x1"):
                     self.root.geometry(geom)
                 else:
-                    self.root.geometry("1200x800")
+                    self.root.geometry(f"{Theme.scaled_val(1200)}x{Theme.scaled_val(800)}")
 
                 self.root.update_idletasks()
 
@@ -183,17 +182,17 @@ class DraftApp:
                 def apply_sashes():
                     try:
                         sash_pos = self.configuration.settings.paned_window_sash
-                        if sash_pos > 50 and self.tabs_visible:
+                        if sash_pos > Theme.scaled_val(50) and self.tabs_visible:
                             self.splitter.sashpos(0, sash_pos)
 
                         dash_sash = getattr(
-                            self.configuration.settings, "dashboard_sash", 800
+                            self.configuration.settings, "dashboard_sash", Theme.scaled_val(800)
                         )
-                        if dash_sash > 50 and hasattr(self.dashboard, "h_splitter"):
+                        if dash_sash > Theme.scaled_val(50) and hasattr(self.dashboard, "h_splitter"):
                             curr_w = self.dashboard.winfo_width()
-                            if curr_w > 200:
-                                safe_sash = min(dash_sash, curr_w - 280)
-                                if safe_sash > 50:
+                            if curr_w > Theme.scaled_val(200):
+                                safe_sash = min(dash_sash, curr_w - Theme.scaled_val(280))
+                                if safe_sash > Theme.scaled_val(50):
                                     self.dashboard.h_splitter.sashpos(0, safe_sash)
                     except Exception:
                         pass
@@ -270,7 +269,7 @@ class DraftApp:
                 from src.app_update import AppUpdate
 
                 v, _ = AppUpdate().retrieve_file_version()
-                if v and float(v) > constants.APPLICATION_VERSION:
+                if v and float(v) > float(constants.APPLICATION_VERSION):
                     self.root.after(0, lambda: self.notify_app_update(v))
             except Exception as e:
                 logger.error(f"App update check failed: {e}")
@@ -347,29 +346,29 @@ class DraftApp:
     def _build_layout(self):
         if hasattr(self, "main_container"):
             self.main_container.destroy()
-        self.main_container = ttk.Frame(self.root, padding=8)
+        self.main_container = ttk.Frame(self.root, padding=Theme.scaled_val(8))
         self.main_container.pack(fill="both", expand=True)
 
         # --- HEADER CONTAINER ---
-        header_frame = ttk.Frame(self.main_container, padding=5)
-        header_frame.pack(fill="x", pady=(0, 10))
+        header_frame = ttk.Frame(self.main_container, padding=Theme.scaled_val(5))
+        header_frame.pack(fill="x", pady=(0, Theme.scaled_val(10)))
 
         # ROW 1: Status & Overlay
         row1 = ttk.Frame(header_frame)
-        row1.pack(fill="x", pady=(0, 5))
+        row1.pack(fill="x", pady=(0, Theme.scaled_val(5)))
 
         self.status_dot = ttk.Label(
-            row1, text="●", font=(Theme.FONT_FAMILY, 16), bootstyle="secondary"
+            row1, text="●", font=Theme.scaled_font(16), bootstyle="secondary"
         )
-        self.status_dot.pack(side="left", padx=5)
+        self.status_dot.pack(side="left", padx=Theme.scaled_val(5))
 
         self.lbl_status = ttk.Label(
             row1,
             textvariable=self.vars["status_text"],
-            font=(Theme.FONT_FAMILY, 11, "bold"),
+            font=Theme.scaled_font(11, "bold"),
             bootstyle="primary",
         )
-        self.lbl_status.pack(side="left", padx=(0, 10))
+        self.lbl_status.pack(side="left", padx=(0, Theme.scaled_val(10)))
 
         ttk.Button(
             row1,
@@ -377,17 +376,17 @@ class DraftApp:
             bootstyle="info-outline",
             command=self._enable_overlay,
             width=-10,
-        ).pack(side="right", padx=5)
+        ).pack(side="right", padx=Theme.scaled_val(5))
 
         self.combo_history = ttk.Combobox(
             row1,
             textvariable=self.vars["set_label"],
             state="readonly",
-            font=(Theme.FONT_FAMILY, 10, "bold"),
+            font=Theme.scaled_font(10, "bold"),
             width=36,
             justify="right",
         )
-        self.combo_history.pack(side="right", padx=10)
+        self.combo_history.pack(side="right", padx=Theme.scaled_val(10))
         self.combo_history.bind("<<ComboboxSelected>>", self._on_history_select)
         self.combo_history.bind("<Button-1>", lambda e: self._update_history_dropdown())
 
@@ -405,7 +404,7 @@ class DraftApp:
             width=7,
             bootstyle="secondary-outline",
         )
-        self.btn_reload.pack(side="left", padx=2)
+        self.btn_reload.pack(side="left", padx=Theme.scaled_val(2))
 
         self.btn_p1p1 = ttk.Button(
             row2,
@@ -426,15 +425,15 @@ class DraftApp:
             "",
             style="TMenubutton",
         )
-        self.om_filter.pack(side="right", padx=2)
+        self.om_filter.pack(side="right", padx=Theme.scaled_val(2))
 
         self.lbl_auto_detect = ttk.Label(
             self.dataset_controls_frame,
             text="",
-            font=(Theme.FONT_FAMILY, 9, "italic"),
+            font=Theme.scaled_font(9, "italic"),
             bootstyle="info",
         )
-        self.lbl_auto_detect.pack(side="right", padx=8)
+        self.lbl_auto_detect.pack(side="right", padx=Theme.scaled_val(8))
 
         # Group (Right)
         self.om_group = ttk.OptionMenu(
@@ -443,7 +442,7 @@ class DraftApp:
             "",
             style="TMenubutton",
         )
-        self.om_group.pack(side="right", padx=2)
+        self.om_group.pack(side="right", padx=Theme.scaled_val(2))
 
         # Event (Right)
         self.om_event = ttk.OptionMenu(
@@ -452,7 +451,7 @@ class DraftApp:
             "",
             style="TMenubutton",
         )
-        self.om_event.pack(side="right", padx=2)
+        self.om_event.pack(side="right", padx=Theme.scaled_val(2))
 
         # --- BODY ---
         self.splitter = ttk.PanedWindow(self.main_container, orient=tkinter.VERTICAL)
@@ -473,7 +472,7 @@ class DraftApp:
         self.bottom_pane = ttk.Frame(self.splitter)
         self.splitter.add(self.bottom_pane, weight=2)
 
-        self.tab_controls = ttk.Frame(self.top_pane, padding=(10, 5, 10, 5))
+        self.tab_controls = ttk.Frame(self.top_pane, padding=Theme.scaled_val((10, 5, 10, 5)))
         self.tab_controls.pack(side="bottom", fill="x")
 
         self.footer_separator = ttk.Separator(self.top_pane, orient="horizontal")
@@ -488,15 +487,15 @@ class DraftApp:
             command=self._toggle_tabs,
             cursor="hand2",
         )
-        self.btn_toggle_tabs.pack(side="right", padx=5)
+        self.btn_toggle_tabs.pack(side="right", padx=Theme.scaled_val(5))
 
         self.lbl_session_info = ttk.Label(
             self.tab_controls,
-            font=(Theme.FONT_FAMILY, 9),
+            font=Theme.scaled_font(9),
             bootstyle="secondary",
             anchor="w",
         )
-        self.lbl_session_info.pack(side="left", fill="x", expand=True, padx=5)
+        self.lbl_session_info.pack(side="left", fill="x", expand=True, padx=Theme.scaled_val(5))
 
         self.notebook = ttk.Notebook(self.bottom_pane)
         self.notebook.pack(fill="both", expand=True)

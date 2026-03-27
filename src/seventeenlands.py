@@ -33,6 +33,8 @@ class Seventeenlands:
         self,
         set_code: str,
         draft_format: str,
+        start_date: str,
+        end_date: str,
         colors: List[str] = None,
         user_group: str = "All",
         progress_callback=None,
@@ -67,7 +69,7 @@ class Seventeenlands:
 
             # Fetch raw data (from cache or network)
             raw_data, from_cache = self._fetch_archetype_with_cache(
-                set_code, draft_format, color, user_group
+                set_code, draft_format, start_date, end_date, color, user_group
             )
 
             # Process into master map
@@ -76,7 +78,6 @@ class Seventeenlands:
             # Throttle ONLY if we actually hit the network, otherwise blast through cache!
             if not from_cache:
                 time.sleep(1.5)
-
 
         if progress_callback:
             progress_callback("Finalizing Dataset...", 100)
@@ -87,13 +88,15 @@ class Seventeenlands:
         self,
         set_code: str,
         draft_format: str,
+        start_date: str,
+        end_date: str,
         color: str,
         user_group: str = "All",
     ):
         """Retrieves data from 17Lands, prioritizing the local raw cache."""
         ug_label = user_group if user_group and user_group != "All" else "All"
 
-        cache_name = f"{set_code}_{draft_format}_{color}_{ug_label}.json".lower()
+        cache_name = f"{set_code}_{draft_format}_{start_date}_{end_date}_{color}_{ug_label}.json".lower()
 
         cache_path = os.path.join(self.CACHE_DIR, cache_name)
 
@@ -111,7 +114,7 @@ class Seventeenlands:
         # Build URL
         url = (
             f"{self.URL_BASE}/card_ratings/data?expansion={set_code.upper()}"
-            f"&format={draft_format}"
+            f"&format={draft_format}&start_date={start_date}&end_date={end_date}"
         )
         if color != "All" and color != "All Decks":
             url += f"&colors={color}"

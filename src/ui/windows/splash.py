@@ -11,6 +11,7 @@ import logging
 from typing import Callable, Any, Optional
 
 from src.ui.styles import Theme
+from src import constants
 
 logger = logging.getLogger(__name__)
 
@@ -71,20 +72,19 @@ class SplashWindow:
         ttk.Label(
             container,
             text="MTGA DRAFT TOOL",
-            font=(Theme.FONT_FAMILY, 14, "bold"),
+            font=Theme.scaled_font(14, "bold"),
             foreground=Theme.ACCENT,
-        ).pack(pady=(0, 5))
+        ).pack(pady=(0, Theme.scaled_val(5)))
 
         ttk.Label(
             container,
-            textvariable=self.status_var,
-            font=(Theme.FONT_FAMILY, 9),
+            text=f"Version {constants.APPLICATION_VERSION}",
+            font=Theme.scaled_font(9),
             foreground=Theme.TEXT_MAIN,
-        ).pack(pady=(0, 15))
+        ).pack(pady=(0, Theme.scaled_val(15)))
 
         self.progress = ttk.Progressbar(container, mode="indeterminate", length=250)
-        self.progress.pack(pady=(0, 10))
-        self.progress.start(15)
+        self.progress.pack(pady=(0, Theme.scaled_val(10)))
 
     def _center_window(self) -> None:
         """Centers the splash screen relative to the monitor."""
