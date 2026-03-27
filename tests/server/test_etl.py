@@ -180,10 +180,13 @@ def test_transform_payload_merging():
         seventeenlands_mock,
         tags_mock,
         color_ratings_mock,
+        "2019-01-01",
+        "2024-05-01",
     )
 
     # Verify Header
-    assert payload["meta"]["set"] == "M10"
+    assert payload["meta"]["start_date"] == "2019-01-01"
+    assert payload["meta"]["end_date"] == "2024-05-01"
     assert payload["meta"]["game_count"] == 5000
 
     # Verify Root Card Properties
