@@ -43,16 +43,16 @@ class SettingsWindow(tkinter.Toplevel):
         self.protocol("WM_DELETE_WINDOW", self._on_close)
 
     def _build_ui(self):
-        container = ttk.Frame(self, padding=20)
+        container = ttk.Frame(self, padding=Theme.scaled_val(20))
         container.pack(fill="both", expand=True)
 
         # --- SECTION: DATA FORMAT ---
         ttk.Label(
-            container, text="DATA EVALUATION", font=(Theme.FONT_FAMILY, 9, "bold")
-        ).grid(row=0, column=0, columnspan=2, sticky="w", pady=(0, 10))
+            container, text="DATA EVALUATION", font=Theme.scaled_font(9, "bold")
+        ).grid(row=0, column=0, columnspan=2, sticky="w", pady=Theme.scaled_val((0, 10)))
 
         ttk.Label(container, text="Win Rate Format:").grid(
-            row=1, column=0, sticky="e", padx=5
+            row=1, column=0, sticky="e", padx=Theme.scaled_val(5)
         )
         self.vars["result_format"] = tkinter.StringVar()
         fmt_om = ttk.OptionMenu(
@@ -62,10 +62,10 @@ class SettingsWindow(tkinter.Toplevel):
             *constants.RESULT_FORMAT_LIST,
             style="TMenubutton",
         )
-        fmt_om.grid(row=1, column=1, sticky="ew", pady=2)
+        fmt_om.grid(row=1, column=1, sticky="ew", pady=Theme.scaled_val(2))
 
         ttk.Label(container, text="Deck Filter Format:").grid(
-            row=2, column=0, sticky="e", padx=5
+            row=2, column=0, sticky="e", padx=Theme.scaled_val(5)
         )
         self.vars["filter_format"] = tkinter.StringVar()
         filter_om = ttk.OptionMenu(
@@ -75,9 +75,9 @@ class SettingsWindow(tkinter.Toplevel):
             *constants.DECK_FILTER_FORMAT_LIST,
             style="TMenubutton",
         )
-        filter_om.grid(row=2, column=1, sticky="ew", pady=2)
+        filter_om.grid(row=2, column=1, sticky="ew", pady=Theme.scaled_val(2))
 
-        ttk.Label(container, text="UI Scale:").grid(row=3, column=0, sticky="e", padx=5)
+        ttk.Label(container, text="UI Scale:").grid(row=3, column=0, sticky="e", padx=Theme.scaled_val(5))
         self.vars["ui_size"] = tkinter.StringVar()
 
         # Sort options nicely (80%, 90%, 100%, etc.)
@@ -91,13 +91,13 @@ class SettingsWindow(tkinter.Toplevel):
             *size_options,
             style="TMenubutton",
         )
-        size_om.grid(row=3, column=1, sticky="ew", pady=2)
+        size_om.grid(row=3, column=1, sticky="ew", pady=Theme.scaled_val(2))
 
         # --- SECTION: ADVISOR & HUD ---
         r = 10
         ttk.Label(
-            container, text="INTELLIGENCE & HUD", font=(Theme.FONT_FAMILY, 9, "bold")
-        ).grid(row=r, column=0, columnspan=2, sticky="w", pady=(20, 10))
+            container, text="INTELLIGENCE & HUD", font=Theme.scaled_font(9, "bold")
+        ).grid(row=r, column=0, columnspan=2, sticky="w", pady=Theme.scaled_val((20, 10)))
 
         features = [
             ("Highlight Row by Mana Cost", "card_colors_enabled"),
@@ -112,13 +112,13 @@ class SettingsWindow(tkinter.Toplevel):
             var = tkinter.IntVar()
             self.vars[key] = var
             ttk.Checkbutton(container, text=label, variable=var).grid(
-                row=r + 1 + i, column=0, columnspan=2, sticky="w", padx=10, pady=2
+                row=r + 1 + i, column=0, columnspan=2, sticky="w", padx=Theme.scaled_val(10), pady=Theme.scaled_val(2)
             )
 
 
         # --- FOOTER ---
         footer = ttk.Frame(container)
-        footer.grid(row=50, column=0, columnspan=2, pady=(25, 0), sticky="ew")
+        footer.grid(row=50, column=0, columnspan=2, pady=Theme.scaled_val((25, 0)), sticky="ew")
 
         ttk.Button(footer, text="Restore Defaults", command=self._reset_defaults).pack(
             side="left"
@@ -132,9 +132,10 @@ class SettingsWindow(tkinter.Toplevel):
         self._toggle_traces(False)
 
         # Standard settings
+        self.original_ui_size = s.ui_size
         self.vars["result_format"].set(s.result_format)
         self.vars["filter_format"].set(s.filter_format)
-        self.vars["ui_size"].set(s.ui_size)
+        self.vars["ui_size"].set(self.original_ui_size)
 
         # Checkbox logic
         checkbox_keys = [

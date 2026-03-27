@@ -6,6 +6,7 @@ import sys
 import re
 import shutil
 import zipfile
+import certifi
 from typing import Tuple
 from src.logger import create_logger
 from src.constants import BASE_DIR
@@ -33,8 +34,9 @@ class AppUpdate:
     def __init__(self):
         self.version: str = ""
         self.file_location: str = ""
-        self.context: ssl.SSLContext = ssl.SSLContext(protocol=ssl.PROTOCOL_TLS_CLIENT)
-        self.context.load_default_certs()
+        self.context: ssl.SSLContext = ssl.create_default_context(
+            cafile=certifi.where()
+        )
 
     def retrieve_file_version(
         self, search_location: str = UPDATE_LATEST_URL

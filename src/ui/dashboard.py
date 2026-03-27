@@ -102,9 +102,9 @@ class DashboardFrame(ttk.Frame):
         ttk.Label(
             tips_frame,
             text="✨ Personalize Your Experience",
-            font=(Theme.FONT_FAMILY, 11, "bold"),
+            font=Theme.scaled_font(11, "bold"),
             bootstyle="primary",
-        ).pack(anchor="w", pady=(0, 8))
+        ).pack(anchor="w", pady=(0, Theme.scaled_val(8)))
 
         tips = [
             (
@@ -123,19 +123,19 @@ class DashboardFrame(ttk.Frame):
 
         for title, desc in tips:
             row = ttk.Frame(tips_frame)
-            row.pack(fill="x", pady=3)
+            row.pack(fill="x", pady=Theme.scaled_val(3))
 
             ttk.Label(
                 row,
                 text=title,
-                font=(Theme.FONT_FAMILY, 9, "bold"),
+                font=Theme.scaled_font(9, "bold"),
                 bootstyle="primary",
             ).pack(anchor="nw")
 
             lbl = ttk.Label(
                 row,
                 text=desc,
-                font=(Theme.FONT_FAMILY, 9),
+                font=Theme.scaled_font(9),
                 bootstyle="info",
                 justify="left",
             )
@@ -154,18 +154,18 @@ class DashboardFrame(ttk.Frame):
         ttk.Label(
             center_box,
             text="👋 Welcome to MTGA Draft Tool",
-            font=(Theme.FONT_FAMILY, 13, "bold"),
+            font=Theme.scaled_font(13, "bold"),
             bootstyle="primary",
             justify="center",
-        ).pack(pady=(0, 10), anchor="center")
+        ).pack(pady=(0, Theme.scaled_val(10)), anchor="center")
 
         desc1 = ttk.Label(
             center_box,
             text="No 17Lands dataset is currently loaded. You need to download data before you can draft.",
-            font=(Theme.FONT_FAMILY, 9),
+            font=Theme.scaled_font(9),
             justify="center",
         )
-        desc1.pack(pady=(0, 15), anchor="center")
+        desc1.pack(pady=(0, Theme.scaled_val(15)), anchor="center")
         self._dynamic_wrap_labels.append(desc1)
 
         step_frame = ttk.Frame(center_box)
@@ -180,39 +180,39 @@ class DashboardFrame(ttk.Frame):
             ttk.Label(
                 step_frame,
                 text=s,
-                font=(Theme.FONT_FAMILY, 9, "bold"),
-            ).pack(anchor="w", pady=2)
+                font=Theme.scaled_font(9, "bold"),
+            ).pack(anchor="w", pady=Theme.scaled_val(2))
 
         expl_frame = ttk.Frame(center_box)
-        expl_frame.pack(pady=(15, 0), anchor="center")
+        expl_frame.pack(pady=(Theme.scaled_val(15), 0), anchor="center")
 
         ttk.Label(
             expl_frame,
             text="Dataset Options:",
-            font=(Theme.FONT_FAMILY, 9, "bold"),
+            font=Theme.scaled_font(9, "bold"),
             bootstyle="warning",
-        ).pack(anchor="w", pady=(0, 5))
+        ).pack(anchor="w", pady=(0, Theme.scaled_val(5)))
 
         lbl_ug = ttk.Label(
             expl_frame,
             text="• USERS: 'All' pulls data from everyone. 'Top' pulls data exclusively from top players.",
-            font=(Theme.FONT_FAMILY, 9),
+            font=Theme.scaled_font(9),
             justify="left",
         )
-        lbl_ug.pack(anchor="w", pady=2)
+        lbl_ug.pack(anchor="w", pady=Theme.scaled_val(2))
         self._dynamic_wrap_labels.append(lbl_ug)
 
         lbl_mg = ttk.Label(
             expl_frame,
             text="• MIN GAMES: The minimum amount of data required to show color-specific win rates.",
-            font=(Theme.FONT_FAMILY, 9),
+            font=Theme.scaled_font(9),
             justify="left",
         )
-        lbl_mg.pack(anchor="w", pady=2)
+        lbl_mg.pack(anchor="w", pady=Theme.scaled_val(2))
         self._dynamic_wrap_labels.append(lbl_mg)
 
         tips = self._build_customization_tips(center_box)
-        tips.pack(pady=(20, 0), anchor="center")
+        tips.pack(pady=(Theme.scaled_val(20), 0), anchor="center")
 
     def _build_waiting_state(self):
         """State 2: Data downloaded, but no draft is active."""
@@ -224,19 +224,19 @@ class DashboardFrame(ttk.Frame):
         self.lbl_waiting_title = ttk.Label(
             center_box,
             text="Waiting for draft to begin...",
-            font=(Theme.FONT_FAMILY, 13, "bold"),
+            font=Theme.scaled_font(13, "bold"),
             bootstyle="primary",
             justify="center",
         )
-        self.lbl_waiting_title.pack(pady=(0, 10), anchor="center")
+        self.lbl_waiting_title.pack(pady=(0, Theme.scaled_val(10)), anchor="center")
 
         self.lbl_waiting_desc = ttk.Label(
             center_box,
             text="Ensure 'Detailed Logs (Plugin Support)' is checked in your MTGA Account Settings.",
-            font=(Theme.FONT_FAMILY, 9),
+            font=Theme.scaled_font(9),
             justify="center",
         )
-        self.lbl_waiting_desc.pack(pady=(0, 20), anchor="center")
+        self.lbl_waiting_desc.pack(pady=(0, Theme.scaled_val(20)), anchor="center")
         self._dynamic_wrap_labels.append(self.lbl_waiting_desc)
 
         tips = self._build_customization_tips(center_box)
@@ -252,18 +252,18 @@ class DashboardFrame(ttk.Frame):
         ttk.Label(
             center_box,
             text="Draft Started: The P1P1 Gap",
-            font=(Theme.FONT_FAMILY, 14, "bold"),
+            font=Theme.scaled_font(14, "bold"),
             bootstyle="warning",
             justify="center",
-        ).pack(pady=(0, 10), anchor="center")
+        ).pack(pady=(0, Theme.scaled_val(10)), anchor="center")
 
         desc1 = ttk.Label(
             center_box,
             text="MTG Arena delays writing the first pack to the log file in Human Drafts.\nTo see your options before picking, we must use Screen Capture (OCR).\nPressing the button below will hide the app (timeout: 8 seconds) and take a screenshot of your screen.",
-            font=(Theme.FONT_FAMILY, 10),
+            font=Theme.scaled_font(10),
             justify="center",
         )
-        desc1.pack(pady=(0, 20), anchor="center")
+        desc1.pack(pady=(0, Theme.scaled_val(20)), anchor="center")
         self._dynamic_wrap_labels.append(desc1)
 
         self.btn_dashboard_scan = ttk.Button(
@@ -271,14 +271,14 @@ class DashboardFrame(ttk.Frame):
             text="SCAN P1P1 (Take Screenshot)",
             bootstyle="success",
             command=lambda: self.on_p1p1_scan() if self.on_p1p1_scan else None,
-            padding=(20, 10),
+            padding=(Theme.scaled_val(20), Theme.scaled_val(10)),
         )
-        self.btn_dashboard_scan.pack(pady=(0, 20))
+        self.btn_dashboard_scan.pack(pady=(0, Theme.scaled_val(20)))
 
         desc2 = ttk.Label(
             center_box,
             text="Note: You can disable this feature or choose to save the screenshots locally via File -> Preferences.",
-            font=(Theme.FONT_FAMILY, 9),
+            font=Theme.scaled_font(9),
             bootstyle="secondary",
             justify="center",
         )
@@ -287,8 +287,8 @@ class DashboardFrame(ttk.Frame):
 
     def _create_stat_box(self, parent, title, text_var_name):
         """Helper to create cohesive stat boxes for the Post-Draft Recap."""
-        frame = ttk.Labelframe(parent, text=title, padding=8)
-        lbl = ttk.Label(frame, text="", font=(Theme.FONT_FAMILY, 9), justify="left")
+        frame = ttk.Labelframe(parent, text=title, padding=Theme.scaled_val(8))
+        lbl = ttk.Label(frame, text="", font=Theme.scaled_font(9), justify="left")
         lbl.pack(anchor="nw", fill="both", expand=True)
         setattr(self, text_var_name, lbl)
         self._dynamic_wrap_labels.append(lbl)
@@ -301,50 +301,49 @@ class DashboardFrame(ttk.Frame):
         self.recovery_frame.rowconfigure(1, weight=1)
 
         # HEADER
-        header_frame = ttk.Frame(self.recovery_frame, padding=10, style="Card.TFrame")
+        header_frame = ttk.Frame(self.recovery_frame, padding=Theme.scaled_val(10), style="Card.TFrame")
         header_frame.grid(row=0, column=0, sticky="ew")
 
         self.lbl_recovery_title = ttk.Label(
             header_frame,
             text="Draft Completed",
-            font=(Theme.FONT_FAMILY, 18, "bold"),
+            font=Theme.scaled_font(18, "bold"),
             bootstyle="success",
         )
         self.lbl_recovery_title.pack(side="left")
 
-        # 17Lands Button (Hidden by default)
         self.btn_17lands_link = ttk.Button(
             header_frame, text="View Draft on 17Lands 🌐", bootstyle="info-outline"
         )
 
         # TABBED CONTENT
         self.recap_notebook = ttk.Notebook(self.recovery_frame)
-        self.recap_notebook.grid(row=1, column=0, sticky="nsew", padx=10, pady=(10, 0))
+        self.recap_notebook.grid(row=1, column=0, sticky="nsew", padx=Theme.scaled_val(10), pady=Theme.scaled_val((10, 0)))
 
         # --- TAB 1: DRAFT RECAP ---
-        tab_recap = ttk.Frame(self.recap_notebook, padding=15)
+        tab_recap = ttk.Frame(self.recap_notebook, padding=Theme.scaled_val(15))
         self.recap_notebook.add(tab_recap, text=" 🏆 Draft Recap ")
 
         top_recap = ttk.Frame(tab_recap)
-        top_recap.pack(fill="x", pady=(0, 10))
+        top_recap.pack(fill="x", pady=Theme.scaled_val((0, 10)))
 
         self.lbl_recovery_grade = ttk.Label(
             top_recap,
             text="Pool Power Grade: --",
-            font=(Theme.FONT_FAMILY, 16, "bold"),
+            font=Theme.scaled_font(16, "bold"),
             bootstyle="primary",
         )
-        self.lbl_recovery_grade.pack(anchor="center", pady=(0, 2))
+        self.lbl_recovery_grade.pack(anchor="center", pady=Theme.scaled_val((0, 2)))
 
         self.lbl_recovery_stats = ttk.Label(
             top_recap,
             text="Top 23 Cards Avg Win Rate: --%",
-            font=(Theme.FONT_FAMILY, 11),
+            font=Theme.scaled_font(11),
         )
         self.lbl_recovery_stats.pack(anchor="center")
 
         self.lbl_actual_record = ttk.Label(
-            top_recap, text="", font=(Theme.FONT_FAMILY, 11, "bold")
+            top_recap, text="", font=Theme.scaled_font(11, "bold")
         )
 
         # Grid for Highlights
@@ -355,19 +354,19 @@ class DashboardFrame(ttk.Frame):
 
         self._create_stat_box(
             grid_recap, "TOP ARCHETYPES", "lbl_recap_archetypes"
-        ).grid(row=0, column=0, sticky="nsew", padx=5, pady=5)
+        ).grid(row=0, column=0, sticky="nsew", padx=Theme.scaled_val(5), pady=Theme.scaled_val(5))
         self._create_stat_box(grid_recap, "BEST CARDS DRAFTED", "lbl_recap_best").grid(
-            row=0, column=1, sticky="nsew", padx=5, pady=5
+            row=0, column=1, sticky="nsew", padx=Theme.scaled_val(5), pady=Theme.scaled_val(5)
         )
         self._create_stat_box(
             grid_recap, "BIGGEST STEALS (LATE PICKS)", "lbl_recap_steals"
-        ).grid(row=1, column=0, sticky="nsew", padx=5, pady=5)
+        ).grid(row=1, column=0, sticky="nsew", padx=Theme.scaled_val(5), pady=Theme.scaled_val(5))
         self._create_stat_box(
             grid_recap, "BIGGEST REACHES (EARLY PICKS)", "lbl_recap_reaches"
-        ).grid(row=1, column=1, sticky="nsew", padx=5, pady=5)
+        ).grid(row=1, column=1, sticky="nsew", padx=Theme.scaled_val(5), pady=Theme.scaled_val(5))
 
         # --- TAB 2: SYNERGY & ROLES ---
-        tab_synergy = ttk.Frame(self.recap_notebook, padding=15)
+        tab_synergy = ttk.Frame(self.recap_notebook, padding=Theme.scaled_val(15))
         self.recap_notebook.add(tab_synergy, text=" 🧩 Synergy & Roles ")
 
         grid_synergy = ttk.Frame(tab_synergy)
@@ -377,42 +376,42 @@ class DashboardFrame(ttk.Frame):
 
         self._create_stat_box(
             grid_synergy, "TOP CREATURE TYPES", "lbl_synergy_tribes"
-        ).grid(row=0, column=0, sticky="nsew", padx=5, pady=5)
+        ).grid(row=0, column=0, sticky="nsew", padx=Theme.scaled_val(5), pady=Theme.scaled_val(5))
         self._create_stat_box(grid_synergy, "CARD ROLES", "lbl_synergy_roles").grid(
-            row=0, column=1, sticky="nsew", padx=5, pady=5
+            row=0, column=1, sticky="nsew", padx=Theme.scaled_val(5), pady=Theme.scaled_val(5)
         )
         self._create_stat_box(
             grid_synergy, "PREMIUM STAPLES", "lbl_synergy_staples"
-        ).grid(row=1, column=0, sticky="nsew", padx=5, pady=5)
+        ).grid(row=1, column=0, sticky="nsew", padx=Theme.scaled_val(5), pady=Theme.scaled_val(5))
         self._create_stat_box(
             grid_synergy, "NON-BASIC LANDS", "lbl_synergy_lands"
-        ).grid(row=1, column=1, sticky="nsew", padx=5, pady=5)
+        ).grid(row=1, column=1, sticky="nsew", padx=Theme.scaled_val(5), pady=Theme.scaled_val(5))
 
         # --- TAB 3: MANA & CURVE ---
-        tab_analysis = ttk.Frame(self.recap_notebook, padding=15)
+        tab_analysis = ttk.Frame(self.recap_notebook, padding=Theme.scaled_val(15))
         self.recap_notebook.add(tab_analysis, text=" 📊 Mana & Curve ")
 
         tab_analysis.columnconfigure((0, 1), weight=1)
         tab_analysis.rowconfigure(0, weight=1)
 
         charts_frame = ttk.Frame(tab_analysis)
-        charts_frame.grid(row=0, column=0, sticky="nsew", padx=(0, 10))
+        charts_frame.grid(row=0, column=0, sticky="nsew", padx=Theme.scaled_val((0, 10)))
 
         ttk.Label(
             charts_frame,
             text="MANA CURVE",
-            font=(Theme.FONT_FAMILY, 10, "bold"),
+            font=Theme.scaled_font(10, "bold"),
             bootstyle="primary",
-        ).pack(anchor="w", pady=(0, 5))
+        ).pack(anchor="w", pady=Theme.scaled_val((0, 5)))
         self.recap_curve_plot = ManaCurvePlot(charts_frame, ideal_distribution=[])
-        self.recap_curve_plot.pack(fill="x", pady=(0, 15))
+        self.recap_curve_plot.pack(fill="x", pady=Theme.scaled_val((0, 15)))
 
         ttk.Label(
             charts_frame,
             text="POOL BALANCE",
-            font=(Theme.FONT_FAMILY, 10, "bold"),
+            font=Theme.scaled_font(10, "bold"),
             bootstyle="primary",
-        ).pack(anchor="w", pady=(0, 5))
+        ).pack(anchor="w", pady=Theme.scaled_val((0, 5)))
         self.recap_type_chart = TypePieChart(charts_frame)
         self.recap_type_chart.pack(fill="x")
 
@@ -420,7 +419,7 @@ class DashboardFrame(ttk.Frame):
         stats_col.grid(row=0, column=1, sticky="nsew")
 
         self._create_stat_box(stats_col, "RARES & MYTHICS", "lbl_recap_rares").pack(
-            fill="both", expand=True, pady=(0, 10)
+            fill="both", expand=True, pady=Theme.scaled_val((0, 10))
         )
 
     def update_pool_summary(self, taken_cards, metrics, draft_id=""):
@@ -758,14 +757,13 @@ class DashboardFrame(ttk.Frame):
                                 text=f"Actual 17Lands Record: {wins} Wins - {losses} Losses",
                                 bootstyle=record_style,
                             )
-                            self.lbl_actual_record.pack(anchor="center", pady=(5, 0))
+                            self.lbl_actual_record.pack(anchor="center", pady=Theme.scaled_val((5, 0)))
 
                         if hasattr(self, "btn_17lands_link"):
                             self.btn_17lands_link.config(
                                 command=lambda: open_file(record["url"])
                             )
-                            self.btn_17lands_link.pack(side="right", padx=(0, 10))
-
+                            self.btn_17lands_link.pack(side="right", padx=Theme.scaled_val((0, 10)))
                 try:
                     self.after(0, update_ui)
                 except RuntimeError:
@@ -795,9 +793,9 @@ class DashboardFrame(ttk.Frame):
 
         # 1. Pack Table
         self.pack_frame = ttk.Labelframe(
-            self.f_left, text=" LIVE PACK: TACTICAL EVALUATION ", padding=5
+            self.f_left, text=" LIVE PACK: TACTICAL EVALUATION ", padding=Theme.scaled_val(5)
         )
-        self.pack_frame.grid(row=0, column=0, sticky="nsew", padx=(10, 0), pady=(10, 0))
+        self.pack_frame.grid(row=0, column=0, sticky="nsew", padx=(Theme.scaled_val(10), 0), pady=(Theme.scaled_val(10), 0))
 
         self.pack_manager = DynamicTreeviewManager(
             self.pack_frame,
@@ -826,7 +824,7 @@ class DashboardFrame(ttk.Frame):
 
         # 2. Missing Table (Wheel Tracker)
         self.missing_frame = ttk.Labelframe(
-            self.f_left, text=" SEEN CARDS (WHEEL TRACKER) ", padding=5
+            self.f_left, text=" SEEN CARDS (WHEEL TRACKER) ", padding=Theme.scaled_val(5)
         )
 
         self.missing_manager = DynamicTreeviewManager(
@@ -870,10 +868,10 @@ class DashboardFrame(ttk.Frame):
             width=1,
             padding=0,
         )
-        self.rail_btn.grid(row=0, column=1, rowspan=2, sticky="", padx=(2, 2))
+        self.rail_btn.grid(row=0, column=1, rowspan=2, sticky="", padx=(Theme.scaled_val(2), Theme.scaled_val(2)))
 
         # --- RIGHT: Sidebar ---
-        self.sidebar_frame = ttk.Frame(self.h_splitter, width=280)
+        self.sidebar_frame = ttk.Frame(self.h_splitter, width=Theme.scaled_val(280))
 
         self.sidebar_frame.rowconfigure(0, weight=1)
         self.sidebar_frame.columnconfigure(0, weight=1)
@@ -927,7 +925,7 @@ class DashboardFrame(ttk.Frame):
             self.configuration,
             on_click_callback=self.on_advisor_click,
         )
-        self.advisor_panel.pack(fill="x", pady=(10, 15), padx=(0, 10))
+        self.advisor_panel.pack(fill="x", pady=(Theme.scaled_val(10), Theme.scaled_val(15)), padx=(0, Theme.scaled_val(10)))
 
         self.signal_container = CollapsibleFrame(
             self.sidebar_container,
@@ -935,7 +933,7 @@ class DashboardFrame(ttk.Frame):
             configuration=self.configuration,
             setting_key="open_lanes_panel",
         )
-        self.signal_container.pack(fill="x", pady=(0, 15), padx=(0, 10))
+        self.signal_container.pack(fill="x", pady=(0, Theme.scaled_val(15)), padx=(0, Theme.scaled_val(10)))
         self.signal_meter = SignalMeter(self.signal_container.content_frame)
         self.signal_meter.pack(fill="x")
 
@@ -945,7 +943,7 @@ class DashboardFrame(ttk.Frame):
             configuration=self.configuration,
             setting_key="mana_curve_panel",
         )
-        self.curve_container.pack(fill="x", pady=(0, 15), padx=(0, 10))
+        self.curve_container.pack(fill="x", pady=(0, Theme.scaled_val(15)), padx=(0, Theme.scaled_val(10)))
         default_ideal = self.configuration.card_logic.deck_mid.distribution
         self.curve_plot = ManaCurvePlot(
             self.curve_container.content_frame, ideal_distribution=default_ideal
@@ -958,7 +956,7 @@ class DashboardFrame(ttk.Frame):
             configuration=self.configuration,
             setting_key="pool_balance_panel",
         )
-        self.pool_container.pack(fill="x", pady=(0, 15), padx=(0, 10))
+        self.pool_container.pack(fill="x", pady=(0, Theme.scaled_val(15)), padx=(0, Theme.scaled_val(10)))
         self.type_chart = TypePieChart(self.pool_container.content_frame)
         self.type_chart.pack(fill="x")
 
@@ -1053,10 +1051,10 @@ class DashboardFrame(ttk.Frame):
                         curr_w = self.winfo_width()
                         if curr_w > 200:
                             dash_sash = getattr(
-                                self.configuration.settings, "dashboard_sash", 800
+                                self.configuration.settings, "dashboard_sash", Theme.scaled_val(800)
                             )
-                            safe_sash = min(dash_sash, curr_w - 280)
-                            if safe_sash > 50:
+                            safe_sash = min(dash_sash, curr_w - Theme.scaled_val(280))
+                            if safe_sash > Theme.scaled_val(50):
                                 self.h_splitter.sashpos(0, safe_sash)
                     except Exception:
                         pass
@@ -1086,7 +1084,7 @@ class DashboardFrame(ttk.Frame):
             self.f_left.rowconfigure(1, weight=0, minsize=0)
         else:
             self.missing_frame.grid(
-                row=1, column=0, sticky="nsew", padx=(10, 0), pady=(15, 10)
+                row=1, column=0, sticky="nsew", padx=(Theme.scaled_val(10), 0), pady=(Theme.scaled_val(15), Theme.scaled_val(10))
             )
 
             pack_w = max(1, self._pack_count)
@@ -1094,8 +1092,8 @@ class DashboardFrame(ttk.Frame):
 
             # minsize guarantees that even if a table only has 1 card, Tkinter will refuse
             # to crush it smaller than 140 pixels, ensuring it remains fully readable!
-            self.f_left.rowconfigure(0, weight=pack_w, minsize=140)
-            self.f_left.rowconfigure(1, weight=miss_w, minsize=140)
+            self.f_left.rowconfigure(0, weight=pack_w, minsize=Theme.scaled_val(140))
+            self.f_left.rowconfigure(1, weight=miss_w, minsize=Theme.scaled_val(140))
 
     def update_pack_data(
         self,
@@ -1325,12 +1323,12 @@ class DashboardFrame(ttk.Frame):
             self.update_idletasks()
 
             current_width = self.winfo_width()
-            default_sash = max(50, current_width - 280) if current_width > 280 else 800
+            default_sash = max(Theme.scaled_val(50), current_width - Theme.scaled_val(280)) if current_width > Theme.scaled_val(280) else Theme.scaled_val(800)
 
             dash_sash = getattr(
                 self.configuration.settings, "dashboard_sash", default_sash
             )
-            if dash_sash < 50 or dash_sash >= current_width - 20:
+            if dash_sash < Theme.scaled_val(50) or dash_sash >= current_width - Theme.scaled_val(20):
                 dash_sash = default_sash
 
             self.h_splitter.sashpos(0, dash_sash)
