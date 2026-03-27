@@ -81,7 +81,9 @@ class CollapsibleFrame(ttk.Frame):
             bootstyle="primary",
             cursor="hand2",
         )
-        self.toggle_label.pack(side="left", padx=Theme.scaled_val((5, 5)), pady=Theme.scaled_val((5, 5)))
+        self.toggle_label.pack(
+            side="left", padx=Theme.scaled_val((5, 5)), pady=Theme.scaled_val((5, 5))
+        )
         self.title_label = ttk.Label(
             self.header_frame,
             text=title.upper(),
@@ -91,7 +93,9 @@ class CollapsibleFrame(ttk.Frame):
         self.title_label.pack(side="left", pady=Theme.scaled_val((5, 5)))
         self.content_frame = ttk.Frame(self)
         if self.expanded:
-            self.content_frame.pack(fill="both", expand=True, pady=Theme.scaled_val((5, 0)))
+            self.content_frame.pack(
+                fill="both", expand=True, pady=Theme.scaled_val((5, 0))
+            )
         self._apply_bindings()
         self.bind_all("<<ThemeChanged>>", self._on_theme_change, add="+")
 
@@ -116,7 +120,9 @@ class CollapsibleFrame(ttk.Frame):
         self.expanded = not self.expanded
         if self.expanded:
             self.toggle_label.config(text="▼")
-            self.content_frame.pack(fill="both", expand=True, pady=Theme.scaled_val((5, 0)))
+            self.content_frame.pack(
+                fill="both", expand=True, pady=Theme.scaled_val((5, 0))
+            )
         else:
             self.toggle_label.config(text="▶")
             self.content_frame.pack_forget()
@@ -335,7 +341,12 @@ class CardToolTip(tkinter.Toplevel):
                     text=val,
                     foreground=col,
                     font=(Theme.FONT_FAMILY, int(9 * scale), "bold"),
-                ).grid(row=ri, column=ci * 2 + 1, sticky="w", padx=Theme.scaled_val((0, 20)))
+                ).grid(
+                    row=ri,
+                    column=ci * 2 + 1,
+                    sticky="w",
+                    padx=Theme.scaled_val((0, 20)),
+                )
         va = sorted(
             [
                 k
@@ -605,7 +616,11 @@ class ModernTreeview(ttk.Treeview):
             if i == "add_btn":
                 self.heading(i, text="+")
                 self.column(
-                    i, width=Theme.scaled_val(50), minwidth=Theme.scaled_val(50), stretch=False, anchor=tkinter.CENTER
+                    i,
+                    width=Theme.scaled_val(40),
+                    minwidth=Theme.scaled_val(40),
+                    stretch=False,
+                    anchor=tkinter.CENTER,
                 )
                 continue
             l = (
@@ -1014,7 +1029,11 @@ class DynamicTreeviewManager(ttk.Frame):
         try:
             t = self.winfo_toplevel()
             cw = t.winfo_width()
-            rw = Theme.scaled_val(140) + (len(self.active_fields) * Theme.scaled_val(40)) + Theme.scaled_val(40)
+            rw = (
+                Theme.scaled_val(140)
+                + (len(self.active_fields) * Theme.scaled_val(40))
+                + Theme.scaled_val(40)
+            )
             if cw < rw:
                 t.geometry(f"{rw}x{t.winfo_height()}")
         except:
@@ -1046,7 +1065,12 @@ class DynamicTreeviewManager(ttk.Frame):
 class SignalMeter(tb.Frame):
     def __init__(self, parent, **kwargs):
         super().__init__(parent, **kwargs)
-        self.canvas_height, self.bar_width, self.gap, self.scores = Theme.scaled_val(80), Theme.scaled_val(20), Theme.scaled_val(4), {}
+        self.canvas_height, self.bar_width, self.gap, self.scores = (
+            Theme.scaled_val(80),
+            Theme.scaled_val(20),
+            Theme.scaled_val(4),
+            {},
+        )
         self.canvas = tb.Canvas(
             self, height=self.canvas_height, bg=Theme.BG_PRIMARY, highlightthickness=0
         )
@@ -1102,7 +1126,11 @@ class SignalMeter(tb.Frame):
 class ManaCurvePlot(tb.Frame):
     def __init__(self, parent, ideal_distribution, **kwargs):
         super().__init__(parent, **kwargs)
-        self.ideal, self.current, self.canvas_height = ideal_distribution, [0] * 7, Theme.scaled_val(80)
+        self.ideal, self.current, self.canvas_height = (
+            ideal_distribution,
+            [0] * 7,
+            Theme.scaled_val(80),
+        )
         self.canvas = tb.Canvas(
             self, height=self.canvas_height, bg=Theme.BG_PRIMARY, highlightthickness=0
         )
@@ -1222,7 +1250,10 @@ class TypePieChart(tb.Frame):
         sx = max(0, (w - total_w) / 2)
 
         # 1. Draw Legend on the Left
-        ly = max(Theme.scaled_val(5), (self.canvas_height - (len(self.counts) * Theme.scaled_val(16))) / 2)
+        ly = max(
+            Theme.scaled_val(5),
+            (self.canvas_height - (len(self.counts) * Theme.scaled_val(16))) / 2,
+        )
         for lb, count in self.counts.items():
             cl = color_map.get(lb, Theme.TEXT_MUTED)
             self.canvas.create_text(
@@ -1350,7 +1381,12 @@ class CardPile(tb.Frame):
 
         # Left color strip accent (width 6 is half the old massive block size)
         cv = tkinter.Canvas(
-            ch, width=Theme.scaled_val(6), height=Theme.scaled_val(24), bg=bg_col, highlightthickness=0, cursor="hand2"
+            ch,
+            width=Theme.scaled_val(6),
+            height=Theme.scaled_val(24),
+            bg=bg_col,
+            highlightthickness=0,
+            cursor="hand2",
         )
         cv.pack(side=LEFT, fill=Y)
 

@@ -67,6 +67,14 @@
             "end_date": "2026-03-24"
         },
         {
+            "set_code": "Remix - Artifacts",
+            "formats": [
+                "PremierDraft"
+            ],
+            "start_date": "2026-03-24",
+            "end_date": "2026-03-31"
+        },
+        {
             "set_code": "NEO",
             "formats": [
                 "PremierDraft"
