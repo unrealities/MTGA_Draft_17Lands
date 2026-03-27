@@ -56,8 +56,8 @@ class AdvisorPanel(tb.Frame):
             tb.Label(
                 self.container,
                 text="Calculating tactical scores...",
-                font=(Theme.FONT_FAMILY, 10 if self.mini_mode else 9),
-            ).pack(pady=10, anchor="center")
+                font=Theme.scaled_font(10 if self.mini_mode else 9),
+            ).pack(pady=Theme.scaled_val(10), anchor="center")
             return
 
         # Show top 5 in Mini Mode or Sidebar

@@ -132,9 +132,10 @@ class SettingsWindow(tkinter.Toplevel):
         self._toggle_traces(False)
 
         # Standard settings
+        self.original_ui_size = s.ui_size
         self.vars["result_format"].set(s.result_format)
         self.vars["filter_format"].set(s.filter_format)
-        self.vars["ui_size"].set(s.ui_size)
+        self.vars["ui_size"].set(self.original_ui_size)
 
         # Checkbox logic
         checkbox_keys = [

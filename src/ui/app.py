@@ -113,29 +113,7 @@ class DraftApp:
             scanner, configuration, self._refresh_ui_data
         )
 
-        # 3. BUILD UI SHELL (Widget Creation Only)
-        # These calls create the Tkinter objects but do not perform math/IO
-        self._setup_variables()
-        self._build_layout()
-        self._setup_menu()
-
-        self.loading_overlay = LoadingOverlay(self.root)
-
-        # 4. ATTACH INFRASTRUCTURE SERVICES
-        # Notifications requires self.panel_data (created in _build_layout)
-        self.notifications = Notifications(
-            self.root, scanner.set_list, configuration, self.panel_data
-        )
-
-        # 5. VIRTUAL EVENT BINDINGS
-        self.root.bind(
-            "<<ShowDataTab>>",
-            lambda e: self._ensure_tabs_visible()
-            or self.notebook.select(self.panel_data),
-        )
-
-        # 6. INITIAL THEME APPLICATION
-        # Apply theme based on config so widgets aren't the default "Grey" on flicker
+        # 3. INITIAL THEME APPLICATION (Must happen before UI widget construction)
         current_scale = constants.UI_SIZE_DICT.get(
             self.configuration.settings.ui_size, 1.0
         )
@@ -145,6 +123,27 @@ class DraftApp:
             engine=getattr(self.configuration.settings, "theme_base", "clam"),
             custom_path=getattr(self.configuration.settings, "theme_custom_path", ""),
             scale=current_scale,
+        )
+
+        # 4. BUILD UI SHELL (Widget Creation Only)
+        # These calls create the Tkinter objects but do not perform math/IO
+        self._setup_variables()
+        self._build_layout()
+        self._setup_menu()
+
+        self.loading_overlay = LoadingOverlay(self.root)
+
+        # 5. ATTACH INFRASTRUCTURE SERVICES
+        # Notifications requires self.panel_data (created in _build_layout)
+        self.notifications = Notifications(
+            self.root, scanner.set_list, configuration, self.panel_data
+        )
+
+        # 6. VIRTUAL EVENT BINDINGS
+        self.root.bind(
+            "<<ShowDataTab>>",
+            lambda e: self._ensure_tabs_visible()
+            or self.notebook.select(self.panel_data),
         )
 
         # 7. FINAL WINDOW PROTOCOL & METADATA
