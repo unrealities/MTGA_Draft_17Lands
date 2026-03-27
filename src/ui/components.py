@@ -605,7 +605,7 @@ class ModernTreeview(ttk.Treeview):
             if i == "add_btn":
                 self.heading(i, text="+")
                 self.column(
-                    i, width=Theme.scaled_val(20), minwidth=Theme.scaled_val(20), stretch=False, anchor=tkinter.CENTER
+                    i, width=Theme.scaled_val(50), minwidth=Theme.scaled_val(50), stretch=False, anchor=tkinter.CENTER
                 )
                 continue
             l = (

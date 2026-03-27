@@ -1087,7 +1087,7 @@ class CustomDeckPanel(ttk.Frame):
         avg_cmc = cmc_sum / non_lands if non_lands else 0
         top_tribes = sorted(subtypes.items(), key=lambda x: x[1], reverse=True)[:5]
 
-         comp_frame = ttk.Frame(target_frame)
+        comp_frame = ttk.Frame(target_frame)
         comp_frame.pack(fill="x", pady=Theme.scaled_val(5))
         ttk.Label(
             comp_frame,
@@ -1395,7 +1395,7 @@ class CustomDeckPanel(ttk.Frame):
             self.sim_frame,
             text="CONSISTENCY METRICS",
             bootstyle="primary",
-            font=(Theme.FONT_FAMILY, 10, "bold"),
+            font=Theme.scaled_font(10, "bold"),
         ).pack(anchor="w", pady=(0, Theme.scaled_val(5)))
         _add_stat("T2 Play (2-Drop):", stats["cast_t2"], (65, 50))
         _add_stat("T3 Play (3-Drop):", stats["cast_t3"], (65, 50))
@@ -1408,7 +1408,7 @@ class CustomDeckPanel(ttk.Frame):
             self.sim_frame,
             text="RISK FACTORS",
             bootstyle="primary",
-            font=(Theme.FONT_FAMILY, 10, "bold"),
+            font=Theme.scaled_font(10, "bold"),
         ).pack(anchor="w", pady=(0, Theme.scaled_val(5)))
         _add_stat("Mulligan Rate:", stats["mulligans"], (15, 25), reverse=True)
         _add_stat(
@@ -1431,14 +1431,14 @@ class CustomDeckPanel(ttk.Frame):
             self.sim_frame,
             text="ADVISOR SUMMARY",
             bootstyle="info",
-            font=(Theme.FONT_FAMILY, 10, "bold"),
+            font=Theme.scaled_font(10, "bold"),
         ).pack(anchor="w", pady=(0, Theme.scaled_val(5)))
 
         if optimization_note:
             lbl_opt = ttk.Label(
                 self.sim_frame,
                 text=optimization_note,
-                font=(Theme.FONT_FAMILY, 9, "bold"),
+                font=Theme.scaled_font(9, "bold"),
                 bootstyle="success",
             )
             lbl_opt.is_dynamic_wrap = True

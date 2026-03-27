@@ -10,6 +10,7 @@ from src.configuration import write_configuration
 from src.file_extractor import FileExtractor
 from src.utils import retrieve_local_set_list
 from src.ui.components import DynamicTreeviewManager, AutoScrollbar
+from src.ui.styles import Theme
 
 
 @dataclass

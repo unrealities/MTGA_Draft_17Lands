@@ -1119,7 +1119,7 @@ class SuggestDeckPanel(ttk.Frame):
         ttk.Label(
             comp_frame,
             text="DECK COMPOSITION",
-            font=(Theme.FONT_FAMILY, 10, "bold"),
+            font=Theme.scaled_font(10, "bold"),
             bootstyle="primary",
         ).pack(anchor="w")
         ttk.Label(
@@ -1134,7 +1134,7 @@ class SuggestDeckPanel(ttk.Frame):
         ttk.Label(
             color_frame,
             text="COLOR REQUIREMENTS (PIPS)",
-            font=(Theme.FONT_FAMILY, 10, "bold"),
+            font=Theme.scaled_font(10, "bold"),
             bootstyle="primary",
         ).pack(anchor="w")
 
@@ -1159,7 +1159,7 @@ class SuggestDeckPanel(ttk.Frame):
         ttk.Label(
             tags_frame,
             text="ROLES & SYNERGIES",
-            font=(Theme.FONT_FAMILY, 10, "bold"),
+            font=Theme.scaled_font(10, "bold"),
             bootstyle="primary",
         ).pack(anchor="w")
 
@@ -1187,7 +1187,7 @@ class SuggestDeckPanel(ttk.Frame):
         ttk.Label(
             curve_frame,
             text=f"MANA CURVE (Avg CMC: {avg_cmc:.2f})",
-            font=(Theme.FONT_FAMILY, 10, "bold"),
+            font=Theme.scaled_font(10, "bold"),
             bootstyle="primary",
         ).pack(anchor="w")
 
@@ -1198,7 +1198,7 @@ class SuggestDeckPanel(ttk.Frame):
             ttk.Label(
                 curve_frame,
                 text=f"{label:<8} {bar} ({count})",
-                font=(constants.FONT_MONO_SPACE, 10),
+                font=Theme.scaled_font(10, family=constants.FONT_MONO_SPACE),
             ).pack(anchor="w", pady=Theme.scaled_val(1))
 
     def _render_deck(self, label: str):

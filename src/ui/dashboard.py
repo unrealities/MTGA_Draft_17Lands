@@ -123,7 +123,7 @@ class DashboardFrame(ttk.Frame):
 
         for title, desc in tips:
             row = ttk.Frame(tips_frame)
-            row.pack(fill="x", Theme.scaled_val(3))
+            row.pack(fill="x", pady=Theme.scaled_val(3))
 
             ttk.Label(
                 row,
