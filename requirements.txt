@@ -5,3 +5,4 @@ pynput==1.8.1
 pytest==9.0.2
 Requests==2.32.5
 ttkbootstrap==1.20.2
+responses==0.25.0
