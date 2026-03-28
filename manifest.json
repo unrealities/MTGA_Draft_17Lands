@@ -1,0 +1,45 @@
+{
+  "datasets": {
+    "TMT_PremierDraft_All": {
+      "filename": "TMT_PremierDraft_All_Data.json.gz",
+      "hash": "bbc7c90de96e5a1a616e6a9e614bf8cbcfd2801bd2ae697998f33d54478e9388",
+      "size_kb": 99
+    },
+    "TMT_PremierDraft_Top": {
+      "filename": "TMT_PremierDraft_Top_Data.json.gz",
+      "hash": "0354910977424cc9ea69db765312e8779a989d0cc2e38a7f2c3a49e7ebad140e",
+      "size_kb": 61
+    },
+    "TMT_TradDraft_All": {
+      "filename": "TMT_TradDraft_All_Data.json.gz",
+      "hash": "65239a441a14524408356abac8a1095ec6f1a8855f177b21deb4e6e423ae6aab",
+      "size_kb": 61
+    },
+    "TMT_TradDraft_Top": {
+      "filename": "TMT_TradDraft_Top_Data.json.gz",
+      "hash": "6fb5993de66ca04192f66d9ae1e13bd4cede995bc25078c97fbb61a0de1f31e2",
+      "size_kb": 35
+    },
+    "TMT_PickTwoDraft_All": {
+      "filename": "TMT_PickTwoDraft_All_Data.json.gz",
+      "hash": "ec504fdddb064c86cc0035307bff86b08b79a5161842921874d4608c3a282821",
+      "size_kb": 88
+    },
+    "TMT_PickTwoDraft_Top": {
+      "filename": "TMT_PickTwoDraft_Top_Data.json.gz",
+      "hash": "869f213aae0f79688611fd977e757b192f1e5afcef5600a16b7405365e45bb4a",
+      "size_kb": 23
+    },
+    "FDN_QuickDraft_All": {
+      "filename": "FDN_QuickDraft_All_Data.json.gz",
+      "hash": "e1a9cd58365b577f69066e1103ced5241d0a0fe496b66107d79aa1a0dd0c96f5",
+      "size_kb": 163
+    },
+    "FDN_QuickDraft_Top": {
+      "filename": "FDN_QuickDraft_Top_Data.json.gz",
+      "hash": "f43b887c74f207c2e32ee386aeafbaebc70f082684cf591787667241825cde67",
+      "size_kb": 52
+    }
+  },
+  "updated_at": "2026-03-28T10:12:20.997274+00:00"
+}

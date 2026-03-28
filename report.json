@@ -1,0 +1,174 @@
+{
+  "pipeline_run": {
+    "started_at": "2026-03-28T10:12:20.997039+00:00",
+    "completed_at": "2026-03-28T10:21:27.169473+00:00",
+    "duration_sec": 546.2,
+    "status": "PARTIAL_SUCCESS"
+  },
+  "api_stats": {
+    "total_requests": 144,
+    "failed_requests": 0,
+    "cached_requests": 0
+  },
+  "intent": {
+    "scheduled_events": {
+      "TMT": [
+        "PremierDraft",
+        "TradDraft",
+        "PickTwoDraft"
+      ],
+      "FDN": [
+        "QuickDraft"
+      ],
+      "Remix - Artifacts": [
+        "PremierDraft"
+      ]
+    },
+    "archetypes_targeted": [
+      "All Decks",
+      "W",
+      "U",
+      "B",
+      "R",
+      "G",
+      "WU",
+      "UB",
+      "BR",
+      "RG",
+      "WG",
+      "WB",
+      "UR",
+      "BG",
+      "WR",
+      "UG",
+      "WUB",
+      "UBR",
+      "BRG",
+      "WRG",
+      "WUG",
+      "WBR",
+      "URG",
+      "WBG",
+      "WUR",
+      "UBG",
+      "WUBR",
+      "UBRG",
+      "WBRG",
+      "WURG",
+      "WUBG",
+      "WUBRG"
+    ],
+    "user_types_targeted": [
+      "All Users"
+    ]
+  },
+  "execution_summary": {
+    "formats_updated": 8,
+    "formats_skipped": 2,
+    "total_output_kb": 582,
+    "total_cards_rated": 2204,
+    "total_errors": 0,
+    "total_warnings": 0
+  },
+  "warehouse_state": {
+    "total_available_datasets": 8,
+    "available_keys": [
+      "TMT_PremierDraft_All",
+      "TMT_PremierDraft_Top",
+      "TMT_TradDraft_All",
+      "TMT_TradDraft_Top",
+      "TMT_PickTwoDraft_All",
+      "TMT_PickTwoDraft_Top",
+      "FDN_QuickDraft_All",
+      "FDN_QuickDraft_Top"
+    ]
+  },
+  "datasets_updated": [
+    {
+      "set": "TMT",
+      "format": "PremierDraft",
+      "filename": "TMT_PremierDraft_All_Data.json.gz",
+      "size_kb": 99,
+      "hash": "bbc7c90de96e5a1a616e6a9e614bf8cbcfd2801bd2ae697998f33d54478e9388",
+      "card_count": 195,
+      "status": "success"
+    },
+    {
+      "set": "TMT",
+      "format": "PremierDraft",
+      "filename": "TMT_PremierDraft_Top_Data.json.gz",
+      "size_kb": 61,
+      "hash": "0354910977424cc9ea69db765312e8779a989d0cc2e38a7f2c3a49e7ebad140e",
+      "card_count": 195,
+      "status": "success"
+    },
+    {
+      "set": "TMT",
+      "format": "TradDraft",
+      "filename": "TMT_TradDraft_All_Data.json.gz",
+      "size_kb": 61,
+      "hash": "65239a441a14524408356abac8a1095ec6f1a8855f177b21deb4e6e423ae6aab",
+      "card_count": 195,
+      "status": "success"
+    },
+    {
+      "set": "TMT",
+      "format": "TradDraft",
+      "filename": "TMT_TradDraft_Top_Data.json.gz",
+      "size_kb": 35,
+      "hash": "6fb5993de66ca04192f66d9ae1e13bd4cede995bc25078c97fbb61a0de1f31e2",
+      "card_count": 195,
+      "status": "success"
+    },
+    {
+      "set": "TMT",
+      "format": "PickTwoDraft",
+      "filename": "TMT_PickTwoDraft_All_Data.json.gz",
+      "size_kb": 88,
+      "hash": "ec504fdddb064c86cc0035307bff86b08b79a5161842921874d4608c3a282821",
+      "card_count": 195,
+      "status": "success"
+    },
+    {
+      "set": "TMT",
+      "format": "PickTwoDraft",
+      "filename": "TMT_PickTwoDraft_Top_Data.json.gz",
+      "size_kb": 23,
+      "hash": "869f213aae0f79688611fd977e757b192f1e5afcef5600a16b7405365e45bb4a",
+      "card_count": 195,
+      "status": "success"
+    },
+    {
+      "set": "FDN",
+      "format": "QuickDraft",
+      "filename": "FDN_QuickDraft_All_Data.json.gz",
+      "size_kb": 163,
+      "hash": "e1a9cd58365b577f69066e1103ced5241d0a0fe496b66107d79aa1a0dd0c96f5",
+      "card_count": 517,
+      "status": "success"
+    },
+    {
+      "set": "FDN",
+      "format": "QuickDraft",
+      "filename": "FDN_QuickDraft_Top_Data.json.gz",
+      "size_kb": 52,
+      "hash": "f43b887c74f207c2e32ee386aeafbaebc70f082684cf591787667241825cde67",
+      "card_count": 517,
+      "status": "success"
+    }
+  ],
+  "datasets_skipped": [
+    {
+      "set": "Remix - Artifacts",
+      "format": "PremierDraft",
+      "reason": "No Scryfall base cards"
+    },
+    {
+      "set": "Remix - Artifacts",
+      "format": "PremierDraft",
+      "reason": "No Scryfall base cards"
+    }
+  ],
+  "errors": [],
+  "warnings": []
+}
