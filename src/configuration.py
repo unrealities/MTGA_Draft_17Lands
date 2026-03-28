@@ -89,6 +89,7 @@ class Settings(BaseModel):
     theme_custom_path: str = ""  # Path to user's .tcl file
 
     # Core Feature Toggles
+    always_on_top: bool = False
     card_colors_enabled: bool = False
     draft_log_enabled: bool = True
     p1p1_ocr_enabled: bool = True

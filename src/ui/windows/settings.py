@@ -49,7 +49,9 @@ class SettingsWindow(tkinter.Toplevel):
         # --- SECTION: DATA FORMAT ---
         ttk.Label(
             container, text="DATA EVALUATION", font=Theme.scaled_font(9, "bold")
-        ).grid(row=0, column=0, columnspan=2, sticky="w", pady=Theme.scaled_val((0, 10)))
+        ).grid(
+            row=0, column=0, columnspan=2, sticky="w", pady=Theme.scaled_val((0, 10))
+        )
 
         ttk.Label(container, text="Win Rate Format:").grid(
             row=1, column=0, sticky="e", padx=Theme.scaled_val(5)
@@ -77,7 +79,9 @@ class SettingsWindow(tkinter.Toplevel):
         )
         filter_om.grid(row=2, column=1, sticky="ew", pady=Theme.scaled_val(2))
 
-        ttk.Label(container, text="UI Scale:").grid(row=3, column=0, sticky="e", padx=Theme.scaled_val(5))
+        ttk.Label(container, text="UI Scale:").grid(
+            row=3, column=0, sticky="e", padx=Theme.scaled_val(5)
+        )
         self.vars["ui_size"] = tkinter.StringVar()
 
         # Sort options nicely (80%, 90%, 100%, etc.)
@@ -97,9 +101,12 @@ class SettingsWindow(tkinter.Toplevel):
         r = 10
         ttk.Label(
             container, text="INTELLIGENCE & HUD", font=Theme.scaled_font(9, "bold")
-        ).grid(row=r, column=0, columnspan=2, sticky="w", pady=Theme.scaled_val((20, 10)))
+        ).grid(
+            row=r, column=0, columnspan=2, sticky="w", pady=Theme.scaled_val((20, 10))
+        )
 
         features = [
+            ("Always On Top", "always_on_top"),
             ("Highlight Row by Mana Cost", "card_colors_enabled"),
             ("Enable P1P1 OCR", "p1p1_ocr_enabled"),
             ("Save P1P1 Screenshots", "save_screenshot_enabled"),
@@ -112,19 +119,24 @@ class SettingsWindow(tkinter.Toplevel):
             var = tkinter.IntVar()
             self.vars[key] = var
             ttk.Checkbutton(container, text=label, variable=var).grid(
-                row=r + 1 + i, column=0, columnspan=2, sticky="w", padx=Theme.scaled_val(10), pady=Theme.scaled_val(2)
+                row=r + 1 + i,
+                column=0,
+                columnspan=2,
+                sticky="w",
+                padx=Theme.scaled_val(10),
+                pady=Theme.scaled_val(2),
             )
-
 
         # --- FOOTER ---
         footer = ttk.Frame(container)
-        footer.grid(row=50, column=0, columnspan=2, pady=Theme.scaled_val((25, 0)), sticky="ew")
+        footer.grid(
+            row=50, column=0, columnspan=2, pady=Theme.scaled_val((25, 0)), sticky="ew"
+        )
 
         ttk.Button(footer, text="Restore Defaults", command=self._reset_defaults).pack(
             side="left"
         )
         ttk.Button(footer, text="Done", command=self._on_close).pack(side="right")
-
 
     def _load_settings(self):
         """Populates UI from the configuration object."""
@@ -139,6 +151,7 @@ class SettingsWindow(tkinter.Toplevel):
 
         # Checkbox logic
         checkbox_keys = [
+            "always_on_top",
             "card_colors_enabled",
             "p1p1_ocr_enabled",
             "save_screenshot_enabled",
