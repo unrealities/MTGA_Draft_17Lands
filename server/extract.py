@@ -40,7 +40,7 @@ def extract_scryfall_data(client, set_code: str) -> dict:
     logger.info(f"   [Scryfall] Fetching {set_code} base cards from API...")
     cards = {}
     url = "https://api.scryfall.com/cards/search"
-    params = {"q": f"set:{set_code}"}
+    params = {"q": f"set:{set_code}", "unique": "prints"}
 
     while url:
         resp = client.respectful_get(url, params=params, allow_404=True)
@@ -58,7 +58,10 @@ def extract_scryfall_data(client, set_code: str) -> dict:
             if not name:
                 continue
 
-            arena_id = c.get("arena_id", "")
+            arena_id = c.get("arena_id")
+            if not arena_id:
+                continue
+
             types, subtypes = parse_scryfall_types(c.get("type_line", ""))
 
             colors = c.get("colors", [])
@@ -82,20 +85,24 @@ def extract_scryfall_data(client, set_code: str) -> dict:
                 if img := c["image_uris"].get("large", ""):
                     images.append(img)
 
-            cards[name] = {
-                "arena_id": arena_id,
-                "name": name,
-                "cmc": int(c.get("cmc", 0)),
-                "mana_cost": mana_cost,
-                "types": types,
-                "subtypes": subtypes,
-                "colors": colors,
-                "color_identity": c.get("color_identity", []),
-                "rarity": c.get("rarity", "common").capitalize(),
-                "image": images,
-                "keywords": c.get("keywords", []),
-                "oracle_text": oracle_text,
-            }
+            if name not in cards:
+                cards[name] = {
+                    "arena_ids": [arena_id],
+                    "name": name,
+                    "cmc": int(c.get("cmc", 0)),
+                    "mana_cost": mana_cost,
+                    "types": types,
+                    "subtypes": subtypes,
+                    "colors": colors,
+                    "color_identity": c.get("color_identity", []),
+                    "rarity": c.get("rarity", "common").capitalize(),
+                    "image": images,
+                    "keywords": c.get("keywords", []),
+                    "oracle_text": oracle_text,
+                }
+            else:
+                if arena_id not in cards[name]["arena_ids"]:
+                    cards[name]["arena_ids"].append(arena_id)
 
         url = data.get("next_page")
         params = None
@@ -275,3 +282,80 @@ def extract_color_ratings(
         logger.warning(f"Failed to fetch color ratings: {e}")
 
     return ratings, games_played
+
+
+def extract_scryfall_by_names(client, names: list) -> dict:
+    cards = {}
+    chunk_size = 20  # Scryfall URL length limits require batching
+
+    for i in range(0, len(names), chunk_size):
+        chunk = names[i : i + chunk_size]
+        # Query format: !"Card Name 1" OR !"Card Name 2"
+        query = " OR ".join([f'! "{n}"' for n in chunk])
+        url = "https://api.scryfall.com/cards/search"
+        params = {"q": query, "unique": "prints"}
+
+        while url:
+            resp = client.respectful_get(url, params=params, allow_404=True)
+            if resp.status_code == 404:
+                break
+
+            try:
+                data = resp.json()
+            except Exception:
+                break
+
+            for c in data.get("data", []):
+                name = c.get("name", "").replace("///", "//")
+                if not name:
+                    continue
+
+                arena_id = c.get("arena_id")
+                if not arena_id:
+                    continue
+
+                types, subtypes = parse_scryfall_types(c.get("type_line", ""))
+                colors = c.get("colors", [])
+                mana_cost = c.get("mana_cost", "")
+                oracle_text = c.get("oracle_text", "")
+                images = []
+
+                if "card_faces" in c:
+                    if not colors:
+                        colors = c["card_faces"][0].get("colors", [])
+                    if not mana_cost:
+                        mana_cost = c["card_faces"][0].get("mana_cost", "")
+                    if not oracle_text:
+                        oracle_text = " // ".join(
+                            face.get("oracle_text", "") for face in c["card_faces"]
+                        )
+                    for face in c["card_faces"]:
+                        if img := face.get("image_uris", {}).get("large", ""):
+                            images.append(img)
+                elif "image_uris" in c:
+                    if img := c["image_uris"].get("large", ""):
+                        images.append(img)
+
+                if name not in cards:
+                    cards[name] = {
+                        "arena_ids": [arena_id],
+                        "name": name,
+                        "cmc": int(c.get("cmc", 0)),
+                        "mana_cost": mana_cost,
+                        "types": types,
+                        "subtypes": subtypes,
+                        "colors": colors,
+                        "color_identity": c.get("color_identity", []),
+                        "rarity": c.get("rarity", "common").capitalize(),
+                        "image": images,
+                        "keywords": c.get("keywords", []),
+                        "oracle_text": oracle_text,
+                    }
+                else:
+                    if arena_id not in cards[name]["arena_ids"]:
+                        cards[name]["arena_ids"].append(arena_id)
+
+            url = data.get("next_page")
+            params = None
+
+    return cards

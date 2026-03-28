@@ -67,15 +67,11 @@ def transform_payload(
         "card_ratings": {},
     }
 
-    # CRITICAL FIX: Iterate over Scryfall so Basic Lands and unplayed cards aren't dropped!
     for name, sf_card in scryfall_cards.items():
-        arena_id = sf_card.get("arena_id")
-        if not arena_id:
-            arena_id = f"UNKNOWN_{name.replace(' ', '')}"
+        arena_ids = sf_card.get("arena_ids", [])
+        if not arena_ids:
+            arena_ids = [f"UNKNOWN_{name.replace(' ', '')}"]
 
-        arena_id = str(arena_id)
-
-        # Safely pull 17lands stats if they exist for this card
         all_decks_stats = seventeenlands_data.get("All Decks", {}).get(name, {})
 
         card_obj = {
@@ -95,15 +91,10 @@ def transform_payload(
             "tags": card_tags.get(name, []),
         }
 
-        # Extra metadata injection
         for extra_key in ["color_identity", "keywords", "oracle_text"]:
             if val := sf_card.get(extra_key):
                 card_obj[extra_key] = val
 
-        # ------------------------------------------------------------------------
-        # CRITICAL FIX 2: Inject the empty string "" dictionary fallback for the UI.
-        # It requires the ALSA and ATA stats to be cloned from "All Decks".
-        # ------------------------------------------------------------------------
         alsa = all_decks_stats.get("alsa", 0.0)
         ata = all_decks_stats.get("ata", 0.0)
         card_obj["deck_colors"][""] = {
@@ -126,6 +117,7 @@ def transform_payload(
                     if k not in ("17lands_images", "arena_id")
                 }
 
-        payload["card_ratings"][arena_id] = card_obj
+        for a_id in arena_ids:
+            payload["card_ratings"][str(a_id)] = card_obj
 
     return payload

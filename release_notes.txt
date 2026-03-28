@@ -1,3 +1,6 @@
+===================== RELEASE NOTES 4.12 =====================
+* unrealities: [Bug] Properly close app on window close
+
 ===================== RELEASE NOTES 4.11 =====================
 * unrealities: [Bug] Fixed a critical data-fetching issue where historical draft formats (such as the recent Foundations Quick Draft) would incorrectly display 0.0% win rates for all cards. The application now properly passes the start and end dates to the 17Lands API to retrieve accurate historical telemetry.
 * unrealities: [UX/UI] Comprehensive overhaul of the UI scaling system. Replaced hardcoded pixel sizes and fonts with a dynamic scaling engine across the entire application (Dashboard, Deck Builder, Mini Mode, Tooltips, etc.)

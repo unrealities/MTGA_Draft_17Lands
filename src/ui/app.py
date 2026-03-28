@@ -293,12 +293,8 @@ class DraftApp:
     def _on_close(self):
         """Save geometry and sash state before closing."""
         try:
-            # If the window is zoomed (maximized), don't save that as the default geom
-            # Otherwise it will open as a weird fixed-size giant window next time
             if self.root.state() == "normal":
                 self.configuration.settings.main_window_geometry = self.root.geometry()
-
-            # Save the current divider position
 
             try:
                 if self.tabs_visible:
@@ -324,6 +320,10 @@ class DraftApp:
             logger.error(f"Error during shutdown: {e}")
 
         self.root.destroy()
+
+        import os
+
+        os._exit(0)
 
     def _setup_variables(self):
         self.vars["deck_filter"] = tkinter.StringVar(
