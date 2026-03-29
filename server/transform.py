@@ -33,6 +33,21 @@ def parse_scryfall_types(type_line: str):
     return types, subtypes
 
 
+BASIC_LANDS = {
+    "Plains",
+    "Island",
+    "Swamp",
+    "Mountain",
+    "Forest",
+    "Wastes",
+    "Snow-Covered Plains",
+    "Snow-Covered Island",
+    "Snow-Covered Swamp",
+    "Snow-Covered Mountain",
+    "Snow-Covered Forest",
+}
+
+
 def transform_payload(
     set_code,
     draft_format,
@@ -69,12 +84,17 @@ def transform_payload(
         "card_ratings": {},
     }
 
+    all_decks_stats_map = seventeenlands_data.get("All Decks", {})
+
     for name, sf_card in scryfall_cards.items():
+        if name not in all_decks_stats_map and name not in BASIC_LANDS:
+            continue
+
         arena_ids = sf_card.get("arena_ids", [])
         if not arena_ids:
             arena_ids = [f"UNKNOWN_{name.replace(' ', '')}"]
 
-        all_decks_stats = seventeenlands_data.get("All Decks", {}).get(name, {})
+        all_decks_stats = all_decks_stats_map.get(name, {})
 
         card_obj = {
             "name": name,
