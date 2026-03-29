@@ -1,21 +1,21 @@
 {
   "pipeline_run": {
-    "started_at": "2026-03-28T10:12:20.997039+00:00",
-    "completed_at": "2026-03-28T10:21:27.169473+00:00",
-    "duration_sec": 546.2,
+    "started_at": "2026-03-29T10:13:17.561254+00:00",
+    "completed_at": "2026-03-29T10:21:59.599411+00:00",
+    "duration_sec": 522.0,
     "status": "PARTIAL_SUCCESS"
   },
   "api_stats": {
-    "total_requests": 144,
+    "total_requests": 115,
     "failed_requests": 0,
     "cached_requests": 0
   },
   "intent": {
     "scheduled_events": {
       "TMT": [
-        "PremierDraft",
         "TradDraft",
-        "PickTwoDraft"
+        "PickTwoDraft",
+        "PremierDraft"
       ],
       "FDN": [
         "QuickDraft"
@@ -65,7 +65,7 @@
   "execution_summary": {
     "formats_updated": 8,
     "formats_skipped": 2,
-    "total_output_kb": 582,
+    "total_output_kb": 587,
     "total_cards_rated": 2204,
     "total_errors": 0,
     "total_warnings": 0
@@ -86,28 +86,10 @@
   "datasets_updated": [
     {
       "set": "TMT",
-      "format": "PremierDraft",
-      "filename": "TMT_PremierDraft_All_Data.json.gz",
-      "size_kb": 99,
-      "hash": "bbc7c90de96e5a1a616e6a9e614bf8cbcfd2801bd2ae697998f33d54478e9388",
-      "card_count": 195,
-      "status": "success"
-    },
-    {
-      "set": "TMT",
-      "format": "PremierDraft",
-      "filename": "TMT_PremierDraft_Top_Data.json.gz",
-      "size_kb": 61,
-      "hash": "0354910977424cc9ea69db765312e8779a989d0cc2e38a7f2c3a49e7ebad140e",
-      "card_count": 195,
-      "status": "success"
-    },
-    {
-      "set": "TMT",
       "format": "TradDraft",
       "filename": "TMT_TradDraft_All_Data.json.gz",
-      "size_kb": 61,
-      "hash": "65239a441a14524408356abac8a1095ec6f1a8855f177b21deb4e6e423ae6aab",
+      "size_kb": 63,
+      "hash": "9727f5c7e67eac681538d4af3335d8f6c38cca6606d362c04d816153515a2aee",
       "card_count": 195,
       "status": "success"
     },
@@ -116,7 +98,7 @@
       "format": "TradDraft",
       "filename": "TMT_TradDraft_Top_Data.json.gz",
       "size_kb": 35,
-      "hash": "6fb5993de66ca04192f66d9ae1e13bd4cede995bc25078c97fbb61a0de1f31e2",
+      "hash": "73836ca71fe0746050175e89f8bd4dbab507b6ee9bd9958c3ac2bc1c0a6d8120",
       "card_count": 195,
       "status": "success"
     },
@@ -124,8 +106,8 @@
       "set": "TMT",
       "format": "PickTwoDraft",
       "filename": "TMT_PickTwoDraft_All_Data.json.gz",
-      "size_kb": 88,
-      "hash": "ec504fdddb064c86cc0035307bff86b08b79a5161842921874d4608c3a282821",
+      "size_kb": 89,
+      "hash": "2bb3bdcc75d75bb2c3aadc220612524d9c5e4b0f511ddd89533f70209adccb29",
       "card_count": 195,
       "status": "success"
     },
@@ -134,7 +116,25 @@
       "format": "PickTwoDraft",
       "filename": "TMT_PickTwoDraft_Top_Data.json.gz",
       "size_kb": 23,
-      "hash": "869f213aae0f79688611fd977e757b192f1e5afcef5600a16b7405365e45bb4a",
+      "hash": "f694b85d0d4747eda2333edad0435d73238fb9e19dad9ded34fcdd09a26d122f",
+      "card_count": 195,
+      "status": "success"
+    },
+    {
+      "set": "TMT",
+      "format": "PremierDraft",
+      "filename": "TMT_PremierDraft_All_Data.json.gz",
+      "size_kb": 99,
+      "hash": "b3a2cd043f77dfdaf1c3f6b1ac8f571351795cae66bfe6252dbd939722652262",
+      "card_count": 195,
+      "status": "success"
+    },
+    {
+      "set": "TMT",
+      "format": "PremierDraft",
+      "filename": "TMT_PremierDraft_Top_Data.json.gz",
+      "size_kb": 61,
+      "hash": "5036f05a19dcbfd5362dcc4090be4bf41569367bbc576f14718bc4aa7482c31e",
       "card_count": 195,
       "status": "success"
     },
@@ -142,8 +142,8 @@
       "set": "FDN",
       "format": "QuickDraft",
       "filename": "FDN_QuickDraft_All_Data.json.gz",
-      "size_kb": 163,
-      "hash": "e1a9cd58365b577f69066e1103ced5241d0a0fe496b66107d79aa1a0dd0c96f5",
+      "size_kb": 165,
+      "hash": "597786cd3791a66a5d81fe70fd6cd632d282c84f9f7b0c3dcb5eea081ad3b69a",
       "card_count": 517,
       "status": "success"
     },
@@ -152,7 +152,7 @@
       "format": "QuickDraft",
       "filename": "FDN_QuickDraft_Top_Data.json.gz",
       "size_kb": 52,
-      "hash": "f43b887c74f207c2e32ee386aeafbaebc70f082684cf591787667241825cde67",
+      "hash": "96fe433348706eadc0d107f32f84c26e8989e9f06da87a5291fdfcca12186f0f",
       "card_count": 517,
       "status": "success"
     }
