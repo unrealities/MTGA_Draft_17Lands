@@ -51,6 +51,9 @@ def get_scheduled_events(calendar_path="server/calendar.json") -> dict:
             if start < active_sets[set_code]["start_date"]:
                 active_sets[set_code]["start_date"] = start
 
+    for data in active_sets.values():
+        data["formats"] = list(data["formats"])
+
     return active_sets
 
 
@@ -110,12 +113,12 @@ def run_pipeline():
             scryfall_cards = scryfall_cache_mem[set_code]
             card_tags = tags_cache_mem[set_code]
 
-            if not scryfall_cards and set_code != "CUBE":
-                logger.info(f"No Scryfall base cards found for {set_code}. Skipping.")
-                report.record_skipped(set_code, draft_format, "No Scryfall base cards")
-                continue
+            if not scryfall_cards:
+                logger.info(
+                    f"   No Scryfall base cards found for {set_code}. Will rely on 17Lands card names."
+                )
 
-            color_ratings, games_played = extract_color_ratings(
+            color_ratings, games_played, total_games = extract_color_ratings(
                 client, set_code, draft_format, user_group, start_date_str, end_date_str
             )
 
@@ -176,6 +179,7 @@ def run_pipeline():
                 color_ratings,
                 start_date_str,
                 end_date_str,
+                total_games,
             )
 
             file_info = save_dataset(set_code, draft_format, user_group, final_dataset)

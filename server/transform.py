@@ -42,16 +42,18 @@ def transform_payload(
     color_ratings,
     start_date,
     end_date,
+    total_games,
 ) -> dict:
     logger.info(f"Transforming payload for {set_code} {draft_format}...")
 
-    max_games = max(
-        (
-            stats.get("samples", 0)
-            for stats in seventeenlands_data.get("All Decks", {}).values()
-        ),
-        default=0,
-    )
+    if total_games == 0:
+        total_games = max(
+            (
+                stats.get("samples", 0)
+                for stats in seventeenlands_data.get("All Decks", {}).values()
+            ),
+            default=0,
+        )
 
     payload = {
         "meta": {
@@ -61,7 +63,7 @@ def transform_payload(
             "start_date": start_date,
             "end_date": end_date,
             "version": 3.0,
-            "game_count": max_games,
+            "game_count": total_games,
         },
         "color_ratings": color_ratings or {},
         "card_ratings": {},

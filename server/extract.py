@@ -1,6 +1,7 @@
 import os
 import json
 import logging
+import re
 from datetime import datetime, timezone, timedelta
 from server import config
 from server.transform import parse_scryfall_types
@@ -12,7 +13,7 @@ os.makedirs(SCRYFALL_CACHE_DIR, exist_ok=True)
 
 
 def extract_scryfall_data(client, set_code: str) -> dict:
-    if "CUBE" in set_code.upper():
+    if "CUBE" in set_code.upper() or "REMIX" in set_code.upper():
         return {}
 
     cache_filepath = os.path.join(SCRYFALL_CACHE_DIR, f"{set_code}_cards.json")
@@ -59,8 +60,6 @@ def extract_scryfall_data(client, set_code: str) -> dict:
                 continue
 
             arena_id = c.get("arena_id")
-            if not arena_id:
-                continue
 
             types, subtypes = parse_scryfall_types(c.get("type_line", ""))
 
@@ -87,7 +86,7 @@ def extract_scryfall_data(client, set_code: str) -> dict:
 
             if name not in cards:
                 cards[name] = {
-                    "arena_ids": [arena_id],
+                    "arena_ids": [arena_id] if arena_id else [],
                     "name": name,
                     "cmc": int(c.get("cmc", 0)),
                     "mana_cost": mana_cost,
@@ -101,7 +100,7 @@ def extract_scryfall_data(client, set_code: str) -> dict:
                     "oracle_text": oracle_text,
                 }
             else:
-                if arena_id not in cards[name]["arena_ids"]:
+                if arena_id and arena_id not in cards[name]["arena_ids"]:
                     cards[name]["arena_ids"].append(arena_id)
 
         url = data.get("next_page")
@@ -115,7 +114,7 @@ def extract_scryfall_data(client, set_code: str) -> dict:
 
 
 def extract_scryfall_tags(client, set_code: str) -> dict:
-    if "CUBE" in set_code.upper():
+    if "CUBE" in set_code.upper() or "REMIX" in set_code.upper():
         return {}
 
     cache_filepath = os.path.join(SCRYFALL_CACHE_DIR, f"{set_code}_tags.json")
@@ -249,7 +248,7 @@ def extract_color_ratings(
     user_group: str,
     start_date: str,
     end_date: str,
-) -> tuple[dict, dict]:
+) -> tuple[dict, dict, int]:
     logger.info(
         f"Fetching color ratings for {set_code} {draft_format} ({user_group})..."
     )
@@ -266,14 +265,25 @@ def extract_color_ratings(
 
     url = "https://www.17lands.com/color_ratings/data"
     ratings, games_played = {}, {}
+    total_games = 0
 
     try:
         data = client.respectful_get(url, params=params).json()
         for entry in data:
-            color_name = entry.get("color_name", "")
-            short_name = entry.get("short_name", "")
+            if entry.get("is_summary"):
+                total_games = entry.get("games", 0)
+                # The summary row has no color data to track
+                continue
 
-            color_key = "" if "All" in color_name else short_name
+            color_key = entry.get("short_name")
+            if not color_key:
+                color_name = entry.get("color_name", "")
+                if "All" in color_name:
+                    color_key = ""
+                else:
+                    match = re.search(r"\((.*?)\)", color_name)
+                    if match:
+                        color_key = match.group(1)
 
             if color_key is not None and (games := entry.get("games", 0)) > 0:
                 ratings[color_key] = round((entry.get("wins", 0) / games) * 100, 1)
@@ -281,7 +291,7 @@ def extract_color_ratings(
     except Exception as e:
         logger.warning(f"Failed to fetch color ratings: {e}")
 
-    return ratings, games_played
+    return ratings, games_played, total_games
 
 
 def extract_scryfall_by_names(client, names: list) -> dict:
@@ -291,7 +301,7 @@ def extract_scryfall_by_names(client, names: list) -> dict:
     for i in range(0, len(names), chunk_size):
         chunk = names[i : i + chunk_size]
         # Query format: !"Card Name 1" OR !"Card Name 2"
-        query = " OR ".join([f'! "{n}"' for n in chunk])
+        query = " OR ".join([f'!"{n}"' for n in chunk])
         url = "https://api.scryfall.com/cards/search"
         params = {"q": query, "unique": "prints"}
 
@@ -311,8 +321,6 @@ def extract_scryfall_by_names(client, names: list) -> dict:
                     continue
 
                 arena_id = c.get("arena_id")
-                if not arena_id:
-                    continue
 
                 types, subtypes = parse_scryfall_types(c.get("type_line", ""))
                 colors = c.get("colors", [])
@@ -338,7 +346,7 @@ def extract_scryfall_by_names(client, names: list) -> dict:
 
                 if name not in cards:
                     cards[name] = {
-                        "arena_ids": [arena_id],
+                        "arena_ids": [arena_id] if arena_id else [],
                         "name": name,
                         "cmc": int(c.get("cmc", 0)),
                         "mana_cost": mana_cost,
@@ -352,7 +360,7 @@ def extract_scryfall_by_names(client, names: list) -> dict:
                         "oracle_text": oracle_text,
                     }
                 else:
-                    if arena_id not in cards[name]["arena_ids"]:
+                    if arena_id and arena_id not in cards[name]["arena_ids"]:
                         cards[name]["arena_ids"].append(arena_id)
 
             url = data.get("next_page")
