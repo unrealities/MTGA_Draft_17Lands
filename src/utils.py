@@ -300,7 +300,19 @@ def read_dataset_info(filename: str, codes=None, names=None):
     """Reads the meta section of a dataset file"""
     name_segments = filename.split("_")
     cleaned_codes = [clean_string(code) for code in codes] if codes else None
-    if len(name_segments) == 4:
+
+    is_custom = False
+
+    # NEW: Handle Custom Datasets (5 segments: SET_EVENT_GROUP_CUSTOMSTAMP_Data.json)
+    if len(name_segments) == 5:
+        set_code = name_segments[0].upper()
+        event_type = name_segments[1]
+        user_group = name_segments[2]
+        # name_segments[3] is the "Custom-12345678" stamp
+        file_suffix = name_segments[4]
+        is_custom = True
+    # STANDARD: Official Datasets (4 segments: SET_EVENT_GROUP_Data.json)
+    elif len(name_segments) == 4:
         set_code = name_segments[0].upper()
         event_type = name_segments[1]
         user_group = name_segments[2]
@@ -308,6 +320,7 @@ def read_dataset_info(filename: str, codes=None, names=None):
     else:
         return ()
 
+    # Validation uses the standard extracted variables so it still passes
     if (
         (cleaned_codes and set_code not in cleaned_codes)
         or (event_type not in LIMITED_TYPES_DICT)
@@ -330,12 +343,19 @@ def read_dataset_info(filename: str, codes=None, names=None):
         else:
             start_date = json_data["meta"]["start_date"]
             end_date = json_data["meta"]["end_date"]
+
         collection_date = json_data["meta"].get("collection_date", "")
 
         if "game_count" in json_data["meta"]:
             game_count = int(json_data["meta"]["game_count"])
         else:
             game_count = 0
+
+        # --- THE MAGIC TRICK ---
+        # Modify the returned user_group so the UI treats it as a unique selectable option
+        if is_custom:
+            # Output: "All (Custom: 2024-04-01 to 2024-04-15)"
+            user_group = f"{user_group} (Custom: {start_date} to {end_date})"
 
         return (
             set_name,

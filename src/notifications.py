@@ -86,78 +86,13 @@ class Notifications:
 
     def update_dataset(self):
         try:
-            current_time = datetime.now().timestamp()
-            if (
-                self.configuration.card_data.last_auto_check
-                and (current_time - self.configuration.card_data.last_auto_check)
-                < 86400
-            ):
-                return
+            from src.dataset_updater import DatasetUpdater
 
-            dataset_info = read_dataset_info(
-                self.configuration.card_data.latest_dataset
-            )
-            if not dataset_info:
-                return
+            def silent_progress(msg):
+                pass
 
-            set_name = dataset_info[0]
-            event_type = dataset_info[1]
-            user_group = dataset_info[2]
-
-            logger.info(
-                f"Checking updates for {set_name} {event_type} ({user_group} players)..."
-            )
-
-            # Fetch summary only (fast check)
-            color_ratings, game_count = Seventeenlands().download_color_ratings(
-                dataset_info[0],
-                dataset_info[1],
-                dataset_info[3],
-                str(date.today()),
-                dataset_info[2],
-            )
-
-            # Local game count (index 5) vs Remote game count
-            local_count = dataset_info[5]
-
-            # Update timestamp to prevent spam
-            self.configuration.card_data.last_auto_check = current_time
-            write_configuration(self.configuration)
-
-            if game_count > local_count:
-                logger.info(
-                    f"New data found for {set_name} {event_type} ({user_group} players): "
-                    f"Local {local_count} vs Remote {game_count}"
-                )
-
-                prompt_msg = (
-                    f"New data available for {set_name} - {event_type} ({user_group} players).\n\n"
-                    f"Local Games: {local_count:,}\n"
-                    f"Remote Games: {game_count:,}\n\n"
-                    f"Would you like to update now?"
-                )
-
-                def prompt_user():
-                    if tkinter.messagebox.askyesno("Dataset Update", prompt_msg):
-                        args = DatasetArgs(
-                            dataset_info[0],
-                            dataset_info[1],
-                            dataset_info[3],
-                            str(date.today()),
-                            dataset_info[2],
-                            game_count,
-                            color_ratings,
-                        )
-
-                        if hasattr(self.root, "event_generate"):
-                            self.root.event_generate("<<ShowDataTab>>")
-
-                        self.dataset_window.enter(args)
-
-                try:
-                    self.root.after(0, prompt_user)
-                except RuntimeError:
-                    pass
+            updater = DatasetUpdater(self.configuration)
+            updater.sync_datasets(silent_progress)
 
         except Exception as e:
             logger.error(f"Notification error: {e}")

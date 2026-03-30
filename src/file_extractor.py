@@ -1299,11 +1299,16 @@ class FileExtractor(UIProgress):
     def export_card_data(self):
         """Build the file for the set data"""
         try:
+            import time
+
+            custom_stamp = f"Custom-{int(time.time())}"
+
             output_file = "_".join(
                 (
                     clean_string(self.selected_sets.seventeenlands[0]),
                     self.draft,
                     self.user_group,
+                    custom_stamp,
                     constants.SET_FILE_SUFFIX,
                 )
             )

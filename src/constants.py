@@ -912,3 +912,7 @@ CARD_NAME_CORRECTIONS = {
     "Bespoke B": "Bespoke Bō",
     "Bespoke BÃ´": "Bespoke Bō",
 }
+
+# --- Remote ETL Pipeline ---
+REMOTE_MANIFEST_URL = "https://unrealities.github.io/MTGA_Draft_17Lands/manifest.json"
+REMOTE_DATASET_BASE_URL = "https://unrealities.github.io/MTGA_Draft_17Lands/"
