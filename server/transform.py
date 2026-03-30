@@ -90,11 +90,14 @@ def transform_payload(
         if name not in all_decks_stats_map and name not in BASIC_LANDS:
             continue
 
+        all_decks_stats = all_decks_stats_map.get(name, {})
+
         arena_ids = sf_card.get("arena_ids", [])
         if not arena_ids:
-            arena_ids = [f"UNKNOWN_{name.replace(' ', '')}"]
-
-        all_decks_stats = all_decks_stats_map.get(name, {})
+            if l17_id := all_decks_stats.get("arena_id"):
+                arena_ids = [l17_id]
+            else:
+                arena_ids = [f"UNKNOWN_{name.replace(' ', '')}"]
 
         card_obj = {
             "name": name,

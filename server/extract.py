@@ -201,6 +201,7 @@ def extract_17lands_data(
             for card in data:
                 name = card.get("name", "").replace("///", "//")
                 archetype_data[color][name] = {
+                    "arena_id": card.get("mtga_id") or card.get("arena_id"),
                     "gihwr": round(
                         float(card.get("ever_drawn_win_rate") or 0) * 100, 2
                     ),
@@ -272,8 +273,6 @@ def extract_color_ratings(
         for entry in data:
             if entry.get("is_summary"):
                 total_games = entry.get("games", 0)
-                # The summary row has no color data to track
-                continue
 
             color_key = entry.get("short_name")
             if not color_key:
