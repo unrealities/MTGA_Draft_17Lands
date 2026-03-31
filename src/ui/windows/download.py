@@ -1,5 +1,6 @@
 import tkinter
 import threading
+import os
 from tkinter import ttk, messagebox
 from datetime import date
 from typing import Optional
@@ -114,7 +115,7 @@ class DownloadWindow(ttk.Frame):
             self.vars["set"],
             self.vars["set"].get(),
             *set_options,
-            command=self._on_set_change
+            command=self._on_set_change,
         )
         self.om_set.grid(row=0, column=1, sticky="ew", pady=Theme.scaled_val(2))
         self.vars["event"] = tkinter.StringVar(value="PremierDraft")
@@ -125,7 +126,7 @@ class DownloadWindow(ttk.Frame):
             form,
             self.vars["event"],
             "PremierDraft",
-            *sorted(constants.LIMITED_TYPE_LIST)
+            *sorted(constants.LIMITED_TYPE_LIST),
         )
         self.om_event.grid(row=0, column=3, sticky="ew", pady=Theme.scaled_val(2))
         self.vars["group"] = tkinter.StringVar(value="All")

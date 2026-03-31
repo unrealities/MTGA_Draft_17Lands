@@ -76,7 +76,7 @@ def test_get_scheduled_events(tmp_path, monkeypatch):
     active_sets = get_scheduled_events(str(cal_file))
 
     assert "TMNT" in active_sets
-    assert "PremierDraft" in active_sets["TMNT"]
+    assert "PremierDraft" in active_sets["TMNT"]["formats"]
     assert "BLB" not in active_sets
     assert "MAT" not in active_sets
 
@@ -151,7 +151,7 @@ def test_transform_payload_merging():
     """Verifies that Scryfall base data and 17Lands stats merge perfectly into the client payload."""
     scryfall_mock = {
         "Lightning Bolt": {
-            "arena_id": 123,
+            "arena_ids": [123],
             "cmc": 1,
             "types": ["Instant"],
             "subtypes": [],
@@ -182,6 +182,7 @@ def test_transform_payload_merging():
         color_ratings_mock,
         "2019-01-01",
         "2024-05-01",
+        5000,
     )
 
     # Verify Header
