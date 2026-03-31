@@ -200,8 +200,14 @@ def extract_17lands_data(
             archetype_data[color] = {}
             for card in data:
                 name = card.get("name", "").replace("///", "//")
+                mtga_id = card.get("mtga_id") or card.get("arena_id")
+                if not mtga_id and "url" in card:
+                    match = re.search(r"card_id=(\d+)", card.get("url", ""))
+                    if match:
+                        mtga_id = int(match.group(1))
+
                 archetype_data[color][name] = {
-                    "arena_id": card.get("mtga_id") or card.get("arena_id"),
+                    "arena_id": mtga_id,
                     "gihwr": round(
                         float(card.get("ever_drawn_win_rate") or 0) * 100, 2
                     ),
@@ -272,7 +278,9 @@ def extract_color_ratings(
         data = client.respectful_get(url, params=params).json()
         for entry in data:
             if entry.get("is_summary"):
-                total_games = entry.get("games", 0)
+                if "All Decks" in entry.get("color_name", ""):
+                    total_games = entry.get("games", 0)
+                continue
 
             color_key = entry.get("short_name")
             if not color_key:
@@ -285,8 +293,10 @@ def extract_color_ratings(
                         color_key = match.group(1)
 
             if color_key is not None and (games := entry.get("games", 0)) > 0:
-                ratings[color_key] = round((entry.get("wins", 0) / games) * 100, 1)
-                games_played[color_key] = games
+                if games >= config.MIN_GAMES_THRESHOLD:
+                    ratings[color_key] = round((entry.get("wins", 0) / games) * 100, 1)
+                    games_played[color_key] = games
+
     except Exception as e:
         logger.warning(f"Failed to fetch color ratings: {e}")
 
@@ -295,11 +305,10 @@ def extract_color_ratings(
 
 def extract_scryfall_by_names(client, names: list) -> dict:
     cards = {}
-    chunk_size = 20  # Scryfall URL length limits require batching
+    chunk_size = 20
 
     for i in range(0, len(names), chunk_size):
         chunk = names[i : i + chunk_size]
-        # Query format: !"Card Name 1" OR !"Card Name 2"
         query = " OR ".join([f'!"{n}"' for n in chunk])
         url = "https://api.scryfall.com/cards/search"
         params = {"q": query, "unique": "prints"}

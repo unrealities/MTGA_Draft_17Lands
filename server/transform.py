@@ -92,12 +92,19 @@ def transform_payload(
 
         all_decks_stats = all_decks_stats_map.get(name, {})
 
-        arena_ids = sf_card.get("arena_ids", [])
-        if not arena_ids:
-            if l17_id := all_decks_stats.get("arena_id"):
-                arena_ids = [l17_id]
-            else:
-                arena_ids = [f"UNKNOWN_{name.replace(' ', '')}"]
+        # Priorities for determining Arena ID:
+        # 1. 17Lands ID (Perfect match for limited environment)
+        # 2. Scryfall IDs
+        # 3. UNKNOWN Fallback
+        l17_id = all_decks_stats.get("arena_id")
+        sf_ids = sf_card.get("arena_ids", [])
+
+        if l17_id:
+            arena_ids = [l17_id]
+        elif sf_ids:
+            arena_ids = sf_ids
+        else:
+            arena_ids = [f"UNKNOWN_{name.replace(' ', '')}"]
 
         card_obj = {
             "name": name,
