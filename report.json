@@ -1,30 +1,27 @@
 {
   "pipeline_run": {
-    "started_at": "2026-03-31T10:25:55.915229+00:00",
-    "completed_at": "2026-03-31T10:42:47.000620+00:00",
-    "duration_sec": 1011.1,
+    "started_at": "2026-04-01T10:26:22.823082+00:00",
+    "completed_at": "2026-04-01T10:41:18.065870+00:00",
+    "duration_sec": 895.2,
     "status": "PARTIAL_SUCCESS"
   },
   "api_stats": {
-    "total_requests": 179,
+    "total_requests": 149,
     "failed_requests": 0,
     "cached_requests": 0
   },
   "intent": {
     "scheduled_events": {
       "TMT": [
-        "PremierDraft",
+        "PickTwoDraft",
         "TradDraft",
-        "PickTwoDraft"
+        "PremierDraft"
       ],
       "BLB": [
         "PremierDraft"
       ],
       "FDN": [
         "QuickDraft"
-      ],
-      "Remix - Artifacts": [
-        "PremierDraft"
       ],
       "CUBE-POWERED": [
         "Cube"
@@ -70,11 +67,11 @@
   },
   "execution_summary": {
     "formats_updated": 10,
-    "formats_skipped": 4,
+    "formats_skipped": 2,
     "total_output_kb": 871,
     "total_cards_rated": 2764,
     "total_errors": 0,
-    "total_warnings": 2
+    "total_warnings": 1
   },
   "warehouse_state": {
     "total_available_datasets": 10,
@@ -94,46 +91,10 @@
   "datasets_updated": [
     {
       "set": "TMT",
-      "format": "PremierDraft",
-      "filename": "TMT_PremierDraft_All_Data.json.gz",
-      "size_kb": 102,
-      "hash": "caa6e288419aba9d93abe6613881a190043cd8faa4815fa6af000cda36c39679",
-      "card_count": 195,
-      "status": "success"
-    },
-    {
-      "set": "TMT",
-      "format": "PremierDraft",
-      "filename": "TMT_PremierDraft_Top_Data.json.gz",
-      "size_kb": 61,
-      "hash": "ee5fd9c70561d2e8ec1a878d28ac4bd5337aa319bb2bc340b73d1dfdb91d8492",
-      "card_count": 195,
-      "status": "success"
-    },
-    {
-      "set": "TMT",
-      "format": "TradDraft",
-      "filename": "TMT_TradDraft_All_Data.json.gz",
-      "size_kb": 63,
-      "hash": "43bbdcb56410ad6d0cc302abb299a6bd42939373a1c14e4928b9b7c670a7d7b2",
-      "card_count": 195,
-      "status": "success"
-    },
-    {
-      "set": "TMT",
-      "format": "TradDraft",
-      "filename": "TMT_TradDraft_Top_Data.json.gz",
-      "size_kb": 35,
-      "hash": "365ad331221acd0774026caee532821d112710131194cb089deaf04f5f5125ac",
-      "card_count": 195,
-      "status": "success"
-    },
-    {
-      "set": "TMT",
       "format": "PickTwoDraft",
       "filename": "TMT_PickTwoDraft_All_Data.json.gz",
       "size_kb": 91,
-      "hash": "eb43ca13abb36e115ede624a6647b57eeb6bedd9b99eef608159b92378aed08f",
+      "hash": "d6a4f299453232f4f837e2c8099e91bb1027d635e9d8b96580c7e27ee669aadc",
       "card_count": 195,
       "status": "success"
     },
@@ -142,7 +103,43 @@
       "format": "PickTwoDraft",
       "filename": "TMT_PickTwoDraft_Top_Data.json.gz",
       "size_kb": 23,
-      "hash": "03ef79989aa41eb212e3789fa207823ddf13d5794ac8a329427916aec0631456",
+      "hash": "e34cfb150d8a2bf34930540e15af4724f32d80e5ed9e58dd0a7c930609d4b59b",
+      "card_count": 195,
+      "status": "success"
+    },
+    {
+      "set": "TMT",
+      "format": "TradDraft",
+      "filename": "TMT_TradDraft_All_Data.json.gz",
+      "size_kb": 63,
+      "hash": "83fb17188d8a711ab7889fc0a5cc19bfb2c0eb11dc1443cd47336ed40a3ba36e",
+      "card_count": 195,
+      "status": "success"
+    },
+    {
+      "set": "TMT",
+      "format": "TradDraft",
+      "filename": "TMT_TradDraft_Top_Data.json.gz",
+      "size_kb": 35,
+      "hash": "220a963341624013eb5a81e028e962b618186944849c85e545caa2fd57a1f229",
+      "card_count": 195,
+      "status": "success"
+    },
+    {
+      "set": "TMT",
+      "format": "PremierDraft",
+      "filename": "TMT_PremierDraft_All_Data.json.gz",
+      "size_kb": 102,
+      "hash": "97804d2e7f759ab20deef5e40935efcd0b81045fc34d991fc9167c7b95f88749",
+      "card_count": 195,
+      "status": "success"
+    },
+    {
+      "set": "TMT",
+      "format": "PremierDraft",
+      "filename": "TMT_PremierDraft_Top_Data.json.gz",
+      "size_kb": 61,
+      "hash": "47cdf582777a609cb6c5b1932426278557bfbba0e0245457d3d9960d0cf9400a",
       "card_count": 195,
       "status": "success"
     },
@@ -151,7 +148,7 @@
       "format": "PremierDraft",
       "filename": "BLB_PremierDraft_All_Data.json.gz",
       "size_kb": 166,
-      "hash": "186e0188504ed4d67828f52003b5763134984c18d36aa87cf40c52848312b931",
+      "hash": "e31f0d506c24f07192f2292bc3348f71faac9b42f0c468aded3605960c080d85",
       "card_count": 280,
       "status": "success"
     },
@@ -160,7 +157,7 @@
       "format": "PremierDraft",
       "filename": "BLB_PremierDraft_Top_Data.json.gz",
       "size_kb": 112,
-      "hash": "f2ef02323153d665fee3d830f9a9707b4215672f6b7ea3aae2ffc148bae441c0",
+      "hash": "6ed85d8b1a8ab64f3617aa232dc3b78843dc2a67de96af86667930aae46704c8",
       "card_count": 280,
       "status": "success"
     },
@@ -169,7 +166,7 @@
       "format": "QuickDraft",
       "filename": "FDN_QuickDraft_All_Data.json.gz",
       "size_kb": 166,
-      "hash": "a0f946d6ed9c8a27b4520cda05b689722925e17bef59c086797580de1dccfb6b",
+      "hash": "0da9cba40b0c7ac67e12729431044c5366be0694bbaa658a4bf8dd31446565a5",
       "card_count": 517,
       "status": "success"
     },
@@ -178,22 +175,12 @@
       "format": "QuickDraft",
       "filename": "FDN_QuickDraft_Top_Data.json.gz",
       "size_kb": 52,
-      "hash": "a21965dc23abea797a39c037405daff184b311cb02fb706ffbddb9cad1ac719f",
+      "hash": "a944661521866b5ebb12ef119d47ba93c94ae0f8cf11de5bfa434dd27cd1550a",
       "card_count": 517,
       "status": "success"
     }
   ],
   "datasets_skipped": [
-    {
-      "set": "Remix - Artifacts",
-      "format": "PremierDraft",
-      "reason": "No Scryfall base cards"
-    },
-    {
-      "set": "Remix - Artifacts",
-      "format": "PremierDraft",
-      "reason": "No Scryfall base cards"
-    },
     {
       "set": "CUBE-POWERED",
       "format": "Cube",
@@ -208,16 +195,10 @@
   "errors": [],
   "warnings": [
     {
-      "time": "2026-03-31T10:35:15.015002+00:00",
+      "time": "2026-04-01T10:35:06.214905+00:00",
       "level": "WARNING",
       "logger": "server.utils",
       "message": "HTTP 403 on www.17lands.com. Backing off 180.0s to cool down IP..."
-    },
-    {
-      "time": "2026-03-31T10:42:18.368771+00:00",
-      "level": "WARNING",
-      "logger": "server.utils",
-      "message": "Network error on https://api.scryfall.com/cards/search?q=set%3ARemix+-+Artifacts: HTTPSConnectionPool(host='api.scryfall.com', port=443): Read timed out. (read timeout=30). Retrying in 5.0s..."
     }
   ]
 }
