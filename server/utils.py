@@ -39,13 +39,15 @@ class APIClient:
         self._last_request_time = {
             "api.scryfall.com": 0.0,
             "www.17lands.com": 0.0,
+            "api.17lands.com": 0.0,
         }
         self._domain_delays = {
             "api.scryfall.com": config.DELAY_SCRYFALL_SEC,
             "www.17lands.com": config.DELAY_17LANDS_SEC,
+            "api.17lands.com": config.DELAY_17LANDS_SEC,
         }
 
-        self._cache_dir = os.path.join(config.OUTPUT_DIR, ".cache")
+        self._cache_dir = os.path.join(os.path.dirname(config.OUTPUT_DIR), ".api_cache")
         os.makedirs(self._cache_dir, exist_ok=True)
 
         self.request_count: int = 0

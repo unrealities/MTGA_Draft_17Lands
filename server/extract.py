@@ -5,10 +5,11 @@ import re
 from datetime import datetime, timezone, timedelta
 from server import config
 from server.transform import parse_scryfall_types
+from src.utils import normalize_color_string
 
 logger = logging.getLogger(__name__)
 
-SCRYFALL_CACHE_DIR = os.path.join(config.OUTPUT_DIR, "scryfall_cache")
+SCRYFALL_CACHE_DIR = os.path.join(os.path.dirname(config.OUTPUT_DIR), ".scryfall_cache")
 os.makedirs(SCRYFALL_CACHE_DIR, exist_ok=True)
 
 
@@ -174,7 +175,7 @@ def extract_17lands_data(
     end_date: str,
 ) -> dict:
     archetype_data = {}
-    base_url = "https://www.17lands.com/card_ratings/data"
+    base_url = "https://api.17lands.com/card_ratings/data"
 
     for i, color in enumerate(valid_archetypes):
         logger.info(
@@ -184,8 +185,8 @@ def extract_17lands_data(
         params = {
             "expansion": set_code,
             "format": draft_format,
-            "start_date": start_date,
-            "end_date": end_date,
+            "start": start_date,
+            "end": end_date,
         }
         if color != "All Decks":
             params["colors"] = color
@@ -280,7 +281,7 @@ def extract_color_ratings(
             if entry.get("is_summary"):
                 if "All Decks" in entry.get("color_name", ""):
                     total_games = entry.get("games", 0)
-                continue
+                # Don't use 'continue' here, otherwise we skip saving the 'All Decks' win rate entirely!
 
             color_key = entry.get("short_name")
             if not color_key:
@@ -291,6 +292,12 @@ def extract_color_ratings(
                     match = re.search(r"\((.*?)\)", color_name)
                     if match:
                         color_key = match.group(1)
+
+            if color_key in ["1", "2", "3", "4", "5"]:
+                continue
+
+            if color_key is not None:
+                color_key = normalize_color_string(color_key)
 
             if color_key is not None and (games := entry.get("games", 0)) > 0:
                 if games >= config.MIN_GAMES_THRESHOLD:
@@ -375,3 +382,12 @@ def extract_scryfall_by_names(client, names: list) -> dict:
             params = None
 
     return cards
+
+
+def get_historical_start_dates(client) -> dict:
+    try:
+        resp = client.respectful_get("https://api.17lands.com/data/filters")
+        return resp.json().get("start_dates", {})
+    except Exception as e:
+        logger.warning(f"Could not fetch historical start dates: {e}")
+        return {}

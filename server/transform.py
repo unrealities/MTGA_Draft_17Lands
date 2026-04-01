@@ -70,6 +70,15 @@ def transform_payload(
             default=0,
         )
 
+    safe_color_ratings = {
+        arch: 0.0 for arch in config.ARCHETYPES if arch != "All Decks"
+    }
+    safe_color_ratings[""] = 0.0
+
+    if color_ratings:
+        for k, v in color_ratings.items():
+            safe_color_ratings[k] = v
+
     payload = {
         "meta": {
             "collection_date": datetime.now(timezone.utc).strftime(
@@ -80,7 +89,7 @@ def transform_payload(
             "version": 3.0,
             "game_count": total_games,
         },
-        "color_ratings": color_ratings or {},
+        "color_ratings": safe_color_ratings,  # Use the safe, pre-filled dict
         "card_ratings": {},
     }
 
@@ -117,7 +126,7 @@ def transform_payload(
             "image": sf_card.get("image", [])
             or all_decks_stats.get("17lands_images", []),
             "subtypes": sf_card.get("subtypes", []),
-            "colors": sf_card.get("colors", []),
+            "colors": sf_card.get("color_identity", []),
             "set": set_code,
             "deck_colors": {},
             "tags": card_tags.get(name, []),
@@ -129,6 +138,7 @@ def transform_payload(
 
         alsa = all_decks_stats.get("alsa", 0.0)
         ata = all_decks_stats.get("ata", 0.0)
+
         card_obj["deck_colors"][""] = {
             "gihwr": 0.0,
             "ohwr": 0.0,
@@ -139,6 +149,10 @@ def transform_payload(
             "ata": ata,
             "iwd": 0.0,
             "samples": 0,
+            "seen_count": 0,
+            "pick_count": 0,
+            "game_count": 0,
+            "play_rate": 0.0,
         }
 
         for arch in config.ARCHETYPES:

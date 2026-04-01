@@ -35,6 +35,18 @@ jobs:
           ref: gh-pages
           path: build
 
+      - name: Restore API Caches
+        uses: actions/cache@v4
+        with:
+          # Tell GitHub to save/restore the two folders we moved in Fix 1
+          path: |
+            .api_cache
+            .scryfall_cache
+          # Cache key based on the date so it refreshes naturally
+          key: etl-cache-${{ runner.os }}-${{ steps.date.outputs.date }}
+          restore-keys: |
+            etl-cache-${{ runner.os }}-
+
       - name: Run ETL Pipeline
         env:
           ETL_OUTPUT_DIR: build # Matches your config.py
@@ -49,4 +61,5 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./build
           publish_branch: gh-pages
+          force_orphan: true
           commit_message: "Automated ETL update: ${{ github.event.head_commit.message }}"

@@ -11,6 +11,7 @@ from server.extract import (
     extract_scryfall_tags,
     extract_17lands_data,
     extract_color_ratings,
+    get_historical_start_dates,
 )
 from server.transform import transform_payload
 from server.load import save_dataset, save_manifest, save_report
@@ -91,13 +92,16 @@ def run_pipeline():
         manifest["datasets"] = {}
 
     end_date_str = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    historical_dates = get_historical_start_dates(client)
 
     jobs = []
     for set_code, data in active_sets.items():
-        start_date_str = data["start_date"]
+        raw_historical_date = historical_dates.get(set_code, "2019-01-01T")
+        true_start_date_str = raw_historical_date.split("T")[0]
+
         for draft_format in data["formats"]:
             for user_group in ["All", "Top"]:
-                jobs.append((set_code, draft_format, user_group, start_date_str))
+                jobs.append((set_code, draft_format, user_group, true_start_date_str))
 
     scryfall_cache_mem = {}
     tags_cache_mem = {}
