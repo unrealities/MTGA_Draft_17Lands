@@ -89,31 +89,28 @@ def transform_payload(
             "version": 3.0,
             "game_count": total_games,
         },
-        "color_ratings": safe_color_ratings,  # Use the safe, pre-filled dict
+        "color_ratings": safe_color_ratings,
         "card_ratings": {},
     }
 
     all_decks_stats_map = seventeenlands_data.get("All Decks", {})
 
-    for name, sf_card in scryfall_cards.items():
-        if name not in all_decks_stats_map and name not in BASIC_LANDS:
-            continue
+    for name, all_decks_stats in all_decks_stats_map.items():
+        sf_card = scryfall_cards.get(name, {})
 
-        all_decks_stats = all_decks_stats_map.get(name, {})
-
-        # Priorities for determining Arena ID:
-        # 1. 17Lands ID (Perfect match for limited environment)
-        # 2. Scryfall IDs
-        # 3. UNKNOWN Fallback
         l17_id = all_decks_stats.get("arena_id")
         sf_ids = sf_card.get("arena_ids", [])
 
+        arena_ids_set = set()
         if l17_id:
-            arena_ids = [l17_id]
-        elif sf_ids:
-            arena_ids = sf_ids
-        else:
-            arena_ids = [f"UNKNOWN_{name.replace(' ', '')}"]
+            arena_ids_set.add(l17_id)
+        if sf_ids:
+            arena_ids_set.update(sf_ids)
+
+        if not arena_ids_set:
+            arena_ids_set.add(f"UNKNOWN_{name.replace(' ', '')}")
+
+        arena_ids = list(arena_ids_set)
 
         card_obj = {
             "name": name,
@@ -122,7 +119,9 @@ def transform_payload(
             "isprimarycard": 1,
             "linkedfacetype": 0,
             "types": sf_card.get("types", ["Creature"]),
-            "rarity": sf_card.get("rarity", "Common").lower(),
+            "rarity": sf_card.get(
+                "rarity", all_decks_stats.get("rarity", "common")
+            ).lower(),
             "image": sf_card.get("image", [])
             or all_decks_stats.get("17lands_images", []),
             "subtypes": sf_card.get("subtypes", []),
@@ -139,31 +138,71 @@ def transform_payload(
         alsa = all_decks_stats.get("alsa", 0.0)
         ata = all_decks_stats.get("ata", 0.0)
 
-        card_obj["deck_colors"][""] = {
-            "gihwr": 0.0,
-            "ohwr": 0.0,
-            "gpwr": 0.0,
-            "gnswr": 0.0,
-            "gdwr": 0.0,
-            "alsa": alsa,
-            "ata": ata,
-            "iwd": 0.0,
-            "samples": 0,
-            "seen_count": 0,
-            "pick_count": 0,
-            "game_count": 0,
-            "play_rate": 0.0,
-        }
-
         for arch in config.ARCHETYPES:
+            card_obj["deck_colors"][arch] = {
+                "gihwr": 0.0,
+                "ohwr": 0.0,
+                "gpwr": 0.0,
+                "gnswr": 0.0,
+                "gdwr": 0.0,
+                "alsa": alsa if arch == "All Decks" else 0.0,
+                "ata": ata if arch == "All Decks" else 0.0,
+                "iwd": 0.0,
+                "samples": 0,
+                "seen_count": 0,
+                "pick_count": 0,
+                "game_count": 0,
+                "play_rate": 0.0,
+            }
             if arch_stats := seventeenlands_data.get(arch, {}).get(name):
-                card_obj["deck_colors"][arch] = {
-                    k: v
-                    for k, v in arch_stats.items()
-                    if k not in ("17lands_images", "arena_id")
-                }
+                for k, v in arch_stats.items():
+                    if k not in ("17lands_images", "arena_id", "rarity"):
+                        card_obj["deck_colors"][arch][k] = v
 
         for a_id in arena_ids:
             payload["card_ratings"][str(a_id)] = card_obj
+
+    for name in BASIC_LANDS:
+        if name in scryfall_cards and name not in all_decks_stats_map:
+            sf_card = scryfall_cards[name]
+            sf_ids = sf_card.get("arena_ids", [])
+            if not sf_ids:
+                continue
+
+            card_obj = {
+                "name": name,
+                "cmc": sf_card.get("cmc", 0),
+                "mana_cost": sf_card.get("mana_cost", ""),
+                "isprimarycard": 1,
+                "linkedfacetype": 0,
+                "types": sf_card.get("types", ["Land", "Basic"]),
+                "rarity": "common",
+                "image": sf_card.get("image", []),
+                "subtypes": sf_card.get("subtypes", []),
+                "colors": sf_card.get("color_identity", []),
+                "set": set_code,
+                "deck_colors": {},
+                "tags": card_tags.get(name, []),
+            }
+
+            for arch in config.ARCHETYPES:
+                card_obj["deck_colors"][arch] = {
+                    "gihwr": 0.0,
+                    "ohwr": 0.0,
+                    "gpwr": 0.0,
+                    "gnswr": 0.0,
+                    "gdwr": 0.0,
+                    "alsa": 0.0,
+                    "ata": 0.0,
+                    "iwd": 0.0,
+                    "samples": 0,
+                    "seen_count": 0,
+                    "pick_count": 0,
+                    "game_count": 0,
+                    "play_rate": 0.0,
+                }
+
+            for a_id in sf_ids:
+                payload["card_ratings"][str(a_id)] = card_obj
 
     return payload

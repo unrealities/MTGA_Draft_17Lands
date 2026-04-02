@@ -185,8 +185,8 @@ def extract_17lands_data(
         params = {
             "expansion": set_code,
             "format": draft_format,
-            "start": start_date,
-            "end": end_date,
+            "start_date": start_date,
+            "end_date": end_date,
         }
         if color != "All Decks":
             params["colors"] = color

@@ -38,20 +38,13 @@ class PipelineReport:
         self._started_at: datetime = datetime.now(timezone.utc)
         self._completed_at: Optional[datetime] = None
 
-        # Intent (What we tried to do)
         self._intended_schedule: dict = {}
         self._intended_archetypes: list = []
-        self._intended_user_types: list = [
-            "All Users"
-        ]  # Default for 17Lands unless specified
-
-        # Execution (What actually happened)
+        self._intended_user_types: list = ["All", "Top"]
         self._datasets: List[Dict] = []
         self._skipped: List[Dict] = []
         self._errors: List[Dict] = []
         self._warnings: List[Dict] = []
-
-        # Warehouse State (What is available now)
         self._warehouse_datasets: dict = {}
 
         self._handler: Optional[_ReportLogHandler] = None
@@ -201,9 +194,10 @@ class PipelineReport:
         if not intent["scheduled_events"]:
             logger.info("   No active events scheduled for today.")
         else:
-            for set_code, formats in intent["scheduled_events"].items():
-                logger.info(f"   Target Set : {set_code:<6} -> {', '.join(formats)}")
-
+            for set_code, event_data in intent["scheduled_events"].items():
+                logger.info(
+                    f"   Target Set : {set_code:<6} -> {', '.join(event_data['formats'])}"
+                )
         logger.info(
             f"   Archetypes : {len(intent['archetypes_targeted'])} configured (e.g. {', '.join(intent['archetypes_targeted'][:5])}...)"
         )
