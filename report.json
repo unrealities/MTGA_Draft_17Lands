@@ -1,8 +1,8 @@
 {
   "pipeline_run": {
-    "started_at": "2026-04-01T10:26:22.823082+00:00",
-    "completed_at": "2026-04-01T10:41:18.065870+00:00",
-    "duration_sec": 895.2,
+    "started_at": "2026-04-02T10:24:14.142109+00:00",
+    "completed_at": "2026-04-02T10:39:33.831353+00:00",
+    "duration_sec": 919.7,
     "status": "PARTIAL_SUCCESS"
   },
   "api_stats": {
@@ -68,7 +68,7 @@
   "execution_summary": {
     "formats_updated": 10,
     "formats_skipped": 2,
-    "total_output_kb": 871,
+    "total_output_kb": 874,
     "total_cards_rated": 2764,
     "total_errors": 0,
     "total_warnings": 1
@@ -93,8 +93,8 @@
       "set": "TMT",
       "format": "PickTwoDraft",
       "filename": "TMT_PickTwoDraft_All_Data.json.gz",
-      "size_kb": 91,
-      "hash": "d6a4f299453232f4f837e2c8099e91bb1027d635e9d8b96580c7e27ee669aadc",
+      "size_kb": 92,
+      "hash": "6ee83ead9bfd07eb0aff5418654fe1d9253e645133709f07de60fddf9e65bee1",
       "card_count": 195,
       "status": "success"
     },
@@ -103,7 +103,7 @@
       "format": "PickTwoDraft",
       "filename": "TMT_PickTwoDraft_Top_Data.json.gz",
       "size_kb": 23,
-      "hash": "e34cfb150d8a2bf34930540e15af4724f32d80e5ed9e58dd0a7c930609d4b59b",
+      "hash": "4035e4cb6394fb03f92a3547597dfb46b93cb3a5837019c625d4a6e66026a70b",
       "card_count": 195,
       "status": "success"
     },
@@ -111,8 +111,8 @@
       "set": "TMT",
       "format": "TradDraft",
       "filename": "TMT_TradDraft_All_Data.json.gz",
-      "size_kb": 63,
-      "hash": "83fb17188d8a711ab7889fc0a5cc19bfb2c0eb11dc1443cd47336ed40a3ba36e",
+      "size_kb": 64,
+      "hash": "526a056ca2fb89053f4b7b1561e857e83b74f9a8dd4ccdd1cda8ae53f8fd3067",
       "card_count": 195,
       "status": "success"
     },
@@ -121,7 +121,7 @@
       "format": "TradDraft",
       "filename": "TMT_TradDraft_Top_Data.json.gz",
       "size_kb": 35,
-      "hash": "220a963341624013eb5a81e028e962b618186944849c85e545caa2fd57a1f229",
+      "hash": "22a7f428b0528e3ff759cbbe7ed0dd496f452bcc7827f5d586a738e83b0ce2fb",
       "card_count": 195,
       "status": "success"
     },
@@ -129,8 +129,8 @@
       "set": "TMT",
       "format": "PremierDraft",
       "filename": "TMT_PremierDraft_All_Data.json.gz",
-      "size_kb": 102,
-      "hash": "97804d2e7f759ab20deef5e40935efcd0b81045fc34d991fc9167c7b95f88749",
+      "size_kb": 103,
+      "hash": "99570986b42a9d81ea630fa114f79c98cc151d178ef27f210c8e187d9a86415f",
       "card_count": 195,
       "status": "success"
     },
@@ -139,7 +139,7 @@
       "format": "PremierDraft",
       "filename": "TMT_PremierDraft_Top_Data.json.gz",
       "size_kb": 61,
-      "hash": "47cdf582777a609cb6c5b1932426278557bfbba0e0245457d3d9960d0cf9400a",
+      "hash": "3f0a780fa7d4236628aa740d766df498f444d98b2bfc78a05136647eae40ee63",
       "card_count": 195,
       "status": "success"
     },
@@ -148,7 +148,7 @@
       "format": "PremierDraft",
       "filename": "BLB_PremierDraft_All_Data.json.gz",
       "size_kb": 166,
-      "hash": "e31f0d506c24f07192f2292bc3348f71faac9b42f0c468aded3605960c080d85",
+      "hash": "676b80532e2cd5e046cd8d5b66bcd7d91a52f220e931652902b6b5f67c8ddff9",
       "card_count": 280,
       "status": "success"
     },
@@ -157,7 +157,7 @@
       "format": "PremierDraft",
       "filename": "BLB_PremierDraft_Top_Data.json.gz",
       "size_kb": 112,
-      "hash": "6ed85d8b1a8ab64f3617aa232dc3b78843dc2a67de96af86667930aae46704c8",
+      "hash": "ad8fe170b2a0329127086d1bf0db715d9c77930414cdea6113e5e4548b8940f5",
       "card_count": 280,
       "status": "success"
     },
@@ -166,7 +166,7 @@
       "format": "QuickDraft",
       "filename": "FDN_QuickDraft_All_Data.json.gz",
       "size_kb": 166,
-      "hash": "0da9cba40b0c7ac67e12729431044c5366be0694bbaa658a4bf8dd31446565a5",
+      "hash": "a460f0df5c3abaf4cd1277a03e6bd19234840bb28d3ca1d73f93725f4edf2165",
       "card_count": 517,
       "status": "success"
     },
@@ -175,7 +175,7 @@
       "format": "QuickDraft",
       "filename": "FDN_QuickDraft_Top_Data.json.gz",
       "size_kb": 52,
-      "hash": "a944661521866b5ebb12ef119d47ba93c94ae0f8cf11de5bfa434dd27cd1550a",
+      "hash": "ba1d90a286c1b02e04353a9c2f90e51bbf63e09218899ca0de4afa55c6ca2b60",
       "card_count": 517,
       "status": "success"
     }
@@ -195,7 +195,7 @@
   "errors": [],
   "warnings": [
     {
-      "time": "2026-04-01T10:35:06.214905+00:00",
+      "time": "2026-04-02T10:33:09.028270+00:00",
       "level": "WARNING",
       "logger": "server.utils",
       "message": "HTTP 403 on www.17lands.com. Backing off 180.0s to cool down IP..."
