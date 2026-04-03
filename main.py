@@ -74,7 +74,7 @@ def load_data(args, config, progress_callback):
     # 5. SCANNER INITIALIZATION
     progress_callback("Initializing Scanner...")
     scanner = ArenaScanner(
-        filename=log_path, set_list=limited_sets, retrieve_unknown=True
+        filename=log_path, set_list=limited_sets, retrieve_unknown=True, db_path=config.settings.database_location
     )
 
     # 6. DRAFT DISCOVERY (Deep Scan)
