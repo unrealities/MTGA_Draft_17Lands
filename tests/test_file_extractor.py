@@ -15,6 +15,7 @@ from src.constants import (
     COLOR_WIN_RATE_GAME_COUNT_THRESHOLD_DEFAULT,
     DECK_COLORS,
 )
+from src.scryfall_tagger import ScryfallTagger
 
 
 @pytest.mark.parametrize(
@@ -188,3 +189,35 @@ def test_get_linux_steam_library_paths(file_extractor):
             assert "/home/user/.local/share/Steam" in paths
             assert "/mnt/secondary_drive/SteamLibrary" in paths
             assert len(paths) > 0
+
+
+def test_harvest_set_tags_cube_unpacking():
+    """
+    Verify that calling harvest_set_tags with a 'CUBE' set code safely returns
+    a tuple of (dict, list) to prevent unpacking errors (Issue #160).
+    """
+    tagger = ScryfallTagger()
+
+    # If the bug is present, this line will immediately crash with:
+    # "ValueError: not enough values to unpack (expected 2, got 0)"
+    tags, errors = tagger.harvest_set_tags("CUBE-POWERED")
+
+    # Verify the exact data types returned
+    assert isinstance(tags, dict), "Expected tags to be a dictionary"
+    assert len(tags) == 0, "Expected Cube tags dictionary to be empty"
+
+    assert isinstance(errors, list), "Expected errors to be a list"
+    assert len(errors) == 0, "Expected Cube errors list to be empty"
+
+
+def test_harvest_set_tags_cube_case_insensitivity():
+    """
+    Verify that the safety guard catches 'cube' regardless of casing.
+    """
+    tagger = ScryfallTagger()
+
+    # Lowercase test
+    tags, errors = tagger.harvest_set_tags("arena_cube")
+
+    assert isinstance(tags, dict)
+    assert isinstance(errors, list)

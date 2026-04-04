@@ -394,8 +394,6 @@ class FileExtractor(UIProgress):
                 self.combined_data["meta"]["game_count"] = max_samples
                 logger.info(f"Backfilled game_count to {max_samples} from card data")
 
-        self._inject_community_tags(update_ui)
-
         tag_errors = self._inject_community_tags(update_ui)
 
         # 4. Export
