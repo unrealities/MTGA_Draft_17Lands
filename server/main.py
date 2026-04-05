@@ -91,13 +91,27 @@ def run_pipeline():
     if "datasets" not in manifest:
         manifest["datasets"] = {}
 
+    manifest["active_sets"] = list(active_sets.keys())
+
     end_date_str = datetime.now(timezone.utc).strftime("%Y-%m-%d")
     historical_dates = get_historical_start_dates(client)
 
     jobs = []
+    jobs = []
     for set_code, data in active_sets.items():
-        raw_historical_date = historical_dates.get(set_code, "2019-01-01T")
-        true_start_date_str = raw_historical_date.split("T")[0]
+
+        # --- FIX: CUBE DATE ISOLATION ---
+        # Cubes change their card lists every time they return to Arena.
+        # Using the calendar start date ensures we only get data for the CURRENT iteration.
+        if "CUBE" in set_code.upper():
+            true_start_date_str = data["start_date"]
+            logger.info(
+                f"Isolating {set_code} data to current calendar run: {true_start_date_str}"
+            )
+        else:
+            raw_historical_date = historical_dates.get(set_code, "2019-01-01T")
+            true_start_date_str = raw_historical_date.split("T")[0]
+        # --------------------------------
 
         for draft_format in data["formats"]:
             for user_group in ["All", "Top"]:

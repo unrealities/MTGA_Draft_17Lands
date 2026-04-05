@@ -38,49 +38,47 @@ class DatasetUpdater:
             remote_manifest = resp.json()
 
             local_manifest = self.get_local_manifest()
-            remote_datasets = remote_manifest.get("datasets", {})
 
+            if "active_sets" in remote_manifest:
+                local_manifest["active_sets"] = remote_manifest["active_sets"]
+
+            remote_datasets = remote_manifest.get("datasets", {})
             updates_made = False
 
             for key, file_info in remote_datasets.items():
                 remote_hash = file_info.get("hash")
-                remote_filename = file_info.get(
-                    "filename"
-                )  # e.g. OTJ_PremierDraft_All_Data.json.gz
+                remote_filename = file_info.get("filename")
 
-                # The local file will drop the .gz extension
                 local_filename = remote_filename.replace(".gz", "")
                 local_filepath = os.path.join(constants.SETS_FOLDER, local_filename)
 
-                # Check if we need to download it
                 local_hash = local_manifest.get("datasets", {}).get(key, {}).get("hash")
                 file_missing = not os.path.exists(local_filepath)
 
                 if file_missing or local_hash != remote_hash:
                     progress_callback(f"Downloading {key}...")
 
-                    # Download the .gz file
                     file_url = constants.REMOTE_DATASET_BASE_URL + remote_filename
                     gz_resp = requests.get(file_url, timeout=15)
                     gz_resp.raise_for_status()
 
-                    # Decompress and save as standard JSON
+                    import gzip
+
                     json_data = gzip.decompress(gz_resp.content)
 
-                    # Atomic write
                     tmp_path = local_filepath + ".tmp"
                     with open(tmp_path, "wb") as f:
                         f.write(json_data)
                     os.replace(tmp_path, local_filepath)
 
-                    # Update local manifest tracker
                     if "datasets" not in local_manifest:
                         local_manifest["datasets"] = {}
                     local_manifest["datasets"][key] = file_info
                     updates_made = True
 
+            self.save_local_manifest(local_manifest)
+
             if updates_made:
-                self.save_local_manifest(local_manifest)
                 progress_callback("Datasets updated successfully.")
 
         except Exception as e:
