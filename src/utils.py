@@ -351,11 +351,13 @@ def read_dataset_info(filename: str, codes=None, names=None):
         else:
             game_count = 0
 
-        # --- THE MAGIC TRICK ---
-        # Modify the returned user_group so the UI treats it as a unique selectable option
         if is_custom:
-            # Output: "All (Custom: 2024-04-01 to 2024-04-15)"
-            user_group = f"{user_group} (Custom: {start_date} to {end_date})"
+            try:
+                s = f"{start_date[5:7]}/{start_date[8:10]}"
+                e = f"{end_date[5:7]}/{end_date[8:10]}"
+                user_group = f"{user_group} ({s}-{e})"
+            except Exception:
+                user_group = f"{user_group} (Custom)"
 
         return (
             set_name,
