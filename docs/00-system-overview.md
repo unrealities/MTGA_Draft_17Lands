@@ -12,15 +12,25 @@ The system follows a uni-directional data flow.
 
 ```mermaid
 graph TD
+    %% Cloud ETL Pipeline
+    Z[Cloud ETL Server] -->|Aggregates Daily| Y[GitHub Pages]
+    Y -->|Downloads manifest.json| X(App Auto-Updater)
+
+    %% Local App Flow
     A[MTGA Client] -->|Writes to| B(Player.log)
+    A -->|Local SQLite DB| DB[(Raw_CardDatabase)]
     B -->|Tails File| C{Log Scanner}
 
     C -->|Event: Start Draft| D[Data Manager]
-    D -->|Fetch Stats| E[17Lands API]
-    E -->|Cache JSON| F[Local Storage]
+    X -->|Caches Active Sets| F[Local Storage]
+
+    %% The Fallback
+    D -.->|Manual Historical Fetch| E[17Lands API]
+    E -.-> F
 
     C -->|Event: Pack Data| G[Advisor Engine]
     F -->|Card Stats| G
+    DB -->|Resolves Unknown IDs| G
 
     H[Taken Cards Pool] -->|Current Deck State| G
 

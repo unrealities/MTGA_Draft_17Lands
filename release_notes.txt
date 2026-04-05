@@ -1,6 +1,11 @@
 ===================== RELEASE NOTES 4.12 =====================
-* unrealities: [Bug] Properly close app on window close
-* unrealities: [Feature] Added always on top option
+* unrealities: [Major Feature] Automated Cloud Datasets. The app now synchronizes the latest pre-compiled 17Lands datasets for active MTG Arena formats in the background on startup, drastically reducing wait times.
+* unrealities: [Feature] Active Set Sorting. The Datasets tab dropdown now automatically pins currently active MTG Arena sets to the very top of the list (synced with the live calendar), complete with a visual separator line.
+* unrealities: [Feature] Zero-Day Card Recognition. Basic lands and alternate art cards now instantly display their correct names on release day by dynamically querying your local MTG Arena database for unknown IDs, completely eliminating the wait for third-party API updates.
+* unrealities: [Feature] Custom Dataset Tagging. Manually downloaded datasets are now stamped with a "Custom" tag and exact date-range in the UI so they aren't confused with live cloud datasets.
+* unrealities: [Feature] Added an "Always On Top" toggle in Preferences.
+* unrealities: [Bug] Fixed a fatal crash ("not enough values to unpack") that occurred when attempting to download datasets for Cube events.
+* unrealities: [Bug] Fixed an application hanging issue by forcing the background processes to cleanly terminate when the window is closed.
 
 ===================== RELEASE NOTES 4.11 =====================
 * unrealities: [Bug] Fixed a critical data-fetching issue where historical draft formats (such as the recent Foundations Quick Draft) would incorrectly display 0.0% win rates for all cards. The application now properly passes the start and end dates to the 17Lands API to retrieve accurate historical telemetry.

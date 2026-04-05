@@ -96,6 +96,7 @@ class Settings(BaseModel):
     save_screenshot_enabled: bool = False
     update_notifications_enabled: bool = True
     missing_notifications_enabled: bool = True
+    auto_sync_datasets: bool = True
 
     # System Paths (Restored)
     arena_log_location: str = ""

@@ -107,6 +107,7 @@ class SettingsWindow(tkinter.Toplevel):
 
         features = [
             ("Always On Top", "always_on_top"),
+            ("Auto-Sync Cloud Datasets", "auto_sync_datasets"),
             ("Highlight Row by Mana Cost", "card_colors_enabled"),
             ("Enable P1P1 OCR", "p1p1_ocr_enabled"),
             ("Save P1P1 Screenshots", "save_screenshot_enabled"),

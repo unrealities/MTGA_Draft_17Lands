@@ -62,10 +62,13 @@ def load_data(args, config, progress_callback):
         write_configuration(config)
 
     # 3. SYNC OFFICIAL DATASETS
-    from src.dataset_updater import DatasetUpdater
+    if config.settings.auto_sync_datasets:
+        from src.dataset_updater import DatasetUpdater
 
-    updater = DatasetUpdater(config)
-    updater.sync_datasets(progress_callback)
+        updater = DatasetUpdater(config)
+        updater.sync_datasets(progress_callback)
+    else:
+        progress_callback("Cloud sync disabled by user...")
 
     # 4. METADATA REFRESH
     progress_callback("Checking 17Lands for New Sets...")
@@ -74,7 +77,10 @@ def load_data(args, config, progress_callback):
     # 5. SCANNER INITIALIZATION
     progress_callback("Initializing Scanner...")
     scanner = ArenaScanner(
-        filename=log_path, set_list=limited_sets, retrieve_unknown=True, db_path=config.settings.database_location
+        filename=log_path,
+        set_list=limited_sets,
+        retrieve_unknown=True,
+        db_path=config.settings.database_location,
     )
 
     # 6. DRAFT DISCOVERY (Deep Scan)
