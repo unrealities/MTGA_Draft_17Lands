@@ -73,7 +73,14 @@ class PipelineReport:
         self._intended_archetypes = archetypes
 
     def record_dataset(
-        self, set_code: str, draft_format: str, file_info: dict, card_count: int
+        self,
+        set_code: str,
+        draft_format: str,
+        file_info: dict,
+        card_count: int,
+        start_date: str,
+        end_date: str,
+        game_count: int,
     ):
         """Records a successfully updated dataset."""
         self._datasets.append(
@@ -84,6 +91,9 @@ class PipelineReport:
                 "size_kb": file_info["size_kb"],
                 "hash": file_info["hash"],
                 "card_count": card_count,
+                "start_date": start_date,
+                "end_date": end_date,
+                "game_count": game_count,
                 "status": "success",
             }
         )
@@ -222,7 +232,9 @@ class PipelineReport:
             logger.info("\n   UPDATED DATASETS:")
             for d in report["datasets_updated"]:
                 logger.info(
-                    f"     ✓ {d['set']:<5} - {d['format']:<18} ({d['card_count']:>4} cards | {d['size_kb']:>5} KB )"
+                    f"     ✓ {d['set']:<5} - {d['format']:<18} "
+                    f"({d['card_count']:>3} cards | Games: {d['game_count']:>6} | "
+                    f"Dates: {d['start_date']} to {d['end_date']} | {d['size_kb']:>4} KB)"
                 )
 
         if report["datasets_skipped"]:
