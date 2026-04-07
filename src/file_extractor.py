@@ -1299,7 +1299,9 @@ class FileExtractor(UIProgress):
         try:
             import time
 
-            custom_stamp = f"Custom-{int(time.time())}"
+            s_clean = self.start_date.replace("-", "")
+            e_clean = self.end_date.replace("-", "")
+            custom_stamp = f"Custom-{s_clean}-{e_clean}"
 
             output_file = "_".join(
                 (
