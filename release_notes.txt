@@ -6,6 +6,8 @@
 * unrealities: [Feature] Added an "Always On Top" toggle in Preferences.
 * unrealities: [Bug] Fixed a fatal crash ("not enough values to unpack") that occurred when attempting to download datasets for Cube events.
 * unrealities: [Bug] Fixed an application hanging issue by forcing the background processes to cleanly terminate when the window is closed.
+* unrealities: [Bug] Macos p1p1 screenshot permissions #158
+* unrealities: [Bug] Cannot download dataset for Cube - Powered #160
 
 ===================== RELEASE NOTES 4.11 =====================
 * unrealities: [Bug] Fixed a critical data-fetching issue where historical draft formats (such as the recent Foundations Quick Draft) would incorrectly display 0.0% win rates for all cards. The application now properly passes the start and end dates to the 17Lands API to retrieve accurate historical telemetry.

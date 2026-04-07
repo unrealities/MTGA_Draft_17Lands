@@ -238,7 +238,7 @@ def check_file_integrity(filename):
 
 def capture_screen_base64str(persist):
     """takes a screenshot and returns it as a base64 encoded string"""
-    screenshot = ImageGrab.grab()
+    screenshot = ImageGrab.grab(all_screens=True)
     buffered = BytesIO()
     screenshot.save(buffered, format="PNG")
     if persist:

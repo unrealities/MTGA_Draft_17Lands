@@ -1,5 +1,5 @@
 # -*- mode: python ; coding: utf-8 -*-
-
+import sys
 
 a = Analysis(
     ['main.py'],
@@ -16,36 +16,61 @@ a = Analysis(
 )
 pyz = PYZ(a.pure)
 
-exe = EXE(
-    pyz,
-    a.scripts,
-    a.binaries,
-    a.zipfiles,
-    a.datas,
-    [],
-    name='MTGA_Draft_Tool',
-    debug=False,
-    bootloader_ignore_signals=False,
-    strip=False,
-    upx=False,
-    console=False,
-    disable_windowed_traceback=False,
-    argv_emulation=False,
-    target_arch=None,
-    codesign_identity=None,
-    entitlements_file=None,
-)
-
-# Only build the Mac .app bundle if running on macOS
-import sys
 if sys.platform == 'darwin':
-    app = BUNDLE(
+    exe = EXE(
+        pyz,
+        a.scripts,
+        [],
+        exclude_binaries=True,
+        name='MTGA_Draft_Tool',
+        debug=False,
+        bootloader_ignore_signals=False,
+        strip=False,
+        upx=False,
+        console=False,
+        disable_windowed_traceback=False,
+        argv_emulation=False,
+        target_arch=None,
+        codesign_identity=None,
+        entitlements_file=None,
+    )
+    coll = COLLECT(
         exe,
-        name='MTGA_Draft_Tool.app',
-        icon=None, # Add a path to an .icns file here if you have one
-        bundle_identifier='com.unrealities.mtgadrafttool',
-        info_plist={
-            'NSHighResolutionCapable': 'True',
-            'LSBackgroundOnly': 'False',
-        }
+        a.binaries,
+        a.zipfiles,
+        a.datas,
+        strip=False,
+        upx=False,
+        name='MTGA_Draft_Tool'
+    )
+     app = BUNDLE(
+        coll,
+         name='MTGA_Draft_Tool.app',
+         icon=None, # Add a path to an .icns file here if you have one
+         bundle_identifier='com.unrealities.mtgadrafttool',
+         info_plist={
+             'NSHighResolutionCapable': 'True',
+             'LSBackgroundOnly': 'False',
+            'NSScreenCaptureUsageDescription': 'This app requires screen recording to scan MTGA drafts for P1P1 cards.',
+         }
+     )
+else:
+    exe = EXE(
+        pyz,
+        a.scripts,
+        a.binaries,
+        a.zipfiles,
+        a.datas,
+        [],
+        name='MTGA_Draft_Tool',
+        debug=False,
+        bootloader_ignore_signals=False,
+        strip=False,
+        upx=False,
+        console=False,
+        disable_windowed_traceback=False,
+        argv_emulation=False,
+        target_arch=None,
+        codesign_identity=None,
+        entitlements_file=None,
     )

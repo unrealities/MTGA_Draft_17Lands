@@ -89,7 +89,6 @@ class PipelineReport:
                 "format": draft_format,
                 "filename": file_info["filename"],
                 "size_kb": file_info["size_kb"],
-                "hash": file_info["hash"],
                 "card_count": card_count,
                 "start_date": start_date,
                 "end_date": end_date,
