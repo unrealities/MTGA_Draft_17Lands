@@ -547,6 +547,13 @@ class DraftApp:
         self.notebook.add(self.panel_custom, text=" Custom Deck ")
         self.notebook.add(self.panel_compare, text=" Comparisons ")
         self.notebook.add(self.panel_tiers, text=" Tier Lists ")
+        self.notebook.bind("<<NotebookTabChanged>>", self._on_main_tab_changed)
+
+    def _on_main_tab_changed(self, event):
+        """Triggered when switching tabs in the main notebook."""
+        current_tab = self.notebook.tab(self.notebook.select(), "text")
+        if "Datasets" in current_tab and hasattr(self, "panel_data"):
+            self.panel_data.refresh()
 
     def update_session_info(self, event_name, draft_id, start_time):
         """Updates the muted technical metadata in the footer."""

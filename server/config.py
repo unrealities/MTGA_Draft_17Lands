@@ -14,7 +14,7 @@ HEADERS = {
 }
 
 # Delays explicitly requested by community API guidelines
-DELAY_17LANDS_SEC = 4.0
+DELAY_17LANDS_SEC = 6.0
 DELAY_SCRYFALL_SEC = 0.2
 
 # Reliability & Anti-Bot config

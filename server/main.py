@@ -1,6 +1,7 @@
 import os
 import json
 import logging
+import time
 import traceback
 from datetime import datetime, timezone
 
@@ -209,6 +210,9 @@ def run_pipeline():
                 end_date_str,
                 total_games,
             )
+
+            # Give the 17Lands/Cloudflare servers a short breather between major datasets
+            time.sleep(15.0)
 
         except Exception as e:
             logger.error(
