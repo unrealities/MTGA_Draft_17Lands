@@ -6,7 +6,6 @@ import platform
 import subprocess
 from enum import Enum
 from io import BytesIO
-from PIL import ImageGrab
 from typing import List
 from src.constants import (
     LIMITED_TYPES_DICT,
@@ -238,6 +237,7 @@ def check_file_integrity(filename):
 
 def capture_screen_base64str(persist):
     """takes a screenshot and returns it as a base64 encoded string"""
+    from PIL import ImageGrab
     screenshot = ImageGrab.grab(all_screens=True)
     buffered = BytesIO()
     screenshot.save(buffered, format="PNG")
