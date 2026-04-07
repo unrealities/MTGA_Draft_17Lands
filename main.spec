@@ -2,11 +2,11 @@
 import sys
 
 a = Analysis(
-    ['main.py'],
+    ["main.py"],
     pathex=[],
     binaries=[],
-    datas=[('themes/*.tcl', 'themes')],
-    hiddenimports=['jaraco.text','platformdirs','importlib_metadata','zipp'],
+    datas=[("themes/*.tcl", "themes")],
+    hiddenimports=["jaraco.text", "platformdirs", "importlib_metadata", "zipp"],
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
@@ -16,13 +16,13 @@ a = Analysis(
 )
 pyz = PYZ(a.pure)
 
-if sys.platform == 'darwin':
+if sys.platform == "darwin":
     exe = EXE(
         pyz,
         a.scripts,
         [],
         exclude_binaries=True,
-        name='MTGA_Draft_Tool',
+        name="MTGA_Draft_Tool",
         debug=False,
         bootloader_ignore_signals=False,
         strip=False,
@@ -41,19 +41,19 @@ if sys.platform == 'darwin':
         a.datas,
         strip=False,
         upx=False,
-        name='MTGA_Draft_Tool'
+        name="MTGA_Draft_Tool",
     )
-     app = BUNDLE(
+    app = BUNDLE(
         coll,
-         name='MTGA_Draft_Tool.app',
-         icon=None, # Add a path to an .icns file here if you have one
-         bundle_identifier='com.unrealities.mtgadrafttool',
-         info_plist={
-             'NSHighResolutionCapable': 'True',
-             'LSBackgroundOnly': 'False',
-            'NSScreenCaptureUsageDescription': 'This app requires screen recording to scan MTGA drafts for P1P1 cards.',
-         }
-     )
+        name="MTGA_Draft_Tool.app",
+        icon=None,  # Add a path to an .icns file here if you have one
+        bundle_identifier="com.unrealities.mtgadrafttool",
+        info_plist={
+            "NSHighResolutionCapable": "True",
+            "LSBackgroundOnly": "False",
+            "NSScreenCaptureUsageDescription": "This app requires screen recording to scan MTGA drafts for P1P1 cards.",
+        },
+    )
 else:
     exe = EXE(
         pyz,
@@ -62,7 +62,7 @@ else:
         a.zipfiles,
         a.datas,
         [],
-        name='MTGA_Draft_Tool',
+        name="MTGA_Draft_Tool",
         debug=False,
         bootloader_ignore_signals=False,
         strip=False,
