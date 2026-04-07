@@ -54,7 +54,7 @@ class ScryfallTagger:
             )
             if progress_callback:
                 progress_callback("Skipping tags for Cube...", 100)
-            return {}
+            return {}, []
 
         safe_set_code = set_code.lower().replace(" ", "")
         cache_path = os.path.join(self.CACHE_DIR, f"{safe_set_code}_scryfall_tags.json")

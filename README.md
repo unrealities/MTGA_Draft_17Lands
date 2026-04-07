@@ -72,7 +72,7 @@ macOS actively quarantines unsigned apps downloaded from the internet. To run th
 - **Step 2:** Download and install Python 3.12.
 - **Step 3:** Confirm that you're running Python 3.12 by opening the terminal, entering `python --version`.
 - **Step 4:** Install the Python package installer Pip by entering `python -m ensurepip --upgrade`.
-- **Step 5:** Open the terminal and install the Python dependencies by entering `pip install -r requirements.txt`.
+- **Step 5:** The app will automatically download the 17Lands data for currently active sets in the background. You can also click the **Datasets** tab to manually download historical sets or custom date ranges.
 - **Step 6:**
   - (Mac Only) Install web certificates by going to `/Applications/Python 3.##/` and double-clicking the file `Install Certificates.command`.
   - (Linux only) [Install Tk](https://tkdocs.com/tutorial/install.html#installlinux)
@@ -90,6 +90,7 @@ macOS actively quarantines unsigned apps downloaded from the internet. To run th
 - **Mini Mode:** Click the `Mini Mode` button to hide the main dashboard and display a compact, draggable, always-on-top window. Perfect for single-monitor setups or playing seamlessly over the Arena client.
 - **Dynamic Columns:** You can customize the columns displayed in any table (Pack, Missing, Card Pool, Compare) by **Right-Clicking the column header**. Add specific 17Lands stats or remove ones you don't need. The app remembers your layout.
 - **Themes & Mana Flairs:** Under the `Theme` menu, you can select custom "Mana Flairs" (Forest, Island, Swamp, Mountain, Plains, Wastes) or fall back to your Native OS System theme.
+- **Automated Cloud Datasets:** The application uses a custom Cloud ETL Pipeline that compiles and distributes the latest 17Lands telemetry every day. When you open the app, it instantly syncs the data for active Arena events in the background, meaning you never have to manually scrape data before a draft again.
 
 ## UI Navigation & Tabs
 

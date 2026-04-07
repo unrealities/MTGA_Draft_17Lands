@@ -61,17 +61,29 @@ def load_data(args, config, progress_callback):
         config.settings.database_location = db_loc
         write_configuration(config)
 
-    # 3. METADATA REFRESH
+    # 3. SYNC OFFICIAL DATASETS
+    if config.settings.auto_sync_datasets:
+        from src.dataset_updater import DatasetUpdater
+
+        updater = DatasetUpdater(config)
+        updater.sync_datasets(progress_callback)
+    else:
+        progress_callback("Cloud sync disabled by user...")
+
+    # 4. METADATA REFRESH
     progress_callback("Checking 17Lands for New Sets...")
     limited_sets = LimitedSets().retrieve_limited_sets()
 
-    # 4. SCANNER INITIALIZATION
+    # 5. SCANNER INITIALIZATION
     progress_callback("Initializing Scanner...")
     scanner = ArenaScanner(
-        filename=log_path, set_list=limited_sets, retrieve_unknown=True
+        filename=log_path,
+        set_list=limited_sets,
+        retrieve_unknown=True,
+        db_path=config.settings.database_location,
     )
 
-    # 5. DRAFT DISCOVERY (Deep Scan)
+    # 6. DRAFT DISCOVERY (Deep Scan)
     # We scan the logs while the splash is active to prevent the main UI from hanging.
     progress_callback("Searching for active draft...")
     if scanner.draft_start_search():

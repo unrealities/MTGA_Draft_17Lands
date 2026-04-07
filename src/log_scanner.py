@@ -52,6 +52,7 @@ class ArenaScanner:
         sets_location: str = constants.SETS_FOLDER,
         step_through: bool = False,
         retrieve_unknown: bool = False,
+        db_path: str = None,
     ):
         self.arena_file = filename
         self.set_list = set_list
@@ -65,7 +66,7 @@ class ArenaScanner:
 
         self.logging_enabled = False
         self.step_through = step_through
-        self.set_data = Dataset(retrieve_unknown)
+        self.set_data = Dataset(retrieve_unknown, db_path)
         self.tier_list = TierList()
         self.draft_type = constants.LIMITED_TYPE_UNKNOWN
 

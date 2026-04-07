@@ -1087,7 +1087,8 @@ class CustomDeckPanel(ttk.Frame):
         avg_cmc = cmc_sum / non_lands if non_lands else 0
         top_tribes = sorted(subtypes.items(), key=lambda x: x[1], reverse=True)[:5]
 
-        comp_frame = ttk.Frame(target_frame)
+        # CHANGED TO self.stats_frame
+        comp_frame = ttk.Frame(self.stats_frame)
         comp_frame.pack(fill="x", pady=Theme.scaled_val(5))
         ttk.Label(
             comp_frame,
@@ -1100,9 +1101,11 @@ class CustomDeckPanel(ttk.Frame):
             text=f"Total Cards: {total_cards}  |  Creatures: {creatures}  |  Non-Creatures: {spells}  |  Lands: {lands}",
         ).pack(anchor="w", pady=Theme.scaled_val(2))
 
-        ttk.Separator(target_frame, orient="horizontal").pack(fill="x", pady=Theme.scaled_val(8))
+        ttk.Separator(self.stats_frame, orient="horizontal").pack(
+            fill="x", pady=Theme.scaled_val(8)
+        )
 
-        color_frame = ttk.Frame(target_frame)
+        color_frame = ttk.Frame(self.stats_frame)
         color_frame.pack(fill="x", pady=Theme.scaled_val(5))
         ttk.Label(
             color_frame,
@@ -1125,9 +1128,11 @@ class CustomDeckPanel(ttk.Frame):
             color_frame, text="  |  ".join(pip_str) if pip_str else "Colorless"
         ).pack(anchor="w", pady=Theme.scaled_val(2))
 
-        ttk.Separator(target_frame, orient="horizontal").pack(fill="x", pady=Theme.scaled_val(8))
+        ttk.Separator(self.stats_frame, orient="horizontal").pack(
+            fill="x", pady=Theme.scaled_val(8)
+        )
 
-        tags_frame = ttk.Frame(target_frame)
+        tags_frame = ttk.Frame(self.stats_frame)
         tags_frame.pack(fill="x", pady=Theme.scaled_val(5))
         ttk.Label(
             tags_frame,
@@ -1161,9 +1166,26 @@ class CustomDeckPanel(ttk.Frame):
                 tags_frame, text=f"Top Tribes: {tribe_str}", font=Theme.scaled_font(9)
             ).pack(anchor="w", pady=Theme.scaled_val(4))
 
-        ttk.Separator(target_frame, orient="horizontal").pack(fill="x", pady=Theme.scaled_val(8))
+        ttk.Separator(self.stats_frame, orient="horizontal").pack(
+            fill="x", pady=Theme.scaled_val(8)
+        )
 
-        curve_frame = ttk.Frame(target_frame)
+        curve_frame = ttk.Frame(self.stats_frame)
+        curve_frame.pack(fill="x", pady=Theme.scaled_val(5))
+        ttk.Label(
+            curve_frame,
+            text=f"MANA CURVE (Avg CMC: {avg_cmc:.2f})",
+            font=Theme.scaled_font(10, "bold"),
+            bootstyle="primary",
+        ).pack(anchor="w")
+        for i in range(1, 7):
+            lbl = f"{i} CMC: " if i < 6 else "6+ CMC:"
+            cnt = curve[i]
+            ttk.Label(
+                curve_frame,
+                text=f"{lbl:<8} {'█'*cnt} ({cnt})",
+                font=Theme.scaled_font(10, family=constants.FONT_MONO_SPACE),
+            ).pack(anchor="w", pady=Theme.scaled_val(1))
         curve_frame.pack(fill="x", pady=Theme.scaled_val(5))
         ttk.Label(
             curve_frame,

@@ -38,6 +38,8 @@ share/python-wheels/
 *.egg
 MANIFEST
 .python-version
+.api_cache/
+.scryfall_cache/
 
 # PyInstaller
 #  Usually these files are written by a python script from a template

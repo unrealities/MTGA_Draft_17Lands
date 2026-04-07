@@ -43,7 +43,9 @@ class LoadingOverlay(ttk.Frame):
         super().__init__(parent)
         self.configure(style="TFrame")
 
-        self.center_box = ttk.Frame(self, padding=Theme.scaled_val(40), style="Card.TFrame")
+        self.center_box = ttk.Frame(
+            self, padding=Theme.scaled_val(40), style="Card.TFrame"
+        )
         self.center_box.place(relx=0.5, rely=0.45, anchor="center")
 
         self.title_lbl = ttk.Label(
@@ -149,6 +151,7 @@ class DraftApp:
         # 7. FINAL WINDOW PROTOCOL & METADATA
         self.root.title(f"MTGA Draft Tool v{constants.APPLICATION_VERSION}")
         self.root.protocol("WM_DELETE_WINDOW", self._on_close)
+        self.root.attributes("-topmost", self.configuration.settings.always_on_top)
 
         # 8. ENABLE LOGGING
         self.orchestrator.scanner.log_enable(
@@ -173,7 +176,9 @@ class DraftApp:
                 if geom and "x" in geom and not geom.startswith("1x1"):
                     self.root.geometry(geom)
                 else:
-                    self.root.geometry(f"{Theme.scaled_val(1200)}x{Theme.scaled_val(800)}")
+                    self.root.geometry(
+                        f"{Theme.scaled_val(1200)}x{Theme.scaled_val(800)}"
+                    )
 
                 self.root.update_idletasks()
 
@@ -186,12 +191,18 @@ class DraftApp:
                             self.splitter.sashpos(0, sash_pos)
 
                         dash_sash = getattr(
-                            self.configuration.settings, "dashboard_sash", Theme.scaled_val(800)
+                            self.configuration.settings,
+                            "dashboard_sash",
+                            Theme.scaled_val(800),
                         )
-                        if dash_sash > Theme.scaled_val(50) and hasattr(self.dashboard, "h_splitter"):
+                        if dash_sash > Theme.scaled_val(50) and hasattr(
+                            self.dashboard, "h_splitter"
+                        ):
                             curr_w = self.dashboard.winfo_width()
                             if curr_w > Theme.scaled_val(200):
-                                safe_sash = min(dash_sash, curr_w - Theme.scaled_val(280))
+                                safe_sash = min(
+                                    dash_sash, curr_w - Theme.scaled_val(280)
+                                )
                                 if safe_sash > Theme.scaled_val(50):
                                     self.dashboard.h_splitter.sashpos(0, safe_sash)
                     except Exception:
@@ -293,12 +304,8 @@ class DraftApp:
     def _on_close(self):
         """Save geometry and sash state before closing."""
         try:
-            # If the window is zoomed (maximized), don't save that as the default geom
-            # Otherwise it will open as a weird fixed-size giant window next time
             if self.root.state() == "normal":
                 self.configuration.settings.main_window_geometry = self.root.geometry()
-
-            # Save the current divider position
 
             try:
                 if self.tabs_visible:
@@ -324,6 +331,10 @@ class DraftApp:
             logger.error(f"Error during shutdown: {e}")
 
         self.root.destroy()
+
+        import os
+
+        os._exit(0)
 
     def _setup_variables(self):
         self.vars["deck_filter"] = tkinter.StringVar(
@@ -472,7 +483,9 @@ class DraftApp:
         self.bottom_pane = ttk.Frame(self.splitter)
         self.splitter.add(self.bottom_pane, weight=2)
 
-        self.tab_controls = ttk.Frame(self.top_pane, padding=Theme.scaled_val((10, 5, 10, 5)))
+        self.tab_controls = ttk.Frame(
+            self.top_pane, padding=Theme.scaled_val((10, 5, 10, 5))
+        )
         self.tab_controls.pack(side="bottom", fill="x")
 
         self.footer_separator = ttk.Separator(self.top_pane, orient="horizontal")
@@ -495,7 +508,9 @@ class DraftApp:
             bootstyle="secondary",
             anchor="w",
         )
-        self.lbl_session_info.pack(side="left", fill="x", expand=True, padx=Theme.scaled_val(5))
+        self.lbl_session_info.pack(
+            side="left", fill="x", expand=True, padx=Theme.scaled_val(5)
+        )
 
         self.notebook = ttk.Notebook(self.bottom_pane)
         self.notebook.pack(fill="both", expand=True)
@@ -532,6 +547,13 @@ class DraftApp:
         self.notebook.add(self.panel_custom, text=" Custom Deck ")
         self.notebook.add(self.panel_compare, text=" Comparisons ")
         self.notebook.add(self.panel_tiers, text=" Tier Lists ")
+        self.notebook.bind("<<NotebookTabChanged>>", self._on_main_tab_changed)
+
+    def _on_main_tab_changed(self, event):
+        """Triggered when switching tabs in the main notebook."""
+        current_tab = self.notebook.tab(self.notebook.select(), "text")
+        if "Datasets" in current_tab and hasattr(self, "panel_data"):
+            self.panel_data.refresh()
 
     def update_session_info(self, event_name, draft_id, start_time):
         """Updates the muted technical metadata in the footer."""
@@ -1426,6 +1448,7 @@ class DraftApp:
     def _open_settings(self):
         def _on_settings_changed():
             s = self.configuration.settings
+            self.root.attributes("-topmost", s.always_on_top)
             self.orchestrator.scanner.log_enable(s.draft_log_enabled)
             current_scale = constants.UI_SIZE_DICT.get(s.ui_size, 1.0)
             Theme.apply(

@@ -27,15 +27,17 @@ def atomic_write(filepath, write_func):
 
 def save_dataset(set_code, draft_format, user_group, dataset) -> dict:
     ensure_output_dir()
-    # Restored the "_Data" suffix to match exact client expectations
     filename = f"{set_code}_{draft_format}_{user_group}_Data.json.gz"
     filepath = os.path.join(config.OUTPUT_DIR, filename)
 
     json_str = json.dumps(dataset, separators=(",", ":"))
 
+    internal_name = filename.replace(".gz", "")
+
     def _write_gz(tmp_path):
-        with gzip.open(tmp_path, "wt", encoding="UTF-8") as f:
-            f.write(json_str)
+        with open(tmp_path, "wb") as f_out:
+            with gzip.GzipFile(filename=internal_name, mode="wb", fileobj=f_out) as gz:
+                gz.write(json_str.encode("utf-8"))
 
     atomic_write(filepath, _write_gz)
 

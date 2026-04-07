@@ -301,7 +301,9 @@ class DashboardFrame(ttk.Frame):
         self.recovery_frame.rowconfigure(1, weight=1)
 
         # HEADER
-        header_frame = ttk.Frame(self.recovery_frame, padding=Theme.scaled_val(10), style="Card.TFrame")
+        header_frame = ttk.Frame(
+            self.recovery_frame, padding=Theme.scaled_val(10), style="Card.TFrame"
+        )
         header_frame.grid(row=0, column=0, sticky="ew")
 
         self.lbl_recovery_title = ttk.Label(
@@ -318,7 +320,13 @@ class DashboardFrame(ttk.Frame):
 
         # TABBED CONTENT
         self.recap_notebook = ttk.Notebook(self.recovery_frame)
-        self.recap_notebook.grid(row=1, column=0, sticky="nsew", padx=Theme.scaled_val(10), pady=Theme.scaled_val((10, 0)))
+        self.recap_notebook.grid(
+            row=1,
+            column=0,
+            sticky="nsew",
+            padx=Theme.scaled_val(10),
+            pady=Theme.scaled_val((10, 0)),
+        )
 
         # --- TAB 1: DRAFT RECAP ---
         tab_recap = ttk.Frame(self.recap_notebook, padding=Theme.scaled_val(15))
@@ -354,16 +362,38 @@ class DashboardFrame(ttk.Frame):
 
         self._create_stat_box(
             grid_recap, "TOP ARCHETYPES", "lbl_recap_archetypes"
-        ).grid(row=0, column=0, sticky="nsew", padx=Theme.scaled_val(5), pady=Theme.scaled_val(5))
+        ).grid(
+            row=0,
+            column=0,
+            sticky="nsew",
+            padx=Theme.scaled_val(5),
+            pady=Theme.scaled_val(5),
+        )
         self._create_stat_box(grid_recap, "BEST CARDS DRAFTED", "lbl_recap_best").grid(
-            row=0, column=1, sticky="nsew", padx=Theme.scaled_val(5), pady=Theme.scaled_val(5)
+            row=0,
+            column=1,
+            sticky="nsew",
+            padx=Theme.scaled_val(5),
+            pady=Theme.scaled_val(5),
         )
         self._create_stat_box(
             grid_recap, "BIGGEST STEALS (LATE PICKS)", "lbl_recap_steals"
-        ).grid(row=1, column=0, sticky="nsew", padx=Theme.scaled_val(5), pady=Theme.scaled_val(5))
+        ).grid(
+            row=1,
+            column=0,
+            sticky="nsew",
+            padx=Theme.scaled_val(5),
+            pady=Theme.scaled_val(5),
+        )
         self._create_stat_box(
             grid_recap, "BIGGEST REACHES (EARLY PICKS)", "lbl_recap_reaches"
-        ).grid(row=1, column=1, sticky="nsew", padx=Theme.scaled_val(5), pady=Theme.scaled_val(5))
+        ).grid(
+            row=1,
+            column=1,
+            sticky="nsew",
+            padx=Theme.scaled_val(5),
+            pady=Theme.scaled_val(5),
+        )
 
         # --- TAB 2: SYNERGY & ROLES ---
         tab_synergy = ttk.Frame(self.recap_notebook, padding=Theme.scaled_val(15))
@@ -376,16 +406,38 @@ class DashboardFrame(ttk.Frame):
 
         self._create_stat_box(
             grid_synergy, "TOP CREATURE TYPES", "lbl_synergy_tribes"
-        ).grid(row=0, column=0, sticky="nsew", padx=Theme.scaled_val(5), pady=Theme.scaled_val(5))
+        ).grid(
+            row=0,
+            column=0,
+            sticky="nsew",
+            padx=Theme.scaled_val(5),
+            pady=Theme.scaled_val(5),
+        )
         self._create_stat_box(grid_synergy, "CARD ROLES", "lbl_synergy_roles").grid(
-            row=0, column=1, sticky="nsew", padx=Theme.scaled_val(5), pady=Theme.scaled_val(5)
+            row=0,
+            column=1,
+            sticky="nsew",
+            padx=Theme.scaled_val(5),
+            pady=Theme.scaled_val(5),
         )
         self._create_stat_box(
             grid_synergy, "PREMIUM STAPLES", "lbl_synergy_staples"
-        ).grid(row=1, column=0, sticky="nsew", padx=Theme.scaled_val(5), pady=Theme.scaled_val(5))
+        ).grid(
+            row=1,
+            column=0,
+            sticky="nsew",
+            padx=Theme.scaled_val(5),
+            pady=Theme.scaled_val(5),
+        )
         self._create_stat_box(
             grid_synergy, "NON-BASIC LANDS", "lbl_synergy_lands"
-        ).grid(row=1, column=1, sticky="nsew", padx=Theme.scaled_val(5), pady=Theme.scaled_val(5))
+        ).grid(
+            row=1,
+            column=1,
+            sticky="nsew",
+            padx=Theme.scaled_val(5),
+            pady=Theme.scaled_val(5),
+        )
 
         # --- TAB 3: MANA & CURVE ---
         tab_analysis = ttk.Frame(self.recap_notebook, padding=Theme.scaled_val(15))
@@ -395,7 +447,9 @@ class DashboardFrame(ttk.Frame):
         tab_analysis.rowconfigure(0, weight=1)
 
         charts_frame = ttk.Frame(tab_analysis)
-        charts_frame.grid(row=0, column=0, sticky="nsew", padx=Theme.scaled_val((0, 10)))
+        charts_frame.grid(
+            row=0, column=0, sticky="nsew", padx=Theme.scaled_val((0, 10))
+        )
 
         ttk.Label(
             charts_frame,
@@ -757,13 +811,18 @@ class DashboardFrame(ttk.Frame):
                                 text=f"Actual 17Lands Record: {wins} Wins - {losses} Losses",
                                 bootstyle=record_style,
                             )
-                            self.lbl_actual_record.pack(anchor="center", pady=Theme.scaled_val((5, 0)))
+                            self.lbl_actual_record.pack(
+                                anchor="center", pady=Theme.scaled_val((5, 0))
+                            )
 
                         if hasattr(self, "btn_17lands_link"):
                             self.btn_17lands_link.config(
                                 command=lambda: open_file(record["url"])
                             )
-                            self.btn_17lands_link.pack(side="right", padx=Theme.scaled_val((0, 10)))
+                            self.btn_17lands_link.pack(
+                                side="right", padx=Theme.scaled_val((0, 10))
+                            )
+
                 try:
                     self.after(0, update_ui)
                 except RuntimeError:
@@ -793,9 +852,17 @@ class DashboardFrame(ttk.Frame):
 
         # 1. Pack Table
         self.pack_frame = ttk.Labelframe(
-            self.f_left, text=" LIVE PACK: TACTICAL EVALUATION ", padding=Theme.scaled_val(5)
+            self.f_left,
+            text=" LIVE PACK: TACTICAL EVALUATION ",
+            padding=Theme.scaled_val(5),
         )
-        self.pack_frame.grid(row=0, column=0, sticky="nsew", padx=(Theme.scaled_val(10), 0), pady=(Theme.scaled_val(10), 0))
+        self.pack_frame.grid(
+            row=0,
+            column=0,
+            sticky="nsew",
+            padx=(Theme.scaled_val(10), 0),
+            pady=(Theme.scaled_val(10), 0),
+        )
 
         self.pack_manager = DynamicTreeviewManager(
             self.pack_frame,
@@ -824,7 +891,9 @@ class DashboardFrame(ttk.Frame):
 
         # 2. Missing Table (Wheel Tracker)
         self.missing_frame = ttk.Labelframe(
-            self.f_left, text=" SEEN CARDS (WHEEL TRACKER) ", padding=Theme.scaled_val(5)
+            self.f_left,
+            text=" SEEN CARDS (WHEEL TRACKER) ",
+            padding=Theme.scaled_val(5),
         )
 
         self.missing_manager = DynamicTreeviewManager(
@@ -868,7 +937,13 @@ class DashboardFrame(ttk.Frame):
             width=1,
             padding=0,
         )
-        self.rail_btn.grid(row=0, column=1, rowspan=2, sticky="", padx=(Theme.scaled_val(2), Theme.scaled_val(2)))
+        self.rail_btn.grid(
+            row=0,
+            column=1,
+            rowspan=2,
+            sticky="",
+            padx=(Theme.scaled_val(2), Theme.scaled_val(2)),
+        )
 
         # --- RIGHT: Sidebar ---
         self.sidebar_frame = ttk.Frame(self.h_splitter, width=Theme.scaled_val(280))
@@ -925,7 +1000,11 @@ class DashboardFrame(ttk.Frame):
             self.configuration,
             on_click_callback=self.on_advisor_click,
         )
-        self.advisor_panel.pack(fill="x", pady=(Theme.scaled_val(10), Theme.scaled_val(15)), padx=(0, Theme.scaled_val(10)))
+        self.advisor_panel.pack(
+            fill="x",
+            pady=(Theme.scaled_val(10), Theme.scaled_val(15)),
+            padx=(0, Theme.scaled_val(10)),
+        )
 
         self.signal_container = CollapsibleFrame(
             self.sidebar_container,
@@ -933,7 +1012,9 @@ class DashboardFrame(ttk.Frame):
             configuration=self.configuration,
             setting_key="open_lanes_panel",
         )
-        self.signal_container.pack(fill="x", pady=(0, Theme.scaled_val(15)), padx=(0, Theme.scaled_val(10)))
+        self.signal_container.pack(
+            fill="x", pady=(0, Theme.scaled_val(15)), padx=(0, Theme.scaled_val(10))
+        )
         self.signal_meter = SignalMeter(self.signal_container.content_frame)
         self.signal_meter.pack(fill="x")
 
@@ -943,7 +1024,9 @@ class DashboardFrame(ttk.Frame):
             configuration=self.configuration,
             setting_key="mana_curve_panel",
         )
-        self.curve_container.pack(fill="x", pady=(0, Theme.scaled_val(15)), padx=(0, Theme.scaled_val(10)))
+        self.curve_container.pack(
+            fill="x", pady=(0, Theme.scaled_val(15)), padx=(0, Theme.scaled_val(10))
+        )
         default_ideal = self.configuration.card_logic.deck_mid.distribution
         self.curve_plot = ManaCurvePlot(
             self.curve_container.content_frame, ideal_distribution=default_ideal
@@ -956,7 +1039,9 @@ class DashboardFrame(ttk.Frame):
             configuration=self.configuration,
             setting_key="pool_balance_panel",
         )
-        self.pool_container.pack(fill="x", pady=(0, Theme.scaled_val(15)), padx=(0, Theme.scaled_val(10)))
+        self.pool_container.pack(
+            fill="x", pady=(0, Theme.scaled_val(15)), padx=(0, Theme.scaled_val(10))
+        )
         self.type_chart = TypePieChart(self.pool_container.content_frame)
         self.type_chart.pack(fill="x")
 
@@ -989,7 +1074,28 @@ class DashboardFrame(ttk.Frame):
             constants.LIMITED_TYPE_STRING_DRAFT_BOT,
         ]
 
-        draft_complete = (is_human or is_bot) and self._taken_count >= 42
+        expected_total = 42
+        if (
+            hasattr(self, "orchestrator")
+            and self.orchestrator
+            and self.orchestrator.scanner
+        ):
+            history = self.orchestrator.scanner.retrieve_draft_history()
+            max_pack_size = 0
+            for entry in history:
+                # For standard drafts: Pick Number + Cards Remaining in Pack - 1 = Original Pack Size
+                pack_size = entry.get("Pick", 1) + len(entry.get("Cards", [])) - 1
+                if pack_size > max_pack_size:
+                    max_pack_size = pack_size
+
+            if max_pack_size >= 15:
+                expected_total = max_pack_size * 3
+            elif max_pack_size == 14:
+                expected_total = 42
+            elif max_pack_size == 13:
+                expected_total = 39
+
+        draft_complete = (is_human or is_bot) and self._taken_count >= expected_total
         sealed_complete = (
             "Sealed" in self._current_event_type and self._taken_count >= 40
         )
@@ -1051,7 +1157,9 @@ class DashboardFrame(ttk.Frame):
                         curr_w = self.winfo_width()
                         if curr_w > 200:
                             dash_sash = getattr(
-                                self.configuration.settings, "dashboard_sash", Theme.scaled_val(800)
+                                self.configuration.settings,
+                                "dashboard_sash",
+                                Theme.scaled_val(800),
                             )
                             safe_sash = min(dash_sash, curr_w - Theme.scaled_val(280))
                             if safe_sash > Theme.scaled_val(50):
@@ -1084,7 +1192,11 @@ class DashboardFrame(ttk.Frame):
             self.f_left.rowconfigure(1, weight=0, minsize=0)
         else:
             self.missing_frame.grid(
-                row=1, column=0, sticky="nsew", padx=(Theme.scaled_val(10), 0), pady=(Theme.scaled_val(15), Theme.scaled_val(10))
+                row=1,
+                column=0,
+                sticky="nsew",
+                padx=(Theme.scaled_val(10), 0),
+                pady=(Theme.scaled_val(15), Theme.scaled_val(10)),
             )
 
             pack_w = max(1, self._pack_count)
@@ -1323,12 +1435,18 @@ class DashboardFrame(ttk.Frame):
             self.update_idletasks()
 
             current_width = self.winfo_width()
-            default_sash = max(Theme.scaled_val(50), current_width - Theme.scaled_val(280)) if current_width > Theme.scaled_val(280) else Theme.scaled_val(800)
+            default_sash = (
+                max(Theme.scaled_val(50), current_width - Theme.scaled_val(280))
+                if current_width > Theme.scaled_val(280)
+                else Theme.scaled_val(800)
+            )
 
             dash_sash = getattr(
                 self.configuration.settings, "dashboard_sash", default_sash
             )
-            if dash_sash < Theme.scaled_val(50) or dash_sash >= current_width - Theme.scaled_val(20):
+            if dash_sash < Theme.scaled_val(
+                50
+            ) or dash_sash >= current_width - Theme.scaled_val(20):
                 dash_sash = default_sash
 
             self.h_splitter.sashpos(0, dash_sash)

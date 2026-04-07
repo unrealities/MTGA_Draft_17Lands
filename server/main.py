@@ -1,6 +1,7 @@
 import os
 import json
 import logging
+import time
 import traceback
 from datetime import datetime, timezone
 
@@ -11,6 +12,7 @@ from server.extract import (
     extract_scryfall_tags,
     extract_17lands_data,
     extract_color_ratings,
+    get_historical_start_dates,
 )
 from server.transform import transform_payload
 from server.load import save_dataset, save_manifest, save_report
@@ -45,10 +47,16 @@ def get_scheduled_events(calendar_path="server/calendar.json") -> dict:
         if start and end and (start <= today_str <= end):
             set_code = event["set_code"]
             if set_code not in active_sets:
-                active_sets[set_code] = set()
-            active_sets[set_code].update(event["formats"])
+                active_sets[set_code] = {"formats": set(), "start_date": start}
+            active_sets[set_code]["formats"].update(event["formats"])
 
-    return {k: list(v) for k, v in active_sets.items()}
+            if start < active_sets[set_code]["start_date"]:
+                active_sets[set_code]["start_date"] = start
+
+    for data in active_sets.values():
+        data["formats"] = list(data["formats"])
+
+    return active_sets
 
 
 def load_existing_manifest() -> dict:
@@ -84,23 +92,30 @@ def run_pipeline():
     if "datasets" not in manifest:
         manifest["datasets"] = {}
 
-    # Define the generic historical "All-Time" magic arena window
-    start_date_str = "2019-01-01"
+    manifest["active_sets"] = list(active_sets.keys())
+
     end_date_str = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    historical_dates = get_historical_start_dates(client)
 
     jobs = []
-    for set_code, formats in active_sets.items():
-        for draft_format in formats:
+    for set_code, data in active_sets.items():
+        if "CUBE" in set_code.upper():
+            true_start_date_str = data["start_date"]
+        else:
+            if set_code in historical_dates:
+                true_start_date_str = historical_dates[set_code].split("T")[0]
+            else:
+                true_start_date_str = data["start_date"]
+
+        for draft_format in data["formats"]:
             for user_group in ["All", "Top"]:
-                jobs.append((set_code, draft_format, user_group))
+                jobs.append((set_code, draft_format, user_group, true_start_date_str))
 
     scryfall_cache_mem = {}
     tags_cache_mem = {}
 
-    for set_code, draft_format, user_group in jobs:
-        logger.info(
-            f"==== Processing {set_code} | {draft_format} | {user_group} Players ===="
-        )
+    for set_code, draft_format, user_group, start_date_str in jobs:
+        logger.info(f"==== Processing {set_code} | {draft_format} | {user_group} ====")
 
         try:
             if set_code not in scryfall_cache_mem:
@@ -110,12 +125,12 @@ def run_pipeline():
             scryfall_cards = scryfall_cache_mem[set_code]
             card_tags = tags_cache_mem[set_code]
 
-            if not scryfall_cards and set_code != "CUBE":
-                logger.info(f"No Scryfall base cards found for {set_code}. Skipping.")
-                report.record_skipped(set_code, draft_format, "No Scryfall base cards")
-                continue
+            if not scryfall_cards:
+                logger.info(
+                    f"   No Scryfall base cards found for {set_code}. Will rely on 17Lands card names."
+                )
 
-            color_ratings, games_played = extract_color_ratings(
+            color_ratings, games_played, total_games = extract_color_ratings(
                 client, set_code, draft_format, user_group, start_date_str, end_date_str
             )
 
@@ -151,10 +166,21 @@ def run_pipeline():
                 logger.warning(
                     f"No baseline data for {set_code} {draft_format} ({user_group})."
                 )
-                report.record_skipped(
-                    set_code, draft_format, f"No baseline data for {user_group}"
-                )
                 continue
+
+            missing_names = []
+            for name in seventeenlands_data["All Decks"].keys():
+                if name not in scryfall_cards:
+                    missing_names.append(name)
+
+            if missing_names:
+                from server.extract import extract_scryfall_by_names
+
+                logger.info(
+                    f"   [Scryfall] Fetching {len(missing_names)} bonus sheet cards..."
+                )
+                bonus_cards = extract_scryfall_by_names(client, missing_names)
+                scryfall_cards.update(bonus_cards)
 
             final_dataset = transform_payload(
                 set_code,
@@ -165,6 +191,7 @@ def run_pipeline():
                 color_ratings,
                 start_date_str,
                 end_date_str,
+                total_games,
             )
 
             file_info = save_dataset(set_code, draft_format, user_group, final_dataset)
@@ -173,7 +200,19 @@ def run_pipeline():
             manifest["datasets"][manifest_key] = file_info
 
             card_count = len(final_dataset.get("card_ratings", {}))
-            report.record_dataset(set_code, draft_format, file_info, card_count)
+
+            report.record_dataset(
+                set_code,
+                draft_format,
+                file_info,
+                card_count,
+                start_date_str,
+                end_date_str,
+                total_games,
+            )
+
+            # Give the 17Lands/Cloudflare servers a short breather between major datasets
+            time.sleep(15.0)
 
         except Exception as e:
             logger.error(

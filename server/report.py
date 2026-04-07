@@ -38,20 +38,13 @@ class PipelineReport:
         self._started_at: datetime = datetime.now(timezone.utc)
         self._completed_at: Optional[datetime] = None
 
-        # Intent (What we tried to do)
         self._intended_schedule: dict = {}
         self._intended_archetypes: list = []
-        self._intended_user_types: list = [
-            "All Users"
-        ]  # Default for 17Lands unless specified
-
-        # Execution (What actually happened)
+        self._intended_user_types: list = ["All", "Top"]
         self._datasets: List[Dict] = []
         self._skipped: List[Dict] = []
         self._errors: List[Dict] = []
         self._warnings: List[Dict] = []
-
-        # Warehouse State (What is available now)
         self._warehouse_datasets: dict = {}
 
         self._handler: Optional[_ReportLogHandler] = None
@@ -80,7 +73,14 @@ class PipelineReport:
         self._intended_archetypes = archetypes
 
     def record_dataset(
-        self, set_code: str, draft_format: str, file_info: dict, card_count: int
+        self,
+        set_code: str,
+        draft_format: str,
+        file_info: dict,
+        card_count: int,
+        start_date: str,
+        end_date: str,
+        game_count: int,
     ):
         """Records a successfully updated dataset."""
         self._datasets.append(
@@ -89,8 +89,10 @@ class PipelineReport:
                 "format": draft_format,
                 "filename": file_info["filename"],
                 "size_kb": file_info["size_kb"],
-                "hash": file_info["hash"],
                 "card_count": card_count,
+                "start_date": start_date,
+                "end_date": end_date,
+                "game_count": game_count,
                 "status": "success",
             }
         )
@@ -201,9 +203,10 @@ class PipelineReport:
         if not intent["scheduled_events"]:
             logger.info("   No active events scheduled for today.")
         else:
-            for set_code, formats in intent["scheduled_events"].items():
-                logger.info(f"   Target Set : {set_code:<6} -> {', '.join(formats)}")
-
+            for set_code, event_data in intent["scheduled_events"].items():
+                logger.info(
+                    f"   Target Set : {set_code:<6} -> {', '.join(event_data['formats'])}"
+                )
         logger.info(
             f"   Archetypes : {len(intent['archetypes_targeted'])} configured (e.g. {', '.join(intent['archetypes_targeted'][:5])}...)"
         )
@@ -228,7 +231,9 @@ class PipelineReport:
             logger.info("\n   UPDATED DATASETS:")
             for d in report["datasets_updated"]:
                 logger.info(
-                    f"     ✓ {d['set']:<5} - {d['format']:<18} ({d['card_count']:>4} cards | {d['size_kb']:>5} KB )"
+                    f"     ✓ {d['set']:<5} - {d['format']:<18} "
+                    f"({d['card_count']:>3} cards | Games: {d['game_count']:>6} | "
+                    f"Dates: {d['start_date']} to {d['end_date']} | {d['size_kb']:>4} KB)"
                 )
 
         if report["datasets_skipped"]:

@@ -394,8 +394,6 @@ class FileExtractor(UIProgress):
                 self.combined_data["meta"]["game_count"] = max_samples
                 logger.info(f"Backfilled game_count to {max_samples} from card data")
 
-        self._inject_community_tags(update_ui)
-
         tag_errors = self._inject_community_tags(update_ui)
 
         # 4. Export
@@ -1299,11 +1297,18 @@ class FileExtractor(UIProgress):
     def export_card_data(self):
         """Build the file for the set data"""
         try:
+            import time
+
+            s_clean = self.start_date.replace("-", "")
+            e_clean = self.end_date.replace("-", "")
+            custom_stamp = f"Custom-{s_clean}-{e_clean}"
+
             output_file = "_".join(
                 (
                     clean_string(self.selected_sets.seventeenlands[0]),
                     self.draft,
                     self.user_group,
+                    custom_stamp,
                     constants.SET_FILE_SUFFIX,
                 )
             )

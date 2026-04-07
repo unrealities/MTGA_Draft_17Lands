@@ -1,5 +1,7 @@
 import tkinter
 import threading
+import os
+import json
 from tkinter import ttk, messagebox
 from datetime import date
 from typing import Optional
@@ -84,77 +86,226 @@ class DownloadWindow(ttk.Frame):
         )
         self.table_manager.pack(fill="x", pady=Theme.scaled_val((0, 10)))
         self.table = self.table_manager.tree
+        self.table.bind("<Double-1>", self._on_set_active)
+        self.table.bind("<Button-3>", self._on_context_menu)
+        self.table.bind("<Control-Button-1>", self._on_context_menu)
+
         form = ttk.Frame(container, style="Card.TFrame", padding=Theme.scaled_val(12))
         form.pack(fill="x")
         form.columnconfigure(1, weight=1)
         form.columnconfigure(3, weight=1)
+
+        # --- DYNAMIC SET SORTING & SEPARATOR LOGIC ---
         set_options = list(self.sets_data.keys())
+        active_set_codes = []
 
-        latest_key = None
-        for k, v in self.sets_data.items():
-            if v.set_code == self.latest_set_code:
-                latest_key = k
-                break
+        try:
+            manifest_path = os.path.join(constants.SETS_FOLDER, "local_manifest.json")
+            if os.path.exists(manifest_path):
+                with open(manifest_path, "r", encoding="utf-8") as f:
+                    manifest_data = json.load(f)
+                    active_set_codes = manifest_data.get("active_sets", [])
+        except Exception:
+            pass
 
-        if latest_key and latest_key in set_options:
-            set_options.remove(latest_key)
-            set_options.insert(0, latest_key)
+        active_options = []
+        inactive_options = []
 
-        self.vars["set"] = tkinter.StringVar(
-            value=set_options[0] if set_options else ""
+        for k in set_options:
+            s_info = self.sets_data[k]
+            is_active = False
+            match_index = 999
+
+            # Check if set_code or 17lands codes match the active calendar
+            if s_info.set_code in active_set_codes:
+                is_active = True
+                match_index = min(match_index, active_set_codes.index(s_info.set_code))
+
+            for sl_code in s_info.seventeenlands:
+                if sl_code in active_set_codes:
+                    is_active = True
+                    match_index = min(match_index, active_set_codes.index(sl_code))
+
+            if is_active:
+                active_options.append((match_index, k))
+            else:
+                inactive_options.append(k)
+
+        # Sort active sets in the exact order they appear in the calendar
+        active_options.sort(key=lambda x: x[0])
+        active_names = [x[1] for x in active_options]
+        inactive_names = inactive_options
+
+        # Fallback if no active sets found (e.g., manifest is missing/empty)
+        if not active_names:
+            latest_key = None
+            for k, v in self.sets_data.items():
+                if v.set_code == self.latest_set_code:
+                    latest_key = k
+                    break
+
+            if latest_key and latest_key in inactive_names:
+                inactive_names.remove(latest_key)
+                active_names.append(latest_key)
+
+        default_val = (
+            active_names[0]
+            if active_names
+            else (inactive_names[0] if inactive_names else "")
         )
-        ttk.Label(form, text="SET:").grid(row=0, column=0, sticky="e", padx=Theme.scaled_val(5))
-        self.om_set = ttk.OptionMenu(
-            form,
-            self.vars["set"],
-            self.vars["set"].get(),
-            *set_options,
-            command=self._on_set_change
+        self.vars["set"] = tkinter.StringVar(value=default_val)
+
+        ttk.Label(form, text="SET:").grid(
+            row=0, column=0, sticky="e", padx=Theme.scaled_val(5)
         )
+
+        self.om_set = ttk.OptionMenu(form, self.vars["set"], default_val)
+        menu = self.om_set["menu"]
+        menu.delete(0, "end")
+
+        for opt in active_names:
+            menu.add_command(
+                label=opt,
+                command=tkinter._setit(self.vars["set"], opt, self._on_set_change),
+            )
+
+        if active_names and inactive_names:
+            menu.add_separator()
+
+        for opt in inactive_names:
+            menu.add_command(
+                label=opt,
+                command=tkinter._setit(self.vars["set"], opt, self._on_set_change),
+            )
+
         self.om_set.grid(row=0, column=1, sticky="ew", pady=Theme.scaled_val(2))
+        # --- END DYNAMIC SET SORTING ---
+
         self.vars["event"] = tkinter.StringVar(value="PremierDraft")
-        ttk.Label(form, text="EVENT:").grid(row=0, column=2, sticky="e", padx=Theme.scaled_val(5))
+        ttk.Label(form, text="EVENT:").grid(
+            row=0, column=2, sticky="e", padx=Theme.scaled_val(5)
+        )
         self.om_event = ttk.OptionMenu(
             form,
             self.vars["event"],
             "PremierDraft",
-            *sorted(constants.LIMITED_TYPE_LIST)
+            *sorted(constants.LIMITED_TYPE_LIST),
         )
         self.om_event.grid(row=0, column=3, sticky="ew", pady=Theme.scaled_val(2))
+
         self.vars["group"] = tkinter.StringVar(value="All")
-        ttk.Label(form, text="USERS:").grid(row=1, column=0, sticky="e", padx=Theme.scaled_val(5))
+        ttk.Label(form, text="USERS:").grid(
+            row=1, column=0, sticky="e", padx=Theme.scaled_val(5)
+        )
         ttk.OptionMenu(
             form, self.vars["group"], "All", *constants.LIMITED_GROUPS_LIST
         ).grid(row=1, column=1, sticky="ew", pady=Theme.scaled_val(2))
+
         self.vars["threshold"] = tkinter.StringVar(value="500")
-        ttk.Label(form, text="MIN GAMES:").grid(row=1, column=2, sticky="e", padx=Theme.scaled_val(5))
+        ttk.Label(form, text="MIN GAMES:").grid(
+            row=1, column=2, sticky="e", padx=Theme.scaled_val(5)
+        )
         ttk.Entry(form, textvariable=self.vars["threshold"]).grid(
             row=1, column=3, sticky="ew", pady=Theme.scaled_val(2)
         )
+
         self.vars["start"] = tkinter.StringVar(value="2019-01-01")
-        ttk.Label(form, text="START DATE:").grid(row=2, column=0, sticky="e", padx=Theme.scaled_val(5))
+        ttk.Label(form, text="START DATE:").grid(
+            row=2, column=0, sticky="e", padx=Theme.scaled_val(5)
+        )
         ttk.Entry(form, textvariable=self.vars["start"]).grid(
             row=2, column=1, sticky="ew", pady=Theme.scaled_val(2)
         )
+
         self.vars["end"] = tkinter.StringVar(value=str(date.today()))
-        ttk.Label(form, text="END DATE:").grid(row=2, column=2, sticky="e", padx=Theme.scaled_val(5))
+        ttk.Label(form, text="END DATE:").grid(
+            row=2, column=2, sticky="e", padx=Theme.scaled_val(5)
+        )
         ttk.Entry(form, textvariable=self.vars["end"]).grid(
             row=2, column=3, sticky="ew", pady=Theme.scaled_val(2)
         )
+
         self.btn_dl = ttk.Button(
             form, text="Download Selected Dataset", command=self._manual_download
         )
-        self.btn_dl.grid(row=3, column=0, columnspan=4, pady=Theme.scaled_val((10, 0)), sticky="ew")
+        self.btn_dl.grid(
+            row=3, column=0, columnspan=4, pady=Theme.scaled_val((10, 0)), sticky="ew"
+        )
+
         self.progress = ttk.Progressbar(container, mode="determinate")
         self.progress.pack(fill="x", pady=Theme.scaled_val(5))
+
         self.vars["status"] = tkinter.StringVar(value="Ready")
         ttk.Label(
             container, textvariable=self.vars["status"], bootstyle="secondary"
         ).pack()
+
         self._update_table()
 
         # Trigger an immediate synchronization so the dynamic dropdowns reflect the correct set's formats
         self._on_set_change(self.vars["set"].get())
+
+    def _on_set_active(self, event=None):
+        """Switches the application to use the selected dataset."""
+        selection = self.table.selection()
+        if not selection:
+            return
+
+        filepath = selection[0]
+        filename = os.path.basename(filepath)
+
+        if self.configuration.card_data.latest_dataset != filename:
+            self.configuration.card_data.latest_dataset = filename
+            write_configuration(self.configuration)
+
+            self._update_table()
+            if self.on_update_callback:
+                self.on_update_callback()
+
+    def _on_context_menu(self, event):
+        """Spawns a right-click menu to manage datasets."""
+        region = self.table.identify_region(event.x, event.y)
+        if region == "heading":
+            return
+
+        row_id = self.table.identify_row(event.y)
+        if not row_id:
+            return
+
+        self.table.selection_set(row_id)
+
+        menu = tkinter.Menu(self, tearoff=0)
+        menu.add_command(label="✅ Set as Active Dataset", command=self._on_set_active)
+        menu.add_separator()
+        menu.add_command(
+            label="🗑️ Delete Dataset", command=lambda: self._delete_dataset(row_id)
+        )
+
+        menu.post(event.x_root, event.y_root)
+
+    def _delete_dataset(self, filepath):
+        """Safely deletes a downloaded dataset from the hard drive."""
+        filename = os.path.basename(filepath)
+
+        if self.configuration.card_data.latest_dataset == filename:
+            messagebox.showwarning(
+                "Cannot Delete",
+                "You cannot delete the currently active dataset. Please double-click a different dataset to switch to it first.",
+            )
+            return
+
+        if messagebox.askyesno(
+            "Confirm Delete",
+            f"Are you sure you want to permanently delete this dataset?\n\n{filename}",
+        ):
+            try:
+                os.remove(filepath)
+                from src.utils import invalidate_local_set_cache
+
+                invalidate_local_set_cache()
+                self._update_table()
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to delete file:\n{e}")
 
     def enter(self, args: DatasetArgs = None):
         if args:
@@ -205,13 +356,33 @@ class DownloadWindow(ttk.Frame):
     def _update_table(self):
         for i in self.table.get_children():
             self.table.delete(i)
+
+        self.table.tag_configure(
+            "active_dataset_card", background="#0ea5e9", foreground="#ffffff"
+        )
+
         codes = [v.seventeenlands[0] for v in self.sets_data.values()]
         files, _ = retrieve_local_set_list(codes, list(self.sets_data.keys()))
-        for row in sorted(files, key=lambda x: x[7], reverse=True):
+
+        active_filename = self.configuration.card_data.latest_dataset
+
+        for idx, row in enumerate(sorted(files, key=lambda x: x[7], reverse=True)):
+            filepath = row[6]
+            filename = os.path.basename(filepath)
+
+            is_active = filename == active_filename
+            tag = (
+                "active_dataset_card"
+                if is_active
+                else ("bw_odd" if idx % 2 == 0 else "bw_even")
+            )
+
             self.table.insert(
                 "",
                 "end",
+                iid=filepath,
                 values=(row[0], row[1], row[2], row[3], row[4], row[7], row[5]),
+                tags=(tag,),
             )
 
     def _start_download(self, args: DatasetArgs = None):
