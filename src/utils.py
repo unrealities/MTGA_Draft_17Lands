@@ -148,15 +148,15 @@ def retrieve_local_set_list(codes=None, names=None):
             continue
 
         set_code = name_segments[0].upper()
+        cleaned_set_code = clean_string(set_code)
 
-        if cleaned_codes and set_code not in cleaned_codes:
+        if cleaned_codes and cleaned_set_code not in cleaned_codes:
             continue
 
-        # If names are provided, map the set_code to the human-readable name
         display_name = set_name
-        if names and cleaned_codes and set_code in cleaned_codes:
+        if names and cleaned_codes and cleaned_set_code in cleaned_codes:
             try:
-                display_name = list(names)[list(cleaned_codes).index(set_code)]
+                display_name = list(names)[list(cleaned_codes).index(cleaned_set_code)]
             except ValueError:
                 pass
 
@@ -238,6 +238,7 @@ def check_file_integrity(filename):
 def capture_screen_base64str(persist):
     """takes a screenshot and returns it as a base64 encoded string"""
     from PIL import ImageGrab
+
     screenshot = ImageGrab.grab(all_screens=True)
     buffered = BytesIO()
     screenshot.save(buffered, format="PNG")
@@ -320,17 +321,21 @@ def read_dataset_info(filename: str, codes=None, names=None):
     else:
         return ()
 
-    # Validation uses the standard extracted variables so it still passes
+    cleaned_set_code = clean_string(set_code)
+
     if (
-        (cleaned_codes and set_code not in cleaned_codes)
+        (cleaned_codes and cleaned_set_code not in cleaned_codes)
         or (event_type not in LIMITED_TYPES_DICT)
         or (user_group not in LIMITED_GROUPS_LIST)
         or (file_suffix != SET_FILE_SUFFIX)
     ):
         return ()
 
-    if names:
-        set_name = list(names)[list(cleaned_codes).index(name_segments[0].upper())]
+    if names and cleaned_codes and cleaned_set_code in cleaned_codes:
+        try:
+            set_name = list(names)[list(cleaned_codes).index(cleaned_set_code)]
+        except ValueError:
+            set_name = set_code
     else:
         set_name = set_code
 

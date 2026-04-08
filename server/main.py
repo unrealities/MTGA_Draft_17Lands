@@ -229,8 +229,11 @@ def run_pipeline():
 
     logger.info("Pipeline Complete!")
 
+    from server.load import save_index_html
+
     final_report = report.finalize(client)
     save_report(final_report)
+    save_index_html()
     report.log_summary(final_report)
 
 
