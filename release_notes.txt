@@ -1,3 +1,7 @@
+===================== RELEASE NOTES 4.13 =====================
+* unrealities: [Bug] Fixed not displaying Powered Cube sets
+* unrealities: [Feature] Easily readible currently available sets: https://unrealities.github.io/MTGA_Draft_17Lands/
+
 ===================== RELEASE NOTES 4.12 =====================
 * unrealities: [Major Feature] Automated Cloud Datasets. The app now synchronizes the latest pre-compiled 17Lands datasets for active MTG Arena formats in the background on startup, drastically reducing wait times.
 * unrealities: [Feature] Active Set Sorting. The Datasets tab dropdown now automatically pins currently active MTG Arena sets to the very top of the list (synced with the live calendar), complete with a visual separator line.
