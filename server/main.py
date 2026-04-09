@@ -229,6 +229,8 @@ def run_pipeline():
         logger.error(f"Critical failure saving manifest: {e}")
 
     logger.info("Pipeline Complete!")
+    final_report = report.finalize(client)
+    save_report(final_report)
 
     deploy_web_assets()
     report.log_summary(final_report)
