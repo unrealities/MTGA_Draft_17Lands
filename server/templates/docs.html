@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dataset Schema - API Documentation</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        /* Smooth expanding for details elements */
+        details>summary {
+            list-style: none;
+        }
+
+        details>summary::-webkit-details-marker {
+            display: none;
+        }
+
+        .schema-target-highlight {
+            animation: highlight-pulse 2s ease-out;
+        }
+
+        @keyframes highlight-pulse {
+            0% {
+                box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.7);
+                border-color: rgba(59, 130, 246, 1);
+            }
+
+            70% {
+                box-shadow: 0 0 0 10px rgba(59, 130, 246, 0);
+                border-color: rgba(51, 65, 85, 0.5);
+            }
+
+            100% {
+                box-shadow: 0 0 0 0 rgba(59, 130, 246, 0);
+            }
+        }
+    </style>
+</head>
+
+<body class="bg-slate-900 text-slate-300 min-h-screen p-4 md:p-8 flex flex-col">
+    <div class="max-w-5xl mx-auto flex-1 w-full">
+
+        <!-- Header & Nav -->
+        <div
+            class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 pb-6 border-b border-slate-800">
+            <div>
+                <h1 class="text-3xl font-bold text-slate-100 mb-2">📖 Dataset Schema & API</h1>
+                <p class="text-slate-400 text-sm">Interactive documentation for the .json.gz data files.</p>
+            </div>
+            <div class="mt-4 md:mt-0 flex gap-4 flex-wrap">
+                <a href="index.html"
+                    class="text-sm bg-slate-800 hover:bg-slate-700 text-slate-300 px-4 py-2 rounded-lg border border-slate-700 transition">Warehouse</a>
+                <a href="calendar.html"
+                    class="text-sm bg-slate-800 hover:bg-slate-700 text-slate-300 px-4 py-2 rounded-lg border border-slate-700 transition">Calendar</a>
+                <a href="docs.html"
+                    class="text-sm bg-blue-600/20 text-blue-400 px-4 py-2 rounded-lg border border-blue-500/30 transition">Data
+                    Docs</a>
+                <a href="https://github.com/unrealities/MTGA_Draft_17Lands" target="_blank"
+                    class="text-sm bg-slate-800 hover:bg-slate-700 text-slate-300 px-4 py-2 rounded-lg border border-slate-700 transition">GitHub
+                    Repo</a>
+            </div>
+        </div>
+
+        <!-- Overview -->
+        <div class="mb-10">
+            <p class="text-slate-300 leading-relaxed text-lg">
+                The ETL pipeline produces a compressed JSON dataset (<code>.json.gz</code>) for each specific MTG Arena
+                event.
+                These files combine MTGA local client IDs, Scryfall metadata, Scryfall community tags (otags), and
+                17Lands telemetry into a single, unified JSON document optimized for local applications and data
+                analysis.
+            </p>
+        </div>
+
+        <!-- Mock Endpoint Definition -->
+        <div class="bg-slate-800/30 rounded-xl border border-slate-700/50 overflow-hidden mb-12 shadow-lg">
+            <div class="bg-slate-800/80 px-4 py-3 border-b border-slate-700/50 flex items-center gap-3">
+                <span class="bg-blue-500 text-white font-bold text-xs px-2 py-1 rounded">GET</span>
+                <code
+                    class="text-slate-200 font-mono text-sm sm:text-base break-all">https://unrealities.github.io/MTGA_Draft_17Lands/<span class="text-blue-400">{set}</span>_<span class="text-emerald-400">{format}</span>_<span class="text-amber-400">{user_group}</span>_Data.json.gz</code>
+            </div>
+            <div class="p-6">
+                <h3 class="text-sm font-bold text-slate-400 uppercase tracking-wider mb-4">Path Parameters</h3>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                    <div class="bg-slate-900/50 p-4 rounded border border-slate-700">
+                        <div class="font-mono text-blue-400 font-bold mb-1">{set}</div>
+                        <div class="text-xs text-slate-500 mb-2">string • required</div>
+                        <div class="text-sm text-slate-300">The 3-letter MTG expansion code (e.g., <code
+                                class="text-slate-400">BLB</code>, <code class="text-slate-400">OTJ</code>).</div>
+                    </div>
+                    <div class="bg-slate-900/50 p-4 rounded border border-slate-700">
+                        <div class="font-mono text-emerald-400 font-bold mb-1">{format}</div>
+                        <div class="text-xs text-slate-500 mb-2">string • required</div>
+                        <div class="text-sm text-slate-300">Event type (e.g., <code
+                                class="text-slate-400">PremierDraft</code>, <code
+                                class="text-slate-400">TradDraft</code>).</div>
+                    </div>
+                    <div class="bg-slate-900/50 p-4 rounded border border-slate-700">
+                        <div class="font-mono text-amber-400 font-bold mb-1">{user_group}</div>
+                        <div class="text-xs text-slate-500 mb-2">string • required</div>
+                        <div class="text-sm text-slate-300">Player skill bracket (e.g., <code
+                                class="text-slate-400">All</code>, <code class="text-slate-400">Top</code>).</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Interactive Schemas -->
+        <h2 class="text-2xl font-bold text-slate-100 mb-6 flex items-center gap-2">
+            <svg class="w-6 h-6 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4">
+                </path>
+            </svg>
+            Data Models (Schemas)
+        </h2>
+
+        <div class="space-y-4 mb-16">
+
+            <!-- Schema: Dataset (Root) -->
+            <details id="schema-dataset"
+                class="bg-slate-800/30 rounded-xl border border-slate-700/50 overflow-hidden shadow-sm group" open>
+                <summary
+                    class="px-6 py-4 cursor-pointer hover:bg-slate-800/50 transition-colors flex justify-between items-center select-none">
+                    <div class="flex items-center gap-3">
+                        <span class="font-mono text-lg font-bold text-slate-100">Dataset</span>
+                        <span class="text-xs bg-slate-700 text-slate-300 px-2 py-0.5 rounded">Root Object</span>
+                    </div>
+                    <svg class="w-5 h-5 text-slate-500 group-open:rotate-180 transition-transform" fill="none"
+                        stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                    </svg>
+                </summary>
+                <div class="p-6 border-t border-slate-700/50 bg-slate-900/20">
+                    <table class="w-full text-left text-sm">
+                        <thead class="text-slate-400 border-b border-slate-700/50">
+                            <tr>
+                                <th class="pb-2 font-semibold w-1/4">Property</th>
+                                <th class="pb-2 font-semibold w-1/4">Type</th>
+                                <th class="pb-2 font-semibold">Description</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-700/30">
+                            <tr>
+                                <td class="py-3 font-mono text-slate-200">meta</td>
+                                <td class="py-3"><a href="#schema-meta"
+                                        class="text-blue-400 hover:underline flex items-center gap-1"
+                                        onclick="highlightSchema('schema-meta')"><svg class="w-3 h-3" fill="none"
+                                            stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1">
+                                            </path>
+                                        </svg> Meta</a></td>
+                                <td class="py-3 text-slate-400">Information about when the dataset was compiled.</td>
+                            </tr>
+                            <tr>
+                                <td class="py-3 font-mono text-slate-200">color_ratings</td>
+                                <td class="py-3"><span class="text-purple-400">Map</span>&lt;<span
+                                        class="text-emerald-400">float</span>&gt;</td>
+                                <td class="py-3 text-slate-400">Baseline win rates for each color archetype in the
+                                    format. Keyed by normalized WUBRG strings (e.g., <code>"UB"</code>,
+                                    <code>"WUBRG"</code>).</td>
+                            </tr>
+                            <tr>
+                                <td class="py-3 font-mono text-slate-200">card_ratings</td>
+                                <td class="py-3"><span class="text-purple-400">Map</span>&lt;<a href="#schema-card"
+                                        class="text-blue-400 hover:underline"
+                                        onclick="highlightSchema('schema-card')">Card</a>&gt;</td>
+                                <td class="py-3 text-slate-400">Dictionary of all cards in the set, keyed by the
+                                    <strong>MTG Arena GrpId</strong> (as a string).</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </details>
+
+            <!-- Schema: Meta -->
+            <details id="schema-meta"
+                class="bg-slate-800/30 rounded-xl border border-slate-700/50 overflow-hidden shadow-sm group">
+                <summary
+                    class="px-6 py-4 cursor-pointer hover:bg-slate-800/50 transition-colors flex justify-between items-center select-none">
+                    <div class="flex items-center gap-3">
+                        <span class="font-mono text-lg font-bold text-slate-100">Meta</span>
+                    </div>
+                    <svg class="w-5 h-5 text-slate-500 group-open:rotate-180 transition-transform" fill="none"
+                        stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                    </svg>
+                </summary>
+                <div class="p-6 border-t border-slate-700/50 bg-slate-900/20">
+                    <table class="w-full text-left text-sm">
+                        <thead class="text-slate-400 border-b border-slate-700/50">
+                            <tr>
+                                <th class="pb-2 font-semibold w-1/4">Property</th>
+                                <th class="pb-2 font-semibold w-1/4">Type</th>
+                                <th class="pb-2 font-semibold">Description</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-700/30">
+                            <tr>
+                                <td class="py-3 font-mono text-slate-200">version</td>
+                                <td class="py-3 text-emerald-400">float</td>
+                                <td class="py-3 text-slate-400">Schema version (e.g. <code>3.0</code>)</td>
+                            </tr>
+                            <tr>
+                                <td class="py-3 font-mono text-slate-200">start_date</td>
+                                <td class="py-3 text-amber-400">date</td>
+                                <td class="py-3 text-slate-400">Start of 17Lands telemetry range.</td>
+                            </tr>
+                            <tr>
+                                <td class="py-3 font-mono text-slate-200">end_date</td>
+                                <td class="py-3 text-amber-400">date</td>
+                                <td class="py-3 text-slate-400">End of 17Lands telemetry range.</td>
+                            </tr>
+                            <tr>
+                                <td class="py-3 font-mono text-slate-200">game_count</td>
+                                <td class="py-3 text-emerald-400">integer</td>
+                                <td class="py-3 text-slate-400">Total number of games analyzed to build this dataset.
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="py-3 font-mono text-slate-200">collection_date</td>
+                                <td class="py-3 text-amber-400">datetime</td>
+                                <td class="py-3 text-slate-400">When the ETL pipeline actually compiled the file.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </details>
+
+            <!-- Schema: Card -->
+            <details id="schema-card"
+                class="bg-slate-800/30 rounded-xl border border-slate-700/50 overflow-hidden shadow-sm group">
+                <summary
+                    class="px-6 py-4 cursor-pointer hover:bg-slate-800/50 transition-colors flex justify-between items-center select-none">
+                    <div class="flex items-center gap-3">
+                        <span class="font-mono text-lg font-bold text-slate-100">Card</span>
+                    </div>
+                    <svg class="w-5 h-5 text-slate-500 group-open:rotate-180 transition-transform" fill="none"
+                        stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                    </svg>
+                </summary>
+                <div class="p-6 border-t border-slate-700/50 bg-slate-900/20">
+                    <table class="w-full text-left text-sm">
+                        <thead class="text-slate-400 border-b border-slate-700/50">
+                            <tr>
+                                <th class="pb-2 font-semibold w-1/4">Property</th>
+                                <th class="pb-2 font-semibold w-1/4">Type</th>
+                                <th class="pb-2 font-semibold">Description</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-700/30">
+                            <tr>
+                                <td class="py-3 font-mono text-slate-200">name</td>
+                                <td class="py-3 text-amber-400">string</td>
+                                <td class="py-3 text-slate-400">Sanitized English card name.</td>
+                            </tr>
+                            <tr>
+                                <td class="py-3 font-mono text-slate-200">cmc</td>
+                                <td class="py-3 text-emerald-400">integer</td>
+                                <td class="py-3 text-slate-400">Converted Mana Cost (Mana Value).</td>
+                            </tr>
+                            <tr>
+                                <td class="py-3 font-mono text-slate-200">mana_cost</td>
+                                <td class="py-3 text-amber-400">string</td>
+                                <td class="py-3 text-slate-400">Formatted mana cost (e.g., <code>"{1}{W}{U}"</code>).
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="py-3 font-mono text-slate-200">types</td>
+                                <td class="py-3 text-purple-400">array[string]</td>
+                                <td class="py-3 text-slate-400">Supertypes (e.g.,
+                                    <code>["Creature", "Artifact"]</code>).</td>
+                            </tr>
+                            <tr>
+                                <td class="py-3 font-mono text-slate-200">subtypes</td>
+                                <td class="py-3 text-purple-400">array[string]</td>
+                                <td class="py-3 text-slate-400">Tribes/Types (e.g., <code>["Human", "Ninja"]</code>).
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="py-3 font-mono text-slate-200">rarity</td>
+                                <td class="py-3 text-amber-400">string</td>
+                                <td class="py-3 text-slate-400"><code>common</code>, <code>uncommon</code>,
+                                    <code>rare</code>, <code>mythic</code>.</td>
+                            </tr>
+                            <tr>
+                                <td class="py-3 font-mono text-slate-200">colors</td>
+                                <td class="py-3 text-purple-400">array[string]</td>
+                                <td class="py-3 text-slate-400">Color identity (e.g., <code>["W", "B"]</code>).</td>
+                            </tr>
+                            <tr>
+                                <td class="py-3 font-mono text-slate-200 border-l-2 border-amber-500 pl-2">tags</td>
+                                <td class="py-3 text-purple-400">array[string]</td>
+                                <td class="py-3 text-slate-400">Scryfall Oracle tags indicating the card's role (e.g.,
+                                    <code>["removal", "evasion", "fixing_ramp"]</code>).</td>
+                            </tr>
+                            <tr>
+                                <td class="py-3 font-mono text-slate-200">image</td>
+                                <td class="py-3 text-purple-400">array[string]</td>
+                                <td class="py-3 text-slate-400">List of image URLs (arrays handle double-faced cards).
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="py-3 font-mono text-slate-200 border-l-2 border-emerald-500 pl-2">deck_colors
+                                </td>
+                                <td class="py-3"><span class="text-purple-400">Map</span>&lt;<a href="#schema-metrics"
+                                        class="text-blue-400 hover:underline flex items-center gap-1"
+                                        onclick="highlightSchema('schema-metrics')"><svg class="w-3 h-3" fill="none"
+                                            stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1">
+                                            </path>
+                                        </svg> ArchetypeMetrics</a>&gt;</td>
+                                <td class="py-3 text-slate-400">Contains 17Lands telemetry data isolated by deck
+                                    archetype (e.g. <code>"All Decks"</code>, <code>"UB"</code>).</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </details>
+
+            <!-- Schema: ArchetypeMetrics -->
+            <details id="schema-metrics"
+                class="bg-slate-800/30 rounded-xl border border-slate-700/50 overflow-hidden shadow-sm group">
+                <summary
+                    class="px-6 py-4 cursor-pointer hover:bg-slate-800/50 transition-colors flex justify-between items-center select-none">
+                    <div class="flex items-center gap-3">
+                        <span class="font-mono text-lg font-bold text-slate-100">ArchetypeMetrics</span>
+                    </div>
+                    <svg class="w-5 h-5 text-slate-500 group-open:rotate-180 transition-transform" fill="none"
+                        stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                    </svg>
+                </summary>
+                <div class="p-6 border-t border-slate-700/50 bg-slate-900/20">
+                    <table class="w-full text-left text-sm">
+                        <thead class="text-slate-400 border-b border-slate-700/50">
+                            <tr>
+                                <th class="pb-2 font-semibold w-1/4">Property</th>
+                                <th class="pb-2 font-semibold w-1/4">Type</th>
+                                <th class="pb-2 font-semibold">Description</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-700/30">
+                            <tr>
+                                <td class="py-3 font-mono text-emerald-400 font-bold">gihwr</td>
+                                <td class="py-3 text-emerald-400">float</td>
+                                <td class="py-3 text-slate-300"><strong>Games in Hand Win Rate (%).</strong> The win
+                                    rate when the card was drawn or in the opening hand. The most standard metric of
+                                    power.</td>
+                            </tr>
+                            <tr>
+                                <td class="py-3 font-mono text-blue-400 font-bold">alsa</td>
+                                <td class="py-3 text-emerald-400">float</td>
+                                <td class="py-3 text-slate-300"><strong>Average Last Seen At.</strong> (1.0 - 15.0)
+                                    Indicates how highly the community values picking this card.</td>
+                            </tr>
+                            <tr>
+                                <td class="py-3 font-mono text-blue-400 font-bold">ata</td>
+                                <td class="py-3 text-emerald-400">float</td>
+                                <td class="py-3 text-slate-300"><strong>Average Taken At.</strong> Similar to ALSA, but
+                                    restricted only to when users of 17Lands actively picked it.</td>
+                            </tr>
+                            <tr>
+                                <td class="py-3 font-mono text-purple-400 font-bold">iwd</td>
+                                <td class="py-3 text-emerald-400">float</td>
+                                <td class="py-3 text-slate-300"><strong>Improvement When Drawn (%).</strong>
+                                    <code>GIHWR - GNSWR</code>. Highly positive IWDs (> 4.0%) strongly indicate "Bomb"
+                                    level cards.</td>
+                            </tr>
+                            <tr>
+                                <td class="py-3 font-mono text-amber-400">ohwr</td>
+                                <td class="py-3 text-emerald-400">float</td>
+                                <td class="py-3 text-slate-400"><strong>Opening Hand Win Rate (%).</strong> High values
+                                    here usually indicate aggressive 1 or 2-drops.</td>
+                            </tr>
+                            <tr>
+                                <td class="py-3 font-mono text-amber-400">gpwr</td>
+                                <td class="py-3 text-emerald-400">float</td>
+                                <td class="py-3 text-slate-400"><strong>Games Played Win Rate (%).</strong> The win rate
+                                    of decks that included this card, regardless of if it was ever drawn.</td>
+                            </tr>
+                            <tr>
+                                <td class="py-3 font-mono text-slate-400">samples</td>
+                                <td class="py-3 text-emerald-400">integer</td>
+                                <td class="py-3 text-slate-400">Total number of games this card was drawn in this
+                                    specific archetype. Use this to determine if the win rate is statistically noisy.
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </details>
+
+        </div>
+
+        <!-- Community Attribution Footer -->
+        <footer class="pt-8 pb-4 border-t border-slate-800 text-center md:text-left">
+            <div class="flex flex-col lg:flex-row items-center justify-between gap-8">
+                <div class="max-w-3xl text-sm text-slate-400 leading-relaxed">
+                    <strong class="text-slate-200 text-base mb-1 block">Community Powered</strong>
+                    This warehouse aggregates data into single compressed files to minimize API load on the incredible
+                    platforms that make MTG analytics possible.
+                    All draft telemetry and win-rate data is generously provided by <a href="https://www.17lands.com"
+                        target="_blank" class="text-blue-400 hover:text-blue-300 underline font-semibold">17Lands</a>.
+                    Card metadata, images, and community tags are sourced from <a href="https://scryfall.com"
+                        target="_blank" class="text-blue-400 hover:text-blue-300 underline font-semibold">Scryfall</a>.
+                    <br><br>
+                    These teams do phenomenal work for the Magic community and provide their APIs for free. If you find
+                    this data useful, <strong>please consider supporting them!</strong>
+                </div>
+                <div class="flex flex-col sm:flex-row gap-4 shrink-0">
+                    <a href="https://www.patreon.com/17lands" target="_blank"
+                        class="bg-[#FF424D]/20 hover:bg-[#FF424D]/30 text-[#FF424D] border border-[#FF424D]/30 px-5 py-3 rounded-lg text-sm font-bold transition flex items-center justify-center shadow-lg shadow-[#FF424D]/10">
+                        ❤️ Support 17Lands
+                    </a>
+                    <a href="https://www.patreon.com/scryfall" target="_blank"
+                        class="bg-violet-600/20 hover:bg-violet-600/30 text-violet-400 border border-violet-500/30 px-5 py-3 rounded-lg text-sm font-bold transition flex items-center justify-center shadow-lg shadow-violet-500/10">
+                        💜 Support Scryfall
+                    </a>
+                </div>
+            </div>
+        </footer>
+
+    </div>
+
+    <script>
+        function highlightSchema(id) {
+            const el = document.getElementById(id);
+            if (el) {
+                // Ensure it's open
+                el.setAttribute('open', '');
+
+                // Remove class, trigger reflow, add class to restart animation
+                el.classList.remove('schema-target-highlight');
+                void el.offsetWidth;
+                el.classList.add('schema-target-highlight');
+            }
+        }
+    </script>
+</body>
+
+</html>

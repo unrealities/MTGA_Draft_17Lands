@@ -1,0 +1,90 @@
+/* Custom additions for interactivity on top of Tailwind CSS */
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+.hash-cell {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+}
+
+/* Sortable Table Styles */
+th.sortable {
+    cursor: pointer;
+    user-select: none;
+    transition: background-color 0.2s;
+}
+
+th.sortable:hover {
+    background-color: rgba(51, 65, 85, 0.8);
+}
+
+th.sortable::after {
+    content: " ↕";
+    font-size: 0.8em;
+    color: #64748b;
+}
+
+th.sortable.asc::after {
+    content: " ↑";
+    color: #cbd5e1;
+}
+
+th.sortable.desc::after {
+    content: " ↓";
+    color: #cbd5e1;
+}
+
+/* Multi-Day Calendar Grid Styles */
+#calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    grid-auto-rows: minmax(130px, auto);
+    /* Allows rows to automatically expand if there are many overlapping events */
+    gap: 1px;
+    background-color: #334155;
+    border: 1px solid #334155;
+}
+
+.calendar-cell.header {
+    background-color: #1e293b;
+    padding: 10px;
+    text-align: center;
+    font-weight: bold;
+    color: #94a3b8;
+    grid-row: 1;
+    /* Lock to the top row */
+}
+
+.day-cell {
+    background-color: #0f172a;
+    padding: 8px;
+    display: flex;
+    flex-direction: column;
+    z-index: 1;
+    /* Keep backgrounds behind events */
+}
+
+.day-cell.inactive {
+    background-color: #0f172a;
+    opacity: 0.4;
+}
+
+.event-bar {
+    z-index: 10;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    padding: 0 8px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    cursor: default;
+    transition: filter 0.2s;
+}
+
+.event-bar:hover {
+    filter: brightness(1.2);
+}

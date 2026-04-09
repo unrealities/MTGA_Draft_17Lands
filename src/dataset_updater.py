@@ -32,6 +32,17 @@ class DatasetUpdater:
     def sync_datasets(self, progress_callback):
         """Fetches remote manifest and downloads missing/updated sets."""
         try:
+            # Check pipeline health first to notify user if there are backend issues
+            try:
+                report_url = constants.REMOTE_DATASET_BASE_URL + "report.json"
+                report_resp = requests.get(report_url, timeout=3)
+                if report_resp.status_code == 200:
+                    report_data = report_resp.json()
+                    if report_data.get("pipeline_run", {}).get("status") == "FAILED":
+                        progress_callback("⚠️ Server sync failed today. Using cached data.")
+            except Exception as health_e:
+                logger.debug(f"Failed to fetch health report (non-fatal): {health_e}")
+
             progress_callback("Checking for official dataset updates...")
             resp = requests.get(constants.REMOTE_MANIFEST_URL, timeout=5)
             resp.raise_for_status()
@@ -84,3 +95,4 @@ class DatasetUpdater:
         except Exception as e:
             logger.error(f"Failed to sync datasets: {e}")
             progress_callback("Skipped dataset sync (Network Error).")
+            

@@ -5,7 +5,6 @@ Collects and persists a highly structured, professional run-report
 for each ETL pipeline execution.
 """
 
-import json
 import logging
 from datetime import datetime, timezone
 from typing import Optional, List, Dict
@@ -76,6 +75,7 @@ class PipelineReport:
         self,
         set_code: str,
         draft_format: str,
+        user_group: str,
         file_info: dict,
         card_count: int,
         start_date: str,
@@ -87,6 +87,7 @@ class PipelineReport:
             {
                 "set": set_code,
                 "format": draft_format,
+                "user_group": user_group,
                 "filename": file_info["filename"],
                 "size_kb": file_info["size_kb"],
                 "card_count": card_count,

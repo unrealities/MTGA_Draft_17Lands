@@ -15,7 +15,7 @@ from server.extract import (
     get_historical_start_dates,
 )
 from server.transform import transform_payload
-from server.load import save_dataset, save_manifest, save_report
+from server.load import save_dataset, save_manifest, save_report, deploy_web_assets
 from server.report import PipelineReport
 
 logging.basicConfig(
@@ -204,6 +204,7 @@ def run_pipeline():
             report.record_dataset(
                 set_code,
                 draft_format,
+                user_group,
                 file_info,
                 card_count,
                 start_date_str,
@@ -229,11 +230,7 @@ def run_pipeline():
 
     logger.info("Pipeline Complete!")
 
-    from server.load import save_index_html
-
-    final_report = report.finalize(client)
-    save_report(final_report)
-    save_index_html()
+    deploy_web_assets()
     report.log_summary(final_report)
 
 
