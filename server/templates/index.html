@@ -4,138 +4,218 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MTGA Draft Tool - Dataset Warehouse</title>
+    <title>MTGA Draft Tool - 17Lands Overlay</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="styles.css">
 </head>
 
-<body class="bg-slate-900 text-slate-300 min-h-screen p-4 md:p-8 flex flex-col">
-    <div class="max-w-6xl mx-auto flex-1 w-full">
+<body class="bg-slate-900 text-slate-300 min-h-screen flex flex-col font-sans">
 
-        <!-- Header & Nav -->
+    <!-- INJECT_NAV -->
+
+    <!-- Hero Section -->
+    <div class="relative w-full flex-1 flex flex-col items-center justify-center py-20 px-4">
+        <!-- Abstract glowing background -->
         <div
-            class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 pb-6 border-b border-slate-800">
-            <div>
-                <h1 class="text-3xl font-bold text-slate-100 mb-2">📦 MTGA Dataset Warehouse</h1>
-                <div class="flex items-center gap-3">
-                    <p class="text-slate-400 text-sm" id="last-updated">Checking last update time...</p>
-                    <span class="text-slate-600 text-sm">•</span>
-                    <p class="text-slate-400 text-sm">Powered by <a href="https://www.17lands.com" target="_blank"
-                            class="text-blue-400 hover:text-blue-300 hover:underline">17Lands</a> & <a
-                            href="https://scryfall.com" target="_blank"
-                            class="text-blue-400 hover:text-blue-300 hover:underline">Scryfall</a></p>
-                </div>
-            </div>
-            <div class="mt-4 md:mt-0 flex gap-4 flex-wrap">
-                <a href="index.html"
-                    class="text-sm bg-blue-600/20 text-blue-400 px-4 py-2 rounded-lg border border-blue-500/30 transition">Warehouse</a>
-                <a href="calendar.html"
-                    class="text-sm bg-slate-800 hover:bg-slate-700 text-slate-300 px-4 py-2 rounded-lg border border-slate-700 transition">Calendar</a>
-                <a href="docs.html"
-                    class="text-sm bg-slate-800 hover:bg-slate-700 text-slate-300 px-4 py-2 rounded-lg border border-slate-700 transition">Data
-                    Docs</a>
-                <a href="https://github.com/unrealities/MTGA_Draft_17Lands" target="_blank"
-                    class="text-sm bg-slate-800 hover:bg-slate-700 text-slate-300 px-4 py-2 rounded-lg border border-slate-700 transition">GitHub
-                    Repo</a>
-            </div>
+            class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-4xl h-64 bg-blue-600/20 blur-[120px] rounded-full pointer-events-none -z-10">
         </div>
 
-        <!-- KPI Cards -->
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-            <div class="bg-slate-800/50 p-5 rounded-xl border border-slate-700/50">
-                <h3 class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Pipeline Status</h3>
-                <p class="text-2xl font-bold" id="status">Loading...</p>
-            </div>
-            <div class="bg-slate-800/50 p-5 rounded-xl border border-slate-700/50">
-                <h3 class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Duration</h3>
-                <p class="text-2xl font-bold text-slate-200" id="duration">--</p>
-            </div>
-            <div class="bg-slate-800/50 p-5 rounded-xl border border-slate-700/50">
-                <h3 class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Total Datasets</h3>
-                <p class="text-2xl font-bold text-slate-200" id="total-datasets">--</p>
-            </div>
-            <div class="bg-slate-800/50 p-5 rounded-xl border border-slate-700/50">
-                <h3 class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">API Requests</h3>
-                <p class="text-2xl font-bold text-slate-200" id="api-reqs">--</p>
-            </div>
+        <h1 class="text-5xl md:text-7xl font-extrabold text-white mb-6 text-center tracking-tight drop-shadow-lg">
+            Draft Like a <span
+                class="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-emerald-400">Pro.</span>
+        </h1>
+
+        <!-- Version Badge -->
+        <div class="flex justify-center items-center gap-3 mb-6">
+            <span class="text-slate-400 font-semibold">Latest Release:</span>
+            <a href="releases.html" id="latest-version"
+                class="bg-blue-600/20 text-blue-400 border border-blue-500/30 px-4 py-1 rounded-full text-sm font-mono font-bold hover:bg-blue-600/40 hover:scale-105 transition shadow-lg shadow-blue-500/20">Checking...</a>
         </div>
 
-        <!-- Data Tables -->
-        <div class="grid grid-cols-1 xl:grid-cols-3 gap-8">
+        <p class="text-xl md:text-2xl text-slate-400 mb-12 max-w-3xl text-center leading-relaxed">
 
-            <!-- Left Col: Today's Activity -->
-            <div class="xl:col-span-2">
-                <h2 class="text-xl font-bold text-slate-200 mb-4">Today's Pipeline Activity</h2>
-                <div class="overflow-x-auto bg-slate-800/30 rounded-xl border border-slate-700/50">
-                    <table class="w-full text-left text-sm" id="activity-table-wrapper">
-                        <thead class="bg-slate-800/50 text-slate-400">
-                            <tr>
-                                <th class="p-4 font-semibold sortable" data-sort="set">Set</th>
-                                <th class="p-4 font-semibold sortable" data-sort="format">Format</th>
-                                <th class="p-4 font-semibold sortable" data-sort="user_group">User Type</th>
-                                <th class="p-4 font-semibold text-right sortable" data-sort="card_count">Cards</th>
-                                <th class="p-4 font-semibold text-right sortable" data-sort="game_count">Games</th>
-                                <th class="p-4 font-semibold text-right sortable" data-sort="size_kb">Size (KB)</th>
-                            </tr>
-                        </thead>
-                        <tbody id="activity-table" class="divide-y divide-slate-700/50">
-                            <tr>
-                                <td colspan="6" class="p-4 text-center text-slate-500">Loading data...</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            <!-- Right Col: Full Warehouse Manifest -->
-            <div class="flex flex-col h-full">
-                <h2 class="text-xl font-bold text-slate-200 mb-4">Available Downloads</h2>
-                <div class="bg-slate-800/30 rounded-xl border border-slate-700/50 overflow-hidden flex flex-col flex-1">
-
-                    <div class="bg-slate-800/50 p-3 border-b border-slate-700/50">
-                        <input type="text" id="manifest-search" placeholder="Search sets or formats..."
-                            class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-sm text-slate-300 focus:outline-none focus:border-blue-500">
-                    </div>
-
-                    <div class="flex-1 overflow-y-auto p-3" id="manifest-list">
-                        <p class="p-4 text-center text-slate-500 text-sm">Loading manifest...</p>
-                    </div>
-                </div>
-            </div>
-
+            <!-- Downloads Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 w-full max-w-4xl">
+            <!-- Windows -->
+            <a href="https://github.com/unrealities/MTGA_Draft_17Lands/releases/latest"
+                class="group flex flex-col items-center bg-slate-800/80 hover:bg-slate-700 border border-slate-700 hover:border-blue-500/50 p-6 rounded-2xl transition-all shadow-xl">
+                <svg class="w-12 h-12 text-blue-400 mb-4 group-hover:scale-110 transition-transform" fill="currentColor"
+                    viewBox="0 0 24 24">
+                    <path
+                        d="M0 3.449L9.75 2.1v9.451H0m10.949-9.602L24 0v11.4H10.949M0 12.6h9.75v9.451L0 20.699M10.949 12.6H24V24l-13.051-1.85z" />
+                </svg>
+                <span class="text-xl font-bold text-white mb-1">Windows</span>
+                <span class="text-sm text-slate-400">Standalone Executable</span>
+            </a>
+            <!-- macOS -->
+            <a href="https://github.com/unrealities/MTGA_Draft_17Lands/releases/latest"
+                class="group flex flex-col items-center bg-slate-800/80 hover:bg-slate-700 border border-slate-700 hover:border-slate-300 p-6 rounded-2xl transition-all shadow-xl">
+                <svg class="w-12 h-12 text-slate-200 mb-4 group-hover:scale-110 transition-transform"
+                    fill="currentColor" viewBox="0 0 24 24">
+                    <path
+                        d="M12 2C6.477 2 2 6.477 2 12c0 4.42 2.865 8.166 6.839 9.489.5.092.682-.217.682-.482 0-.237-.008-.866-.013-1.7-2.782.603-3.369-1.34-3.369-1.34-.454-1.156-1.11-1.462-1.11-1.462-.908-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.529 2.341 1.087 2.91.831.092-.646.35-1.086.636-1.336-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.269 2.75 1.025A9.578 9.578 0 0112 6.836c.85.004 1.705.114 2.504.336 1.909-1.294 2.747-1.025 2.747-1.025.546 1.377.203 2.394.1 2.647.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.935.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.743 0 .267.18.578.688.48C19.138 20.161 22 16.418 22 12c0-5.523-4.477-10-10-10z" />
+                </svg>
+                <span class="text-xl font-bold text-white mb-1">macOS</span>
+                <span class="text-sm text-slate-400">Native .app Bundle</span>
+            </a>
+            <!-- Linux -->
+            <a href="https://github.com/unrealities/MTGA_Draft_17Lands/releases/latest"
+                class="group flex flex-col items-center bg-slate-800/80 hover:bg-slate-700 border border-slate-700 hover:border-amber-500/50 p-6 rounded-2xl transition-all shadow-xl">
+                <svg class="w-12 h-12 text-amber-500 mb-4 group-hover:scale-110 transition-transform"
+                    fill="currentColor" viewBox="0 0 24 24">
+                    <path
+                        d="M12.015 1.25c-2.302 0-4.664.91-6.177 2.423-1.513 1.513-2.028 3.51-2.028 5.485 0 2.213.673 4.316 2.013 6.068-1.558 1.583-2.585 3.42-2.585 5.518 0 1.488.75 2.213 1.956 2.213.882 0 1.637-.417 2.164-1.042.871-.97 1.222-2.358 1.222-3.791 0-2.343-.883-4.301-2.122-6.035 1.324-1.464 3.036-2.483 4.97-2.88 1.487 1.83 2.87 3.99 3.208 6.574-.632.748-1.127 1.696-1.127 2.761 0 1.898 1.221 3.24 2.873 3.24 1.378 0 2.453-.986 2.453-2.383 0-1.05-.5-1.986-1.118-2.73 1.096-2.898 3.26-4.992 4.887-6.84-1.255 1.701-2.138 3.659-2.138 6.035 0 1.433.35 2.82 1.22 3.79.528.625 1.284 1.043 2.166 1.043 1.206 0 1.956-.725 1.956-2.213 0-2.098-1.026-3.935-2.583-5.518 1.34-1.752 2.013-3.855 2.013-6.068 0-1.975-.515-3.972-2.028-5.485-1.513-1.513-3.875-2.423-6.177-2.423zm-4.331 6.273c.725 0 1.312.587 1.312 1.313 0 .725-.587 1.312-1.312 1.312-.725 0-1.312-.587-1.312-1.312 0-.726.587-1.313 1.312-1.313zm8.662 0c.725 0 1.312.587 1.312 1.313 0 .725-.587 1.312-1.312 1.312-.725 0-1.312-.587-1.312-1.312 0-.726.587-1.313 1.312-1.313z" />
+                </svg>
+                <span class="text-xl font-bold text-white mb-1">Linux</span>
+                <span class="text-sm text-slate-400">Headless Tarball</span>
+            </a>
         </div>
-
-        <!-- Community Attribution Footer -->
-        <footer class="mt-16 pt-8 pb-4 border-t border-slate-800 text-center md:text-left">
-            <div class="flex flex-col lg:flex-row items-center justify-between gap-8">
-                <div class="max-w-3xl text-sm text-slate-400 leading-relaxed">
-                    <strong class="text-slate-200 text-base mb-1 block">Community Powered</strong>
-                    This warehouse aggregates data into single compressed files to minimize API load on the incredible
-                    platforms that make MTG analytics possible.
-                    All draft telemetry and win-rate data is generously provided by <a href="https://www.17lands.com"
-                        target="_blank" class="text-blue-400 hover:text-blue-300 underline font-semibold">17Lands</a>.
-                    Card metadata, images, and community tags are sourced from <a href="https://scryfall.com"
-                        target="_blank" class="text-blue-400 hover:text-blue-300 underline font-semibold">Scryfall</a>.
-                    <br><br>
-                    These teams do phenomenal work for the Magic community and provide their APIs for free. If you find
-                    this data useful, <strong>please consider supporting them!</strong>
-                </div>
-                <div class="flex flex-col sm:flex-row gap-4 shrink-0">
-                    <a href="https://www.patreon.com/17lands" target="_blank"
-                        class="bg-[#FF424D]/20 hover:bg-[#FF424D]/30 text-[#FF424D] border border-[#FF424D]/30 px-5 py-3 rounded-lg text-sm font-bold transition flex items-center justify-center shadow-lg shadow-[#FF424D]/10">
-                        ❤️ Support 17Lands
-                    </a>
-                    <a href="https://www.patreon.com/scryfall" target="_blank"
-                        class="bg-violet-600/20 hover:bg-violet-600/30 text-violet-400 border border-violet-500/30 px-5 py-3 rounded-lg text-sm font-bold transition flex items-center justify-center shadow-lg shadow-violet-500/10">
-                        💜 Support Scryfall
-                    </a>
-                </div>
-            </div>
-        </footer>
-
     </div>
 
-    <script src="app.js"></script>
+    <!-- Quick Start & Features -->
+    <div class="max-w-6xl mx-auto w-full px-4 md:px-8 py-16">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-16">
+
+            <!-- Features List -->
+            <div>
+                <h2 class="text-2xl font-bold text-white mb-6 border-b border-slate-700 pb-2">Marquee Features</h2>
+                <ul class="space-y-6">
+                    <li class="flex gap-4">
+                        <div class="text-3xl">🧠</div>
+                        <div>
+                            <h3 class="text-lg font-bold text-blue-400">Tactical Advisor ("The Brain")</h3>
+                            <p class="text-slate-400 text-sm leading-relaxed">A custom formulaic engine that calculates
+                                a 0-100 score for cards in your pack. It dynamically weighs raw Z-Score power, color
+                                commitment, curve needs, and relative wheel probability to suggest optimal picks.</p>
+                        </div>
+                    </li>
+                    <li class="flex gap-4">
+                        <div class="text-3xl">🎴</div>
+                        <div>
+                            <h3 class="text-lg font-bold text-emerald-400">Interactive Deck Builder</h3>
+                            <p class="text-slate-400 text-sm leading-relaxed">Drag-and-drop customization with a 1-click
+                                Auto-Lands button. Run a 10,000 game Monte Carlo simulation or use the background AI
+                                Optimizer to brute-force the mathematically perfect 40-card configuration.</p>
+                        </div>
+                    </li>
+                    <li class="flex gap-4">
+                        <div class="text-3xl">📷</div>
+                        <div>
+                            <h3 class="text-lg font-bold text-purple-400">The P1P1 Solution (OCR)</h3>
+                            <p class="text-slate-400 text-sm leading-relaxed">MTG Arena doesn't log the very first pack
+                                for Human Drafts until you make a pick. We use a lightning-fast screenshot and cloud OCR
+                                to instantly display your Pack 1 Pick 1 options.</p>
+                        </div>
+                    </li>
+                    <li class="flex gap-4">
+                        <div class="text-3xl">⚡</div>
+                        <div>
+                            <h3 class="text-lg font-bold text-amber-400">Automated Cloud Datasets</h3>
+                            <p class="text-slate-400 text-sm leading-relaxed">Powered by our custom daily ETL pipeline.
+                                The app silently downloads pre-compiled 17Lands telemetry in the background so you never
+                                have to manually scrape data before a draft again.</p>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- Setup Instructions & Community -->
+            <div class="flex flex-col h-full">
+                <h2 class="text-2xl font-bold text-white mb-6 border-b border-slate-700 pb-2">Quick Start</h2>
+                <div class="bg-slate-800/50 rounded-xl p-6 border border-slate-700 mb-10 shadow-lg">
+                    <ol class="list-decimal list-inside space-y-3 text-slate-300 text-sm">
+                        <li>Download and extract the latest release for your OS.</li>
+                        <li>In MTG Arena, go to <strong>Options -> Account -> Check "Detailed Logs"</strong>.</li>
+                        <li>Launch the app. It will automatically download datasets for currently active events.</li>
+                        <li>Start drafting! Click the <strong>SCAN P1P1</strong> button to reveal your first pack.</li>
+                    </ol>
+                </div>
+
+                <h2 class="text-2xl font-bold text-white mb-6 border-b border-slate-700 pb-2">Community & Support</h2>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-10">
+                    <a href="https://github.com/unrealities/MTGA_Draft_17Lands/issues/new/choose" target="_blank"
+                        class="flex items-center gap-3 bg-slate-800 hover:bg-slate-700 border border-slate-700 p-4 rounded-xl transition shadow-md group">
+                        <span class="text-2xl group-hover:scale-110 transition-transform">🐛</span>
+                        <div>
+                            <div class="font-bold text-slate-200 text-sm">Report a Bug</div>
+                            <div class="text-xs text-slate-500">Create an issue on GitHub</div>
+                        </div>
+                    </a>
+                    <a href="https://github.com/unrealities/MTGA_Draft_17Lands/discussions" target="_blank"
+                        class="flex items-center gap-3 bg-slate-800 hover:bg-slate-700 border border-slate-700 p-4 rounded-xl transition shadow-md group">
+                        <span class="text-2xl group-hover:scale-110 transition-transform">💬</span>
+                        <div>
+                            <div class="font-bold text-slate-200 text-sm">Discussions</div>
+                            <div class="text-xs text-slate-500">Ask questions & share ideas</div>
+                        </div>
+                    </a>
+                    <a href="https://github.com/unrealities/MTGA_Draft_17Lands/issues" target="_blank"
+                        class="flex items-center gap-3 bg-slate-800 hover:bg-slate-700 border border-slate-700 p-4 rounded-xl transition shadow-md group sm:col-span-2">
+                        <span class="text-2xl group-hover:scale-110 transition-transform">💡</span>
+                        <div>
+                            <div class="font-bold text-slate-200 text-sm">Request a Feature</div>
+                            <div class="text-xs text-slate-500">Help shape the future of the tool</div>
+                        </div>
+                    </a>
+                </div>
+
+                <h2 class="text-2xl font-bold text-white mb-6 border-b border-slate-700 pb-2">Frequently Asked Questions
+                </h2>
+                <div class="space-y-4 flex-1">
+                    <details
+                        class="group bg-slate-800/30 border border-slate-700/50 rounded-lg open:bg-slate-800/50 transition-colors">
+                        <summary
+                            class="flex justify-between items-center font-bold cursor-pointer list-none p-4 text-sm text-slate-200">
+                            Why does macOS say the app is "damaged"?
+                            <span class="transition group-open:rotate-180">▼</span>
+                        </summary>
+                        <div class="text-slate-400 text-sm p-4 pt-0 border-t border-slate-700/50 mt-2 leading-relaxed">
+                            Because this is a free, open-source project, it isn't signed with a paid Apple Developer
+                            Certificate. macOS aggressively quarantines unsigned apps. To run it safely, open Terminal
+                            and type <code
+                                class="text-emerald-400 bg-slate-900 px-1 py-0.5 rounded border border-slate-700">xattr -cr </code>
+                            (include the space), then drag the <strong>MTGA_Draft_Tool.app</strong> into the Terminal
+                            window and press Enter.
+                        </div>
+                    </details>
+
+                    <details
+                        class="group bg-slate-800/30 border border-slate-700/50 rounded-lg open:bg-slate-800/50 transition-colors">
+                        <summary
+                            class="flex justify-between items-center font-bold cursor-pointer list-none p-4 text-sm text-slate-200">
+                            Why is Pack 1 Pick 1 completely blank?
+                            <span class="transition group-open:rotate-180">▼</span>
+                        </summary>
+                        <div class="text-slate-400 text-sm p-4 pt-0 border-t border-slate-700/50 mt-2 leading-relaxed">
+                            MTG Arena intentionally delays writing the contents of the very first pack to the log file
+                            in Human Drafts until <em>after</em> you make your first pick. To solve this, simply click
+                            the green <strong>SCAN P1P1</strong> button in the app. It will take a lightning-fast
+                            screenshot and use OCR to instantly display your options.
+                        </div>
+                    </details>
+
+                    <details
+                        class="group bg-slate-800/30 border border-slate-700/50 rounded-lg open:bg-slate-800/50 transition-colors">
+                        <summary
+                            class="flex justify-between items-center font-bold cursor-pointer list-none p-4 text-sm text-slate-200">
+                            The app isn't updating when I pick cards.
+                            <span class="transition group-open:rotate-180">▼</span>
+                        </summary>
+                        <div class="text-slate-400 text-sm p-4 pt-0 border-t border-slate-700/50 mt-2 leading-relaxed">
+                            Double check that you have enabled <strong>Detailed Logs (Plugin Support)</strong> inside
+                            MTG Arena's Account settings. If the app ever severely desyncs, just click the
+                            <strong>Reload</strong> button on the dashboard to force it to re-read the log file from the
+                            beginning.
+                        </div>
+                    </details>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- INJECT_FOOTER -->
+
 </body>
 
 </html>

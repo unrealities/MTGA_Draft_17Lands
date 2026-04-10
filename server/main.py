@@ -195,6 +195,8 @@ def run_pipeline():
             )
 
             file_info = save_dataset(set_code, draft_format, user_group, final_dataset)
+            file_info["start_date"] = start_date_str
+            file_info["end_date"] = end_date_str
 
             manifest_key = f"{set_code}_{draft_format}_{user_group}"
             manifest["datasets"][manifest_key] = file_info

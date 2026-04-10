@@ -68,7 +68,9 @@ def generate_mock_data():
         manifest_datasets[manifest_key] = {
             "filename": filename,
             "hash": fake_hash,
-            "size_kb": ds['size']
+            "size_kb": ds['size'],
+            "start_date": "2026-01-01",
+            "end_date": "2026-03-01"
         }
 
     # 1. Write mock report.json
