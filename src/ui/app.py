@@ -1328,6 +1328,12 @@ class DraftApp:
             self._refresh_ui_data()
 
     def _on_card_select(self, event, table, source_type):
+        # Prevent tooltips from popping up when clicking column headers to sort
+        if hasattr(event, "x") and hasattr(event, "y"):
+            region = table.identify_region(event.x, event.y)
+            if region not in ("tree", "cell"):
+                return
+
         selection = table.selection()
         if not selection:
             return
@@ -1446,24 +1452,39 @@ class DraftApp:
             )
 
     def _open_settings(self):
-        def _on_settings_changed():
+        def _on_settings_changed(key=None):
             s = self.configuration.settings
-            self.root.attributes("-topmost", s.always_on_top)
-            self.orchestrator.scanner.log_enable(s.draft_log_enabled)
-            current_scale = constants.UI_SIZE_DICT.get(s.ui_size, 1.0)
-            Theme.apply(
-                self.root,
-                palette=s.theme,
-                engine=getattr(s, "theme_base", "clam"),
-                custom_path=s.theme_custom_path,
-                scale=current_scale,
-            )
-            if s.p1p1_ocr_enabled:
-                self.btn_p1p1.pack(side="left", padx=2, after=self.btn_reload)
-            else:
-                self.btn_p1p1.pack_forget()
-            self._update_deck_filter_options()
-            self._refresh_ui_data()
+
+            if key == "always_on_top" or key is None:
+                self.root.attributes("-topmost", s.always_on_top)
+
+            if key == "draft_log_enabled" or key is None:
+                self.orchestrator.scanner.log_enable(s.draft_log_enabled)
+
+            if (
+                key in ["theme", "theme_base", "theme_custom_path", "ui_size"]
+                or key is None
+            ):
+                current_scale = constants.UI_SIZE_DICT.get(s.ui_size, 1.0)
+                Theme.apply(
+                    self.root,
+                    palette=s.theme,
+                    engine=getattr(s, "theme_base", "clam"),
+                    custom_path=s.theme_custom_path,
+                    scale=current_scale,
+                )
+
+            if key == "p1p1_ocr_enabled" or key is None:
+                if s.p1p1_ocr_enabled:
+                    self.btn_p1p1.pack(side="left", padx=2, after=self.btn_reload)
+                else:
+                    self.btn_p1p1.pack_forget()
+
+            if key in ["filter_format"] or key is None:
+                self._update_deck_filter_options()
+
+            if key in ["result_format", "card_colors_enabled"] or key is None:
+                self._refresh_ui_data()
 
         parent_window = self.overlay_window if self.overlay_window else self.root
         SettingsWindow(parent_window, self.configuration, _on_settings_changed)

@@ -75,6 +75,7 @@ MOCKED_DATASET_JSON = {
 
 class TestCaptureScreenBase64str(unittest.TestCase):
 
+    @patch("sys.platform", "win32")
     @patch("PIL.ImageGrab.grab")
     @patch("time.time")
     @patch("src.utils.os.makedirs")
@@ -94,6 +95,7 @@ class TestCaptureScreenBase64str(unittest.TestCase):
         self.assertEqual(mock_image.save.call_count, 2)
         self.assertIsInstance(base64str, str)
 
+    @patch("sys.platform", "win32")
     @patch("PIL.ImageGrab.grab")
     @patch("time.time")
     def test_screenshot_not_persist(self, mock_time, mock_grab):

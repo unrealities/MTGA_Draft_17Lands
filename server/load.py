@@ -82,23 +82,23 @@ def save_report(report_data: dict):
 def deploy_web_assets():
     """Copies static HTML/CSS/JS and calendar.json to the GitHub Pages build directory."""
     ensure_output_dir()
-    
+
     # Copy the calendar for frontend parsing
     calendar_src = os.path.join(os.path.dirname(__file__), "calendar.json")
     if os.path.exists(calendar_src):
         shutil.copy2(calendar_src, os.path.join(config.OUTPUT_DIR, "calendar.json"))
 
     template_dir = os.path.join(os.path.dirname(__file__), "templates")
-    
+
     # Load the unified navigation bar and footer
     nav_content = ""
     footer_content = ""
-    
+
     nav_path = os.path.join(template_dir, "nav.html")
     if os.path.exists(nav_path):
         with open(nav_path, "r", encoding="utf-8") as f:
             nav_content = f.read()
-            
+
     footer_path = os.path.join(template_dir, "footer.html")
     if os.path.exists(footer_path):
         with open(footer_path, "r", encoding="utf-8") as f:
@@ -108,23 +108,23 @@ def deploy_web_assets():
     if os.path.exists(template_dir):
         for filename in os.listdir(template_dir):
             if filename in ["nav.html", "footer.html"]:
-                continue # Don't output the raw snippets
-                
+                continue  # Don't output the raw snippets
+
             src_file = os.path.join(template_dir, filename)
             dest_file = os.path.join(config.OUTPUT_DIR, filename)
-            
+
             if os.path.isfile(src_file):
                 if filename.endswith(".html"):
                     with open(src_file, "r", encoding="utf-8") as f:
                         content = f.read()
-                    
+
                     # Inject the unified layout components
                     content = content.replace("<!-- INJECT_NAV -->", nav_content)
                     content = content.replace("<!-- INJECT_FOOTER -->", footer_content)
-                    
+
                     with open(dest_file, "w", encoding="utf-8") as f:
                         f.write(content)
                 else:
                     shutil.copy2(src_file, dest_file)
-                
+
     logger.info("Web assets deployed successfully.")

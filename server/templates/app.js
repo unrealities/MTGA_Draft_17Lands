@@ -259,7 +259,7 @@ function renderActivityTable() {
     tbody.innerHTML = '';
 
     if (activityData.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="6" class="p-4 text-center text-slate-500">No active sets scheduled for today.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="7" class="p-4 text-center text-slate-500">No active sets scheduled for today.</td></tr>';
         return;
     }
 
@@ -272,6 +272,9 @@ function renderActivityTable() {
                 <td class="p-4 text-slate-400 text-sm whitespace-nowrap">${u.start_date || '?'} <span class="text-slate-600 px-1">→</span> ${u.end_date || '?'}</td>
                 <td class="p-4 text-right text-emerald-400/90">${u.game_count.toLocaleString()}</td>
                 <td class="p-4 text-right text-slate-400">${u.size_kb}</td>
+                <td class="p-4 text-center">
+                    <a href="${u.filename}" download class="inline-block bg-blue-600/20 hover:bg-blue-600/40 text-blue-400 border border-blue-500/30 rounded py-1 px-3 text-xs font-semibold transition shadow-sm">Download</a>
+                </td>
             </tr>
         `;
     });

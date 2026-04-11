@@ -40,7 +40,11 @@ class CompactOverlay(tb.Toplevel):
             ]
 
         self.overrideredirect(True)
-        geom = getattr(self.configuration.settings, "overlay_geometry", f"{Theme.scaled_val(380)}x{Theme.scaled_val(600)}+50+50")
+        geom = getattr(
+            self.configuration.settings,
+            "overlay_geometry",
+            f"{Theme.scaled_val(380)}x{Theme.scaled_val(600)}+50+50",
+        )
         self.geometry(geom)
 
         try:
@@ -73,8 +77,12 @@ class CompactOverlay(tb.Toplevel):
         self._start_y = event.y_root
 
     def _do_resize(self, event):
-        new_w = max(Theme.scaled_val(250), self._start_w + (event.x_root - self._start_x))
-        new_h = max(Theme.scaled_val(200), self._start_h + (event.y_root - self._start_y))
+        new_w = max(
+            Theme.scaled_val(250), self._start_w + (event.x_root - self._start_x)
+        )
+        new_h = max(
+            Theme.scaled_val(200), self._start_h + (event.y_root - self._start_y)
+        )
         self.geometry(f"{new_w}x{new_h}")
 
     def _stop_resize(self, event):
@@ -145,7 +153,13 @@ class CompactOverlay(tb.Toplevel):
 
         # --- TABBED CONTENT ---
         self.notebook = tb.Notebook(self)
-        self.notebook.pack(fill=BOTH, expand=True, padx=Theme.scaled_val(2), pady=Theme.scaled_val(2), side=TOP)
+        self.notebook.pack(
+            fill=BOTH,
+            expand=True,
+            padx=Theme.scaled_val(2),
+            pady=Theme.scaled_val(2),
+            side=TOP,
+        )
 
         self.tab_pack = tb.Frame(self.notebook, padding=Theme.scaled_val(2))
         self.tab_advisor = tb.Frame(self.notebook, padding=Theme.scaled_val(10))
@@ -363,7 +377,9 @@ class CompactOverlay(tb.Toplevel):
         self.lbl_status.config(text=f"P{pk} / P{pi}")
 
         if pk <= 1 and pi <= 1:
-            self.btn_scan.pack(side=LEFT, padx=Theme.scaled_val(5), before=self.lbl_info)
+            self.btn_scan.pack(
+                side=LEFT, padx=Theme.scaled_val(5), before=self.lbl_info
+            )
         else:
             self.btn_scan.pack_forget()
 
@@ -547,7 +563,7 @@ class CompactOverlay(tb.Toplevel):
 
         self.tree = self.table_manager.tree
         self.tree.bind(
-            "<<TreeviewSelect>>",
+            "<ButtonRelease-1>",
             lambda e: self._on_card_select(e, self.current_pack_cards),
         )
         _populate_tree(
@@ -561,7 +577,7 @@ class CompactOverlay(tb.Toplevel):
 
         self.missing_tree = self.missing_manager.tree
         self.missing_tree.bind(
-            "<<TreeviewSelect>>", lambda e: self._on_card_select(e, missing_cards)
+            "<ButtonRelease-1>", lambda e: self._on_card_select(e, missing_cards)
         )
         _populate_tree(
             self.missing_tree,
@@ -573,7 +589,7 @@ class CompactOverlay(tb.Toplevel):
 
         self.pool_tree = self.pool_manager.tree
         self.pool_tree.bind(
-            "<<TreeviewSelect>>",
+            "<ButtonRelease-1>",
             lambda e: self._on_card_select(e, self.current_pool_cards),
         )
         _populate_tree(
@@ -586,6 +602,11 @@ class CompactOverlay(tb.Toplevel):
 
     def _on_card_select(self, event, source_list):
         tree = event.widget
+        if hasattr(event, "x") and hasattr(event, "y"):
+            region = tree.identify_region(event.x, event.y)
+            if region not in ("tree", "cell"):
+                return
+
         selection = tree.selection()
         if not selection:
             return

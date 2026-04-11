@@ -46,9 +46,12 @@ class Theme:
     FONT_SIZE_MAIN = 10
     FONT_SIZE_SMALL = 9
     current_scale: float = 1.0
+    _last_scale = None
 
     @classmethod
-    def scaled_font(cls, size: int, weight: Optional[str] = None, family: Optional[str] = None) -> tuple:
+    def scaled_font(
+        cls, size: int, weight: Optional[str] = None, family: Optional[str] = None
+    ) -> tuple:
         """Returns a scaled font tuple."""
         f_family = family if family else cls.FONT_FAMILY
         f_size = max(4, int(size * cls.current_scale))
@@ -113,6 +116,8 @@ class Theme:
 
     @classmethod
     def apply(cls, root, palette="Neutral", engine=None, custom_path="", scale=1.0):
+        scale_changed = cls._last_scale != scale
+        cls._last_scale = scale
         cls.current_scale = scale
         style = ttk.Style()
         is_custom_loaded = False
@@ -171,7 +176,9 @@ class Theme:
                     else "vista" if sys.platform == "win32" else "clam"
                 )
                 try:
-                    root.tk.call("ttk::style", "theme", "use", native_engine)
+                    current = root.tk.call("ttk::style", "theme", "use")
+                    if current != native_engine or scale_changed:
+                        root.tk.call("ttk::style", "theme", "use", native_engine)
                 except tkinter.TclError:
                     try:
                         root.tk.call("ttk::style", "theme", "use", "clam")
@@ -210,10 +217,14 @@ class Theme:
 
             else:
                 # --- BOOTSTRAP MODE ---
-                try:
-                    style.theme_use(target_theme)
-                except:
-                    style.theme_use("cyborg")
+                current_theme = (
+                    style.theme.name if hasattr(style, "theme") and style.theme else ""
+                )
+                if current_theme != target_theme or scale_changed:
+                    try:
+                        style.theme_use(target_theme)
+                    except:
+                        style.theme_use("cyborg")
 
                 sys_bg = style.lookup("TFrame", "background")
                 colors = style.colors

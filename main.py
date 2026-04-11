@@ -224,6 +224,7 @@ def main():
         def on_ready(data, splash):
             try:
                 splash.close()
+                root.update()
                 app = DraftApp(root, data["scanner"], data["config"])
 
                 # 1. Show the window skeleton immediately

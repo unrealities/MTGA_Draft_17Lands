@@ -237,11 +237,39 @@ def check_file_integrity(filename):
 
 def capture_screen_base64str(persist):
     """takes a screenshot and returns it as a base64 encoded string"""
-    from PIL import ImageGrab
+    import sys
+    from PIL import Image
 
-    screenshot = ImageGrab.grab(all_screens=True)
+    if sys.platform == "darwin":
+        import tempfile
+
+        fd, temp_path = tempfile.mkstemp(suffix=".png")
+        os.close(fd)
+        try:
+            env = os.environ.copy()
+            # Prevent PyInstaller's bundled libraries from breaking the macOS system 'screencapture' utility
+            env.pop("DYLD_LIBRARY_PATH", None)
+            env.pop("LD_LIBRARY_PATH", None)
+
+            # -x: no sound. Capture all screens.
+            subprocess.run(["screencapture", "-x", temp_path], env=env, check=True)
+
+            screenshot = Image.open(temp_path)
+            screenshot.load()  # Force load image data into memory so we can delete the file safely
+        finally:
+            if os.path.exists(temp_path):
+                try:
+                    os.remove(temp_path)
+                except Exception:
+                    pass
+    else:
+        from PIL import ImageGrab
+
+        screenshot = ImageGrab.grab(all_screens=True)
+
     buffered = BytesIO()
     screenshot.save(buffered, format="PNG")
+
     if persist:
         current_timestamp = int(time.time())
         filename = SCREENSHOT_PREFIX + str(current_timestamp) + ".png"

@@ -40,7 +40,7 @@ class APIClient:
             "api.scryfall.com": 0.0,
             "www.17lands.com": 0.0,
             "api.17lands.com": 0.0,
-        }
+        }   
         self._domain_delays = {
             "api.scryfall.com": config.DELAY_SCRYFALL_SEC,
             "www.17lands.com": config.DELAY_17LANDS_SEC,

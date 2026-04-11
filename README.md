@@ -90,7 +90,7 @@ macOS actively quarantines unsigned apps downloaded from the internet. To run th
 - **Mini Mode:** Click the `Mini Mode` button to hide the main dashboard and display a compact, draggable, always-on-top window. Perfect for single-monitor setups or playing seamlessly over the Arena client.
 - **Dynamic Columns:** You can customize the columns displayed in any table (Pack, Missing, Card Pool, Compare) by **Right-Clicking the column header**. Add specific 17Lands stats or remove ones you don't need. The app remembers your layout.
 - **Themes & Mana Flairs:** Under the `Theme` menu, you can select custom "Mana Flairs" (Forest, Island, Swamp, Mountain, Plains, Wastes) or fall back to your Native OS System theme.
-- **Automated Cloud Datasets:** The application uses a custom Cloud ETL Pipeline that compiles and distributes the latest 17Lands telemetry every day. When you open the app, it instantly syncs the data for active Arena events in the background, meaning you never have to manually scrape data before a draft again.
+- **Automated Cloud Datasets:** The application uses a custom Cloud ETL Pipeline that compiles and distributes the latest 17Lands telemetry every day. When you open the app, it instantly syncs the data for active Arena events in the background, meaning you never have to manually scrape data before a draft again. You can also browse the pipeline schedule and manually download historical datasets directly from our [Data Warehouse website](https://unrealities.github.io/MTGA_Draft_17Lands/).
 
 ## UI Navigation & Tabs
 

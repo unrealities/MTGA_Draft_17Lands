@@ -38,6 +38,8 @@ class SettingsWindow(tkinter.Toplevel):
             parent, self.winfo_width(), self.winfo_height(), 50, 50
         )
         self.geometry(f"+{x}+{y}")
+        if self.configuration.settings.always_on_top:
+            self.attributes("-topmost", True)
         self.grab_set()  # Modal interaction
 
         self.protocol("WM_DELETE_WINDOW", self._on_close)
@@ -153,6 +155,7 @@ class SettingsWindow(tkinter.Toplevel):
         # Checkbox logic
         checkbox_keys = [
             "always_on_top",
+            "auto_sync_datasets",
             "card_colors_enabled",
             "p1p1_ocr_enabled",
             "save_screenshot_enabled",
@@ -189,15 +192,24 @@ class SettingsWindow(tkinter.Toplevel):
 
         # Handle type conversion
         if isinstance(val, int) and key != "result_format":
-            setattr(self.configuration.settings, key, bool(val))
+            bool_val = bool(val)
+            setattr(self.configuration.settings, key, bool_val)
+            val = bool_val
         else:
             setattr(self.configuration.settings, key, val)
 
         write_configuration(self.configuration)
 
+        # Keep the settings window on top of the main window if toggled
+        if key == "always_on_top":
+            self.attributes("-topmost", val)
+
         # Immediate visual update if something was toggled
         if self.on_update_callback:
-            self.on_update_callback()
+            try:
+                self.on_update_callback(key)
+            except TypeError:
+                self.on_update_callback()
 
     def _reset_defaults(self):
         """Restores pro-level baseline configuration."""
@@ -209,7 +221,10 @@ class SettingsWindow(tkinter.Toplevel):
             self.configuration.settings = new_conf.settings
             self._load_settings()
             if self.on_update_callback:
-                self.on_update_callback()
+                try:
+                    self.on_update_callback(None)
+                except TypeError:
+                    self.on_update_callback()
 
     def _on_close(self):
         self._toggle_traces(False)

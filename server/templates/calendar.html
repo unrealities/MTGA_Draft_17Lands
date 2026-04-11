@@ -1,51 +1,58 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>MTGA Event Calendar</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="styles.css?v=2">
-</head>
+    <link rel="stylesheet" href="styles.css?v=2" />
+  </head>
 
-<body class="bg-slate-900 text-slate-300 min-h-screen flex flex-col font-sans">
-
+  <body
+    class="bg-slate-900 text-slate-300 min-h-screen flex flex-col font-sans"
+  >
     <!-- INJECT_NAV -->
 
     <div class="max-w-6xl mx-auto px-4 md:px-8 py-8 flex-1 w-full">
+      <div class="mb-8 pb-6 border-b border-slate-800">
+        <h1 class="text-3xl font-bold text-slate-100 mb-2">
+          📅 MTGA Event Calendar
+        </h1>
+        <p class="text-slate-400 text-sm">
+          Visual schedule of when 17Lands datasets are actively aggregated by
+          the ETL pipeline.
+        </p>
+      </div>
 
-        <div class="mb-8 pb-6 border-b border-slate-800">
-            <h1 class="text-3xl font-bold text-slate-100 mb-2">📅 MTGA Event Calendar</h1>
-            <p class="text-slate-400 text-sm">Visual schedule of when 17Lands datasets are actively aggregated by the
-                ETL pipeline.</p>
+      <div class="bg-slate-800/30 rounded-xl border border-slate-700/50 p-6">
+        <!-- Calendar Controls -->
+        <div class="flex justify-between items-center mb-6">
+          <button
+            id="prev-month"
+            class="px-4 py-2 bg-slate-800 hover:bg-slate-700 rounded-lg text-sm border border-slate-700 transition"
+          >
+            ← Previous
+          </button>
+          <h2 id="month-label" class="text-2xl font-bold text-slate-200"></h2>
+          <button
+            id="next-month"
+            class="px-4 py-2 bg-slate-800 hover:bg-slate-700 rounded-lg text-sm border border-slate-700 transition"
+          >
+            Next →
+          </button>
         </div>
 
-        <div class="bg-slate-800/30 rounded-xl border border-slate-700/50 p-6">
-
-            <!-- Calendar Controls -->
-            <div class="flex justify-between items-center mb-6">
-                <button id="prev-month"
-                    class="px-4 py-2 bg-slate-800 hover:bg-slate-700 rounded-lg text-sm border border-slate-700 transition">←
-                    Previous</button>
-                <h2 id="month-label" class="text-2xl font-bold text-slate-200"></h2>
-                <button id="next-month"
-                    class="px-4 py-2 bg-slate-800 hover:bg-slate-700 rounded-lg text-sm border border-slate-700 transition">Next
-                    →</button>
-            </div>
-
-            <!-- Calendar Grid (Rendered by JS) -->
-            <div id="calendar-grid" class="rounded overflow-hidden">
-                <div id="calendar-status" class="p-8 text-center text-slate-400">Loading Calendar...</div>
-            </div>
-
+        <!-- Calendar Grid (Rendered by JS) -->
+        <div id="calendar-grid" class="rounded overflow-hidden">
+          <div id="calendar-status" class="p-8 text-center text-slate-400">
+            Loading Calendar...
+          </div>
         </div>
-
+      </div>
     </div>
 
     <!-- INJECT_FOOTER -->
 
     <script src="calendar.js?v=2"></script>
-</body>
-
+  </body>
 </html>

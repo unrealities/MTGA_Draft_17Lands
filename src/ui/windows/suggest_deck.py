@@ -94,7 +94,9 @@ class SuggestDeckPanel(ttk.Frame):
             style="TMenubutton",
             command=self._on_deck_selection_change,
         )
-        self.om_archetype.pack(side="left", padx=Theme.scaled_val(10), fill="x", expand=True)
+        self.om_archetype.pack(
+            side="left", padx=Theme.scaled_val(10), fill="x", expand=True
+        )
 
         self.btn_copy = ttk.Button(
             self.arch_frame, text="Copy Deck", width=12, command=self._copy_to_clipboard
@@ -112,7 +114,9 @@ class SuggestDeckPanel(ttk.Frame):
             )
             self.btn_export_builder.pack(side="right", padx=Theme.scaled_val(5))
 
-        self.notes_frame = ttk.Frame(self, style="Card.TFrame", padding=Theme.scaled_val((10, 0, 5, 5)))
+        self.notes_frame = ttk.Frame(
+            self, style="Card.TFrame", padding=Theme.scaled_val((10, 0, 5, 5))
+        )
         self.notes_frame.pack(fill="x", pady=Theme.scaled_val((0, 5)))
         self.lbl_deck_notes = ttk.Label(
             self.notes_frame,
@@ -140,7 +144,7 @@ class SuggestDeckPanel(ttk.Frame):
         )
         self.table_manager.pack(fill="both", expand=True)
         self.table.bind(
-            "<<TreeviewSelect>>", lambda e: self._on_selection(e, is_sb=False)
+            "<ButtonRelease-1>", lambda e: self._on_selection(e, is_sb=False)
         )
 
         # Sideboard Tab
@@ -156,7 +160,7 @@ class SuggestDeckPanel(ttk.Frame):
         )
         self.sb_manager.pack(fill="both", expand=True)
         self.sb_table.bind(
-            "<<TreeviewSelect>>", lambda e: self._on_selection(e, is_sb=True)
+            "<ButtonRelease-1>", lambda e: self._on_selection(e, is_sb=True)
         )
 
         # Stats Tab
@@ -208,7 +212,9 @@ class SuggestDeckPanel(ttk.Frame):
         self.hand_tab.rowconfigure(1, weight=1)
 
         hand_control_bar = ttk.Frame(self.hand_tab)
-        hand_control_bar.grid(row=0, column=0, columnspan=2, sticky="ew", pady=Theme.scaled_val((0, 15)))
+        hand_control_bar.grid(
+            row=0, column=0, columnspan=2, sticky="ew", pady=Theme.scaled_val((0, 15))
+        )
 
         self.btn_draw = ttk.Button(
             hand_control_bar,
@@ -221,7 +227,9 @@ class SuggestDeckPanel(ttk.Frame):
 
         # Left Column: Scrollable Canvas for Sample Hand
         self.hand_canvas_frame = ttk.Frame(self.hand_tab)
-        self.hand_canvas_frame.grid(row=1, column=0, sticky="nsew", padx=Theme.scaled_val((0, 15)))
+        self.hand_canvas_frame.grid(
+            row=1, column=0, sticky="nsew", padx=Theme.scaled_val((0, 15))
+        )
         self.hand_canvas_frame.rowconfigure(0, weight=1)
         self.hand_canvas_frame.columnconfigure(0, weight=1)
 
@@ -258,7 +266,9 @@ class SuggestDeckPanel(ttk.Frame):
 
         # Right Column: Scrollable Monte Carlo Simulation
         self.sim_outer_frame = ttk.Labelframe(
-            self.hand_tab, text=" MONTE CARLO SIMULATION (10,000 Games) ", padding=Theme.scaled_val(5)
+            self.hand_tab,
+            text=" MONTE CARLO SIMULATION (10,000 Games) ",
+            padding=Theme.scaled_val(5),
         )
         self.sim_outer_frame.grid(row=1, column=1, sticky="nsew")
 
@@ -1127,7 +1137,9 @@ class SuggestDeckPanel(ttk.Frame):
             text=f"Total Cards: {total_cards}  |  Creatures: {creatures}  |  Non-Creatures: {spells}  |  Lands: {lands}",
         ).pack(anchor="w", pady=Theme.scaled_val(2))
 
-        ttk.Separator(stats_frame, orient="horizontal").pack(fill="x", pady=Theme.scaled_val(8))
+        ttk.Separator(stats_frame, orient="horizontal").pack(
+            fill="x", pady=Theme.scaled_val(8)
+        )
 
         color_frame = ttk.Frame(stats_frame)
         color_frame.pack(fill="x", pady=Theme.scaled_val(5))
@@ -1152,7 +1164,9 @@ class SuggestDeckPanel(ttk.Frame):
             color_frame, text="  |  ".join(pip_str) if pip_str else "Colorless"
         ).pack(anchor="w", pady=Theme.scaled_val(2))
 
-        ttk.Separator(stats_frame, orient="horizontal").pack(fill="x", pady=Theme.scaled_val(8))
+        ttk.Separator(stats_frame, orient="horizontal").pack(
+            fill="x", pady=Theme.scaled_val(8)
+        )
 
         tags_frame = ttk.Frame(stats_frame)
         tags_frame.pack(fill="x", pady=Theme.scaled_val(5))
@@ -1180,7 +1194,9 @@ class SuggestDeckPanel(ttk.Frame):
                 anchor="w", pady=Theme.scaled_val(2)
             )
 
-        ttk.Separator(stats_frame, orient="horizontal").pack(fill="x", pady=Theme.scaled_val(8))
+        ttk.Separator(stats_frame, orient="horizontal").pack(
+            fill="x", pady=Theme.scaled_val(8)
+        )
 
         curve_frame = ttk.Frame(stats_frame)
         curve_frame.pack(fill="x", pady=Theme.scaled_val(5))
@@ -1268,6 +1284,11 @@ class SuggestDeckPanel(ttk.Frame):
         tree = getattr(self, "sb_table" if is_sb else "table", None)
         if not tree:
             return
+
+        if hasattr(event, "x") and hasattr(event, "y"):
+            region = tree.identify_region(event.x, event.y)
+            if region not in ("tree", "cell"):
+                return
 
         selection = tree.selection()
         if not selection:

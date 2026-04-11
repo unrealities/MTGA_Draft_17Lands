@@ -874,7 +874,7 @@ class DashboardFrame(ttk.Frame):
         self.pack_manager.pack(fill="both", expand=True)
 
         self.pack_manager.tree.bind(
-            "<<TreeviewSelect>>",
+            "<ButtonRelease-1>",
             lambda e: self.on_card_select(e, self.pack_manager.tree, "pack"),
         )
 
@@ -905,7 +905,7 @@ class DashboardFrame(ttk.Frame):
         )
         self.missing_manager.pack(fill="both", expand=True)
         self.missing_manager.tree.bind(
-            "<<TreeviewSelect>>",
+            "<ButtonRelease-1>",
             lambda e: self.on_card_select(e, self.missing_manager.tree, "missing"),
         )
 
@@ -1223,7 +1223,7 @@ class DashboardFrame(ttk.Frame):
             return
 
         tree.bind(
-            "<<TreeviewSelect>>",
+            "<ButtonRelease-1>",
             lambda e, t=tree, s=source_type: self.on_card_select(e, t, s),
         )
 
