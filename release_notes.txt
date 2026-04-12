@@ -3,6 +3,7 @@
 * unrealities: [Bug] Fixed an issue on the GitHub Pages landing site where the latest release version would get stuck on "Checking...".
 * unrealities: [Bug] Fixed a severe macOS issue (especially on Sequoia) where the application would get stuck in an endless Screen Recording permission loop when attempting to scan P1P1.
 * unrealities: [Bug] Segmentation fault fatal crash on load #166
+* unrealities: [Bug] Fixed an issue where the application would not display basic lands
 
 ===================== RELEASE NOTES 4.13 =====================
 * unrealities: [Bug] Fixed not displaying Powered Cube sets
