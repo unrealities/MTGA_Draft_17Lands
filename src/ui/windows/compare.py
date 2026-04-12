@@ -61,7 +61,6 @@ class ComparePanel(ttk.Frame):
             on_update_callback=self._update_content,
         )
         self.table_manager.pack(fill="both", expand=True)
-        self.table.bind("<ButtonRelease-1>", self._on_selection)
 
     def _add_card(self, event=None):
         typed = self.entry_card.get().strip().lower()
@@ -91,7 +90,9 @@ class ComparePanel(ttk.Frame):
         if t is None:
             return
 
-        t.bind("<<TreeviewSelect>>", self._on_selection)
+        if not getattr(t, "_selection_bound", False):
+            t.bind("<ButtonRelease-1>", self._on_selection, add="+")
+            t._selection_bound = True
 
         from src.card_logic import filter_options
 

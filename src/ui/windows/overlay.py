@@ -372,6 +372,7 @@ class CompactOverlay(tb.Toplevel):
         taken_cards = self.orchestrator.scanner.retrieve_taken_cards()
         self.current_pool_cards = stack_cards(taken_cards) if taken_cards else []
         missing_cards = self.orchestrator.scanner.retrieve_current_missing_cards()
+        self.current_missing_cards = missing_cards
 
         pk, pi = self.orchestrator.scanner.retrieve_current_pack_and_pick()
         self.lbl_status.config(text=f"P{pk} / P{pi}")
@@ -562,10 +563,14 @@ class CompactOverlay(tb.Toplevel):
                 tree.reapply_sort()
 
         self.tree = self.table_manager.tree
-        self.tree.bind(
-            "<ButtonRelease-1>",
-            lambda e: self._on_card_select(e, self.current_pack_cards),
-        )
+        if not getattr(self.tree, "_selection_bound", False):
+            self.tree.bind(
+                "<ButtonRelease-1>",
+                lambda e: self._on_card_select(e, self.current_pack_cards),
+                add="+",
+            )
+            self.tree._selection_bound = True
+
         _populate_tree(
             self.tree,
             self.table_manager,
@@ -576,9 +581,14 @@ class CompactOverlay(tb.Toplevel):
         )
 
         self.missing_tree = self.missing_manager.tree
-        self.missing_tree.bind(
-            "<ButtonRelease-1>", lambda e: self._on_card_select(e, missing_cards)
-        )
+        if not getattr(self.missing_tree, "_selection_bound", False):
+            self.missing_tree.bind(
+                "<ButtonRelease-1>",
+                lambda e: self._on_card_select(e, self.current_missing_cards),
+                add="+",
+            )
+            self.missing_tree._selection_bound = True
+
         _populate_tree(
             self.missing_tree,
             self.missing_manager,
@@ -588,10 +598,14 @@ class CompactOverlay(tb.Toplevel):
         )
 
         self.pool_tree = self.pool_manager.tree
-        self.pool_tree.bind(
-            "<ButtonRelease-1>",
-            lambda e: self._on_card_select(e, self.current_pool_cards),
-        )
+        if not getattr(self.pool_tree, "_selection_bound", False):
+            self.pool_tree.bind(
+                "<ButtonRelease-1>",
+                lambda e: self._on_card_select(e, self.current_pool_cards),
+                add="+",
+            )
+            self.pool_tree._selection_bound = True
+
         _populate_tree(
             self.pool_tree,
             self.pool_manager,
@@ -612,27 +626,25 @@ class CompactOverlay(tb.Toplevel):
             return
 
         item_vals = tree.item(selection[0])["values"]
-        card_name = (
-            str(item_vals[0])
-            .replace("⭐ ", "")
-            .replace("[+] ", "")
-            .replace("..", "")
-            .strip()
-        )
+        try:
+            name_idx = getattr(
+                tree, "active_fields", self.table_manager.active_fields
+            ).index("name")
+            card_name = (
+                str(item_vals[name_idx])
+                .replace("⭐ ", "")
+                .replace("[+] ", "")
+                .replace("..", "")
+                .strip()
+            )
+        except (ValueError, AttributeError, IndexError):
+            return
 
-        found = next(
-            (
-                c
-                for c in source_list
-                if card_name in c.get(constants.DATA_FIELD_NAME, "")
-            ),
-            None,
-        )
-
-        if found:
+        card = next((c for c in source_list if c.get("name") == card_name), None)
+        if card:
             CardToolTip.create(
                 tree,
-                found,
+                card,
                 self.configuration.features.images_enabled,
-                constants.UI_SIZE_DICT.get(self.configuration.settings.ui_size, 1.0),
+                Theme.current_scale,
             )

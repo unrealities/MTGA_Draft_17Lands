@@ -873,21 +873,23 @@ class DashboardFrame(ttk.Frame):
         )
         self.pack_manager.pack(fill="both", expand=True)
 
-        self.pack_manager.tree.bind(
-            "<ButtonRelease-1>",
-            lambda e: self.on_card_select(e, self.pack_manager.tree, "pack"),
-        )
-
-        for event_type in ["<Button-3>", "<Control-Button-1>"]:
+        if not getattr(self.pack_manager.tree, "_selection_bound", False):
             self.pack_manager.tree.bind(
-                event_type,
-                lambda e: (
-                    self.on_context_menu(e, self.pack_manager.tree, "pack")
-                    if self.on_context_menu
-                    else None
+                "<ButtonRelease-1>",
+                lambda e, t=self.pack_manager.tree, s="pack": self.on_card_select(
+                    e, t, s
                 ),
                 add="+",
             )
+            for event_type in ["<Button-3>", "<Control-Button-1>"]:
+                self.pack_manager.tree.bind(
+                    event_type,
+                    lambda e, t=self.pack_manager.tree, s="pack": (
+                        self.on_context_menu(e, t, s) if self.on_context_menu else None
+                    ),
+                    add="+",
+                )
+            self.pack_manager.tree._selection_bound = True
 
         # 2. Missing Table (Wheel Tracker)
         self.missing_frame = ttk.Labelframe(
@@ -904,21 +906,24 @@ class DashboardFrame(ttk.Frame):
             height=1,
         )
         self.missing_manager.pack(fill="both", expand=True)
-        self.missing_manager.tree.bind(
-            "<ButtonRelease-1>",
-            lambda e: self.on_card_select(e, self.missing_manager.tree, "missing"),
-        )
 
-        for event_type in ["<Button-3>", "<Control-Button-1>"]:
+        if not getattr(self.missing_manager.tree, "_selection_bound", False):
             self.missing_manager.tree.bind(
-                event_type,
-                lambda e: (
-                    self.on_context_menu(e, self.missing_manager.tree, "missing")
-                    if self.on_context_menu
-                    else None
+                "<ButtonRelease-1>",
+                lambda e, t=self.missing_manager.tree, s="missing": self.on_card_select(
+                    e, t, s
                 ),
                 add="+",
             )
+            for event_type in ["<Button-3>", "<Control-Button-1>"]:
+                self.missing_manager.tree.bind(
+                    event_type,
+                    lambda e, t=self.missing_manager.tree, s="missing": (
+                        self.on_context_menu(e, t, s) if self.on_context_menu else None
+                    ),
+                    add="+",
+                )
+            self.missing_manager.tree._selection_bound = True
 
         self.missing_frame.grid_remove()
 
@@ -1221,11 +1226,6 @@ class DashboardFrame(ttk.Frame):
         tree = self.get_treeview(source_type)
         if not tree or not hasattr(tree, "active_fields"):
             return
-
-        tree.bind(
-            "<ButtonRelease-1>",
-            lambda e, t=tree, s=source_type: self.on_card_select(e, t, s),
-        )
 
         for item in tree.get_children():
             tree.delete(item)

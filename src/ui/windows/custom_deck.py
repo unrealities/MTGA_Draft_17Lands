@@ -669,6 +669,10 @@ class CustomDeckPanel(ttk.Frame):
         return None
 
     def _bind_dnd(self, tree, is_sb=False):
+        if getattr(tree, "_dnd_bound", False):
+            return
+        tree._dnd_bound = True
+
         tree.bind(
             "<ButtonPress-1>", lambda e: self._on_drag_start(e, tree, is_sb), add="+"
         )

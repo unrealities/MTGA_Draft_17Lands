@@ -1344,12 +1344,14 @@ class DraftApp:
         )
         item_vals = table.item(selection[0])["values"]
         try:
-            name_idx = table.active_fields.index("name")
+            name_idx = getattr(
+                table, "active_fields", self.pack_manager.active_fields
+            ).index("name")
             raw_name = str(item_vals[name_idx])
             card_name = (
                 raw_name.replace("⭐ ", "").replace("[+] ", "").replace("*", "").strip()
             )
-        except ValueError:
+        except (ValueError, AttributeError, IndexError):
             return
         self._show_tooltip(card_name, table, data_list)
 

@@ -143,9 +143,6 @@ class SuggestDeckPanel(ttk.Frame):
             static_columns=cols,
         )
         self.table_manager.pack(fill="both", expand=True)
-        self.table.bind(
-            "<ButtonRelease-1>", lambda e: self._on_selection(e, is_sb=False)
-        )
 
         # Sideboard Tab
         self.sb_frame = ttk.Frame(self.notebook, padding=Theme.scaled_val(2))
@@ -159,9 +156,6 @@ class SuggestDeckPanel(ttk.Frame):
             static_columns=cols,
         )
         self.sb_manager.pack(fill="both", expand=True)
-        self.sb_table.bind(
-            "<ButtonRelease-1>", lambda e: self._on_selection(e, is_sb=True)
-        )
 
         # Stats Tab
         self.stats_tab = ttk.Frame(self.notebook)
@@ -1002,10 +996,16 @@ class SuggestDeckPanel(ttk.Frame):
 
         from src.card_logic import row_color_tag
 
-        def populate_tree(manager, source_list):
+        def populate_tree(manager, source_list, is_sb):
             if not manager or not manager.tree:
                 return
             tree = manager.tree
+
+            if not getattr(tree, "_selection_bound", False):
+                tree.bind(
+                    "<ButtonRelease-1>", lambda e: self._on_selection(e, is_sb), add="+"
+                )
+                tree._selection_bound = True
 
             for idx, card in enumerate(source_list):
                 name = card.get(constants.DATA_FIELD_NAME, "Unknown")
@@ -1070,9 +1070,9 @@ class SuggestDeckPanel(ttk.Frame):
                 tree.reapply_sort()
 
         if table:
-            populate_tree(self.table_manager, self.current_deck_list)
+            populate_tree(self.table_manager, self.current_deck_list, False)
         if sb_table:
-            populate_tree(self.sb_manager, self.current_sb_list)
+            populate_tree(self.sb_manager, self.current_sb_list, True)
 
     def _render_deck_stats(self):
         stats_frame = getattr(self, "stats_frame", None)

@@ -156,7 +156,6 @@ class TakenCardsPanel(ttk.Frame):
             on_update_callback=self._update_table_view,
         )
         self.table_manager.pack(fill="both", expand=True)
-        self.table.bind("<ButtonRelease-1>", self._on_selection)
 
         # 2. Visual View (Hidden initially)
         self.visual_scroller = ScrolledFrame(self.content_area)
@@ -186,7 +185,10 @@ class TakenCardsPanel(ttk.Frame):
 
         metrics = self.draft.retrieve_set_metrics()
         tier_data = self.draft.retrieve_tier_data()
-        t.bind("<<TreeviewSelect>>", self._on_selection)
+
+        if not getattr(t, "_selection_bound", False):
+            t.bind("<ButtonRelease-1>", self._on_selection, add="+")
+            t._selection_bound = True
 
         for item in t.get_children():
             t.delete(item)
