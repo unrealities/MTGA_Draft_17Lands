@@ -13,6 +13,7 @@ from server.extract import (
     extract_17lands_data,
     extract_color_ratings,
     get_historical_start_dates,
+    extract_basic_lands,
 )
 from server.transform import transform_payload
 from server.load import save_dataset, save_manifest, save_report, deploy_web_assets
@@ -113,16 +114,37 @@ def run_pipeline():
 
     scryfall_cache_mem = {}
     tags_cache_mem = {}
+    basic_lands_mem = None
 
     for set_code, draft_format, user_group, start_date_str in jobs:
         logger.info(f"==== Processing {set_code} | {draft_format} | {user_group} ====")
 
         try:
+            if basic_lands_mem is None:
+                basic_lands_mem = extract_basic_lands(client)
+
             if set_code not in scryfall_cache_mem:
                 scryfall_cache_mem[set_code] = extract_scryfall_data(client, set_code)
                 tags_cache_mem[set_code] = extract_scryfall_tags(client, set_code)
 
-            scryfall_cards = scryfall_cache_mem[set_code]
+            scryfall_cards = {}
+            for k, v in scryfall_cache_mem[set_code].items():
+                scryfall_cards[k] = {
+                    k2: (v2.copy() if isinstance(v2, list) else v2)
+                    for k2, v2 in v.items()
+                }
+
+            for b_name, b_card in basic_lands_mem.items():
+                if b_name in scryfall_cards:
+                    for a_id in b_card["arena_ids"]:
+                        if a_id not in scryfall_cards[b_name]["arena_ids"]:
+                            scryfall_cards[b_name]["arena_ids"].append(a_id)
+                else:
+                    scryfall_cards[b_name] = {
+                        k: (v.copy() if isinstance(v, list) else v)
+                        for k, v in b_card.items()
+                    }
+
             card_tags = tags_cache_mem[set_code]
 
             if not scryfall_cards:
