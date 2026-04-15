@@ -1,5 +1,7 @@
 import pytest
-from unittest.mock import MagicMock
+import json
+import os
+from unittest.mock import patch, mock_open, MagicMock
 from src.seventeenlands import Seventeenlands
 from src import constants
 
@@ -240,3 +242,80 @@ def test_process_color_ratings_fallback_logic(seventeenlands):
     # "GU" extracted from "Simic (GU)" and normalized to "UG"
     assert "UG" in ratings
     assert ratings["UG"] == 60.0
+
+
+def test_get_draft_record_success(mock_session, seventeenlands):
+    """Verify that a valid 17Lands draft record is retrieved and parsed."""
+    session, response = mock_session
+    response.status_code = 200
+    response.json.return_value = {"wins": 7, "losses": 2}
+
+    # Act
+    record = seventeenlands.get_draft_record("draft-uuid-1234")
+
+    # Assert
+    assert record is not None
+    assert record["wins"] == 7
+    assert record["url"] == "https://www.17lands.com/draft/draftuuid1234"
+
+    # Verify UUID formatting (hyphens stripped)
+    session.get.assert_called_once()
+    called_url = session.get.call_args[0][0]
+    assert "draftuuid1234" in called_url
+
+
+def test_get_draft_record_not_found(mock_session, seventeenlands):
+    """Verify graceful handling when 17Lands doesn't track the draft."""
+    session, response = mock_session
+    response.status_code = 200
+    response.json.return_value = {}  # Missing 'wins' key
+
+    record = seventeenlands.get_draft_record("draft-uuid-1234")
+    assert record is None
+
+
+@patch("src.seventeenlands.is_cache_stale")
+def test_fetch_archetype_with_cache_hit(mock_stale, seventeenlands, tmp_path):
+    """Verify that a valid cache completely bypasses the network call."""
+    mock_stale.return_value = False
+
+    # Override CACHE_DIR to our tmp_path
+    seventeenlands.CACHE_DIR = str(tmp_path)
+    cache_path = tmp_path / "otj_premierdraft_2024-01-01_2024-02-01_all_all.json"
+    cache_path.write_text(json.dumps([{"name": "Cached Card"}]))
+
+    # Act
+    data, from_cache = seventeenlands._fetch_archetype_with_cache(
+        "OTJ", "PremierDraft", "2024-01-01", "2024-02-01", "All", "All"
+    )
+
+    # Assert
+    assert from_cache is True
+    assert data[0]["name"] == "Cached Card"
+    assert seventeenlands.session.get.call_count == 0  # No network hit!
+
+
+@patch("src.seventeenlands.is_cache_stale")
+def test_fetch_archetype_with_cache_miss_writes_to_disk(
+    mock_stale, mock_session, seventeenlands, tmp_path
+):
+    """Verify that a cache miss hits the network and safely writes a new cache file."""
+    mock_stale.return_value = True
+    session, response = mock_session
+    response.json.return_value = [{"name": "Network Card"}]
+
+    seventeenlands.CACHE_DIR = str(tmp_path)
+
+    # Act
+    data, from_cache = seventeenlands._fetch_archetype_with_cache(
+        "OTJ", "PremierDraft", "2024-01-01", "2024-02-01", "All", "All"
+    )
+
+    # Assert
+    assert from_cache is False
+    assert data[0]["name"] == "Network Card"
+    assert session.get.call_count == 1
+
+    # Verify the cache file was actually created by the method
+    cache_path = tmp_path / "otj_premierdraft_2024-01-01_2024-02-01_all_all.json"
+    assert cache_path.exists()

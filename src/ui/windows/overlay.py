@@ -428,7 +428,7 @@ class CompactOverlay(tb.Toplevel):
             self.type_chart.update_counts(type_counts)
         else:
             self.curve_plot.update_curve([0] * 8)
-            self.type_chart.update_counts(0, 0, 0)
+            self.type_chart.update_counts({})
 
         self._force_stats_redraw()
 
