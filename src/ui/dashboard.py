@@ -64,7 +64,6 @@ class DashboardFrame(ttk.Frame):
         self._current_event_set = ""
         self._current_pack = 0
         self._current_pick = 0
-        self.on_p1p1_scan = None
 
         self._build_layout()
 
@@ -80,7 +79,6 @@ class DashboardFrame(ttk.Frame):
 
         self._build_no_data_state()
         self._build_waiting_state()
-        self._build_p1p1_state()
         self._build_deck_recovery_state()
         self._build_active_state()
 
@@ -241,49 +239,6 @@ class DashboardFrame(ttk.Frame):
 
         tips = self._build_customization_tips(center_box)
         tips.pack(anchor="center")
-
-    def _build_p1p1_state(self):
-        """State 2B: Draft active, but Pack 1 is hidden by MTGA logs."""
-        self.p1p1_frame = ttk.Frame(self)
-
-        center_box = ttk.Frame(self.p1p1_frame)
-        center_box.pack(expand=True)
-
-        ttk.Label(
-            center_box,
-            text="Draft Started: The P1P1 Gap",
-            font=Theme.scaled_font(14, "bold"),
-            bootstyle="warning",
-            justify="center",
-        ).pack(pady=(0, Theme.scaled_val(10)), anchor="center")
-
-        desc1 = ttk.Label(
-            center_box,
-            text="MTG Arena delays writing the first pack to the log file in Human Drafts.\nTo see your options before picking, we must use Screen Capture (OCR).\nPressing the button below will hide the app (timeout: 8 seconds) and take a screenshot of your screen.",
-            font=Theme.scaled_font(10),
-            justify="center",
-        )
-        desc1.pack(pady=(0, Theme.scaled_val(20)), anchor="center")
-        self._dynamic_wrap_labels.append(desc1)
-
-        self.btn_dashboard_scan = ttk.Button(
-            center_box,
-            text="SCAN P1P1 (Take Screenshot)",
-            bootstyle="success",
-            command=lambda: self.on_p1p1_scan() if self.on_p1p1_scan else None,
-            padding=(Theme.scaled_val(20), Theme.scaled_val(10)),
-        )
-        self.btn_dashboard_scan.pack(pady=(0, Theme.scaled_val(20)))
-
-        desc2 = ttk.Label(
-            center_box,
-            text="Note: You can disable this feature or choose to save the screenshots locally via File -> Preferences.",
-            font=Theme.scaled_font(9),
-            bootstyle="secondary",
-            justify="center",
-        )
-        desc2.pack(pady=(0, 0), anchor="center")
-        self._dynamic_wrap_labels.append(desc2)
 
     def _create_stat_box(self, parent, title, text_var_name):
         """Helper to create cohesive stat boxes for the Post-Draft Recap."""
@@ -1107,51 +1062,20 @@ class DashboardFrame(ttk.Frame):
 
         show_recovery = draft_complete or sealed_complete
 
-        # Determine if we should show the explicit P1P1 OCR frame
-        show_p1p1 = (
-            self._current_event_set
-            and is_human
-            and self._current_pack <= 1
-            and self._current_pick <= 1
-            and self._pack_count == 0
-            and self._taken_count
-            < 15  # Prevents overriding a recovered draft if pack=0
-            and self.configuration.settings.p1p1_ocr_enabled
-            and not show_recovery  # Safety block
-        )
-
         # Capture visibility BEFORE grid_remove() so was_hidden is accurate
         was_content_hidden = not self.content_frame.winfo_viewable()
         self.content_frame.grid_remove()
         self.waiting_frame.grid_remove()
         self.no_data_frame.grid_remove()
-        if hasattr(self, "p1p1_frame"):
-            self.p1p1_frame.grid_remove()
         if hasattr(self, "recovery_frame"):
             self.recovery_frame.grid_remove()
 
-        if not has_any_datasets:
-            self.no_data_frame.grid(row=0, column=0, sticky="nsew")
-        elif show_recovery:
-            if self._current_event_set:
-                prefix = (
-                    "Sealed Pool"
-                    if "Sealed" in self._current_event_type
-                    else "Draft Completed"
-                )
-                self.lbl_recovery_title.config(
-                    text=f"{prefix}: {self._current_event_set} {self._current_event_type}"
-                )
-            self.recovery_frame.grid(row=0, column=0, sticky="nsew")
-
-            # Force charts to render if they haven't yet
+        if not has_any_datasets:  # Force charts to render if they haven't yet
             if hasattr(self, "recap_curve_plot") and self.recap_curve_plot:
                 self.recap_curve_plot.redraw()
             if hasattr(self, "recap_type_chart") and self.recap_type_chart:
                 self.recap_type_chart.redraw()
 
-        elif show_p1p1:
-            self.p1p1_frame.grid(row=0, column=0, sticky="nsew")
         elif has_draft_data:
             self.content_frame.grid(row=0, column=0, sticky="nsew")
 

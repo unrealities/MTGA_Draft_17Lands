@@ -64,7 +64,6 @@ macOS actively quarantines unsigned apps downloaded from the internet. To run th
 - **Step 5:** Click the **Datasets** tab to download the 17Lands data for the sets you plan to play.
 - **Step 6:** Configure the tool through `File -> Preferences...`.
 - **Step 7:** Start the draft in Arena.
-  - _Note: MTG Arena doesn't list the very first pack (P1P1) in the log for human drafts. Clicking the `SCAN P1P1` button in the app will use OCR to instantly identify the cards on your screen._
 
 ## Run Steps: Python (Windows/Mac/Linux)
 
@@ -120,8 +119,6 @@ Access Settings via `File -> Preferences...`
 - **UI Scale:** Increase or decrease the application text and image sizes globally (from 40% up to 250%). Perfect for smaller laptop displays or massive 4k monitors.
 - **Highlight Row by Mana Cost:** Colors the background of table rows based on the card's color identity.
 - **Auto-Switch Deck Filter to Best Colors:** When the filter is set to "Auto", the app tracks your picks and will automatically switch to displaying data for your confirmed color pair once your lane is identified.
-- **Enable P1P1 OCR:** Enables [The P1P1 Solution](#the-p1p1-solution). Turning this off removes the `P1P1` button from the UI.
-- **Save P1P1 Screenshots:** Saves the image taken during P1P1 OCR locally to `./Screenshots` for troubleshooting.
 - **Check for Dataset Updates:** Prompts you if a newer version of your currently loaded 17Lands dataset is available (checked once every 24 hours).
 - **Alert on Missing Datasets:** Automatically prompts you to open the Dataset manager if you join a draft event that you don't have data downloaded for.
 - **Enable Draft Log Creation:** Records the draft step-by-step in a readable log file within the `./Logs` folder.
@@ -145,19 +142,6 @@ The application looks for the configuration file in the following order:
 - Downloaded card data is stored in the `Sets` folder.
 - Custom Tier lists are stored in the `Tier` folder.
 - Application debug logs are stored in the `Debug` folder, and draft logs are in the `Logs` folder.
-
-## The P1P1 Solution
-
-### The Problem
-
-MTG Arena does not show the pack data in the log files for the very first pack of Premier and Traditional drafts until after you have made your pick.
-
-### The Solution
-
-- Click the `P1P1` button in the top menu when you see your first pack.
-- A screenshot is taken and converted to a base64 string.
-- The string and a list of possible card names are sent to a Google Cloud Function (GCF) for OCR.
-- All possible matches are returned as P1P1 cards, populating your UI instantly; no data persists locally or via GCF unless you explicitly enable `Save P1P1 Screenshots`.
 
 ## Tier List (API-Based)
 

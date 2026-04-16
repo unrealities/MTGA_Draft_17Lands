@@ -142,7 +142,7 @@ class DraftOrchestrator(threading.Thread):
                     self.sync_dataset_to_event()
 
                     self.update_queue.put({"status": "Parsing Picks..."})
-                    self.scanner.draft_data_search(False, False)
+                    self.scanner.draft_data_search()
                 except Exception as e:
                     logger.error(f"Error processing file swap: {e}")
                 finally:
@@ -208,10 +208,10 @@ class DraftOrchestrator(threading.Thread):
             self.sync_dataset_to_event()  # Guarantee card dictionary is mapped immediately
 
         # SEARCH 2: Is there new pack/pick data?
-        if self.scanner.draft_data_search(use_ocr=False, save_screenshot=False):
+        if self.scanner.draft_data_search():
             changed = True
 
-            # Failsafe: If we recovered cards from the log but the dataset is missing in memory, load it!
+            # Failsafe: If we recovered cards from the log but the dataset is missing in memory, load it
             if not self.scanner.set_data._dataset and self.scanner.draft_sets:
                 self.sync_dataset_to_event()
 

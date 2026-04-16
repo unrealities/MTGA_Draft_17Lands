@@ -1,13 +1,9 @@
 import pytest
-import unittest
-from unittest.mock import patch, MagicMock
 import os
 from src.constants import SETS_FOLDER, BASE_DIR
-from src.utils import capture_screen_base64str, retrieve_local_set_list, Result
+from src.utils import retrieve_local_set_list, Result
 from src.utils import normalize_color_string
-
-SCREENSHOT_FOLDER = os.path.join(BASE_DIR, "Screenshots")
-SCREENSHOT_PREFIX = "p1p1_screenshot_"
+from unittest.mock import patch
 
 MOCKED_SET_CODES = ["MH3", "OTJ"]
 MOCKED_DATASETS = [
@@ -71,52 +67,6 @@ MOCKED_DATASET_JSON = {
         "collection_date": "2025-11-28 10:15:45.788070",
     }
 }
-
-
-class TestCaptureScreenBase64str(unittest.TestCase):
-
-    @patch("sys.platform", "win32")
-    @patch("PIL.ImageGrab.grab")
-    @patch("time.time")
-    @patch("src.utils.os.makedirs")
-    def test_screenshot_persist(self, mock_makedirs, mock_time, mock_grab):
-        # Arrange
-        mock_image = MagicMock()
-        mock_grab.return_value = mock_image
-        mock_time.return_value = 1234567890
-
-        # Act
-        base64str = capture_screen_base64str(True)
-
-        # Assert
-        mock_grab.assert_called_once()
-        mock_time.assert_called_once()
-        # Verify save was called TWICE (once for BytesIO memory, once for disk)
-        self.assertEqual(mock_image.save.call_count, 2)
-        self.assertIsInstance(base64str, str)
-
-    @patch("sys.platform", "win32")
-    @patch("PIL.ImageGrab.grab")
-    @patch("time.time")
-    def test_screenshot_not_persist(self, mock_time, mock_grab):
-        # Arrange
-        mock_image = MagicMock()
-        mock_grab.return_value = mock_image
-
-        # Act
-        base64str = capture_screen_base64str(False)
-
-        # Assert
-        mock_grab.assert_called_once()
-        mock_time.assert_not_called()
-        # Verify save was only called ONCE (for the BytesIO buffer in memory)
-        # and NOT twice (which would imply it saved to disk)
-        self.assertEqual(mock_image.save.call_count, 1)
-        self.assertIsInstance(base64str, str)
-
-
-if __name__ == "__main__":
-    unittest.main()
 
 
 @patch("src.utils.os.path.exists")

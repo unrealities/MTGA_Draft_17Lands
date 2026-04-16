@@ -105,13 +105,6 @@ class CompactOverlay(tb.Toplevel):
         header.bind("<ButtonRelease-1>", self._stop_move)
         header.bind("<B1-Motion>", self._do_move)
 
-        self.btn_scan = tb.Button(
-            header,
-            text="SCAN P1P1",
-            bootstyle="success-outline",
-            command=self._manual_scan,
-        )
-
         # Dynamic Info Label (Format | Group | Filter)
         self.lbl_info = tb.Label(
             header, text="", font=Theme.scaled_font(9), bootstyle="inverse-secondary"
@@ -321,10 +314,6 @@ class CompactOverlay(tb.Toplevel):
         if hasattr(self.orchestrator, "refresh_callback"):
             self.orchestrator.refresh_callback()
 
-    def _manual_scan(self):
-        # Offload to async thread in the main app to prevent UI freezing
-        self.app_context._manual_refresh(use_ocr=True)
-
     def update_data(
         self,
         pack_cards,
@@ -376,13 +365,6 @@ class CompactOverlay(tb.Toplevel):
 
         pk, pi = self.orchestrator.scanner.retrieve_current_pack_and_pick()
         self.lbl_status.config(text=f"P{pk} / P{pi}")
-
-        if pk <= 1 and pi <= 1:
-            self.btn_scan.pack(
-                side=LEFT, padx=Theme.scaled_val(5), before=self.lbl_info
-            )
-        else:
-            self.btn_scan.pack_forget()
 
         self.advisor_panel.update_recommendations(recommendations)
         self.signal_meter.update_values(self.app_context._calculate_signals(metrics))
