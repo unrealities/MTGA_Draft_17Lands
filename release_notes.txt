@@ -4,6 +4,7 @@
 * unrealities: [Bug] Fixed a severe macOS issue (especially on Sequoia) where the application would get stuck in an endless Screen Recording permission loop when attempting to scan P1P1.
 * unrealities: [Bug] Segmentation fault fatal crash on load #166
 * unrealities: [Bug] Fixed an issue where the application would not display basic lands
+* unrealities: [Bug] Fixed clicking on a card name who was truncated
 * unrealities: [UX/UI] Removed P1P1 screenshot functionality as MTG Arena has fixed logging for Premier and Traditional Draft
 
 ===================== RELEASE NOTES 4.13 =====================

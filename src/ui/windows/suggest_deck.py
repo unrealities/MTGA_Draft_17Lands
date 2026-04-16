@@ -1063,6 +1063,7 @@ class SuggestDeckPanel(ttk.Frame):
                     "",
                     "end",
                     iid=str(idx),
+                    text=name,
                     values=row_values,
                     tags=(tag,),
                 )
@@ -1293,10 +1294,22 @@ class SuggestDeckPanel(ttk.Frame):
         selection = tree.selection()
         if not selection:
             return
-        idx = int(selection[0])
+
+        item = tree.item(selection[0])
+        card_name = item.get("text")
+
         source_list = self.current_sb_list if is_sb else self.current_deck_list
-        if idx < len(source_list):
-            card = source_list[idx]
+
+        if not card_name:
+            idx = int(selection[0])
+            if idx < len(source_list):
+                card = source_list[idx]
+            else:
+                card = None
+        else:
+            card = next((c for c in source_list if c.get("name") == card_name), None)
+
+        if card:
             CardToolTip.create(
                 tree,
                 card,

@@ -526,7 +526,12 @@ class CompactOverlay(tb.Toplevel):
 
                 sort_val = rec.contextual_score if rec else stats.get("gihwr", 0.0)
                 processed_rows.append(
-                    {"vals": row_values, "tag": row_tag, "sort_key": sort_val}
+                    {
+                        "card_name": name,
+                        "vals": row_values,
+                        "tag": row_tag,
+                        "sort_key": sort_val,
+                    }
                 )
 
             if not is_pool:
@@ -539,7 +544,13 @@ class CompactOverlay(tb.Toplevel):
                     and "high" not in row["tag"]
                 ):
                     row["tag"] = "bw_odd" if i % 2 == 0 else "bw_even"
-                tree.insert("", "end", values=row["vals"], tags=(row["tag"],))
+                tree.insert(
+                    "",
+                    "end",
+                    text=row.get("card_name", ""),
+                    values=row["vals"],
+                    tags=(row["tag"],),
+                )
 
             if hasattr(tree, "reapply_sort"):
                 tree.reapply_sort()
@@ -607,20 +618,24 @@ class CompactOverlay(tb.Toplevel):
         if not selection:
             return
 
-        item_vals = tree.item(selection[0])["values"]
-        try:
-            name_idx = getattr(
-                tree, "active_fields", self.table_manager.active_fields
-            ).index("name")
-            card_name = (
-                str(item_vals[name_idx])
-                .replace("⭐ ", "")
-                .replace("[+] ", "")
-                .replace("..", "")
-                .strip()
-            )
-        except (ValueError, AttributeError, IndexError):
-            return
+        item = tree.item(selection[0])
+        card_name = item.get("text")
+
+        if not card_name:
+            item_vals = item["values"]
+            try:
+                name_idx = getattr(
+                    tree, "active_fields", self.table_manager.active_fields
+                ).index("name")
+                card_name = (
+                    str(item_vals[name_idx])
+                    .replace("⭐ ", "")
+                    .replace("[+] ", "")
+                    .replace("..", "")
+                    .strip()
+                )
+            except (ValueError, AttributeError, IndexError):
+                return
 
         card = next((c for c in source_list if c.get("name") == card_name), None)
         if card:

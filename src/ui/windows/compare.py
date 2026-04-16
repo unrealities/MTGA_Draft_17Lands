@@ -162,6 +162,7 @@ class ComparePanel(ttk.Frame):
             t.insert(
                 "",
                 "end",
+                text=card.get("name", ""),
                 values=row_values,
                 tags=(tag,),
             )
@@ -178,10 +179,23 @@ class ComparePanel(ttk.Frame):
         sel = self.table.selection()
         if not sel:
             return
-        idx = self.table.index(sel[0])
-        if idx < len(self.compare_list):
-            card = self.compare_list[idx]
-            CardToolTip(
+
+        item = self.table.item(sel[0])
+        card_name = item.get("text")
+
+        if card_name:
+            card = next(
+                (c for c in self.compare_list if c.get("name") == card_name), None
+            )
+        else:
+            idx = self.table.index(sel[0])
+            if idx < len(self.compare_list):
+                card = self.compare_list[idx]
+            else:
+                card = None
+
+        if card:
+            CardToolTip.create(
                 self.table,
                 card,
                 self.configuration.features.images_enabled,

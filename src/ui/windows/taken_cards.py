@@ -243,7 +243,9 @@ class TakenCardsPanel(ttk.Frame):
             if int(self.configuration.settings.card_colors_enabled):
                 tag = row_color_tag(card.get(constants.DATA_FIELD_MANA_COST, ""))
 
-            t.insert("", "end", values=row_values, tags=(tag,))
+            t.insert(
+                "", "end", text=card.get("name", ""), values=row_values, tags=(tag,)
+            )
 
         if hasattr(t, "reapply_sort"):
             t.reapply_sort()
@@ -342,18 +344,22 @@ class TakenCardsPanel(ttk.Frame):
         if not sel:
             return
 
-        item_vals = self.table.item(sel[0])["values"]
-        try:
-            name_idx = self.table_manager.active_fields.index("name")
-            card_name = (
-                str(item_vals[name_idx])
-                .replace("⭐ ", "")
-                .replace("[+] ", "")
-                .replace("*", "")
-                .strip()
-            )
-        except ValueError:
-            return
+        item = self.table.item(sel[0])
+        card_name = item.get("text")
+
+        if not card_name:
+            item_vals = item["values"]
+            try:
+                name_idx = self.table_manager.active_fields.index("name")
+                card_name = (
+                    str(item_vals[name_idx])
+                    .replace("⭐ ", "")
+                    .replace("[+] ", "")
+                    .replace("*", "")
+                    .strip()
+                )
+            except ValueError:
+                return
 
         card = next(
             (c for c in self.current_display_list if c.get("name") == card_name), None
