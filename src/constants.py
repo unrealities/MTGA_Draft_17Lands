@@ -31,9 +31,9 @@ def get_resource_dir():
 BASE_DIR = get_base_dir()
 RESOURCE_DIR = get_resource_dir()
 
-APPLICATION_VERSION = "4.13"
-OLD_APPLICATION_VERSION = "4.13"
-PREVIOUS_APPLICATION_VERSION = "0412"
+APPLICATION_VERSION = "4.14"
+OLD_APPLICATION_VERSION = "4.14"
+PREVIOUS_APPLICATION_VERSION = "0413"
 
 FONT_SANS_SERIF = "Arial"
 FONT_MONO_SPACE = "Courier"
@@ -224,7 +224,6 @@ DRAFT_DETECTION_CATCH_ALL = ["Draft", "draft"]
 DRAFT_START_STRING_PREMIER = "[UnityCrossThreadLogger]==> Event_Join "
 DRAFT_PICK_STRING_PREMIER = "[UnityCrossThreadLogger]==> Event_PlayerDraftMakePick "
 DRAFT_PICK_STRING_PREMIER_OLD = "[UnityCrossThreadLogger]==> Draft.MakeHumanDraftPick "
-DRAFT_P1P1_STRING_PREMIER = "CardsInPack"
 DRAFT_PACK_STRING_PREMIER = "[UnityCrossThreadLogger]Draft.Notify "
 
 DRAFT_START_STRING_QUICK_DRAFT = "[UnityCrossThreadLogger]==> BotDraft_DraftStatus "
@@ -828,11 +827,6 @@ UI_SIZE_DICT = {
     "240%": 2.4,
     "250%": 2.5,
 }
-
-PACK_PARSER_URL = "https://us-central1-mtgalimited.cloudfunctions.net/pack_parser"
-
-SCREENSHOT_FOLDER = os.path.join(BASE_DIR, "Screenshots")
-SCREENSHOT_PREFIX = "p1p1_screenshot_"
 
 PICK_TWO_EVENT_STRING = "PickTwo"
 

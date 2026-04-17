@@ -1,0 +1,21 @@
+[run]
+# Only measure the src and server directories
+source = 
+    src
+    server
+
+# Omit constants, and initialization files
+omit =
+    src/constants.py
+    src/__init__.py
+    server/__init__.py
+
+[report]
+# Exclude lines that are strictly defensive or untestable
+exclude_lines =
+    pragma: no cover
+    def __repr__
+    if __name__ == .__main__.:
+    raise NotImplementedError
+    pass
+    except Exception:

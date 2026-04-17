@@ -103,19 +103,124 @@
             "set_code": "SOS",
             "formats": [
                 "PremierDraft",
-                "TradDraft"
+                "TradDraft",
+                "PickTwoDraft"
             ],
             "start_date": "2026-04-21",
-            "end_date": "2026-06-23"
+            "end_date": "2026-06-22"
         },
         {
             "set_code": "SOS",
             "formats": [
-                "Sealed",
+                "Sealed"
+            ],
+            "start_date": "2026-04-21",
+            "end_date": "2026-05-13"
+        },
+        {
+            "set_code": "SOS",
+            "formats": [
                 "TradSealed"
             ],
             "start_date": "2026-04-21",
-            "end_date": "2026-05-26"
+            "end_date": "2026-05-04"
+        },
+        {
+            "set_code": "STX",
+            "formats": [
+                "PremierDraft"
+            ],
+            "start_date": "2026-05-26",
+            "end_date": "2026-06-01"
+        },
+        {
+            "set_code": "TLA",
+            "formats": [
+                "PremierDraft"
+            ],
+            "start_date": "2026-06-02",
+            "end_date": "2026-06-08"
+        },
+        {
+            "set_code": "TDM",
+            "formats": [
+                "Sealed"
+            ],
+            "start_date": "2026-06-09",
+            "end_date": "2026-06-15"
+        },
+        {
+            "set_code": "FIN",
+            "formats": [
+                "PremierDraft"
+            ],
+            "start_date": "2026-06-16",
+            "end_date": "2026-06-22"
+        },
+        {
+            "set_code": "TDM",
+            "formats": [
+                "QuickDraft"
+            ],
+            "start_date": "2026-04-21",
+            "end_date": "2026-04-29"
+        },
+        {
+            "set_code": "SOS",
+            "formats": [
+                "QuickDraft"
+            ],
+            "start_date": "2026-04-30",
+            "end_date": "2026-05-10"
+        },
+        {
+            "set_code": "EOE",
+            "formats": [
+                "QuickDraft"
+            ],
+            "start_date": "2026-05-11",
+            "end_date": "2026-05-25"
+        },
+        {
+            "set_code": "SOS",
+            "formats": [
+                "QuickDraft"
+            ],
+            "start_date": "2026-05-26",
+            "end_date": "2026-06-07"
+        },
+        {
+            "set_code": "MKM",
+            "formats": [
+                "QuickDraft"
+            ],
+            "start_date": "2026-06-08",
+            "end_date": "2026-06-16"
+        },
+        {
+            "set_code": "BLB",
+            "formats": [
+                "QuickDraft"
+            ],
+            "start_date": "2026-06-17",
+            "end_date": "2026-07-01"
+        },
+        {
+            "set_code": "Cube - Powered",
+            "formats": [
+                "PremierDraft",
+                "TradDraft"
+            ],
+            "start_date": "2026-06-02",
+            "end_date": "2026-06-22"
+        },
+        {
+            "set_code": "SOS",
+            "formats": [
+                "ContenderDraft"
+            ],
+            "start_date": "2026-05-22",
+            "end_date": "2026-05-28"
         }
     ]
 }

@@ -658,70 +658,91 @@ class ModernTreeview(ttk.Treeview):
         return [c for c in dc if c != "add_btn"]
 
     def _on_header_press(self, event):
-        if self.identify_region(event.x, event.y) != "heading":
-            self._drag_col = None
-            return
         try:
-            idx = int(self.identify_column(event.x).replace("#", "")) - 1
-        except (ValueError, AttributeError):
+            if self.identify_region(event.x, event.y) != "heading":
+                self._drag_col = None
+                return
+
+            col_id = self.identify_column(event.x)
+            if not col_id:
+                self._drag_col = None
+                return
+
+            idx = int(col_id.replace("#", "")) - 1
+            display_order = self._get_display_order()
+
+            if idx < 0 or idx >= len(display_order):
+                self._drag_col = None
+                return
+
+            self._drag_col = display_order[idx]
+            self._drag_start_x = event.x
+            self._dragging = False
+        except Exception:
             self._drag_col = None
-            return
-        display_order = self._get_display_order()
-        if idx < 0 or idx >= len(display_order):
-            self._drag_col = None
-            return
-        self._drag_col = display_order[idx]
-        self._drag_start_x = event.x
-        self._dragging = False
 
     def _on_header_motion(self, event):
-        if self._drag_col and abs(event.x - self._drag_start_x) > 8:
-            self._dragging = True
-            self.configure(cursor="fleur")
+        try:
+            if self._drag_col and abs(event.x - self._drag_start_x) > 8:
+                self._dragging = True
+                self.configure(cursor="fleur")
+        except Exception:
+            pass
 
     def _on_header_release(self, event):
-        self.configure(cursor="")
-        if self._drag_col is None:
-            return
-        if not self._dragging:
-            # It was a click — sort
-            col = self._drag_col
-            self._drag_col = None
-            self._handle_sort(col)
-            return
-        # It was a drag — reorder display only (do NOT touch active_fields,
-        # which must stay in self["columns"] order for correct value insertion)
         try:
-            target_idx = int(self.identify_column(event.x).replace("#", "")) - 1
-        except (ValueError, AttributeError):
+            self.configure(cursor="")
+            if self._drag_col is None:
+                return
+            if not self._dragging:
+                # It was a click — sort
+                col = self._drag_col
+                self._drag_col = None
+                self._handle_sort(col)
+                return
+
+            # Handle Drag
+            col_id = self.identify_column(event.x)
+            if not col_id:
+                self._drag_col = None
+                self._dragging = False
+                return
+
+            target_idx = int(col_id.replace("#", "")) - 1
+            display_order = self._get_display_order()
+
+            src_idx = (
+                display_order.index(self._drag_col)
+                if self._drag_col in display_order
+                else -1
+            )
+
+            if (
+                src_idx >= 0
+                and 0 <= target_idx < len(display_order)
+                and src_idx != target_idx
+            ):
+                display_order.insert(target_idx, display_order.pop(src_idx))
+                has_add_btn = "add_btn" in self["columns"]
+                self["displaycolumns"] = display_order + (
+                    ["add_btn"] if has_add_btn else []
+                )
+
+                if self.config and self.view_id:
+                    if not hasattr(self.config.settings, "column_display_orders"):
+                        self.config.settings.column_display_orders = {}
+                    self.config.settings.column_display_orders[self.view_id] = (
+                        display_order
+                    )
+                    from src.configuration import write_configuration
+
+                    write_configuration(self.config)
+
             self._drag_col = None
             self._dragging = False
-            return
-        display_order = self._get_display_order()
-        src_idx = (
-            display_order.index(self._drag_col)
-            if self._drag_col in display_order
-            else -1
-        )
-        if (
-            src_idx >= 0
-            and 0 <= target_idx < len(display_order)
-            and src_idx != target_idx
-        ):
-            display_order.insert(target_idx, display_order.pop(src_idx))
-            has_add_btn = "add_btn" in self["columns"]
-            self["displaycolumns"] = display_order + (
-                ["add_btn"] if has_add_btn else []
-            )
-            if self.config and self.view_id:
-                if not hasattr(self.config.settings, "column_display_orders"):
-                    self.config.settings.column_display_orders = {}
-                self.config.settings.column_display_orders[self.view_id] = display_order
-                from src.configuration import write_configuration
-
-                write_configuration(self.config)
-        self._drag_col = None
-        self._dragging = False
+        except Exception:
+            self._drag_col = None
+            self._dragging = False
 
     def _setup_row_colors(self):
         # Bind theme updates so zebra striping changes seamlessly
@@ -810,28 +831,52 @@ class ModernTreeview(ttk.Treeview):
             return
 
         def _k(t):
-            p = field_process_sort(t[0][ci])
+            try:
+                vals = t[0]
+                if not vals or len(vals) <= ci:
+                    p = (0, 0.0)
+                else:
+                    p = field_process_sort(vals[ci])
+            except Exception:
+                p = (0, 0.0)
+
+            try:
+                vals = t[0]
+                name_str = str(vals[0]).lower() if vals else ""
+            except Exception:
+                name_str = ""
+
             return (
-                (p[0], p[1], str(t[0][0]).lower())
-                if isinstance(p, tuple)
-                else (
-                    (1, float(p), str(t[0][0]).lower())
-                    if str(p).replace(".", "").isdigit()
-                    else (0, str(p), str(t[0][0]).lower())
+                (p[0], p[1], name_str) if isinstance(p, tuple) else (0, 0.0, name_str)
+            )
+
+        try:
+            it.sort(key=_k, reverse=rev)
+            for i, (v, k) in enumerate(it):
+                self.move(k, "", i)
+
+                # Re-apply zebra striping to maintain alternating colors after sort
+                tags = self.item(k, "tags")
+                tags_list = (
+                    list(tags)
+                    if isinstance(tags, (list, tuple))
+                    else [tags] if tags else []
                 )
-            )
 
-        it.sort(key=_k, reverse=rev)
-        for i, (v, k) in enumerate(it):
-            self.move(k, "", i)
-            ts = [t for t in self.item(k, "tags") if t not in ("bw_odd", "bw_even")]
-            has_special = any(
-                t in ("elite_bomb", "high_fit") or str(t).endswith("_card") for t in ts
-            )
-            if not has_special:
-                ts.append("bw_odd" if i % 2 == 0 else "bw_even")
+                # Check if this row is using standard zebra striping or has no tags (for tests)
+                # We don't want to overwrite colored highlights like "red_card" or "picked"
+                is_zebra = not tags_list or any(
+                    t in ["bw_odd", "bw_even"] for t in tags_list
+                )
 
-            self.item(k, tags=tuple(ts))
+                if is_zebra:
+                    # Remove old zebra tags
+                    tags_list = [t for t in tags_list if t not in ["bw_odd", "bw_even"]]
+                    # Add new zebra tag based on new index
+                    tags_list.append("bw_odd" if i % 2 == 0 else "bw_even")
+                    self.item(k, tags=tuple(tags_list))
+        except Exception:
+            pass
 
     def reapply_sort(self):
         """Forces the tree to re-apply the user's active sort settings after external data injection."""
@@ -935,8 +980,8 @@ class DynamicTreeviewManager(ttk.Frame):
         self._scrollbar.grid(row=0, column=1, sticky="ns")
 
         if not self.static_columns:
-            self.tree.bind("<Button-3>", self._show_context_menu)
-            self.tree.bind("<Control-Button-1>", self._show_context_menu)
+            self.tree.bind("<Button-3>", self._show_context_menu, add="+")
+            self.tree.bind("<Control-Button-1>", self._show_context_menu, add="+")
             self.tree.bind("<Button-1>", self._handle_click, add="+")
 
         if trigger_callback:
@@ -994,10 +1039,15 @@ class DynamicTreeviewManager(ttk.Frame):
         menu.post(event.x_root, event.y_root)
 
     def _handle_click(self, event):
-        if self.tree.identify_region(event.x, event.y) == "heading" and int(
-            self.tree.identify_column(event.x).replace("#", "")
-        ) - 1 == len(self.active_fields):
-            self._show_add_menu(event)
+        try:
+            if self.tree.identify_region(event.x, event.y) == "heading":
+                col_id = self.tree.identify_column(event.x)
+                if col_id:
+                    col_idx = int(col_id.replace("#", "")) - 1
+                    if col_idx == len(self.active_fields):
+                        self._show_add_menu(event)
+        except Exception:
+            pass
 
     def _show_add_menu(self, event):
         menu = tkinter.Menu(self, tearoff=0)

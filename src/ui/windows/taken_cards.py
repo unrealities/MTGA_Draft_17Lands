@@ -97,7 +97,9 @@ class TakenCardsPanel(ttk.Frame):
 
     def _build_ui(self):
         # --- Control Bar ---
-        self.filter_frame = ttk.Frame(self, style="Card.TFrame", padding=Theme.scaled_val(5))
+        self.filter_frame = ttk.Frame(
+            self, style="Card.TFrame", padding=Theme.scaled_val(5)
+        )
         self.filter_frame.pack(fill="x", pady=Theme.scaled_val((0, 5)))
 
         type_grp = ttk.Frame(self.filter_frame, style="Card.TFrame")
@@ -154,7 +156,6 @@ class TakenCardsPanel(ttk.Frame):
             on_update_callback=self._update_table_view,
         )
         self.table_manager.pack(fill="both", expand=True)
-        self.table.bind("<<TreeviewSelect>>", self._on_selection)
 
         # 2. Visual View (Hidden initially)
         self.visual_scroller = ScrolledFrame(self.content_area)
@@ -184,7 +185,10 @@ class TakenCardsPanel(ttk.Frame):
 
         metrics = self.draft.retrieve_set_metrics()
         tier_data = self.draft.retrieve_tier_data()
-        t.bind("<<TreeviewSelect>>", self._on_selection)
+
+        if not getattr(t, "_selection_bound", False):
+            t.bind("<ButtonRelease-1>", self._on_selection, add="+")
+            t._selection_bound = True
 
         for item in t.get_children():
             t.delete(item)
@@ -239,7 +243,9 @@ class TakenCardsPanel(ttk.Frame):
             if int(self.configuration.settings.card_colors_enabled):
                 tag = row_color_tag(card.get(constants.DATA_FIELD_MANA_COST, ""))
 
-            t.insert("", "end", values=row_values, tags=(tag,))
+            t.insert(
+                "", "end", text=card.get("name", ""), values=row_values, tags=(tag,)
+            )
 
         if hasattr(t, "reapply_sort"):
             t.reapply_sort()
@@ -300,7 +306,13 @@ class TakenCardsPanel(ttk.Frame):
 
             # Create Column
             pile_frame = ttk.Frame(self.visual_scroller.scrollable_frame)
-            pile_frame.pack(side="left", fill="y", padx=Theme.scaled_val(5), pady=Theme.scaled_val(5), anchor="n")
+            pile_frame.pack(
+                side="left",
+                fill="y",
+                padx=Theme.scaled_val(5),
+                pady=Theme.scaled_val(5),
+                anchor="n",
+            )
 
             # Use the CardPile component
             pile = CardPile(pile_frame, title=f"CMC {key}", app_instance=self)
@@ -323,22 +335,31 @@ class TakenCardsPanel(ttk.Frame):
         )
 
     def _on_selection(self, event):
+        if hasattr(event, "x") and hasattr(event, "y"):
+            region = self.table.identify_region(event.x, event.y)
+            if region not in ("tree", "cell"):
+                return
+
         sel = self.table.selection()
         if not sel:
             return
 
-        item_vals = self.table.item(sel[0])["values"]
-        try:
-            name_idx = self.table_manager.active_fields.index("name")
-            card_name = (
-                str(item_vals[name_idx])
-                .replace("⭐ ", "")
-                .replace("[+] ", "")
-                .replace("*", "")
-                .strip()
-            )
-        except ValueError:
-            return
+        item = self.table.item(sel[0])
+        card_name = item.get("text")
+
+        if not card_name:
+            item_vals = item["values"]
+            try:
+                name_idx = self.table_manager.active_fields.index("name")
+                card_name = (
+                    str(item_vals[name_idx])
+                    .replace("⭐ ", "")
+                    .replace("[+] ", "")
+                    .replace("*", "")
+                    .strip()
+                )
+            except ValueError:
+                return
 
         card = next(
             (c for c in self.current_display_list if c.get("name") == card_name), None

@@ -51,7 +51,6 @@ if sys.platform == "darwin":
         info_plist={
             "NSHighResolutionCapable": "True",
             "LSBackgroundOnly": "False",
-            "NSScreenCaptureUsageDescription": "This app requires screen recording to scan MTGA drafts for P1P1 cards.",
         },
     )
 else:

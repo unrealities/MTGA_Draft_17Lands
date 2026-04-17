@@ -65,8 +65,8 @@ TEST_SETS = SetDictionary(
 # --- CONSTANTS ---
 
 OTJ_EVENT_ENTRY = r'[UnityCrossThreadLogger]==> Event_Join {"id":"11a8f74b-1afb-4d25-bb35-55d43674c808","request":"{\"EventName\":\"PremierDraft_OTJ_20240416\",\"EntryCurrencyType\":\"Gem\",\"EntryCurrencyPaid\":1500,\"CustomTokenId\":null}"}'
-OTJ_P1P1_ENTRY = r'[UnityCrossThreadLogger]==> LogBusinessEvents {"id":"a5515a1a-d96e-4da3-9a4a-c03cc4b2b938","request":"{\"PlayerId\":null,\"ClientPlatform\":null,\"DraftId\":\"87b408d1-43e0-4fb5-8c74-a1257fde087c\",\"EventId\":\"PremierDraft_OTJ_20240416\",\"SeatNumber\":1,\"PackNumber\":1,\"PickNumber\":1,\"PickGrpId\":90459,\"CardsInPack\":[90734,90584,90631,90362,90440,90349,90486,90527,90406,90439,90488,90480,90388,90459],\"AutoPick\":false,\"TimeRemainingOnPick\":63.99701,\"EventType\":24,\"EventTime\":\"2024-05-08T00:56:34.4223433Z\"}"}'
-OTJ_P1P2_ENTRY_SKIP = r'[UnityCrossThreadLogger]==> LogBusinessEvents {"id":"972efef7-cd60-4254-ae18-634210287c95","request":"{\"PlayerId\":null,\"ClientPlatform\":null,\"DraftId\":\"87b408d1-43e0-4fb5-8c74-a1257fde087c\",\"EventId\":\"PremierDraft_OTJ_20240416\",\"SeatNumber\":1,\"PackNumber\":1,\"PickNumber\":2,\"PickGrpId\":90701,\"CardsInPack\":[90702,90417,90607,90524,90481,90588,90440,90418,90353,90494,90360,90609,90548],\"AutoPick\":false,\"TimeRemainingOnPick\":30.8176479,\"EventType\":24,\"EventTime\":\"2024-05-08T00:57:07.6027017Z\"}"}'
+OTJ_P1P1_ENTRY = r'[UnityCrossThreadLogger]Draft.Notify {"draftId":"87b408d1-43e0-4fb5-8c74-a1257fde087c","SelfPick":1,"SelfPack":1,"PackCards":"90734,90584,90631,90362,90440,90349,90486,90527,90406,90439,90488,90480,90388,90459"}'
+OTJ_P1P2_ENTRY_SKIP = r'[UnityCrossThreadLogger]Draft.Notify {"draftId":"87b408d1-43e0-4fb5-8c74-a1257fde087c","SelfPick":2,"SelfPack":1,"PackCards":"90701,90416,90606,90524,90481,90588,90440,90418,90353,90494,90360,90609,90548"}'
 OTJ_P1P1_CARD_NAMES = [
     "Back for More",
     "Wrangler of the Damned",
@@ -82,7 +82,6 @@ OTJ_P1P1_CARD_NAMES = [
     "Deepmuck Desperado",
     "Vadmir, New Blood",
 ]
-OTJ_P1P2_ENTRY_SKIP = r'[UnityCrossThreadLogger]==> LogBusinessEvents {"id":"972efef7-cd60-4254-ae18-634210287c95","request":"{\"PlayerId\":null,\"ClientPlatform\":null,\"DraftId\":\"87b408d1-43e0-4fb5-8c74-a1257fde087c\",\"EventId\":\"PremierDraft_OTJ_20240416\",\"SeatNumber\":1,\"PackNumber\":1,\"PickNumber\":2,\"PickGrpId\":90701,\"CardsInPack\":[90702,90417,90607,90524,90481,90588,90440,90418,90353,90494,90360,90609,90548],\"AutoPick\":false,\"TimeRemainingOnPick\":30.8176479,\"EventType\":24,\"EventTime\":\"2024-05-08T00:57:07.6027017Z\"}"}'
 
 # --- DATASETS ---
 
@@ -117,7 +116,7 @@ TDM_PREMIER_DRAFT_ENTRIES_2025_4_8 = [
                 "95804",
             ],
         ),
-        r'[UnityCrossThreadLogger]==> LogBusinessEvents {"id":"ee35cead-cddb-4ef0-919e-eb0fe92097b5","request":"{\"PlayerId\":null,\"ClientPlatform\":null,\"DraftId\":\"395f747c-07a0-4aed-8bb2-a4b399b24bb5\",\"EventId\":\"PremierDraft_TDM_20250408\",\"SeatNumber\":5,\"PackNumber\":1,\"PickNumber\":1,\"PickGrpId\":95606,\"PickGrpIds\":[95606],\"CardsInPack\":[95536,95586,95574,95615,95544,95742,95640,95663,95732,95635,95700,95561,95606,95804],\"AutoPick\":false,\"TimeRemainingOnPick\":58.92359,\"EventType\":24,\"EventTime\":\"2025-04-19T14:45:33.8146729Z\"}"}',
+        r'[UnityCrossThreadLogger]Draft.Notify {"draftId":"395f747c-07a0-4aed-8bb2-a4b399b24bb5","SelfPick":1,"SelfPack":1,"PackCards":"95536,95586,95574,95615,95544,95742,95640,95663,95732,95635,95700,95561,95606,95804"}',
     ),
     (
         "P1P1 - Pick",
@@ -361,7 +360,7 @@ MKM_PREMIER_DRAFT_ENTRIES = [
                 "88931",
             ],
         ),
-        r'[UnityCrossThreadLogger]==> LogBusinessEvents {"id":"a5c18703-d17d-4ec0-8c81-d5a6ba0ffd31","request":"{\"Type\":1912,\"TransId\":\"a5c18703-d17d-4ec0-8c81-d5a6ba0ffd31\",\"Payload\":\"{\\\"PlayerId\\\":null,\\\"ClientPlatform\\\":null,\\\"DraftId\\\":\\\"bc95b8cb-04d4-4823-aa37-a9b1a1212cb6\\\",\\\"EventId\\\":\\\"PremierDraft_MKM_20240206\\\",\\\"SeatNumber\\\":5,\\\"PackNumber\\\":1,\\\"PickNumber\\\":1,\\\"PickGrpId\\\":89119,\\\"CardsInPack\\\":[89119,89040,89008,88926,89093,88981,88950,89158,89105,89194,88994,88989,88931],\\\"AutoPick\\\":false,\\\"TimeRemainingOnPick\\\":58.9969749,\\\"EventType\\\":24,\\\"EventTime\\\":\\\"2024-02-13T09:53:59.9980573Z\\\"}\"}"}',
+        r'[UnityCrossThreadLogger]Draft.Notify {"draftId":"bc95b8cb-04d4-4823-aa37-a9b1a1212cb6","SelfPick":1,"SelfPack":1,"PackCards":"89119,89040,89008,88926,89093,88981,88950,89158,89105,89194,88994,88989,88931"}',
     ),
     (
         "P1P1 - Pick",
@@ -852,7 +851,7 @@ OTJ_TRAD_DRAFT_ENTRIES_2024_5_7 = [
                 "90593",
             ],
         ),
-        r'[UnityCrossThreadLogger]==> LogBusinessEvents {"id":"f78e3f9d-6368-4bcc-98aa-7bd0297f29c0","request":"{\"PlayerId\":null,\"ClientPlatform\":null,\"DraftId\":\"df799bea-cba5-4acc-b7e0-bf3b742e6fb7\",\"EventId\":\"TradDraft_OTJ_20240416\",\"SeatNumber\":6,\"PackNumber\":1,\"PickNumber\":1,\"PickGrpId\":90686,\"CardsInPack\":[90711,90515,90623,90686,90354,90571,90418,90511,90468,90429,90432,90458,90456,90593],\"AutoPick\":false,\"TimeRemainingOnPick\":63.9975624,\"EventType\":24,\"EventTime\":\"2024-05-09T16:33:01.828189Z\"}"}',
+        r'[UnityCrossThreadLogger]Draft.Notify {"draftId":"df799bea-cba5-4acc-b7e0-bf3b742e6fb7","SelfPick":1,"SelfPack":1,"PackCards":"90711,90515,90623,90686,90354,90571,90418,90511,90468,90429,90432,90458,90456,90593"}',
     ),
     (
         "P1P1 - Pick",
@@ -1167,7 +1166,7 @@ OM1_PICK_TWO_PREMIER_DRAFT_ENTRIES = [
                 "95197",
             ],
         ),
-        r'[UnityCrossThreadLogger]==> LogBusinessEvents {"id":"402f96d0-6517-492a-bc9a-1e713838e53c","request":"{\"PlayerId\":null,\"ClientPlatform\":null,\"DraftId\":\"dbd971d5-5bee-4d10-a2ec-eac0530d6553\",\"EventId\":\"PickTwoDraft_OM1_20250923\",\"SeatNumber\":0,\"PackNumber\":1,\"PickNumber\":1,\"PickGrpId\":97923,\"CardsInPack\":[97864,97988,97995,97827,97879,97914,97918,97992,97842,97878,97977,97923,97911,95197],\"AutoPick\":false,\"TimeRemainingOnPick\":47.4696846,\"EventType\":24,\"EventTime\":\"2025-09-23T20:46:55.7381073Z\"}"}',
+        r'[UnityCrossThreadLogger]Draft.Notify {"draftId":"dbd971d5-5bee-4d10-a2ec-eac0530d6553","SelfPick":1,"SelfPack":1,"PackCards":"97864,97988,97995,97827,97879,97914,97918,97992,97842,97878,97977,97923,97911,95197"}',
     ),
     (
         "P1P1 - Pick",

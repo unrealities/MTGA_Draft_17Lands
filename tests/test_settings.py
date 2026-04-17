@@ -40,7 +40,7 @@ class TestSettingsWindow:
 
         # Check integer conversion for booleans (True -> 1)
         assert window.vars["draft_log_enabled"].get() == 1  # Default is True
-        assert window.vars["p1p1_ocr_enabled"].get() == 1  # Default is True
+        assert window.vars["always_on_top"].get() == 0  # Default is False
 
     @patch("src.ui.windows.settings.write_configuration")
     def test_dropdown_change_persists(self, mock_write, root, config):
@@ -61,10 +61,9 @@ class TestSettingsWindow:
         """Verify toggling a feature updates the config boolean."""
         window = SettingsWindow(root, config, MagicMock())
 
-        # Simulate unchecking 'Enable P1P1 OCR'
-        window.vars["p1p1_ocr_enabled"].set(0)
+        window.vars["always_on_top"].set(1)
 
-        assert config.settings.p1p1_ocr_enabled is False
+        assert config.settings.always_on_top is True
         assert mock_write.called
 
     @patch("src.ui.windows.settings.reset_configuration")
@@ -79,13 +78,13 @@ class TestSettingsWindow:
                 mock_read.return_value = (default_config, True)
 
                 # Set current state to something non-default first
-                window.vars["p1p1_ocr_enabled"].set(0)  # False (default is True)
+                window.vars["always_on_top"].set(1)  # True (default is False)
 
                 window._reset_defaults()
 
                 assert mock_reset.called
-                # Should be back to 1 (True) per default config
-                assert window.vars["p1p1_ocr_enabled"].get() == 1
+                # Should be back to 0 (False) per default config
+                assert window.vars["always_on_top"].get() == 0
 
     def test_safe_closure_cleanup(self, root, config):
         """Verify traces are removed on close."""

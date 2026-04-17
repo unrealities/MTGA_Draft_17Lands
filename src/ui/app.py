@@ -417,14 +417,6 @@ class DraftApp:
         )
         self.btn_reload.pack(side="left", padx=Theme.scaled_val(2))
 
-        self.btn_p1p1 = ttk.Button(
-            row2,
-            text="SCAN P1P1",
-            command=lambda: self._manual_refresh(True),
-            width=-10,
-            bootstyle="success",
-        )
-
         # Container for right-side controls (hidden when no draft is active)
         self.dataset_controls_frame = ttk.Frame(row2)
         self.dataset_controls_frame.pack(side="right")
@@ -810,11 +802,6 @@ class DraftApp:
             if hasattr(self, "lbl_status"):
                 self.lbl_status.configure(bootstyle="secondary")
 
-        if self.configuration.settings.p1p1_ocr_enabled and pk <= 1 and pi <= 1:
-            self.btn_p1p1.pack(side="left", padx=2, after=self.btn_reload)
-        else:
-            self.btn_p1p1.pack_forget()
-
         # 4. REFRESH DASHBOARD
         colors = filter_options(
             taken_cards,
@@ -855,7 +842,6 @@ class DraftApp:
         self.dashboard._current_event_type = et
         self.dashboard._current_pack = pk
         self.dashboard._current_pick = pi
-        self.dashboard.on_p1p1_scan = lambda: self._manual_refresh(True)
 
         self.update_session_info(event_string, draft_id, start_time)
         self.dashboard.update_recommendations(recommendations)
@@ -1235,99 +1221,17 @@ class DraftApp:
         finally:
             self._loading = old_loading
 
-    def _manual_refresh(self, use_ocr=False):
-        save_img = (
-            self.configuration.settings.save_screenshot_enabled if use_ocr else False
-        )
-        if use_ocr:
-            self.btn_p1p1.config(state="disabled")
-            if self.overlay_window and hasattr(self.overlay_window, "btn_scan"):
-                self.overlay_window.btn_scan.config(state="disabled")
-            if (
-                hasattr(self.dashboard, "btn_dashboard_scan")
-                and self.dashboard.btn_dashboard_scan.winfo_exists()
-            ):
-                self.dashboard.btn_dashboard_scan.config(state="disabled")
-
-            def update_btn_text(msg):
-                def _update():
-                    if self.btn_p1p1.winfo_exists():
-                        self.btn_p1p1.config(text=msg)
-                    if (
-                        self.overlay_window
-                        and hasattr(self.overlay_window, "btn_scan")
-                        and self.overlay_window.btn_scan.winfo_exists()
-                    ):
-                        self.overlay_window.btn_scan.config(text=msg)
-                    if (
-                        hasattr(self.dashboard, "btn_dashboard_scan")
-                        and self.dashboard.btn_dashboard_scan.winfo_exists()
-                    ):
-                        self.dashboard.btn_dashboard_scan.config(text=msg)
-
-                try:
-                    self.root.after(0, _update)
-                except RuntimeError:
-                    pass
-
-            def restore_windows():
-                if self.overlay_window:
-                    self.overlay_window.deiconify()
-                else:
-                    self.root.deiconify()
-
-            def _scan_thread():
-                import time
-
-                time.sleep(
-                    0.2
-                )  # Allow OS compositor to fully clear the app from screen
-                data_found = self.orchestrator.scanner.run_ocr_workflow(
-                    save_img,
-                    status_callback=update_btn_text,
-                    capture_callback=lambda: self.root.after(0, restore_windows),
-                )
-                try:
-                    self.root.after(0, lambda: self._on_scan_complete(data_found))
-                except RuntimeError:
-                    pass
-
-            # Instantly hide UI to prevent blocking cards
-            if self.overlay_window:
-                self.overlay_window.withdraw()
-            else:
-                self.root.withdraw()
-            self.root.update()
-
-            import threading
-
-            threading.Thread(target=_scan_thread, daemon=True).start()
-        else:
-            if self.orchestrator.scanner.draft_data_search(False, save_img):
-                self._refresh_ui_data()
-
-    def _on_scan_complete(self, data_found):
-        if self.btn_p1p1.winfo_exists():
-            self.btn_p1p1.config(text="SCAN P1P1", state="normal")
-        if (
-            self.overlay_window
-            and hasattr(self.overlay_window, "btn_scan")
-            and self.overlay_window.btn_scan.winfo_exists()
-        ):
-            self.overlay_window.btn_scan.config(text="SCAN P1P1", state="normal")
-        if (
-            hasattr(self.dashboard, "btn_dashboard_scan")
-            and self.dashboard.btn_dashboard_scan.winfo_exists()
-        ):
-            self.dashboard.btn_dashboard_scan.config(
-                text="SCAN P1P1 (Take Screenshot)", state="normal"
-            )
-
-        if data_found:
-            self.orchestrator.request_math_update()
+    def _manual_refresh(self):
+        if self.orchestrator.scanner.draft_data_search():
             self._refresh_ui_data()
 
     def _on_card_select(self, event, table, source_type):
+        # Prevent tooltips from popping up when clicking column headers to sort
+        if hasattr(event, "x") and hasattr(event, "y"):
+            region = table.identify_region(event.x, event.y)
+            if region not in ("tree", "cell"):
+                return
+
         selection = table.selection()
         if not selection:
             return
@@ -1336,15 +1240,26 @@ class DraftApp:
             if source_type == "pack"
             else self.current_missing_data
         )
-        item_vals = table.item(selection[0])["values"]
-        try:
-            name_idx = table.active_fields.index("name")
-            raw_name = str(item_vals[name_idx])
-            card_name = (
-                raw_name.replace("⭐ ", "").replace("[+] ", "").replace("*", "").strip()
-            )
-        except ValueError:
-            return
+
+        item = table.item(selection[0])
+        card_name = item.get("text")
+
+        if not card_name:
+            item_vals = item["values"]
+            try:
+                name_idx = getattr(
+                    table, "active_fields", self.pack_manager.active_fields
+                ).index("name")
+                raw_name = str(item_vals[name_idx])
+                card_name = (
+                    raw_name.replace("⭐ ", "")
+                    .replace("[+] ", "")
+                    .replace("*", "")
+                    .strip()
+                )
+            except (ValueError, AttributeError, IndexError):
+                return
+
         self._show_tooltip(card_name, table, data_list)
 
     def _show_tooltip_from_advisor(self, card_name, widget):
@@ -1382,16 +1297,23 @@ class DraftApp:
             if source_type == "pack"
             else self.current_missing_data
         )
-        item_vals = table.item(selection)["values"]
 
-        try:
-            name_idx = table.active_fields.index("name")
-            raw_name = str(item_vals[name_idx])
-            card_name = (
-                raw_name.replace("⭐ ", "").replace("[+] ", "").replace("*", "").strip()
-            )
-        except ValueError:
-            return
+        item = table.item(selection)
+        card_name = item.get("text")
+
+        if not card_name:
+            item_vals = item["values"]
+            try:
+                name_idx = table.active_fields.index("name")
+                raw_name = str(item_vals[name_idx])
+                card_name = (
+                    raw_name.replace("⭐ ", "")
+                    .replace("[+] ", "")
+                    .replace("*", "")
+                    .strip()
+                )
+            except ValueError:
+                return
 
         found = next(
             (c for c in data_list if c.get(constants.DATA_FIELD_NAME) == card_name),
@@ -1446,24 +1368,33 @@ class DraftApp:
             )
 
     def _open_settings(self):
-        def _on_settings_changed():
+        def _on_settings_changed(key=None):
             s = self.configuration.settings
-            self.root.attributes("-topmost", s.always_on_top)
-            self.orchestrator.scanner.log_enable(s.draft_log_enabled)
-            current_scale = constants.UI_SIZE_DICT.get(s.ui_size, 1.0)
-            Theme.apply(
-                self.root,
-                palette=s.theme,
-                engine=getattr(s, "theme_base", "clam"),
-                custom_path=s.theme_custom_path,
-                scale=current_scale,
-            )
-            if s.p1p1_ocr_enabled:
-                self.btn_p1p1.pack(side="left", padx=2, after=self.btn_reload)
-            else:
-                self.btn_p1p1.pack_forget()
-            self._update_deck_filter_options()
-            self._refresh_ui_data()
+
+            if key == "always_on_top" or key is None:
+                self.root.attributes("-topmost", s.always_on_top)
+
+            if key == "draft_log_enabled" or key is None:
+                self.orchestrator.scanner.log_enable(s.draft_log_enabled)
+
+            if (
+                key in ["theme", "theme_base", "theme_custom_path", "ui_size"]
+                or key is None
+            ):
+                current_scale = constants.UI_SIZE_DICT.get(s.ui_size, 1.0)
+                Theme.apply(
+                    self.root,
+                    palette=s.theme,
+                    engine=getattr(s, "theme_base", "clam"),
+                    custom_path=s.theme_custom_path,
+                    scale=current_scale,
+                )
+
+            if key in ["filter_format"] or key is None:
+                self._update_deck_filter_options()
+
+            if key in ["result_format", "card_colors_enabled"] or key is None:
+                self._refresh_ui_data()
 
         parent_window = self.overlay_window if self.overlay_window else self.root
         SettingsWindow(parent_window, self.configuration, _on_settings_changed)

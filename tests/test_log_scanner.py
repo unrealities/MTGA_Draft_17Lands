@@ -64,9 +64,7 @@ def fixture_function_scanner():
         os.remove(TEST_LOG_FILE_LOCATION)
 
 
-def event_test_cases(
-    input_scanner, event_label, entry_label, expected, entry_string, mock_ocr
-):
+def event_test_cases(input_scanner, event_label, entry_label, expected, entry_string):
     """Generic test cases for verifying the log events"""
     # Write the entry to the fake Player.log file
     with open(
@@ -81,7 +79,7 @@ def event_test_cases(
     ), f"Test Failed: New Event, Set: {event_label}, {entry_label}, Expected: {expected.new_event}, Actual: {new_event}"
 
     # Verify that new event data was collected
-    data_update = input_scanner.draft_data_search(False, False)
+    data_update = input_scanner.draft_data_search()
     assert (
         expected.data_update == data_update
     ), f"Test Failed: Data Update, Set: {event_label}, {entry_label}, Expected: {expected.data_update}, Actual: {data_update}"
@@ -124,168 +122,118 @@ def event_test_cases(
         expected.picks == picks
     ), f"Test Failed: Picks, Set: {event_label}, {entry_label}, Expected: {expected.picks}, Actual: {picks}"
 
-    # Verify that the OCR method wasn't called
-    assert (
-        mock_ocr.call_count == 0
-    ), f"Test Failed: OCR Check, Set: {event_label}, {entry_label}, Expected: 0, Actual: {mock_ocr.call_count}"
-
 
 @pytest.mark.parametrize(
     "entry_label, expected, entry_string", TDM_PREMIER_DRAFT_ENTRIES_2025_4_8
 )
 def test_tdm_premier_draft_new(session_scanner, entry_label, expected, entry_string):
-    with (
-        patch("src.log_scanner.OCR.get_pack") as mock_ocr,
-        patch("src.log_scanner.capture_screen_base64str"),
-    ):
-        event_test_cases(
-            session_scanner,
-            "New TDM PremierDraft",
-            entry_label,
-            expected,
-            entry_string,
-            mock_ocr,
-        )
+    event_test_cases(
+        session_scanner,
+        "New TDM PremierDraft",
+        entry_label,
+        expected,
+        entry_string,
+    )
 
 
 @pytest.mark.parametrize(
     "entry_label, expected, entry_string", OTJ_PREMIER_DRAFT_ENTRIES_2024_5_7
 )
 def test_otj_premier_draft_new(session_scanner, entry_label, expected, entry_string):
-    with (
-        patch("src.log_scanner.OCR.get_pack") as mock_ocr,
-        patch("src.log_scanner.capture_screen_base64str"),
-    ):
-        event_test_cases(
-            session_scanner,
-            "New OTJ PremierDraft",
-            entry_label,
-            expected,
-            entry_string,
-            mock_ocr,
-        )
+    event_test_cases(
+        session_scanner,
+        "New OTJ PremierDraft",
+        entry_label,
+        expected,
+        entry_string,
+    )
 
 
 @pytest.mark.parametrize(
     "entry_label, expected, entry_string", MKM_PREMIER_DRAFT_ENTRIES
 )
 def test_mkm_premier_draft_old(session_scanner, entry_label, expected, entry_string):
-    with (
-        patch("src.log_scanner.OCR.get_pack") as mock_ocr,
-        patch("src.log_scanner.capture_screen_base64str"),
-    ):
-        event_test_cases(
-            session_scanner,
-            "Old MKM PremierDraft",
-            entry_label,
-            expected,
-            entry_string,
-            mock_ocr,
-        )
+    event_test_cases(
+        session_scanner,
+        "Old MKM PremierDraft",
+        entry_label,
+        expected,
+        entry_string,
+    )
 
 
 @pytest.mark.parametrize(
     "entry_label, expected, entry_string", TDM_QUICK_DRAFT_ENTRIES_2025_4_8
 )
 def test_tdm_quick_draft_new(session_scanner, entry_label, expected, entry_string):
-    with (
-        patch("src.log_scanner.OCR.get_pack") as mock_ocr,
-        patch("src.log_scanner.capture_screen_base64str"),
-    ):
-        event_test_cases(
-            session_scanner,
-            "New TDM QuickDraft",
-            entry_label,
-            expected,
-            entry_string,
-            mock_ocr,
-        )
+    event_test_cases(
+        session_scanner,
+        "New TDM QuickDraft",
+        entry_label,
+        expected,
+        entry_string,
+    )
 
 
 @pytest.mark.parametrize(
     "entry_label, expected, entry_string", DMU_QUICK_DRAFT_ENTRIES_2024_5_7
 )
 def test_dmu_quick_draft_new(session_scanner, entry_label, expected, entry_string):
-    with (
-        patch("src.log_scanner.OCR.get_pack") as mock_ocr,
-        patch("src.log_scanner.capture_screen_base64str"),
-    ):
-        event_test_cases(
-            session_scanner,
-            "New DMU QuickDraft",
-            entry_label,
-            expected,
-            entry_string,
-            mock_ocr,
-        )
+    event_test_cases(
+        session_scanner,
+        "New DMU QuickDraft",
+        entry_label,
+        expected,
+        entry_string,
+    )
 
 
 @pytest.mark.parametrize("entry_label, expected, entry_string", OTJ_QUICK_DRAFT_ENTRIES)
 def test_mkm_quick_draft_old(session_scanner, entry_label, expected, entry_string):
-    with (
-        patch("src.log_scanner.OCR.get_pack") as mock_ocr,
-        patch("src.log_scanner.capture_screen_base64str"),
-    ):
-        event_test_cases(
-            session_scanner,
-            "Old OTJ QuickDraft",
-            entry_label,
-            expected,
-            entry_string,
-            mock_ocr,
-        )
+    event_test_cases(
+        session_scanner,
+        "Old OTJ QuickDraft",
+        entry_label,
+        expected,
+        entry_string,
+    )
 
 
 @pytest.mark.parametrize(
     "entry_label, expected, entry_string", OTJ_TRAD_DRAFT_ENTRIES_2024_5_7
 )
 def test_quick_trad_draft_old(session_scanner, entry_label, expected, entry_string):
-    with (
-        patch("src.log_scanner.OCR.get_pack") as mock_ocr,
-        patch("src.log_scanner.capture_screen_base64str"),
-    ):
-        event_test_cases(
-            session_scanner,
-            "New OTJ TradDraft",
-            entry_label,
-            expected,
-            entry_string,
-            mock_ocr,
-        )
+    event_test_cases(
+        session_scanner,
+        "New OTJ TradDraft",
+        entry_label,
+        expected,
+        entry_string,
+    )
 
 
 @pytest.mark.parametrize("entry_label, expected, entry_string", ARENA_OPEN_TEST_ENTRIES)
 def test_arena_open(function_scanner, entry_label, expected, entry_string):
-    with (
-        patch("src.log_scanner.OCR.get_pack") as mock_ocr,
-        patch("src.log_scanner.capture_screen_base64str"),
-    ):
-        event_test_cases(
-            function_scanner,
-            "Arena Open",
-            entry_label,
-            expected,
-            entry_string,
-            mock_ocr,
-        )
+    event_test_cases(
+        function_scanner,
+        "Arena Open",
+        entry_label,
+        expected,
+        entry_string,
+    )
 
 
 @pytest.mark.parametrize(
     "entry_label, expected, entry_string", DSK_SEALED_ENTRIES_2024_9_24
 )
 def test_dsk_sealed(session_scanner, entry_label, expected, entry_string):
-    with (
-        patch("src.log_scanner.OCR.get_pack") as mock_ocr,
-        patch("src.log_scanner.capture_screen_base64str"),
-    ):
-        event_test_cases(
-            session_scanner,
-            "New DSK Sealed",
-            entry_label,
-            expected,
-            entry_string,
-            mock_ocr,
-        )
+    event_test_cases(
+        session_scanner,
+        "New DSK Sealed",
+        entry_label,
+        expected,
+        entry_string,
+    )
 
 
 @pytest.mark.parametrize(
@@ -297,18 +245,13 @@ def test_dsk_sealed_navigation(function_scanner, entry_label, expected, entry_st
         function_scanner.draft_sets = ["DSK"]
         function_scanner.draft_label = "Sealed"
 
-    with (
-        patch("src.log_scanner.OCR.get_pack") as mock_ocr,
-        patch("src.log_scanner.capture_screen_base64str"),
-    ):
-        event_test_cases(
-            function_scanner,
-            "DSK Sealed Navigation",
-            entry_label,
-            expected,
-            entry_string,
-            mock_ocr,
-        )
+    event_test_cases(
+        function_scanner,
+        "DSK Sealed Navigation",
+        entry_label,
+        expected,
+        entry_string,
+    )
 
 
 def test_consecutive_drafts_reset(function_scanner):
@@ -317,193 +260,53 @@ def test_consecutive_drafts_reset(function_scanner):
     as new events due to different transaction IDs and fee payment. This test
     does not use parametrize to ensure the state accumulates sequentially.
     """
-    with (
-        patch("src.log_scanner.OCR.get_pack") as mock_ocr,
-        patch("src.log_scanner.capture_screen_base64str"),
-    ):
-        for entry_label, expected, entry_string in CONSECUTIVE_DRAFT_ENTRIES:
-            event_test_cases(
-                function_scanner,
-                "Consecutive Drafts",
-                entry_label,
-                expected,
-                entry_string,
-                mock_ocr,
-            )
+    for entry_label, expected, entry_string in CONSECUTIVE_DRAFT_ENTRIES:
+        event_test_cases(
+            function_scanner,
+            "Consecutive Drafts",
+            entry_label,
+            expected,
+            entry_string,
+        )
 
 
 @pytest.mark.parametrize(
     "entry_label, expected, entry_string", OM1_PICK_TWO_PREMIER_DRAFT_ENTRIES
 )
 def test_om1_pick_two_premier(session_scanner, entry_label, expected, entry_string):
-    with (
-        patch("src.log_scanner.OCR.get_pack") as mock_ocr,
-        patch("src.log_scanner.capture_screen_base64str"),
-    ):
-        event_test_cases(
-            session_scanner,
-            "Pick Two OM1 Premier Draft ",
-            entry_label,
-            expected,
-            entry_string,
-            mock_ocr,
-        )
+    event_test_cases(
+        session_scanner,
+        "Pick Two OM1 Premier Draft ",
+        entry_label,
+        expected,
+        entry_string,
+    )
 
 
 @pytest.mark.parametrize(
     "entry_label, expected, entry_string", TMT_PICK_TWO_DRAFT_ENTRIES_2026_03_03
 )
 def test_tmt_pick_two_draft(session_scanner, entry_label, expected, entry_string):
-    with (
-        patch("src.log_scanner.OCR.get_pack") as mock_ocr,
-        patch("src.log_scanner.capture_screen_base64str"),
-    ):
-        event_test_cases(
-            session_scanner,
-            "TMT PickTwoDraft",
-            entry_label,
-            expected,
-            entry_string,
-            mock_ocr,
-        )
+    event_test_cases(
+        session_scanner,
+        "TMT PickTwoDraft",
+        entry_label,
+        expected,
+        entry_string,
+    )
 
 
 @pytest.mark.parametrize(
     "entry_label, expected, entry_string", POWERED_CUBE_DRAFT_ENTRIES
 )
 def test_powered_cube_premier(session_scanner, entry_label, expected, entry_string):
-    with (
-        patch("src.log_scanner.OCR.get_pack") as mock_ocr,
-        patch("src.log_scanner.capture_screen_base64str"),
-    ):
-        event_test_cases(
-            session_scanner,
-            "Powered Cube Premier Draft ",
-            entry_label,
-            expected,
-            entry_string,
-            mock_ocr,
-        )
-
-
-@patch("src.log_scanner.OCR.get_pack")
-@patch("src.log_scanner.capture_screen_base64str")
-def test_otj_premier_p1p1_ocr_overwrite(mock_screenshot, mock_ocr, function_scanner):
-    # Write the event entry to the fake Player.log file
-    with open(
-        TEST_LOG_FILE_LOCATION, "a", encoding="utf-8", errors="replace"
-    ) as log_file:
-        log_file.write(f"{OTJ_EVENT_ENTRY}\n")
-
-    # Search for the event
-    function_scanner.draft_start_search()
-
-    # Open the dataset
-    function_scanner.retrieve_set_data(OTJ_PREMIER_SNAPSHOT)
-
-    # Mock the card names returned by the OCR get_pack method
-    expected_names = ["Seraphic Steed", "Spinewoods Armadillo", "Sterling Keykeeper"]
-    mock_ocr.return_value = expected_names
-    mock_screenshot.return_value = 0
-
-    function_scanner.draft_data_search(True, False)
-
-    # Verify the current pack, pick
-    current_pack, current_pick = function_scanner.retrieve_current_pack_and_pick()
-    assert (1, 1) == (
-        current_pack,
-        current_pick,
-    ), f"OCT Test Failed: OCR Pack/Pick, Set: OTJ, Expected: {(1,1)}, Actual: {(current_pack, current_pick)}"
-
-    # Verify the pack cards
-    card_names = [x["name"] for x in function_scanner.retrieve_current_pack_cards()]
-    assert (
-        expected_names == card_names
-    ), f"OCR Test Failed: OCR Pack Cards, Set: OTJ, Expected: {expected_names}, Actual: {card_names}"
-
-    # Write the P1P1 entry to the fake Player.log file
-    with open(
-        TEST_LOG_FILE_LOCATION, "a", encoding="utf-8", errors="replace"
-    ) as log_file:
-        log_file.write(f"{OTJ_P1P1_ENTRY}\n")
-
-    # Update the ArenaScanner results
-    function_scanner.draft_data_search(False, False)
-
-    # Verify that P1P1 is overwritten when the log entry is received
-    card_names = [x["name"] for x in function_scanner.retrieve_current_pack_cards()]
-    assert (
-        OTJ_P1P1_CARD_NAMES == card_names
-    ), f"OCR Test Failed: Log Pack Cards, Set: OTJ, Expected: {OTJ_P1P1_CARD_NAMES}, Actual: {card_names}"
-
-    # Verify that the OCR method was only called once
-    assert mock_ocr.call_count == 1
-
-
-@patch("src.log_scanner.OCR.get_pack")
-@patch("src.log_scanner.capture_screen_base64str")
-def test_otj_premier_p1p1_ocr_multiclick(mock_screenshot, mock_ocr, function_scanner):
-    # Write the event entry to the fake Player.log file
-    with open(
-        TEST_LOG_FILE_LOCATION, "a", encoding="utf-8", errors="replace"
-    ) as log_file:
-        log_file.write(f"{OTJ_EVENT_ENTRY}\n")
-
-    # Search for the event
-    function_scanner.draft_start_search()
-
-    # Open the dataset
-    function_scanner.retrieve_set_data(OTJ_PREMIER_SNAPSHOT)
-
-    # Mock the card names returned by the OCR get_pack method
-    expected_names = ["Seraphic Steed", "Spinewoods Armadillo", "Sterling Keykeeper"]
-    mock_ocr.return_value = expected_names
-    mock_screenshot.return_value = 0
-
-    function_scanner.draft_data_search(True, False)
-
-    # Verify the current pack, pick
-    current_pack, current_pick = function_scanner.retrieve_current_pack_and_pick()
-    assert (1, 1) == (
-        current_pack,
-        current_pick,
-    ), f"OCR Test Failed: OCR Pack/Pick, Set: OTJ, Expected: {(1,1)}, Actual: {(current_pack, current_pick)}"
-
-    # Verify the pack cards
-    card_names = [x["name"] for x in function_scanner.retrieve_current_pack_cards()]
-    assert (
-        expected_names == card_names
-    ), f"OCR Test Failed: OCR Pack Cards, Set: OTJ, Expected: {expected_names}, Actual: {card_names}"
-
-    # Simulate refresh clicks
-    function_scanner.draft_data_search(True, False)
-    function_scanner.draft_data_search(True, False)
-
-    # Verify that the OCR method was only called once
-    assert mock_ocr.call_count == 1
-
-
-@patch("src.log_scanner.OCR.get_pack")
-@patch("src.log_scanner.capture_screen_base64str")
-def test_otj_premier_p1p1_ocr_disabled(mock_screenshot, mock_ocr, function_scanner):
-    # Write the event entry to the fake Player.log file
-    with open(
-        TEST_LOG_FILE_LOCATION, "a", encoding="utf-8", errors="replace"
-    ) as log_file:
-        log_file.write(f"{OTJ_EVENT_ENTRY}\n")
-
-    # Search for the event
-    function_scanner.draft_start_search()
-
-    # Open the dataset
-    function_scanner.retrieve_set_data(OTJ_PREMIER_SNAPSHOT)
-
-    # P1P1_OCR is disabled
-    function_scanner.draft_data_search(False, False)
-
-    # Verify that the OCR method was not called
-    assert mock_ocr.call_count == 0
-    mock_screenshot.return_value = 0
+    event_test_cases(
+        session_scanner,
+        "Powered Cube Premier Draft ",
+        entry_label,
+        expected,
+        entry_string,
+    )
 
 
 def test_scanner_retrieve_color_win_rate_mismatch_handling():
@@ -546,7 +349,7 @@ def test_draft_history_recording(function_scanner):
         TEST_LOG_FILE_LOCATION, "a", encoding="utf-8", errors="replace"
     ) as log_file:
         log_file.write(f"{OTJ_P1P1_ENTRY}\n")
-    function_scanner.draft_data_search(False, False)
+    function_scanner.draft_data_search()
 
     history = function_scanner.retrieve_draft_history()
     assert len(history) == 1
@@ -562,7 +365,7 @@ def test_draft_history_recording(function_scanner):
         TEST_LOG_FILE_LOCATION, "a", encoding="utf-8", errors="replace"
     ) as log_file:
         log_file.write(f"{P1P2_VALID_ENTRY}\n")
-    function_scanner.draft_data_search(False, False)
+    function_scanner.draft_data_search()
 
     history = function_scanner.retrieve_draft_history()
     assert len(history) == 2
@@ -594,7 +397,7 @@ def test_draft_state_recovery(function_scanner):
         TEST_LOG_FILE_LOCATION, "a", encoding="utf-8", errors="replace"
     ) as log_file:
         log_file.write(f"{OTJ_P1P1_ENTRY}\n")
-    function_scanner.draft_data_search(False, False)
+    function_scanner.draft_data_search()
 
     # Verify state is in memory
     assert function_scanner.current_pack == 1

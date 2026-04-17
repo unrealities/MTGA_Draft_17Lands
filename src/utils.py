@@ -1,11 +1,9 @@
-import base64
 import json
 import os
 import time
 import platform
 import subprocess
 from enum import Enum
-from io import BytesIO
 from typing import List
 from src.constants import (
     LIMITED_TYPES_DICT,
@@ -23,8 +21,6 @@ from src.constants import (
     DATA_FIELD_MANA_COST,
     DATA_SECTION_IMAGES,
     FILTER_OPTION_ALL_DECKS,
-    SCREENSHOT_FOLDER,
-    SCREENSHOT_PREFIX,
 )
 from src.logger import create_logger
 
@@ -233,23 +229,6 @@ def check_file_integrity(filename):
         return Result.ERROR_UNREADABLE_FILE, json_data
 
     return result, json_data
-
-
-def capture_screen_base64str(persist):
-    """takes a screenshot and returns it as a base64 encoded string"""
-    from PIL import ImageGrab
-
-    screenshot = ImageGrab.grab(all_screens=True)
-    buffered = BytesIO()
-    screenshot.save(buffered, format="PNG")
-    if persist:
-        current_timestamp = int(time.time())
-        filename = SCREENSHOT_PREFIX + str(current_timestamp) + ".png"
-        if not os.path.exists(SCREENSHOT_FOLDER):
-            os.makedirs(SCREENSHOT_FOLDER)
-        screenshot.save(os.path.join(SCREENSHOT_FOLDER, filename), format="PNG")
-
-    return base64.b64encode(buffered.getvalue()).decode("utf-8")
 
 
 def detect_string(search_line: str, search_strings: List[str]) -> int:

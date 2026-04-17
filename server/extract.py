@@ -85,24 +85,34 @@ def extract_scryfall_data(client, set_code: str) -> dict:
                 if img := c["image_uris"].get("large", ""):
                     images.append(img)
 
+            card_obj = {
+                "arena_ids": [arena_id] if arena_id else [],
+                "name": name,
+                "cmc": int(c.get("cmc", 0)),
+                "mana_cost": mana_cost,
+                "types": types,
+                "subtypes": subtypes,
+                "colors": colors,
+                "color_identity": c.get("color_identity", []),
+                "rarity": c.get("rarity", "common").capitalize(),
+                "image": images,
+                "keywords": c.get("keywords", []),
+                "oracle_text": oracle_text,
+            }
+
             if name not in cards:
-                cards[name] = {
-                    "arena_ids": [arena_id] if arena_id else [],
-                    "name": name,
-                    "cmc": int(c.get("cmc", 0)),
-                    "mana_cost": mana_cost,
-                    "types": types,
-                    "subtypes": subtypes,
-                    "colors": colors,
-                    "color_identity": c.get("color_identity", []),
-                    "rarity": c.get("rarity", "common").capitalize(),
-                    "image": images,
-                    "keywords": c.get("keywords", []),
-                    "oracle_text": oracle_text,
-                }
+                cards[name] = card_obj
             else:
                 if arena_id and arena_id not in cards[name]["arena_ids"]:
                     cards[name]["arena_ids"].append(arena_id)
+
+            if " // " in name:
+                for face_name in name.split(" // "):
+                    if face_name not in cards:
+                        cards[face_name] = cards[name]
+                    else:
+                        if arena_id and arena_id not in cards[face_name]["arena_ids"]:
+                            cards[face_name]["arena_ids"].append(arena_id)
 
         url = data.get("next_page")
         params = None
@@ -310,6 +320,115 @@ def extract_color_ratings(
     return ratings, games_played, total_games
 
 
+def extract_basic_lands(client) -> dict:
+    cache_filepath = os.path.join(SCRYFALL_CACHE_DIR, "arena_basic_lands.json")
+
+    if os.path.exists(cache_filepath):
+        file_mod_time = datetime.fromtimestamp(
+            os.path.getmtime(cache_filepath), tz=timezone.utc
+        )
+        age = datetime.now(timezone.utc) - file_mod_time
+
+        if age < timedelta(days=7):
+            logger.info(
+                "   [Scryfall] Loading Arena basic lands from local repository."
+            )
+            try:
+                with open(cache_filepath, "r", encoding="utf-8") as f:
+                    return json.load(f)
+            except json.JSONDecodeError:
+                pass
+
+    logger.info("   [Scryfall] Fetching all Arena basic lands from API...")
+    cards = {}
+    url = "https://api.scryfall.com/cards/search"
+    # Search for basic lands available on Arena
+    params = {"q": "t:basic game:arena", "unique": "prints"}
+
+    while url:
+        resp = client.respectful_get(url, params=params, allow_404=True)
+        if resp.status_code == 404:
+            break
+
+        try:
+            data = resp.json()
+        except json.JSONDecodeError as e:
+            logger.warning(f"Non-JSON Scryfall response for basics: {e}")
+            break
+
+        for c in data.get("data", []):
+            name = c.get("name", "").replace("///", "//")
+            if name not in [
+                "Plains",
+                "Island",
+                "Swamp",
+                "Mountain",
+                "Forest",
+                "Wastes",
+                "Snow-Covered Plains",
+                "Snow-Covered Island",
+                "Snow-Covered Swamp",
+                "Snow-Covered Mountain",
+                "Snow-Covered Forest",
+            ]:
+                continue
+
+            arena_id = c.get("arena_id")
+            if not arena_id:
+                continue
+
+            if name not in cards:
+                types, subtypes = parse_scryfall_types(c.get("type_line", ""))
+
+                colors = c.get("colors", [])
+                mana_cost = c.get("mana_cost", "")
+                oracle_text = c.get("oracle_text", "")
+                images = []
+
+                if "card_faces" in c:
+                    if not colors:
+                        colors = c["card_faces"][0].get("colors", [])
+                    if not mana_cost:
+                        mana_cost = c["card_faces"][0].get("mana_cost", "")
+                    if not oracle_text:
+                        oracle_text = " // ".join(
+                            face.get("oracle_text", "") for face in c["card_faces"]
+                        )
+                    for face in c["card_faces"]:
+                        if img := face.get("image_uris", {}).get("large", ""):
+                            images.append(img)
+                elif "image_uris" in c:
+                    if img := c["image_uris"].get("large", ""):
+                        images.append(img)
+
+                cards[name] = {
+                    "arena_ids": [arena_id],
+                    "name": name,
+                    "cmc": int(c.get("cmc", 0)),
+                    "mana_cost": mana_cost,
+                    "types": types,
+                    "subtypes": subtypes,
+                    "colors": colors,
+                    "color_identity": c.get("color_identity", []),
+                    "rarity": c.get("rarity", "common").capitalize(),
+                    "image": images,
+                    "keywords": c.get("keywords", []),
+                    "oracle_text": oracle_text,
+                }
+            else:
+                if arena_id not in cards[name]["arena_ids"]:
+                    cards[name]["arena_ids"].append(arena_id)
+
+        url = data.get("next_page")
+        params = None
+
+    if cards:
+        with open(cache_filepath, "w", encoding="utf-8") as f:
+            json.dump(cards, f, indent=2)
+
+    return cards
+
+
 def extract_scryfall_by_names(client, names: list) -> dict:
     cards = {}
     chunk_size = 20
@@ -359,24 +478,37 @@ def extract_scryfall_by_names(client, names: list) -> dict:
                     if img := c["image_uris"].get("large", ""):
                         images.append(img)
 
+                card_obj = {
+                    "arena_ids": [arena_id] if arena_id else [],
+                    "name": name,
+                    "cmc": int(c.get("cmc", 0)),
+                    "mana_cost": mana_cost,
+                    "types": types,
+                    "subtypes": subtypes,
+                    "colors": colors,
+                    "color_identity": c.get("color_identity", []),
+                    "rarity": c.get("rarity", "common").capitalize(),
+                    "image": images,
+                    "keywords": c.get("keywords", []),
+                    "oracle_text": oracle_text,
+                }
+
                 if name not in cards:
-                    cards[name] = {
-                        "arena_ids": [arena_id] if arena_id else [],
-                        "name": name,
-                        "cmc": int(c.get("cmc", 0)),
-                        "mana_cost": mana_cost,
-                        "types": types,
-                        "subtypes": subtypes,
-                        "colors": colors,
-                        "color_identity": c.get("color_identity", []),
-                        "rarity": c.get("rarity", "common").capitalize(),
-                        "image": images,
-                        "keywords": c.get("keywords", []),
-                        "oracle_text": oracle_text,
-                    }
+                    cards[name] = card_obj
                 else:
                     if arena_id and arena_id not in cards[name]["arena_ids"]:
                         cards[name]["arena_ids"].append(arena_id)
+
+                if " // " in name:
+                    for face_name in name.split(" // "):
+                        if face_name not in cards:
+                            cards[face_name] = cards[name]
+                        else:
+                            if (
+                                arena_id
+                                and arena_id not in cards[face_name]["arena_ids"]
+                            ):
+                                cards[face_name]["arena_ids"].append(arena_id)
 
             url = data.get("next_page")
             params = None

@@ -651,16 +651,19 @@ class CustomDeckPanel(ttk.Frame):
 
     # --- DRAG AND DROP & SELECTION LOGIC ---
     def _get_card_from_row(self, tree, row_id, is_sb):
-        manager = self.sb_manager if is_sb else self.deck_manager
-        item_vals = tree.item(row_id)["values"]
-        if not item_vals:
-            return None
+        item = tree.item(row_id)
+        card_name = item.get("text")
 
-        try:
-            name_idx = manager.active_fields.index("name")
-            card_name = str(item_vals[name_idx])
-        except ValueError:
-            return None
+        if not card_name:
+            manager = self.sb_manager if is_sb else self.deck_manager
+            item_vals = item["values"]
+            if not item_vals:
+                return None
+            try:
+                name_idx = manager.active_fields.index("name")
+                card_name = str(item_vals[name_idx])
+            except ValueError:
+                return None
 
         source_list = self.sb_list if is_sb else self.deck_list
         for c in source_list:
@@ -669,6 +672,10 @@ class CustomDeckPanel(ttk.Frame):
         return None
 
     def _bind_dnd(self, tree, is_sb=False):
+        if getattr(tree, "_dnd_bound", False):
+            return
+        tree._dnd_bound = True
+
         tree.bind(
             "<ButtonPress-1>", lambda e: self._on_drag_start(e, tree, is_sb), add="+"
         )
@@ -1011,7 +1018,14 @@ class CustomDeckPanel(ttk.Frame):
                 if self.configuration.settings.card_colors_enabled:
                     tag = row_color_tag(card.get(constants.DATA_FIELD_MANA_COST, ""))
 
-                tree.insert("", "end", iid=str(idx), values=row_values, tags=(tag,))
+                tree.insert(
+                    "",
+                    "end",
+                    iid=str(idx),
+                    text=card.get("name", ""),
+                    values=row_values,
+                    tags=(tag,),
+                )
 
             if hasattr(tree, "reapply_sort"):
                 tree.reapply_sort()

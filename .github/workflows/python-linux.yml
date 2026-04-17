@@ -3,19 +3,24 @@ name: Python Linux
 on:
   workflow_dispatch:
   pull_request:
-    branches: [ 'main' ]
+    branches: [ 'main', 'master' ]
     paths: 
     - '**.py'
+
 jobs:
   build:
-
     runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+      contents: read
+      
     strategy:
       matrix:
         python-version: ['3.12']
         
     steps:
     - uses: actions/checkout@v4
+    
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v5
       with:
@@ -24,10 +29,25 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install pytest
+        pip install pytest pytest-cov
         pip install -r requirements.txt
-    - name: Test with pytest
+        
+    - name: Test with pytest and collect coverage
       run: |
           export DISPLAY=:99
           Xvfb :99 &
-          python -m pytest tests/
+          python -m pytest --cov --cov-report=xml tests/
+          
+    - name: Post Coverage Report to PR
+      uses: MishaKav/pytest-coverage-comment@main
+      # 'if: always()' ensures the coverage report posts even if a test fails
+      if: always() 
+      with:
+        pytest-xml-coverage-path: ./coverage.xml
+        title: "🧪 Test Coverage Report"
+        badge-title: "Coverage"
+        hide-badge: false
+        hide-report: false
+        create-new-comment: false
+        hide-comment: false
+        report-only-changed-files: false

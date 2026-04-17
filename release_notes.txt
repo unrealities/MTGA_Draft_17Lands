@@ -1,3 +1,13 @@
+===================== RELEASE NOTES 4.14 =====================
+* unrealities: [Feature] Improvements to the Github Pages site. Added direct download links to the "Today's Pipeline Activity" table.
+* unrealities: [Bug] Fixed an issue on the GitHub Pages landing site where the latest release version would get stuck on "Checking...".
+* unrealities: [Bug] Fixed a severe macOS issue (especially on Sequoia) where the application would get stuck in an endless Screen Recording permission loop when attempting to scan P1P1.
+* unrealities: [Bug] Segmentation fault fatal crash on load #166
+* unrealities: [Bug] Fixed an issue where the application would not display basic lands
+* unrealities: [Bug] Fixed clicking on a card name who was truncated
+* unrealities: [UX/UI] Removed P1P1 screenshot functionality as MTG Arena has fixed logging for Premier and Traditional Draft
+* unrealities: [Bug] Fixed an issue where double faced cards were not displayed #170
+
 ===================== RELEASE NOTES 4.13 =====================
 * unrealities: [Bug] Fixed not displaying Powered Cube sets
 * unrealities: [Feature] Easily readable currently available sets: https://unrealities.github.io/MTGA_Draft_17Lands/

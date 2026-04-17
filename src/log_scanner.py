@@ -18,13 +18,11 @@ import src.constants as constants
 from src.logger import create_logger
 from src.set_metrics import SetMetrics
 from src.dataset import Dataset
-from src.ocr import OCR
 from src.tier_list import TierList
 from src.utils import (
     process_json,
     json_find,
     retrieve_local_set_list,
-    capture_screen_base64str,
     detect_string,
     normalize_color_string,
 )
@@ -73,7 +71,6 @@ class ArenaScanner:
         # File Pointers
         self.pick_offset = 0
         self.pack_offset = 0
-        self.p1p1_offset = 0
         self.pool_offset = 0
         self.search_offset = 0
         self.draft_start_offset = 0
@@ -255,7 +252,6 @@ class ArenaScanner:
             self.draft_type = constants.LIMITED_TYPE_UNKNOWN
             self.pick_offset = 0
             self.pack_offset = 0
-            self.p1p1_offset = 0
             self.pool_offset = 0
             self.draft_sets = None
             self.current_pick = 0
@@ -370,7 +366,6 @@ class ArenaScanner:
                     self.draft_log.info(event_line.strip())
                     self.pick_offset = self.draft_start_offset
                     self.pack_offset = self.draft_start_offset
-                    self.p1p1_offset = self.draft_start_offset
                     self.pool_offset = self.draft_start_offset
         except Exception as error:
             logger.error(error)
@@ -581,7 +576,6 @@ class ArenaScanner:
         pick: int,
         pack_cards: list,
         draft_id: str = None,
-        is_p1p1_fallback: bool = False,
     ):
         """Universal handler for processing pack permutations across all Draft formats."""
         if not pack or not pick or not pack_cards:
@@ -622,11 +616,6 @@ class ArenaScanner:
                 and self.pack_cards[pack_index] == pack_cards
             ):
                 return False
-
-            # P1P1 Telemetry Fallback Guard
-            if is_p1p1_fallback:
-                if len(self.pack_cards[pack_index]) >= len(pack_cards):
-                    return False
 
             # Commit Data safely
             if len(self.initial_pack[pack_index]) == 0 and pick <= expected_players:
@@ -788,14 +777,8 @@ class ArenaScanner:
     # EVENT DISPATCHER
     # =========================================================================
 
-    def draft_data_search(
-        self, use_ocr=False, save_screenshot=False, status_callback=None
-    ):
+    def draft_data_search(self):
         update = False
-        if use_ocr:
-            if self.run_ocr_workflow(save_screenshot, status_callback):
-                update = True
-
         changes = self.__perform_search_logic()
 
         is_unknown = False
@@ -822,11 +805,7 @@ class ArenaScanner:
         # RECOVERY MODE: If the app restarts mid-draft and misses EventJoin,
         # infer the draft type from the active log events.
         if self.draft_type == constants.LIMITED_TYPE_UNKNOWN:
-            if (
-                self._search_pack_notify()
-                or self._search_pick_human()
-                or self._search_pack_p1p1()
-            ):
+            if self._search_pack_notify() or self._search_pick_human():
                 self.draft_type = constants.LIMITED_TYPE_DRAFT_PREMIER_V2
                 self.number_of_players = 8
                 explicit_update = True
@@ -840,7 +819,6 @@ class ArenaScanner:
 
         if self.draft_type == constants.LIMITED_TYPE_DRAFT_PREMIER_V1:
             explicit_update |= self._search_pick_v1()
-            explicit_update |= self._search_pack_p1p1()
             explicit_update |= self._search_pack_notify()
             explicit_update |= self._search_card_pool()
         elif self.draft_type in [
@@ -850,7 +828,6 @@ class ArenaScanner:
             constants.LIMITED_TYPE_DRAFT_PICK_TWO_TRAD,
         ]:
             explicit_update |= self._search_pick_human()
-            explicit_update |= self._search_pack_p1p1()
             explicit_update |= self._search_pack_notify()
             explicit_update |= self._search_card_pool()
         elif self.draft_type in [
@@ -877,32 +854,6 @@ class ArenaScanner:
     # =========================================================================
     # MODULAR PARSERS
     # =========================================================================
-    def _search_pack_p1p1(self) -> bool:
-        def _extract(data):
-            cards = json_find(constants.DRAFT_P1P1_STRING_PREMIER, data)
-            if not cards:
-                return False
-
-            p_val = json_find("PackNumber", data)
-            pi_val = json_find("PickNumber", data)
-            pack = int(p_val) if p_val is not None else 0
-            pick = int(pi_val) if pi_val is not None else 0
-
-            draft_id = json_find("DraftId", data)
-            if draft_id is None:
-                draft_id = json_find("draftId", data)
-
-            return self._process_pack_data(
-                pack=pack,
-                pick=pick,
-                pack_cards=[str(c) for c in cards],
-                draft_id=str(draft_id) if draft_id else "",
-                is_p1p1_fallback=True,
-            )
-
-        return self._parse_events(
-            "p1p1_offset", [constants.DRAFT_P1P1_STRING_PREMIER], _extract
-        )
 
     def _search_pack_notify(self) -> bool:
         def _extract(data):
@@ -1136,66 +1087,6 @@ class ArenaScanner:
     # =========================================================================
     # DATA RETRIEVAL
     # =========================================================================
-
-    def run_ocr_workflow(self, persist, status_callback=None, capture_callback=None):
-        with self.lock:
-            if (
-                self.current_pack == 1
-                and self.current_pick == 1
-                and len(self.pack_cards[0]) > 0
-            ):
-                if status_callback:
-                    status_callback("Already Scanned")
-                return False
-            if self.current_pack > 1 or self.current_pick > 1:
-                return False
-            card_names = self.set_data.get_all_names()
-            if not card_names:
-                return False
-
-        try:
-            if status_callback:
-                status_callback("Capturing Screen...")
-            screenshot = capture_screen_base64str(persist)
-
-            # The app hides, takes the screenshot, and instantly pops back up
-            if capture_callback:
-                capture_callback()
-
-            if status_callback:
-                status_callback("Calling Cloud...")
-
-            received_names = OCR().get_pack(card_names, screenshot)
-
-            if status_callback:
-                status_callback("Processing Data...")
-
-            with self.lock:
-                pack_cards = self.set_data.get_ids_by_name(received_names)
-                if not pack_cards:
-                    if status_callback:
-                        status_callback("No Cards Found")
-                    time.sleep(1.5)
-                    return False
-
-                self._check_and_wipe_stale_pool(1, 1, pack_cards)
-                self.initial_pack[0] = pack_cards
-                self.pack_cards[0] = pack_cards
-                self.current_pack, self.current_pick = 1, 1
-                self.previous_scanned_pack = 1
-                self._record_pack(1, 1, pack_cards)
-                self._save_state()
-
-                if status_callback:
-                    status_callback("Success!")
-                time.sleep(0.5)
-                return True
-        except Exception as error:
-            logger.error(f"OCR Error: {error}")
-            if status_callback:
-                status_callback("OCR Failed")
-            time.sleep(1.5)
-            return False
 
     def retrieve_data_sources(self):
         data_sources = {}

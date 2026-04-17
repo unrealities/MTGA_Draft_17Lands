@@ -131,8 +131,9 @@ class TestLogPipelineIntegration:
         ), f"Failed to detect OTJ. Current detected code: '{app.detected_set_code}'"
 
         p1p1 = (
-            '[UnityCrossThreadLogger]==> LogBusinessEvents {"id":"2","request":"{\\"DraftId\\":\\"1\\",\\"PackNumber\\":1,\\"PickNumber\\":1,'
-            '\\"CardsInPack\\":[90734,90584,90631,90362,90440,90349,90486,90527,90406,90439,90488,90480,90388,90459]}"}\n'
+            r'[UnityCrossThreadLogger]Draft.Notify {"draftId":"1","SelfPick":1,"SelfPack":1,'
+            r'"PackCards":"90734,90584,90631,90362,90440,90349,90486,90527,90406,90439,90488,90480,90388,90459"}'
+            "\n"
         )
         with open(log, "a") as f:
             f.write(p1p1)
@@ -202,8 +203,9 @@ class TestLogPipelineIntegration:
 
         # Write pack data
         p1p1 = (
-            '[UnityCrossThreadLogger]==> LogBusinessEvents {"id":"2","request":"{\\"PackNumber\\":1,\\"PickNumber\\":1,'
-            '\\"CardsInPack\\":[90734, 90584, 90459]}"}\n'
+            r'[UnityCrossThreadLogger]Draft.Notify {"draftId":"2","SelfPick":1,"SelfPack":1,'
+            r'"PackCards":"90734, 90584, 90459"}'
+            "\n"
         )
         with open(log, "a") as f:
             f.write(p1p1)
@@ -239,8 +241,9 @@ class TestLogPipelineIntegration:
             time.sleep(0.1)
 
         p1p1 = (
-            '[UnityCrossThreadLogger]==> LogBusinessEvents {"id":"2","request":"{\\"DraftId\\":\\"1\\",\\"PackNumber\\":1,\\"PickNumber\\":1,'
-            '\\"CardsInPack\\":[90734,90584,90631,90362,90440,90349,90486,90527,90406,90439,90488,90480,90388,90459]}"}\n'
+            r'[UnityCrossThreadLogger]Draft.Notify {"draftId":"1","SelfPick":1,"SelfPack":1,'
+            r'"PackCards":"90734,90584,90631,90362,90440,90349,90486,90527,90406,90439,90488,90480,90388,90459"}'
+            "\n"
         )
         with open(log, "a") as f:
             f.write(p1p1)

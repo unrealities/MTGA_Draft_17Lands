@@ -13,10 +13,9 @@ The application is a **Reactive Overlay** for Magic: The Gathering Arena (MTGA).
 
 ## 2. Critical Constraints
 
-1. **The P1P1 Gap:** MTGA logs do NOT reveal Pack 1 Pick 1 cards immediately. You must implement a **Screen Capture + OCR** fallback for this specific state.
-2. **Rate Limiting:** 17Lands API requests must be cached locally for **24 hours**. Never fetch on every startup.
-3. **Color Normalization:** All color keys must be sorted **WUBRG** (e.g., store "GW" as "WG"). Failure to do this breaks dictionary lookups.
-4. **Read-Only:** Never write to MTGA memory or inject input. Only read logs/screen.
+1. **Rate Limiting:** 17Lands API requests must be cached locally for **24 hours**. Never fetch on every startup.
+2. **Color Normalization:** All color keys must be sorted **WUBRG** (e.g., store "GW" as "WG"). Failure to do this breaks dictionary lookups.
+3. **Read-Only:** Never write to MTGA memory or inject input. Only read logs/screen.
 
 ## 3. Data Schema (Types)
 
@@ -80,4 +79,3 @@ $$ Score = (Base + ZScore) \times ColorMult \times HungerMult $$
 ## 7. External Integrations
 
 1. **17Lands:** `GET /card_ratings/data?expansion={SET}&format={FMT}`.
-2. **Google OCR:** `POST /pack_parser` (Payload: `{image: "base64", candidates: ["list", "of", "names"]}`).

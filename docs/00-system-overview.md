@@ -40,13 +40,12 @@ graph TD
 
 ## 3. Key Modules
 
-| Module             | Function                                                                                                                                                                   | Dependencies           | Criticality                     |
-| :----------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :--------------------- | :------------------------------ |
-| **Log Scanner**    | Tails `Player.log`, executes Regex matching, manages state machine (Idle -> Drafting -> Game).                                                                             | OS File System         | **High** (App fails without it) |
-| **Data Manager**   | Downloads/Caches set data. Handles fallback (if Premier data missing, use Quick data).                                                                                     | 17Lands API            | **High**                        |
-| **Advisor Engine** | The "Brain." Normalizes win-rates, calculates Z-Scores, applies "Lane Commitment" logic.                                                                                   | None (Pure Math)       | **High**                        |
-| **OCR Service**    | **Edge Case:** Reads P1P1 (Pack 1 Pick 1) via screenshot because logs are delayed.                                                                                         | Google Cloud Functions | Medium                          |
-| **Deck Builder**   | Interactive drag-and-drop deck construction environment. Generates base archetypes, applies 1-click "Auto-Lands" math, and features an on-demand AI Monte Carlo optimizer. | Card Logic             | Medium                          |
+| Module             | Function                                                                                                                                                                   | Dependencies     | Criticality                     |
+| :----------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :--------------- | :------------------------------ |
+| **Log Scanner**    | Tails `Player.log`, executes Regex matching, manages state machine (Idle -> Drafting -> Game).                                                                             | OS File System   | **High** (App fails without it) |
+| **Data Manager**   | Downloads/Caches set data. Handles fallback (if Premier data missing, use Quick data).                                                                                     | 17Lands API      | **High**                        |
+| **Advisor Engine** | The "Brain." Normalizes win-rates, calculates Z-Scores, applies "Lane Commitment" logic.                                                                                   | None (Pure Math) | **High**                        |
+| **Deck Builder**   | Interactive drag-and-drop deck construction environment. Generates base archetypes, applies 1-click "Auto-Lands" math, and features an on-demand AI Monte Carlo optimizer. | Card Logic       | Medium                          |
 
 ## 4. Operational Lifecycle
 
@@ -66,12 +65,7 @@ The application polls for file changes every **1000ms**.
      3. Pass data to **Advisor Engine**.
      4. Render Overlay Table sorted by "Score".
 
-3. **State: P1P1 (Pack 1 Pick 1)**
-   - **The Gap:** MTGA often delays writing the log for the very first pack.
-   - **User Action:** User clicks the **"P1P1"** button in the UI.
-   - **System Action:** Takes a screenshot -> Sends to OCR Service -> Returns Card Names -> Updates UI.
-
-4. **State: Pick Confirmation**
+3. **State: Pick Confirmation**
    - Listens for: `Event_PlayerDraftMakePick`.
    - Action: Move selected `GrpId` from "Pack" array to "TakenCards" array. Update "Signals" logic.
 
@@ -81,6 +75,5 @@ The application polls for file changes every **1000ms**.
 
 ## 5. Constraints & Invariants
 
-1. **The P1P1 Gap:** MTGA does NOT write P1P1 pack data to the log immediately in Premier Drafts. The system MUST support a Screenshot/OCR fallback mechanism or the user sees nothing for the first pick.
-2. **Rate Limiting:** 17Lands API requests must be cached for 24 hours. Do not fetch on every launch.
-3. **Color Normalization:** All color strings must be sorted WUBRG (`GW` -> `WG`). The keys in 17Lands JSONs vary; the app must normalize them before lookup or data will appear missing.
+1. **Rate Limiting:** 17Lands API requests must be cached for 24 hours. Do not fetch on every launch.
+2. **Color Normalization:** All color strings must be sorted WUBRG (`GW` -> `WG`). The keys in 17Lands JSONs vary; the app must normalize them before lookup or data will appear missing.

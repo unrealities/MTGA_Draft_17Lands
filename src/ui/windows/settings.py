@@ -38,6 +38,8 @@ class SettingsWindow(tkinter.Toplevel):
             parent, self.winfo_width(), self.winfo_height(), 50, 50
         )
         self.geometry(f"+{x}+{y}")
+        if self.configuration.settings.always_on_top:
+            self.attributes("-topmost", True)
         self.grab_set()  # Modal interaction
 
         self.protocol("WM_DELETE_WINDOW", self._on_close)
@@ -109,8 +111,6 @@ class SettingsWindow(tkinter.Toplevel):
             ("Always On Top", "always_on_top"),
             ("Auto-Sync Cloud Datasets", "auto_sync_datasets"),
             ("Highlight Row by Mana Cost", "card_colors_enabled"),
-            ("Enable P1P1 OCR", "p1p1_ocr_enabled"),
-            ("Save P1P1 Screenshots", "save_screenshot_enabled"),
             ("Check for Dataset Updates", "update_notifications_enabled"),
             ("Alert on Missing Datasets", "missing_notifications_enabled"),
             ("Enable Draft Log Creation", "draft_log_enabled"),
@@ -153,9 +153,8 @@ class SettingsWindow(tkinter.Toplevel):
         # Checkbox logic
         checkbox_keys = [
             "always_on_top",
+            "auto_sync_datasets",
             "card_colors_enabled",
-            "p1p1_ocr_enabled",
-            "save_screenshot_enabled",
             "update_notifications_enabled",
             "missing_notifications_enabled",
             "draft_log_enabled",
@@ -189,15 +188,24 @@ class SettingsWindow(tkinter.Toplevel):
 
         # Handle type conversion
         if isinstance(val, int) and key != "result_format":
-            setattr(self.configuration.settings, key, bool(val))
+            bool_val = bool(val)
+            setattr(self.configuration.settings, key, bool_val)
+            val = bool_val
         else:
             setattr(self.configuration.settings, key, val)
 
         write_configuration(self.configuration)
 
+        # Keep the settings window on top of the main window if toggled
+        if key == "always_on_top":
+            self.attributes("-topmost", val)
+
         # Immediate visual update if something was toggled
         if self.on_update_callback:
-            self.on_update_callback()
+            try:
+                self.on_update_callback(key)
+            except TypeError:
+                self.on_update_callback()
 
     def _reset_defaults(self):
         """Restores pro-level baseline configuration."""
@@ -209,7 +217,10 @@ class SettingsWindow(tkinter.Toplevel):
             self.configuration.settings = new_conf.settings
             self._load_settings()
             if self.on_update_callback:
-                self.on_update_callback()
+                try:
+                    self.on_update_callback(None)
+                except TypeError:
+                    self.on_update_callback()
 
     def _on_close(self):
         self._toggle_traces(False)

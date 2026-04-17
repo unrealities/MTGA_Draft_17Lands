@@ -40,7 +40,11 @@ class CompactOverlay(tb.Toplevel):
             ]
 
         self.overrideredirect(True)
-        geom = getattr(self.configuration.settings, "overlay_geometry", f"{Theme.scaled_val(380)}x{Theme.scaled_val(600)}+50+50")
+        geom = getattr(
+            self.configuration.settings,
+            "overlay_geometry",
+            f"{Theme.scaled_val(380)}x{Theme.scaled_val(600)}+50+50",
+        )
         self.geometry(geom)
 
         try:
@@ -73,8 +77,12 @@ class CompactOverlay(tb.Toplevel):
         self._start_y = event.y_root
 
     def _do_resize(self, event):
-        new_w = max(Theme.scaled_val(250), self._start_w + (event.x_root - self._start_x))
-        new_h = max(Theme.scaled_val(200), self._start_h + (event.y_root - self._start_y))
+        new_w = max(
+            Theme.scaled_val(250), self._start_w + (event.x_root - self._start_x)
+        )
+        new_h = max(
+            Theme.scaled_val(200), self._start_h + (event.y_root - self._start_y)
+        )
         self.geometry(f"{new_w}x{new_h}")
 
     def _stop_resize(self, event):
@@ -96,13 +104,6 @@ class CompactOverlay(tb.Toplevel):
         header.bind("<ButtonPress-1>", self._start_move)
         header.bind("<ButtonRelease-1>", self._stop_move)
         header.bind("<B1-Motion>", self._do_move)
-
-        self.btn_scan = tb.Button(
-            header,
-            text="SCAN P1P1",
-            bootstyle="success-outline",
-            command=self._manual_scan,
-        )
 
         # Dynamic Info Label (Format | Group | Filter)
         self.lbl_info = tb.Label(
@@ -145,7 +146,13 @@ class CompactOverlay(tb.Toplevel):
 
         # --- TABBED CONTENT ---
         self.notebook = tb.Notebook(self)
-        self.notebook.pack(fill=BOTH, expand=True, padx=Theme.scaled_val(2), pady=Theme.scaled_val(2), side=TOP)
+        self.notebook.pack(
+            fill=BOTH,
+            expand=True,
+            padx=Theme.scaled_val(2),
+            pady=Theme.scaled_val(2),
+            side=TOP,
+        )
 
         self.tab_pack = tb.Frame(self.notebook, padding=Theme.scaled_val(2))
         self.tab_advisor = tb.Frame(self.notebook, padding=Theme.scaled_val(10))
@@ -307,10 +314,6 @@ class CompactOverlay(tb.Toplevel):
         if hasattr(self.orchestrator, "refresh_callback"):
             self.orchestrator.refresh_callback()
 
-    def _manual_scan(self):
-        # Offload to async thread in the main app to prevent UI freezing
-        self.app_context._manual_refresh(use_ocr=True)
-
     def update_data(
         self,
         pack_cards,
@@ -358,14 +361,10 @@ class CompactOverlay(tb.Toplevel):
         taken_cards = self.orchestrator.scanner.retrieve_taken_cards()
         self.current_pool_cards = stack_cards(taken_cards) if taken_cards else []
         missing_cards = self.orchestrator.scanner.retrieve_current_missing_cards()
+        self.current_missing_cards = missing_cards
 
         pk, pi = self.orchestrator.scanner.retrieve_current_pack_and_pick()
         self.lbl_status.config(text=f"P{pk} / P{pi}")
-
-        if pk <= 1 and pi <= 1:
-            self.btn_scan.pack(side=LEFT, padx=Theme.scaled_val(5), before=self.lbl_info)
-        else:
-            self.btn_scan.pack_forget()
 
         self.advisor_panel.update_recommendations(recommendations)
         self.signal_meter.update_values(self.app_context._calculate_signals(metrics))
@@ -411,7 +410,7 @@ class CompactOverlay(tb.Toplevel):
             self.type_chart.update_counts(type_counts)
         else:
             self.curve_plot.update_curve([0] * 8)
-            self.type_chart.update_counts(0, 0, 0)
+            self.type_chart.update_counts({})
 
         self._force_stats_redraw()
 
@@ -527,7 +526,12 @@ class CompactOverlay(tb.Toplevel):
 
                 sort_val = rec.contextual_score if rec else stats.get("gihwr", 0.0)
                 processed_rows.append(
-                    {"vals": row_values, "tag": row_tag, "sort_key": sort_val}
+                    {
+                        "card_name": name,
+                        "vals": row_values,
+                        "tag": row_tag,
+                        "sort_key": sort_val,
+                    }
                 )
 
             if not is_pool:
@@ -540,16 +544,26 @@ class CompactOverlay(tb.Toplevel):
                     and "high" not in row["tag"]
                 ):
                     row["tag"] = "bw_odd" if i % 2 == 0 else "bw_even"
-                tree.insert("", "end", values=row["vals"], tags=(row["tag"],))
+                tree.insert(
+                    "",
+                    "end",
+                    text=row.get("card_name", ""),
+                    values=row["vals"],
+                    tags=(row["tag"],),
+                )
 
             if hasattr(tree, "reapply_sort"):
                 tree.reapply_sort()
 
         self.tree = self.table_manager.tree
-        self.tree.bind(
-            "<<TreeviewSelect>>",
-            lambda e: self._on_card_select(e, self.current_pack_cards),
-        )
+        if not getattr(self.tree, "_selection_bound", False):
+            self.tree.bind(
+                "<ButtonRelease-1>",
+                lambda e: self._on_card_select(e, self.current_pack_cards),
+                add="+",
+            )
+            self.tree._selection_bound = True
+
         _populate_tree(
             self.tree,
             self.table_manager,
@@ -560,9 +574,14 @@ class CompactOverlay(tb.Toplevel):
         )
 
         self.missing_tree = self.missing_manager.tree
-        self.missing_tree.bind(
-            "<<TreeviewSelect>>", lambda e: self._on_card_select(e, missing_cards)
-        )
+        if not getattr(self.missing_tree, "_selection_bound", False):
+            self.missing_tree.bind(
+                "<ButtonRelease-1>",
+                lambda e: self._on_card_select(e, self.current_missing_cards),
+                add="+",
+            )
+            self.missing_tree._selection_bound = True
+
         _populate_tree(
             self.missing_tree,
             self.missing_manager,
@@ -572,10 +591,14 @@ class CompactOverlay(tb.Toplevel):
         )
 
         self.pool_tree = self.pool_manager.tree
-        self.pool_tree.bind(
-            "<<TreeviewSelect>>",
-            lambda e: self._on_card_select(e, self.current_pool_cards),
-        )
+        if not getattr(self.pool_tree, "_selection_bound", False):
+            self.pool_tree.bind(
+                "<ButtonRelease-1>",
+                lambda e: self._on_card_select(e, self.current_pool_cards),
+                add="+",
+            )
+            self.pool_tree._selection_bound = True
+
         _populate_tree(
             self.pool_tree,
             self.pool_manager,
@@ -586,32 +609,39 @@ class CompactOverlay(tb.Toplevel):
 
     def _on_card_select(self, event, source_list):
         tree = event.widget
+        if hasattr(event, "x") and hasattr(event, "y"):
+            region = tree.identify_region(event.x, event.y)
+            if region not in ("tree", "cell"):
+                return
+
         selection = tree.selection()
         if not selection:
             return
 
-        item_vals = tree.item(selection[0])["values"]
-        card_name = (
-            str(item_vals[0])
-            .replace("⭐ ", "")
-            .replace("[+] ", "")
-            .replace("..", "")
-            .strip()
-        )
+        item = tree.item(selection[0])
+        card_name = item.get("text")
 
-        found = next(
-            (
-                c
-                for c in source_list
-                if card_name in c.get(constants.DATA_FIELD_NAME, "")
-            ),
-            None,
-        )
+        if not card_name:
+            item_vals = item["values"]
+            try:
+                name_idx = getattr(
+                    tree, "active_fields", self.table_manager.active_fields
+                ).index("name")
+                card_name = (
+                    str(item_vals[name_idx])
+                    .replace("⭐ ", "")
+                    .replace("[+] ", "")
+                    .replace("..", "")
+                    .strip()
+                )
+            except (ValueError, AttributeError, IndexError):
+                return
 
-        if found:
+        card = next((c for c in source_list if c.get("name") == card_name), None)
+        if card:
             CardToolTip.create(
                 tree,
-                found,
+                card,
                 self.configuration.features.images_enabled,
-                constants.UI_SIZE_DICT.get(self.configuration.settings.ui_size, 1.0),
+                Theme.current_scale,
             )

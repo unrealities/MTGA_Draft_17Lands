@@ -72,8 +72,20 @@ class Dataset:
                     conn = sqlite3.connect(db_file)
                     cursor = conn.cursor()
 
-                    query = "SELECT loc.Loc FROM Cards c JOIN Localizations_enUS loc ON c.titleid = loc.LocId WHERE c.grpid = ?"
-                    cursor.execute(query, (grp_id,))
+                    try:
+                        numeric_id = int(grp_id)
+                    except ValueError:
+                        numeric_id = grp_id
+
+                    cursor.execute(
+                        "SELECT name FROM sqlite_master WHERE type='table' AND name='Localizations_enUS'"
+                    )
+                    if cursor.fetchone():
+                        query = "SELECT loc.Loc FROM Cards c JOIN Localizations_enUS loc ON c.titleid = loc.LocId WHERE c.grpid = ?"
+                    else:
+                        query = "SELECT loc.Loc FROM Cards c JOIN Localizations loc ON c.titleid = loc.LocId WHERE c.grpid = ?"
+
+                    cursor.execute(query, (numeric_id,))
                     row = cursor.fetchone()
                     conn.close()
 

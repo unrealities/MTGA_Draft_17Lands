@@ -42,7 +42,9 @@ class ComparePanel(ttk.Frame):
             bootstyle="primary",
         ).pack(side="left", padx=Theme.scaled_val(5))
         self.entry_card = AutocompleteEntry(bar, completion_list=[], width=40)
-        self.entry_card.pack(side="left", fill="x", expand=True, padx=Theme.scaled_val(5))
+        self.entry_card.pack(
+            side="left", fill="x", expand=True, padx=Theme.scaled_val(5)
+        )
         self.entry_card.bind("<Return>", self._add_card)
 
         ttk.Button(bar, text="Add", width=8, command=self._add_card).pack(
@@ -59,7 +61,6 @@ class ComparePanel(ttk.Frame):
             on_update_callback=self._update_content,
         )
         self.table_manager.pack(fill="both", expand=True)
-        self.table.bind("<<TreeviewSelect>>", self._on_selection)
 
     def _add_card(self, event=None):
         typed = self.entry_card.get().strip().lower()
@@ -89,7 +90,9 @@ class ComparePanel(ttk.Frame):
         if t is None:
             return
 
-        t.bind("<<TreeviewSelect>>", self._on_selection)
+        if not getattr(t, "_selection_bound", False):
+            t.bind("<ButtonRelease-1>", self._on_selection, add="+")
+            t._selection_bound = True
 
         from src.card_logic import filter_options
 
@@ -159,6 +162,7 @@ class ComparePanel(ttk.Frame):
             t.insert(
                 "",
                 "end",
+                text=card.get("name", ""),
                 values=row_values,
                 tags=(tag,),
             )
@@ -167,13 +171,31 @@ class ComparePanel(ttk.Frame):
             t.reapply_sort()
 
     def _on_selection(self, event):
+        if hasattr(event, "x") and hasattr(event, "y"):
+            region = self.table.identify_region(event.x, event.y)
+            if region not in ("tree", "cell"):
+                return
+
         sel = self.table.selection()
         if not sel:
             return
-        idx = self.table.index(sel[0])
-        if idx < len(self.compare_list):
-            card = self.compare_list[idx]
-            CardToolTip(
+
+        item = self.table.item(sel[0])
+        card_name = item.get("text")
+
+        if card_name:
+            card = next(
+                (c for c in self.compare_list if c.get("name") == card_name), None
+            )
+        else:
+            idx = self.table.index(sel[0])
+            if idx < len(self.compare_list):
+                card = self.compare_list[idx]
+            else:
+                card = None
+
+        if card:
+            CardToolTip.create(
                 self.table,
                 card,
                 self.configuration.features.images_enabled,
