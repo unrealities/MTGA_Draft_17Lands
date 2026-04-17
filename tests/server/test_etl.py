@@ -204,7 +204,7 @@ def test_transform_payload_merging():
 
 
 def test_parse_scryfall_types():
-    """Ensure we correctly strip supertypes and split tribal lines."""
+    """Ensure we correctly strip supertypes and split tribal lines, including DFCs."""
     types, subtypes = parse_scryfall_types("Legendary Creature — Human Ninja")
     assert types == ["Creature"]
     assert subtypes == ["Human", "Ninja"]
@@ -217,6 +217,15 @@ def test_parse_scryfall_types():
     types, subtypes = parse_scryfall_types("Battle — Siege")
     assert types == ["Battle"]
     assert subtypes == ["Siege"]
+
+    # Test DFC / Transforming Sagas
+    types, subtypes = parse_scryfall_types(
+        "Enchantment — Saga // Enchantment Creature — Rat Rogue"
+    )
+    assert "Creature" in types
+    assert "Enchantment" in types
+    assert "Saga" in subtypes
+    assert "Rat" in subtypes
 
 
 # ==============================================================================

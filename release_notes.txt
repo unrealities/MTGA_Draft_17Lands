@@ -6,6 +6,7 @@
 * unrealities: [Bug] Fixed an issue where the application would not display basic lands
 * unrealities: [Bug] Fixed clicking on a card name who was truncated
 * unrealities: [UX/UI] Removed P1P1 screenshot functionality as MTG Arena has fixed logging for Premier and Traditional Draft
+* unrealities: [Bug] Fixed an issue where double faced cards were not displayed #170
 
 ===================== RELEASE NOTES 4.13 =====================
 * unrealities: [Bug] Fixed not displaying Powered Cube sets

@@ -112,3 +112,71 @@ def test_extract_basic_lands_api_call(mock_open, mock_exists, mock_client):
     assert "Island" in lands
     assert lands["Island"]["arena_ids"] == [999]
     assert "Random Card" not in lands
+
+
+def test_extract_scryfall_data_dfc_mapping(mock_client):
+    """Verifies that DFCs map both their full name and front name to the card data."""
+    from server.extract import extract_scryfall_data
+
+    mock_response = MagicMock()
+    mock_response.status_code = 200
+    mock_response.json.return_value = {
+        "data": [
+            {
+                "name": "Okiba Reckoner Raid // Nezumi Road Captain",
+                "arena_id": 79544,
+                "cmc": 1.0,
+                "type_line": "Enchantment — Saga // Enchantment Creature — Rat Rogue",
+                "mana_cost": "{B}",
+            }
+        ],
+        "next_page": None,
+    }
+    mock_client.respectful_get.return_value = mock_response
+
+    # Act
+    cards = extract_scryfall_data(mock_client, "NEO")
+
+    # Assert
+    assert "Okiba Reckoner Raid // Nezumi Road Captain" in cards
+    assert "Okiba Reckoner Raid" in cards
+
+    # Both keys should point to the exact same mapped data
+    assert cards["Okiba Reckoner Raid"]["arena_ids"] == [79544]
+    assert cards["Okiba Reckoner Raid"]["cmc"] == 1
+    assert "Creature" in cards["Okiba Reckoner Raid"]["types"]
+
+
+def test_extract_scryfall_adventure_and_supertypes(mock_client):
+    """Verifies that Adventures alias both faces and preserve Super Types."""
+    from server.extract import extract_scryfall_data
+
+    mock_response = MagicMock()
+    mock_response.status_code = 200
+    mock_response.json.return_value = {
+        "data": [
+            {
+                "name": "Brazen Borrower // Petty Theft",
+                "arena_id": 70186,
+                "cmc": 3.0,
+                "type_line": "Legendary Creature — Faerie Rogue // Instant — Adventure",
+                "mana_cost": "{1}{U}{U}",
+            }
+        ],
+        "next_page": None,
+    }
+    mock_client.respectful_get.return_value = mock_response
+
+    # Act
+    cards = extract_scryfall_data(mock_client, "ELD")
+
+    # Assert aliasing
+    assert "Brazen Borrower // Petty Theft" in cards
+    assert "Brazen Borrower" in cards
+    assert "Petty Theft" in cards  # The Adventure half is perfectly searchable
+
+    # Assert Super Types are preserved
+    primary_card = cards["Brazen Borrower"]
+    assert "Creature" in primary_card["types"]
+    assert "Instant" in primary_card["types"]
+    assert "Adventure" in primary_card["subtypes"]

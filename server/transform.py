@@ -9,9 +9,10 @@ def parse_scryfall_types(type_line: str):
     if not type_line:
         return [], []
 
-    parts = type_line.split("—")
-    base_str = parts[0].strip()
-    sub_str = parts[1].strip() if len(parts) > 1 else ""
+    faces = type_line.split("//")
+
+    types_list = []
+    subtypes_list = []
 
     allowed_types = {
         "Creature",
@@ -23,14 +24,26 @@ def parse_scryfall_types(type_line: str):
         "Planeswalker",
         "Battle",
     }
-    types = [t for t in base_str.split() if t in allowed_types]
 
-    if "Creature" in types:
-        types.remove("Creature")
-        types.insert(0, "Creature")
+    for face in faces:
+        parts = face.split("—")
+        base_str = parts[0].strip()
+        sub_str = parts[1].strip() if len(parts) > 1 else ""
 
-    subtypes = sub_str.split() if sub_str else []
-    return types, subtypes
+        for t in base_str.split():
+            if t in allowed_types and t not in types_list:
+                types_list.append(t)
+
+        if sub_str:
+            for st in sub_str.split():
+                if st not in subtypes_list:
+                    subtypes_list.append(st)
+
+    if "Creature" in types_list:
+        types_list.remove("Creature")
+        types_list.insert(0, "Creature")
+
+    return types_list, subtypes_list
 
 
 BASIC_LANDS = {
