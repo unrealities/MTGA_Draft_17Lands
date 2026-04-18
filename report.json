@@ -1,0 +1,292 @@
+{
+  "pipeline_run": {
+    "started_at": "2026-04-18T10:18:44.084439+00:00",
+    "completed_at": "2026-04-18T10:53:10.593832+00:00",
+    "duration_sec": 2066.5,
+    "status": "SUCCESS"
+  },
+  "api_stats": {
+    "total_requests": 306,
+    "failed_requests": 0,
+    "cached_requests": 129
+  },
+  "intent": {
+    "scheduled_events": {
+      "TMT": {
+        "formats": [
+          "PickTwoDraft",
+          "TradDraft",
+          "QuickDraft",
+          "PremierDraft"
+        ],
+        "start_date": "2026-03-03"
+      },
+      "NEO": {
+        "formats": [
+          "PremierDraft"
+        ],
+        "start_date": "2026-04-14"
+      },
+      "Cube - Powered": {
+        "formats": [
+          "TradDraft",
+          "PremierDraft"
+        ],
+        "start_date": "2026-03-31"
+      }
+    },
+    "archetypes_targeted": [
+      "All Decks",
+      "W",
+      "U",
+      "B",
+      "R",
+      "G",
+      "WU",
+      "UB",
+      "BR",
+      "RG",
+      "WG",
+      "WB",
+      "UR",
+      "BG",
+      "WR",
+      "UG",
+      "WUB",
+      "UBR",
+      "BRG",
+      "WRG",
+      "WUG",
+      "WBR",
+      "URG",
+      "WBG",
+      "WUR",
+      "UBG",
+      "WUBR",
+      "UBRG",
+      "WBRG",
+      "WURG",
+      "WUBG",
+      "WUBRG"
+    ],
+    "user_types_targeted": [
+      "All",
+      "Top"
+    ]
+  },
+  "execution_summary": {
+    "formats_updated": 14,
+    "formats_skipped": 0,
+    "total_output_kb": 2303,
+    "total_cards_rated": 16968,
+    "total_errors": 0,
+    "total_warnings": 1
+  },
+  "warehouse_state": {
+    "total_available_datasets": 22,
+    "available_keys": [
+      "TMT_PremierDraft_All",
+      "TMT_PremierDraft_Top",
+      "TMT_TradDraft_All",
+      "TMT_TradDraft_Top",
+      "TMT_PickTwoDraft_All",
+      "TMT_PickTwoDraft_Top",
+      "FDN_QuickDraft_All",
+      "FDN_QuickDraft_Top",
+      "BLB_PremierDraft_All",
+      "BLB_PremierDraft_Top",
+      "TMT_QuickDraft_All",
+      "TMT_QuickDraft_Top",
+      "FDN_PremierDraft_All",
+      "FDN_PremierDraft_Top",
+      "Cube - Powered_PremierDraft_All",
+      "Cube - Powered_PremierDraft_Top",
+      "Cube - Powered_TradDraft_All",
+      "Cube - Powered_TradDraft_Top",
+      "BLB_Sealed_All",
+      "BLB_Sealed_Top",
+      "NEO_PremierDraft_All",
+      "NEO_PremierDraft_Top"
+    ]
+  },
+  "datasets_updated": [
+    {
+      "set": "TMT",
+      "format": "PickTwoDraft",
+      "user_group": "All",
+      "filename": "TMT_PickTwoDraft_All_Data.json.gz",
+      "size_kb": 142,
+      "card_count": 1058,
+      "start_date": "2026-03-03",
+      "end_date": "2026-04-18",
+      "game_count": 157671,
+      "status": "success"
+    },
+    {
+      "set": "TMT",
+      "format": "PickTwoDraft",
+      "user_group": "Top",
+      "filename": "TMT_PickTwoDraft_Top_Data.json.gz",
+      "size_kb": 74,
+      "card_count": 1058,
+      "start_date": "2026-03-03",
+      "end_date": "2026-04-18",
+      "game_count": 0,
+      "status": "success"
+    },
+    {
+      "set": "TMT",
+      "format": "TradDraft",
+      "user_group": "All",
+      "filename": "TMT_TradDraft_All_Data.json.gz",
+      "size_kb": 115,
+      "card_count": 1058,
+      "start_date": "2026-03-03",
+      "end_date": "2026-04-18",
+      "game_count": 52223,
+      "status": "success"
+    },
+    {
+      "set": "TMT",
+      "format": "TradDraft",
+      "user_group": "Top",
+      "filename": "TMT_TradDraft_Top_Data.json.gz",
+      "size_kb": 89,
+      "card_count": 1058,
+      "start_date": "2026-03-03",
+      "end_date": "2026-04-18",
+      "game_count": 6989,
+      "status": "success"
+    },
+    {
+      "set": "TMT",
+      "format": "QuickDraft",
+      "user_group": "All",
+      "filename": "TMT_QuickDraft_All_Data.json.gz",
+      "size_kb": 131,
+      "card_count": 1058,
+      "start_date": "2026-03-03",
+      "end_date": "2026-04-18",
+      "game_count": 96471,
+      "status": "success"
+    },
+    {
+      "set": "TMT",
+      "format": "QuickDraft",
+      "user_group": "Top",
+      "filename": "TMT_QuickDraft_Top_Data.json.gz",
+      "size_kb": 74,
+      "card_count": 1058,
+      "start_date": "2026-03-03",
+      "end_date": "2026-04-18",
+      "game_count": 0,
+      "status": "success"
+    },
+    {
+      "set": "TMT",
+      "format": "PremierDraft",
+      "user_group": "All",
+      "filename": "TMT_PremierDraft_All_Data.json.gz",
+      "size_kb": 155,
+      "card_count": 1058,
+      "start_date": "2026-03-03",
+      "end_date": "2026-04-18",
+      "game_count": 314715,
+      "status": "success"
+    },
+    {
+      "set": "TMT",
+      "format": "PremierDraft",
+      "user_group": "Top",
+      "filename": "TMT_PremierDraft_Top_Data.json.gz",
+      "size_kb": 114,
+      "card_count": 1058,
+      "start_date": "2026-03-03",
+      "end_date": "2026-04-18",
+      "game_count": 49273,
+      "status": "success"
+    },
+    {
+      "set": "NEO",
+      "format": "PremierDraft",
+      "user_group": "All",
+      "filename": "NEO_PremierDraft_All_Data.json.gz",
+      "size_kb": 242,
+      "card_count": 1232,
+      "start_date": "2022-02-10",
+      "end_date": "2026-04-18",
+      "game_count": 1236078,
+      "status": "success"
+    },
+    {
+      "set": "NEO",
+      "format": "PremierDraft",
+      "user_group": "Top",
+      "filename": "NEO_PremierDraft_Top_Data.json.gz",
+      "size_kb": 177,
+      "card_count": 1232,
+      "start_date": "2022-02-10",
+      "end_date": "2026-04-18",
+      "game_count": 150880,
+      "status": "success"
+    },
+    {
+      "set": "Cube - Powered",
+      "format": "TradDraft",
+      "user_group": "All",
+      "filename": "Cube - Powered_TradDraft_All_Data.json.gz",
+      "size_kb": 233,
+      "card_count": 1510,
+      "start_date": "2026-03-31",
+      "end_date": "2026-04-18",
+      "game_count": 22888,
+      "status": "success"
+    },
+    {
+      "set": "Cube - Powered",
+      "format": "TradDraft",
+      "user_group": "Top",
+      "filename": "Cube - Powered_TradDraft_Top_Data.json.gz",
+      "size_kb": 155,
+      "card_count": 1510,
+      "start_date": "2026-03-31",
+      "end_date": "2026-04-18",
+      "game_count": 2292,
+      "status": "success"
+    },
+    {
+      "set": "Cube - Powered",
+      "format": "PremierDraft",
+      "user_group": "All",
+      "filename": "Cube - Powered_PremierDraft_All_Data.json.gz",
+      "size_kb": 361,
+      "card_count": 1510,
+      "start_date": "2026-03-31",
+      "end_date": "2026-04-18",
+      "game_count": 227929,
+      "status": "success"
+    },
+    {
+      "set": "Cube - Powered",
+      "format": "PremierDraft",
+      "user_group": "Top",
+      "filename": "Cube - Powered_PremierDraft_Top_Data.json.gz",
+      "size_kb": 241,
+      "card_count": 1510,
+      "start_date": "2026-03-31",
+      "end_date": "2026-04-18",
+      "game_count": 30350,
+      "status": "success"
+    }
+  ],
+  "datasets_skipped": [],
+  "errors": [],
+  "warnings": [
+    {
+      "time": "2026-04-18T10:34:09.681077+00:00",
+      "level": "WARNING",
+      "logger": "server.utils",
+      "message": "Network error on https://api.scryfall.com/cards/search?q=set%3ANEO&unique=prints: HTTPSConnectionPool(host='api.scryfall.com', port=443): Read timed out. (read timeout=30). Retrying in 5.0s..."
+    }
+  ]
+}
