@@ -16,8 +16,28 @@ import json
 import random
 from src import constants
 from src.logger import create_logger
+from src.sealed_logic import HeuristicEvaluator
 
 logger = create_logger()
+
+# Maps standard Tier List grades to 17Lands GIHWR equivalents for Day-1 calculations
+TIER_TO_GIHWR = {
+    "A+": 68.0,
+    "A ": 66.0,
+    "A-": 64.0,
+    "B+": 62.0,
+    "B ": 60.0,
+    "B-": 58.0,
+    "C+": 56.0,
+    "C ": 54.0,
+    "C-": 52.0,
+    "D+": 50.0,
+    "D ": 48.0,
+    "D-": 46.0,
+    "F ": 40.0,
+    "SB": 40.0,
+    "NA": 0.0,
+}
 
 # --- HELPER CLASSES ---
 
@@ -985,9 +1005,10 @@ def suggest_deck(
     return sorted_decks
 
 
-def identify_top_pairs(pool, metrics):
-    """Returns top 2-color pairs based on playability and raw power."""
-    global_mean, global_std = metrics.get_metrics("All Decks", "gihwr")
+def identify_top_pairs(pool, metrics, tier_data=None):
+    global_mean, global_std = (
+        metrics.get_metrics("All Decks", "gihwr") if metrics else (54.0, 4.0)
+    )
     if global_mean == 0.0:
         global_mean = 54.0
     if global_std == 0.0:
@@ -998,8 +1019,7 @@ def identify_top_pairs(pool, metrics):
     scores = {c: 0.0 for c in constants.CARD_COLORS}
     for card in pool:
         colors = card.get(constants.DATA_FIELD_COLORS, [])
-        stats = card.get("deck_colors", {}).get("All Decks", {})
-        wr = float(stats.get(constants.DATA_FIELD_GIHWR, 0.0))
+        wr = get_card_rating(card, ["All Decks"], metrics, tier_data)
 
         if wr > playable_baseline:
             points = (wr - playable_baseline) / global_std
@@ -1007,10 +1027,9 @@ def identify_top_pairs(pool, metrics):
                 scores[c] += points
 
     sorted_c = sorted(scores.items(), key=lambda x: x[1], reverse=True)
-
-    top_pairs = []
     top_4_colors = [c[0] for c in sorted_c[:4]]
 
+    top_pairs = []
     from itertools import combinations
 
     for pair in combinations(top_4_colors, 2):
@@ -1022,7 +1041,7 @@ def identify_top_pairs(pool, metrics):
 # --- UNIVERSAL LIQUID SCORING ENGINE ---
 
 
-def calculate_holistic_score(deck, colors, pool_size, metrics):
+def calculate_holistic_score(deck, colors, pool_size, metrics, tier_data=None):
     """
     Evaluates a deck on a 0-100 Power Level scale.
     """
@@ -1198,7 +1217,7 @@ def estimate_record(power_level, is_bo3=False):
 # --- HEURISTIC BUILDERS ---
 
 
-def build_variant_consistency(pool, colors, metrics):
+def build_variant_consistency(pool, colors, metrics, tier_data=None):
     candidates = [
         c
         for c in pool
@@ -1226,7 +1245,7 @@ def build_variant_consistency(pool, colors, metrics):
     return stack_cards(spells + non_basic_lands + basics)
 
 
-def build_variant_greedy(pool, colors, metrics):
+def build_variant_greedy(pool, colors, metrics, tier_data=None):
     global_mean, global_std = metrics.get_metrics("All Decks", "gihwr")
     if global_mean == 0.0:
         global_mean = 54.0
@@ -1298,7 +1317,7 @@ def build_variant_greedy(pool, colors, metrics):
     return stack_cards(deck_spells + non_basic_lands + basics), best_splash[1]
 
 
-def build_variant_curve(pool, colors, metrics):
+def build_variant_curve(pool, colors, metrics, tier_data=None):
     candidates = [
         c
         for c in pool
@@ -1371,12 +1390,12 @@ def get_strict_colors(spells):
     return sorted_strict
 
 
-def build_variant_soup(pool, metrics):
+def build_variant_soup(pool, metrics, tier_data=None):
     """Builds a 'Good Stuff' deck strictly prioritizing global power, but forces fixing into the top 23."""
     candidates = [c for c in pool if "Land" not in c.get("types", [])]
 
     def soup_rating(card):
-        base = get_card_rating(card, ["All Decks"], metrics)
+        base = get_card_rating(card, ["All Decks"], metrics, tier_data)
         tags = card.get("tags", [])
         text = str(card.get("text", "")).lower()
         name = str(card.get("name", "")).lower()
@@ -1745,12 +1764,7 @@ def is_castable(card, colors, strict=True):
         return any(c in colors for c in card_colors)
 
 
-def get_card_rating(card, colors, metrics=None):
-    """
-    Synthesizes Archetype data with Global data.
-    Ensures that universally good cards (Bombs) are always valued highly,
-    even if data is sparse in a specific color pairing.
-    """
+def get_card_rating(card, colors, metrics=None, tier_data=None):
     global_mean = 54.0
     if metrics:
         mean_val, _ = metrics.get_metrics("All Decks", "gihwr")
@@ -1758,29 +1772,35 @@ def get_card_rating(card, colors, metrics=None):
             global_mean = mean_val
 
     stats = card.get("deck_colors", {})
-
-    # 1. Always get the Global baseline first
     global_stats = stats.get("All Decks", {})
     global_wr = float(global_stats.get("gihwr", 0.0))
 
-    # 2. Try to get the specific archetype data
     arch_key = (
         "".join(sorted(colors)) if len(colors) <= 2 else "".join(sorted(colors[:2]))
     )
     arch_stats = stats.get(arch_key, {})
     arch_wr = float(arch_stats.get("gihwr", 0.0))
 
-    # 3. Blending Logic
     if arch_wr > 30.0 and global_wr > 30.0:
-        # If we have valid data for both, blend them.
-        # 70% weight to the specific archetype, 30% weight to the global power of the card.
         return (arch_wr * 0.7) + (global_wr * 0.3)
     elif global_wr > 30.0:
-        # If the archetype data is missing or 0.0 (data sparsity), rely 100% on global stats.
         return global_wr
-    else:
-        # If the card is completely unknown, assume baseline filler relative to the set
-        return global_mean - 4.0
+
+    if tier_data:
+        name = card.get("name", "")
+        tier_scores = []
+        for tier_obj in tier_data.values():
+            if name in tier_obj.ratings:
+                grade = tier_obj.ratings[name].rating
+                score = TIER_TO_GIHWR.get(grade, 0.0)
+                if score > 0.0:
+                    tier_scores.append(score)
+        if tier_scores:
+            return sum(tier_scores) / len(tier_scores)
+
+    from src.sealed_logic import HeuristicEvaluator
+
+    return HeuristicEvaluator.evaluate(card)
 
 
 class ManaSourceAnalyzer:

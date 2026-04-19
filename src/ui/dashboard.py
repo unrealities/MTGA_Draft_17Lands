@@ -273,6 +273,13 @@ class DashboardFrame(ttk.Frame):
             header_frame, text="View Draft on 17Lands 🌐", bootstyle="info-outline"
         )
 
+        self.btn_sealed_studio = ttk.Button(
+            header_frame,
+            text="⚔️ Enter Epic Sealed Studio",
+            bootstyle="warning",
+            command=self._launch_sealed_studio,
+        )
+
         # TABBED CONTENT
         self.recap_notebook = ttk.Notebook(self.recovery_frame)
         self.recap_notebook.grid(
@@ -429,6 +436,19 @@ class DashboardFrame(ttk.Frame):
 
         self._create_stat_box(stats_col, "RARES & MYTHICS", "lbl_recap_rares").pack(
             fill="both", expand=True, pady=Theme.scaled_val((0, 10))
+        )
+
+    def _launch_sealed_studio(self):
+        """Triggers the massive Sealed Workspace Toplevel."""
+        from src.ui.windows.sealed_studio import SealedStudioWindow
+
+        # Gather the raw pool and metrics
+        raw_pool = self.orchestrator.scanner.retrieve_taken_cards()
+        metrics = self.orchestrator.scanner.retrieve_set_metrics()
+
+        # Launch the Toplevel window safely using the root application window as the parent
+        SealedStudioWindow(
+            self.winfo_toplevel(), self, self.configuration, raw_pool, metrics
         )
 
     def update_pool_summary(self, taken_cards, metrics, draft_id=""):
@@ -620,7 +640,6 @@ class DashboardFrame(ttk.Frame):
             if "Land" in types:
                 non_basics.append(c)
 
-            # Only count subtypes if the card is actually a creature (ignores Food, Treasure, etc.)
             if "Creature" in types:
                 for sub in subs:
                     subtypes_counts[sub] = subtypes_counts.get(sub, 0) + 1
@@ -628,7 +647,6 @@ class DashboardFrame(ttk.Frame):
             for tag in c.get("tags", []):
                 tags_count[tag] = tags_count.get(tag, 0) + 1
 
-        # 1. Tribes
         top_tribes = sorted(subtypes_counts.items(), key=lambda x: x[1], reverse=True)
         tribe_text = ""
         for t, count in top_tribes[:6]:
@@ -640,7 +658,6 @@ class DashboardFrame(ttk.Frame):
                 text=tribe_text if tribe_text else "No creature types with 3+ cards."
             )
 
-        # 2. Roles
         role_text = ""
         for tag, count in sorted(tags_count.items(), key=lambda x: x[1], reverse=True)[
             :6
@@ -653,7 +670,6 @@ class DashboardFrame(ttk.Frame):
                 text=role_text if role_text else "No Scryfall tags matched."
             )
 
-        # 3. Staples
         staples = [
             c
             for c in valid_cards
@@ -670,7 +686,6 @@ class DashboardFrame(ttk.Frame):
                 text=staples_text if staples_text else "No premium staples drafted."
             )
 
-        # 4. Non-Basic Lands
         non_basics.sort(key=get_gihwr, reverse=True)
         non_basic_text = ""
         for c in non_basics[:6]:
@@ -721,7 +736,6 @@ class DashboardFrame(ttk.Frame):
                 name = card.get("name", "")
                 types = card.get("types", [])
 
-                # EXCLUDE BASIC LANDS
                 if "Basic" in types or name in constants.BASIC_LANDS:
                     continue
 
@@ -741,10 +755,22 @@ class DashboardFrame(ttk.Frame):
                     type_counts["Artifact"] += 1
                 elif "Land" in types:
                     type_counts["Land"] += 1
+
             self.recap_type_chart.update_counts(type_counts)
 
-        # --- 8. 17LANDS API FETCH ---
+        # --- 8. SHOW SEALED STUDIO BUTTON IF APPLICABLE ---
+        is_sealed = "Sealed" in getattr(self, "_current_event_type", "")
+        if hasattr(self, "btn_sealed_studio"):
+            if is_sealed:
+                from src.ui.styles import Theme
+
+                self.btn_sealed_studio.pack(side="right", padx=Theme.scaled_val(10))
+            else:
+                self.btn_sealed_studio.pack_forget()
+
+        # --- 9. 17LANDS API FETCH ---
         if draft_id:
+            import threading
 
             def fetch_17lands_record():
                 from src.seventeenlands import Seventeenlands
@@ -766,14 +792,20 @@ class DashboardFrame(ttk.Frame):
                                 text=f"Actual 17Lands Record: {wins} Wins - {losses} Losses",
                                 bootstyle=record_style,
                             )
+                            from src.ui.styles import Theme
+
                             self.lbl_actual_record.pack(
                                 anchor="center", pady=Theme.scaled_val((5, 0))
                             )
 
                         if hasattr(self, "btn_17lands_link"):
+                            from src.utils import open_file
+
                             self.btn_17lands_link.config(
                                 command=lambda: open_file(record["url"])
                             )
+                            from src.ui.styles import Theme
+
                             self.btn_17lands_link.pack(
                                 side="right", padx=Theme.scaled_val((0, 10))
                             )
@@ -1027,7 +1059,6 @@ class DashboardFrame(ttk.Frame):
             constants.LIMITED_TYPE_STRING_DRAFT_PICK_TWO_TRAD,
         ]
 
-        # Determine if the draft is mathematically completed based on taken cards
         is_bot = self._current_event_type in [
             constants.LIMITED_TYPE_STRING_DRAFT_QUICK,
             constants.LIMITED_TYPE_STRING_DRAFT_PICK_TWO_QUICK,
@@ -1043,7 +1074,6 @@ class DashboardFrame(ttk.Frame):
             history = self.orchestrator.scanner.retrieve_draft_history()
             max_pack_size = 0
             for entry in history:
-                # For standard drafts: Pick Number + Cards Remaining in Pack - 1 = Original Pack Size
                 pack_size = entry.get("Pick", 1) + len(entry.get("Cards", [])) - 1
                 if pack_size > max_pack_size:
                     max_pack_size = pack_size
@@ -1062,7 +1092,6 @@ class DashboardFrame(ttk.Frame):
 
         show_recovery = draft_complete or sealed_complete
 
-        # Capture visibility BEFORE grid_remove() so was_hidden is accurate
         was_content_hidden = not self.content_frame.winfo_viewable()
         self.content_frame.grid_remove()
         self.waiting_frame.grid_remove()
@@ -1070,33 +1099,38 @@ class DashboardFrame(ttk.Frame):
         if hasattr(self, "recovery_frame"):
             self.recovery_frame.grid_remove()
 
-        if not has_any_datasets:  # Force charts to render if they haven't yet
+        if not has_any_datasets:
             if hasattr(self, "recap_curve_plot") and self.recap_curve_plot:
                 self.recap_curve_plot.redraw()
             if hasattr(self, "recap_type_chart") and self.recap_type_chart:
                 self.recap_type_chart.redraw()
 
         elif has_draft_data:
-            self.content_frame.grid(row=0, column=0, sticky="nsew")
+            if show_recovery:
+                self.recovery_frame.grid(row=0, column=0, sticky="nsew")
+            else:
+                self.content_frame.grid(row=0, column=0, sticky="nsew")
 
-            if was_content_hidden and self.sidebar_visible:
+                if was_content_hidden and self.sidebar_visible:
 
-                def fix_sash():
-                    try:
-                        curr_w = self.winfo_width()
-                        if curr_w > 200:
-                            dash_sash = getattr(
-                                self.configuration.settings,
-                                "dashboard_sash",
-                                Theme.scaled_val(800),
-                            )
-                            safe_sash = min(dash_sash, curr_w - Theme.scaled_val(280))
-                            if safe_sash > Theme.scaled_val(50):
-                                self.h_splitter.sashpos(0, safe_sash)
-                    except Exception:
-                        pass
+                    def fix_sash():
+                        try:
+                            curr_w = self.winfo_width()
+                            if curr_w > 200:
+                                dash_sash = getattr(
+                                    self.configuration.settings,
+                                    "dashboard_sash",
+                                    Theme.scaled_val(800),
+                                )
+                                safe_sash = min(
+                                    dash_sash, curr_w - Theme.scaled_val(280)
+                                )
+                                if safe_sash > Theme.scaled_val(50):
+                                    self.h_splitter.sashpos(0, safe_sash)
+                        except Exception:
+                            pass
 
-                self.after(50, fix_sash)
+                    self.after(50, fix_sash)
         else:
             if self._current_event_set:
                 self.lbl_waiting_title.config(
@@ -1131,8 +1165,6 @@ class DashboardFrame(ttk.Frame):
             pack_w = max(1, self._pack_count)
             miss_w = max(1, self._missing_count)
 
-            # minsize guarantees that even if a table only has 1 card, Tkinter will refuse
-            # to crush it smaller than 140 pixels, ensuring it remains fully readable!
             self.f_left.rowconfigure(0, weight=pack_w, minsize=Theme.scaled_val(140))
             self.f_left.rowconfigure(1, weight=miss_w, minsize=Theme.scaled_val(140))
 
@@ -1154,7 +1186,6 @@ class DashboardFrame(ttk.Frame):
         for item in tree.get_children():
             tree.delete(item)
 
-        # Track card counts for dynamic layout rendering
         if source_type == "pack":
             self._pack_count = len(cards) if cards else 0
         else:
@@ -1273,7 +1304,6 @@ class DashboardFrame(ttk.Frame):
 
         processed_rows.sort(key=lambda x: x["sort_key"], reverse=True)
 
-        # Apply zebra striping AFTER sorting so the alternating pattern is correct on load
         for i, row in enumerate(processed_rows):
             if not self.configuration.settings.card_colors_enabled and row["tag"] in [
                 "bw_odd",
@@ -1349,14 +1379,12 @@ class DashboardFrame(ttk.Frame):
             self.advisor_panel.update_recommendations(recs)
 
     def _on_sash_drag_end(self, event):
-        """Save the sash position immediately after the user drags it."""
         try:
             self.configuration.settings.dashboard_sash = self.h_splitter.sashpos(0)
         except Exception:
             pass
 
     def _toggle_sidebar(self):
-        """Dynamically grid or hide the sidebar via the rail button."""
         self.sidebar_visible = not self.sidebar_visible
         self.rail_btn.config(text="◀" if self.sidebar_visible else "▶")
 
