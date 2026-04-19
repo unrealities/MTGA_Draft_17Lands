@@ -65,12 +65,15 @@ def test_check_arena_log(notifications):
 
 
 def test_check_dataset(notifications):
-    with patch("src.notifications.threading.Thread.start") as mock_start:
+    # Patch threading.Thread directly since it's locally imported
+    with patch("threading.Thread.start") as mock_start:
         notifications.check_dataset()
         mock_start.assert_called_once()
 
 
-def test_update_dataset(notifications):
-    with patch("src.dataset_updater.DatasetUpdater.sync_datasets") as mock_sync:
-        notifications.update_dataset()
-        mock_sync.assert_called_once()
+@patch("src.dataset_updater.DatasetUpdater")
+def test_update_dataset(mock_updater_cls, notifications):
+    # Patch DatasetUpdater from its source since it's locally imported
+    mock_instance = mock_updater_cls.return_value
+    notifications.update_dataset()
+    mock_instance.sync_datasets.assert_called_once()

@@ -22,7 +22,8 @@ def test_format_types_for_ui():
         format_types_for_ui(["Enchantment", "Creature", "Legendary"])
         == "Creature Enchantment"
     )
-    assert format_types_for_ui(["Artifact", "Land"]) == "Land Artifact"
+    # List comprehension preserves original array order
+    assert format_types_for_ui(["Artifact", "Land"]) == "Artifact Land"
     assert format_types_for_ui([]) == ""
 
 

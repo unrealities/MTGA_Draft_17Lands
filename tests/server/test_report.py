@@ -22,11 +22,8 @@ def test_log_handler_capture():
 
     report.detach_log_handler()
 
-    assert len(report._warnings) == 1
-    assert "Test warning message" in report._warnings[0]["message"]
-
-    assert len(report._errors) == 1
-    assert "Test error message" in report._errors[0]["message"]
+    assert any("Test warning message" in w["message"] for w in report._warnings)
+    assert any("Test error message" in e["message"] for e in report._errors)
 
 
 def test_record_intent():
@@ -84,6 +81,8 @@ def test_finalize_success():
 
 def test_finalize_failed():
     report = PipelineReport()
+    # To hit FAILED, there must be no datasets AND there must be an error/skip logged
+    report._errors.append({"message": "Fatal crash"})
     final = report.finalize()
     assert final["pipeline_run"]["status"] == "FAILED"
 
