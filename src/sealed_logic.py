@@ -167,18 +167,52 @@ class SealedSession:
             return False
 
         variant = self.variants[self.active_variant_name]
-        max_available = self._pool_inventory.get(card_name, 0)
         is_basic = card_name in constants.BASIC_LANDS
-        current_in_main = variant.main_deck_counts.get(card_name, 0)
+
+        if card_name in self._pool_inventory:
+            actual_name = card_name
+        else:
+            # Fallback for MTGA DFC imports (which often only list the front face)
+            actual_name = next(
+                (
+                    k
+                    for k in self._pool_inventory.keys()
+                    if k.startswith(f"{card_name} //")
+                ),
+                None,
+            )
+            if not actual_name and not is_basic:
+                return False
+
+        if is_basic:
+            actual_name = card_name
+
+        max_available = self._pool_inventory.get(actual_name, 0)
+        current_in_main = variant.main_deck_counts.get(actual_name, 0)
 
         if is_basic or (current_in_main + count <= max_available):
-            variant.add_card(card_name, count)
+            variant.add_card(actual_name, count)
             return True
         return False
 
     def move_to_sideboard(self, card_name: str, count: int = 1):
         if self.active_variant_name:
-            self.variants[self.active_variant_name].remove_card(card_name, count)
+            if card_name in self._pool_inventory:
+                actual_name = card_name
+            else:
+                actual_name = (
+                    next(
+                        (
+                            k
+                            for k in self._pool_inventory.keys()
+                            if k.startswith(f"{card_name} //")
+                        ),
+                        None,
+                    )
+                    or card_name
+                )
+
+            self.variants[self.active_variant_name].remove_card(actual_name, count)
 
     def get_active_deck_lists(self) -> Tuple[List[Dict], List[Dict]]:
         if not self.active_variant_name:

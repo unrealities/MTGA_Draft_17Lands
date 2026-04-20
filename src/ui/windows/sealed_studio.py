@@ -1,5 +1,8 @@
 """
 src/ui/windows/sealed_studio.py
+Provides a massive workspace for Sealed deckbuilding.
+Features both a detailed List View and a highly interactive,
+MTGA-style Visual Drag-and-Drop Deckbuilder with card images.
 """
 
 import tkinter
@@ -7,7 +10,12 @@ from tkinter import ttk, messagebox, simpledialog
 import ttkbootstrap as tb
 import requests
 import json
+import io
+import os
+import hashlib
 from typing import List, Dict
+from PIL import Image, ImageTk
+from concurrent.futures import ThreadPoolExecutor
 
 from src import constants
 from src.configuration import Configuration
@@ -17,6 +25,7 @@ from src.ui.components import (
     ManaCurvePlot,
     TypePieChart,
     CardToolTip,
+    AutoScrollbar,
 )
 from src.card_logic import copy_deck, get_deck_metrics
 from src.sealed_logic import SealedSession, generate_sealed_shells
@@ -31,6 +40,7 @@ class SealedStudioWindow(tb.Toplevel):
         configuration: Configuration,
         raw_pool: List[Dict],
         metrics,
+        draft_id: str = None,
     ):
         super().__init__(parent)
         self.app_context = app_context
@@ -44,13 +54,22 @@ class SealedStudioWindow(tb.Toplevel):
         self.geometry(f"{width}x{height}")
         self.minsize(Theme.scaled_val(1000), Theme.scaled_val(700))
 
-        draft_id = app_context.orchestrator.scanner.current_draft_id or "local_sealed"
+        draft_id = (
+            draft_id
+            or app_context.orchestrator.scanner.current_draft_id
+            or "local_sealed"
+        )
 
         # Load or create session
         self.session = SealedSession.load_session(draft_id, raw_pool)
         if not self.session:
             self.session = SealedSession(draft_id)
             self.session.load_pool(raw_pool)
+
+        # State
+        self.view_mode = "visual"  # Options: "visual" or "list"
+        self.image_cache = {}
+        self.image_executor = ThreadPoolExecutor(max_workers=6)
 
         self.filter_vars = {
             "creatures": tkinter.IntVar(value=1),
@@ -80,10 +99,10 @@ class SealedStudioWindow(tb.Toplevel):
         self._build_ui()
         self._refresh_tabs()
         self._refresh_data()
+
         self.update_idletasks()
         self.focus_force()
 
-        # Handle window close to save state
         self.protocol("WM_DELETE_WINDOW", self._on_close)
 
     def _build_ui(self):
@@ -106,10 +125,11 @@ class SealedStudioWindow(tb.Toplevel):
 
         tb.Button(
             header,
-            text="🌐 Export to Sealeddeck.tech",
-            bootstyle="warning-outline",
-            command=self._export_to_sealeddeck_tech,
-        ).pack(side="right", padx=Theme.scaled_val(5))
+            text="📥 Import Deck",
+            bootstyle="info",
+            command=self._import_deck_from_clipboard,
+        ).pack(side="left", padx=Theme.scaled_val(10))
+
         tb.Button(
             header,
             text="📋 Copy MTGA Format",
@@ -117,25 +137,71 @@ class SealedStudioWindow(tb.Toplevel):
             command=self._export_active_deck,
         ).pack(side="right", padx=Theme.scaled_val(5))
 
-        self.splitter = tb.PanedWindow(self, orient=tkinter.HORIZONTAL)
-        self.splitter.pack(
+        tb.Button(
+            header,
+            text="🌐 Export to Sealeddeck.tech",
+            bootstyle="warning-outline",
+            command=self._export_to_sealeddeck_tech,
+        ).pack(side="right", padx=Theme.scaled_val(5))
+
+        self.btn_view_toggle = tb.Button(
+            header,
+            text="👁️ Switch to List View",
+            bootstyle="secondary-outline",
+            command=self._toggle_view,
+        )
+        self.btn_view_toggle.pack(side="right", padx=Theme.scaled_val(15))
+
+        # Core container
+        self.container = ttk.PanedWindow(self, orient=tkinter.HORIZONTAL)
+        self.container.pack(
             fill="both",
             expand=True,
             padx=Theme.scaled_val(10),
             pady=Theme.scaled_val(10),
         )
 
-        # LEFT PANE: MASTER POOL
-        self.left_pane = tb.Frame(self.splitter)
-        self.splitter.add(self.left_pane, weight=1)
+        # --- LIST VIEW FRAMES ---
+        self.list_pane_left = tb.Frame(self.container)
+        self.list_pane_right = tb.Frame(self.container)
+        self._build_list_view()
 
-        pool_header = tb.Frame(self.left_pane)
+        # --- VISUAL VIEW FRAME ---
+        self.visual_pane = tb.Frame(self.container)
+        self._build_visual_view()
+
+        # Initial View Setup
+        self._apply_view_mode()
+
+    def _toggle_view(self):
+        self.view_mode = "list" if self.view_mode == "visual" else "visual"
+        self._apply_view_mode()
+        self._refresh_data()
+
+    def _apply_view_mode(self):
+        for pane in [self.visual_pane, self.list_pane_left, self.list_pane_right]:
+            try:
+                self.container.forget(pane)
+            except tkinter.TclError:
+                pass
+
+        if self.view_mode == "list":
+            self.btn_view_toggle.config(text="👁️ Switch to Visual View")
+            self.container.add(self.list_pane_left, weight=1)
+            self.container.add(self.list_pane_right, weight=1)
+        else:
+            self.btn_view_toggle.config(text="👁️ Switch to List View")
+            self.container.add(self.visual_pane, weight=1)
+
+    def _build_list_view(self):
+        # LEFT PANE: MASTER POOL
+        pool_header = tb.Frame(self.list_pane_left)
         pool_header.pack(fill="x", pady=Theme.scaled_val((0, 5)))
 
-        self.lbl_pool_title = tb.Label(
+        self.lbl_pool_title_list = tb.Label(
             pool_header, text="MASTER POOL (0)", font=Theme.scaled_font(12, "bold")
         )
-        self.lbl_pool_title.pack(side="left")
+        self.lbl_pool_title_list.pack(side="left")
 
         filter_frame = tb.Frame(pool_header)
         filter_frame.pack(side="right")
@@ -159,7 +225,7 @@ class SealedStudioWindow(tb.Toplevel):
         ).pack(side="left", padx=2)
 
         self.pool_manager = DynamicTreeviewManager(
-            self.left_pane,
+            self.list_pane_left,
             view_id="sealed_pool_table",
             configuration=self.configuration,
             on_update_callback=self._refresh_data,
@@ -167,17 +233,13 @@ class SealedStudioWindow(tb.Toplevel):
         self.pool_manager.pack(fill="both", expand=True)
 
         # RIGHT PANE: WORKBENCH
-        self.right_pane = tb.Frame(self.splitter)
-        self.splitter.add(self.right_pane, weight=1)
-
-        tab_header = tb.Frame(self.right_pane)
+        tab_header = tb.Frame(self.list_pane_right)
         tab_header.pack(fill="x")
 
-        self.notebook = tb.Notebook(tab_header)
-        self.notebook.pack(side="left", fill="x", expand=True)
-        self.notebook.bind("<<NotebookTabChanged>>", self._on_tab_changed)
+        self.notebook_list = tb.Notebook(tab_header)
+        self.notebook_list.pack(side="left", fill="x", expand=True)
+        self.notebook_list.bind("<<NotebookTabChanged>>", self._on_tab_changed_list)
 
-        # Quick tab controls
         tb.Button(
             tab_header,
             text="➕",
@@ -201,17 +263,17 @@ class SealedStudioWindow(tb.Toplevel):
         ).pack(side="right", padx=2, pady=2)
 
         deck_controls = tb.Frame(
-            self.right_pane, style="Card.TFrame", padding=Theme.scaled_val(5)
+            self.list_pane_right, style="Card.TFrame", padding=Theme.scaled_val(5)
         )
         deck_controls.pack(fill="x", pady=Theme.scaled_val((0, 5)))
 
-        self.lbl_deck_title = tb.Label(
+        self.lbl_deck_title_list = tb.Label(
             deck_controls,
             text="ACTIVE DECK (0)",
             font=Theme.scaled_font(12, "bold"),
             bootstyle="success",
         )
-        self.lbl_deck_title.pack(side="left", padx=Theme.scaled_val(5))
+        self.lbl_deck_title_list.pack(side="left", padx=Theme.scaled_val(5))
 
         tb.Button(
             deck_controls,
@@ -220,9 +282,9 @@ class SealedStudioWindow(tb.Toplevel):
             command=self._apply_auto_lands,
         ).pack(side="left", padx=Theme.scaled_val(10))
 
-        self.basics_frame = tb.Frame(deck_controls)
-        self.basics_frame.pack(side="right")
-        self.basic_buttons = {}
+        self.basics_frame_list = tb.Frame(deck_controls)
+        self.basics_frame_list.pack(side="right")
+        self.basic_buttons_list = {}
         for sym, name, style in [
             ("W", "Plains", "light"),
             ("U", "Island", "info"),
@@ -231,7 +293,7 @@ class SealedStudioWindow(tb.Toplevel):
             ("G", "Forest", "success"),
         ]:
             btn = tb.Button(
-                self.basics_frame,
+                self.basics_frame_list,
                 text=f"{sym}: 0",
                 bootstyle=style,
                 width=5,
@@ -240,19 +302,197 @@ class SealedStudioWindow(tb.Toplevel):
             btn.bind("<ButtonRelease-1>", lambda e, n=name: self._add_basic(n))
             btn.bind("<Button-3>", lambda e, n=name: self._remove_basic(n))
             btn.pack(side="left", padx=1)
-            self.basic_buttons[name] = btn
+            self.basic_buttons_list[name] = btn
 
         self.deck_manager = DynamicTreeviewManager(
-            self.right_pane,
+            self.list_pane_right,
             view_id="sealed_deck_table",
             configuration=self.configuration,
             on_update_callback=self._refresh_data,
         )
         self.deck_manager.pack(fill="both", expand=True)
 
-        # HUD Analytics
+        self._build_hud(self.list_pane_right)
+        self._bind_dnd_list(self.pool_manager.tree, is_pool=True)
+        self._bind_dnd_list(self.deck_manager.tree, is_pool=False)
+
+    def _build_visual_view(self):
+        self.visual_splitter = ttk.PanedWindow(
+            self.visual_pane, orient=tkinter.VERTICAL
+        )
+        self.visual_splitter.pack(fill="both", expand=True)
+
+        # --- TOP: DECK CANVAS ---
+        deck_frame = tb.Frame(self.visual_splitter)
+        self.visual_splitter.add(deck_frame, weight=3)
+
+        tab_header = tb.Frame(deck_frame)
+        tab_header.pack(fill="x")
+
+        self.notebook_vis = tb.Notebook(tab_header)
+        self.notebook_vis.pack(side="left", fill="x", expand=True)
+        self.notebook_vis.bind("<<NotebookTabChanged>>", self._on_tab_changed_vis)
+
+        tb.Button(
+            tab_header,
+            text="➕",
+            width=3,
+            command=self._create_new_tab,
+            bootstyle="secondary-outline",
+        ).pack(side="right", padx=2, pady=2)
+        tb.Button(
+            tab_header,
+            text="✏️",
+            width=3,
+            command=self._rename_tab,
+            bootstyle="secondary-outline",
+        ).pack(side="right", padx=2, pady=2)
+        tb.Button(
+            tab_header,
+            text="🗑️",
+            width=3,
+            command=self._delete_tab,
+            bootstyle="danger-outline",
+        ).pack(side="right", padx=2, pady=2)
+
+        deck_controls = tb.Frame(
+            deck_frame, style="Card.TFrame", padding=Theme.scaled_val(5)
+        )
+        deck_controls.pack(fill="x", pady=Theme.scaled_val((0, 5)))
+
+        self.lbl_deck_title_vis = tb.Label(
+            deck_controls,
+            text="ACTIVE DECK (0)",
+            font=Theme.scaled_font(12, "bold"),
+            bootstyle="success",
+        )
+        self.lbl_deck_title_vis.pack(side="left", padx=Theme.scaled_val(5))
+
+        tb.Button(
+            deck_controls,
+            text="Auto-Lands",
+            bootstyle="warning",
+            command=self._apply_auto_lands,
+        ).pack(side="left", padx=Theme.scaled_val(10))
+
+        self.basics_frame_vis = tb.Frame(deck_controls)
+        self.basics_frame_vis.pack(side="right")
+        self.basic_buttons_vis = {}
+        for sym, name, style in [
+            ("W", "Plains", "light"),
+            ("U", "Island", "info"),
+            ("B", "Swamp", "dark"),
+            ("R", "Mountain", "danger"),
+            ("G", "Forest", "success"),
+        ]:
+            btn = tb.Button(
+                self.basics_frame_vis,
+                text=f"{sym}: 0",
+                bootstyle=style,
+                width=5,
+                padding=Theme.scaled_val(3),
+            )
+            btn.bind("<ButtonRelease-1>", lambda e, n=name: self._add_basic(n))
+            btn.bind("<Button-3>", lambda e, n=name: self._remove_basic(n))
+            btn.pack(side="left", padx=1)
+            self.basic_buttons_vis[name] = btn
+
+        deck_canvas_container = tb.Frame(deck_frame)
+        deck_canvas_container.pack(side="top", fill="both", expand=True)
+        deck_canvas_container.rowconfigure(0, weight=1)
+        deck_canvas_container.columnconfigure(0, weight=1)
+
+        self.deck_canvas = tkinter.Canvas(
+            deck_canvas_container, bg=Theme.BG_PRIMARY, highlightthickness=0
+        )
+        self.deck_scroll = AutoScrollbar(
+            deck_canvas_container, orient="horizontal", command=self.deck_canvas.xview
+        )
+        self.deck_canvas.configure(xscrollcommand=self.deck_scroll.set)
+        self.deck_canvas.grid(row=0, column=0, sticky="nsew")
+        self.deck_scroll.grid(row=1, column=0, sticky="ew")
+
+        # --- BOTTOM: POOL CANVAS ---
+        pool_frame = tb.Frame(self.visual_splitter)
+        self.visual_splitter.add(pool_frame, weight=2)
+
+        pool_header = tb.Frame(pool_frame)
+        pool_header.pack(fill="x", pady=Theme.scaled_val(5))
+
+        self.lbl_pool_title_vis = tb.Label(
+            pool_header, text="MASTER POOL (0)", font=Theme.scaled_font(12, "bold")
+        )
+        self.lbl_pool_title_vis.pack(side="left")
+
+        filter_frame = tb.Frame(pool_header)
+        filter_frame.pack(side="right")
+        tb.Checkbutton(
+            filter_frame,
+            text="Creatures",
+            variable=self.filter_vars["creatures"],
+            command=self._refresh_data,
+        ).pack(side="left", padx=2)
+        tb.Checkbutton(
+            filter_frame,
+            text="Spells",
+            variable=self.filter_vars["spells"],
+            command=self._refresh_data,
+        ).pack(side="left", padx=2)
+        tb.Checkbutton(
+            filter_frame,
+            text="Lands",
+            variable=self.filter_vars["lands"],
+            command=self._refresh_data,
+        ).pack(side="left", padx=2)
+
+        pool_canvas_container = tb.Frame(pool_frame)
+        pool_canvas_container.pack(side="top", fill="both", expand=True)
+        pool_canvas_container.rowconfigure(0, weight=1)
+        pool_canvas_container.columnconfigure(0, weight=1)
+
+        self.pool_canvas = tkinter.Canvas(
+            pool_canvas_container, bg=Theme.BG_PRIMARY, highlightthickness=0
+        )
+        self.pool_scroll = AutoScrollbar(
+            pool_canvas_container, orient="horizontal", command=self.pool_canvas.xview
+        )
+        self.pool_canvas.configure(xscrollcommand=self.pool_scroll.set)
+        self.pool_canvas.grid(row=0, column=0, sticky="nsew")
+        self.pool_scroll.grid(row=1, column=0, sticky="ew")
+
+        # Cross-platform mouse wheel scrolling horizontally for canvases
+        def _bind_horizontal_scroll(canvas):
+            import sys
+
+            if sys.platform == "darwin":
+                canvas.bind(
+                    "<MouseWheel>",
+                    lambda e: canvas.xview_scroll(-1 * e.delta, "units"),
+                    add="+",
+                )
+            elif sys.platform == "win32":
+                canvas.bind(
+                    "<MouseWheel>",
+                    lambda e: canvas.xview_scroll(-1 * (int(e.delta) // 120), "units"),
+                    add="+",
+                )
+            else:
+                canvas.bind(
+                    "<Button-4>", lambda e: canvas.xview_scroll(-1, "units"), add="+"
+                )
+                canvas.bind(
+                    "<Button-5>", lambda e: canvas.xview_scroll(1, "units"), add="+"
+                )
+
+        _bind_horizontal_scroll(self.deck_canvas)
+        _bind_horizontal_scroll(self.pool_canvas)
+
+        self._bind_canvas_dnd(self.pool_canvas, is_pool=True)
+        self._bind_canvas_dnd(self.deck_canvas, is_pool=False)
+
+    def _build_hud(self, parent):
         self.hud_frame = tb.Labelframe(
-            self.right_pane, text=" DECK ANALYTICS ", padding=Theme.scaled_val(10)
+            parent, text=" DECK ANALYTICS ", padding=Theme.scaled_val(10)
         )
         self.hud_frame.pack(fill="x", side="bottom", pady=Theme.scaled_val((10, 0)))
         self.hud_frame.columnconfigure(0, weight=1)
@@ -299,11 +539,7 @@ class SealedStudioWindow(tb.Toplevel):
         self.type_chart = TypePieChart(color_frame)
         self.type_chart.pack(fill="both", expand=True)
 
-        self._bind_dnd(self.pool_manager.tree, is_pool=True)
-        self._bind_dnd(self.deck_manager.tree, is_pool=False)
-
     def _on_close(self):
-        """Save session state when closing the studio."""
         self.session.save_session()
         self.destroy()
 
@@ -343,27 +579,51 @@ class SealedStudioWindow(tb.Toplevel):
             )
 
     def _refresh_tabs(self):
-        for tab in self.notebook.tabs():
-            self.notebook.forget(tab)
+        for nb in [self.notebook_list, getattr(self, "notebook_vis", None)]:
+            if not nb:
+                continue
+            for tab in nb.tabs():
+                nb.forget(tab)
+            for variant_name in self.session.variants.keys():
+                f = tb.Frame(nb)
+                nb.add(f, text=f" {variant_name} ")
+                if variant_name == self.session.active_variant_name:
+                    nb.select(f)
 
-        for variant_name in self.session.variants.keys():
-            f = tb.Frame(self.notebook)
-            self.notebook.add(f, text=f" {variant_name} ")
-            if variant_name == self.session.active_variant_name:
-                self.notebook.select(f)
+    def _on_tab_changed_list(self, event):
+        self._handle_tab_change(self.notebook_list)
 
-    def _on_tab_changed(self, event):
+    def _on_tab_changed_vis(self, event):
+        self._handle_tab_change(self.notebook_vis)
+
+    def _handle_tab_change(self, notebook):
         try:
-            current_tab_idx = self.notebook.index(self.notebook.select())
-            tab_name = self.notebook.tab(current_tab_idx, "text").strip()
+            current_tab_idx = notebook.index(notebook.select())
+            tab_name = notebook.tab(current_tab_idx, "text").strip()
             if tab_name in self.session.variants:
                 self.session.active_variant_name = tab_name
+                # Sync other notebook
+                other_nb = (
+                    self.notebook_vis
+                    if notebook == self.notebook_list
+                    else self.notebook_list
+                )
+                for i in range(other_nb.index("end")):
+                    if other_nb.tab(i, "text").strip() == tab_name:
+                        other_nb.select(i)
+                        break
                 self._refresh_data()
         except:
             pass
 
     def _on_auto_generate(self):
-        self.lbl_deck_title.config(text="GENERATING SHELLS...", bootstyle="warning")
+        self.lbl_deck_title_list.config(
+            text="GENERATING SHELLS...", bootstyle="warning"
+        )
+        if hasattr(self, "lbl_deck_title_vis"):
+            self.lbl_deck_title_vis.config(
+                text="GENERATING SHELLS...", bootstyle="warning"
+            )
         self.update_idletasks()
 
         tier_data = self.app_context.orchestrator.scanner.retrieve_tier_data()
@@ -373,16 +633,26 @@ class SealedStudioWindow(tb.Toplevel):
         self._refresh_data()
 
     def _refresh_data(self):
+        if hasattr(self.app_context, "orchestrator"):
+            self.metrics = self.app_context.orchestrator.scanner.retrieve_set_metrics()
+
         main_deck, sideboard = self.session.get_active_deck_lists()
 
         pool_count = sum(c.get("count", 1) for c in sideboard)
         deck_count = sum(c.get("count", 1) for c in main_deck)
 
-        self.lbl_pool_title.config(text=f"MASTER POOL ({pool_count})")
+        self.lbl_pool_title_list.config(text=f"MASTER POOL ({pool_count})")
+        if hasattr(self, "lbl_pool_title_vis"):
+            self.lbl_pool_title_vis.config(text=f"MASTER POOL ({pool_count})")
+
         deck_style = "success" if deck_count == 40 else "warning"
-        self.lbl_deck_title.config(
+        self.lbl_deck_title_list.config(
             text=f"ACTIVE DECK ({deck_count})", bootstyle=deck_style
         )
+        if hasattr(self, "lbl_deck_title_vis"):
+            self.lbl_deck_title_vis.config(
+                text=f"ACTIVE DECK ({deck_count})", bootstyle=deck_style
+            )
 
         show_c, show_s, show_l = (
             self.filter_vars["creatures"].get(),
@@ -399,13 +669,17 @@ class SealedStudioWindow(tb.Toplevel):
             elif "Creature" not in t and "Land" not in t and show_s:
                 filtered_sb.append(c)
 
-        self._populate_tree(self.pool_manager, filtered_sb, is_pool=True)
-        self._populate_tree(self.deck_manager, main_deck, is_pool=False)
+        if self.view_mode == "list":
+            self._populate_tree(self.pool_manager, filtered_sb)
+            self._populate_tree(self.deck_manager, main_deck)
+        else:
+            self._populate_canvas(self.pool_canvas, filtered_sb, is_pool=True)
+            self._populate_canvas(self.deck_canvas, main_deck, is_pool=False)
 
         self._update_hud(main_deck)
         self._update_basics_toolbar(main_deck)
 
-    def _populate_tree(self, manager, card_list, is_pool=False):
+    def _populate_tree(self, manager, card_list):
         tree = manager.tree
         for item in tree.get_children():
             tree.delete(item)
@@ -471,6 +745,236 @@ class SealedStudioWindow(tb.Toplevel):
         if hasattr(tree, "reapply_sort"):
             tree.reapply_sort()
 
+    def _populate_canvas(self, canvas, cards, is_pool):
+        canvas.delete("all")
+        if not cards:
+            return
+
+        columns = {}
+        if is_pool:
+            for c in cards:
+                col_id = self._get_color_group(c)
+                columns.setdefault(col_id, []).append(c)
+            col_order = [0, 1, 2, 3, 4, 5, 6, 7]
+            col_labels = {
+                0: "White",
+                1: "Blue",
+                2: "Black",
+                3: "Red",
+                4: "Green",
+                5: "Gold",
+                6: "Colorless",
+                7: "Lands",
+            }
+        else:
+            for c in cards:
+                if "Land" in c.get("types", []):
+                    columns.setdefault(7, []).append(c)
+                else:
+                    cmc = min(6, int(c.get("cmc", 0)))
+                    columns.setdefault(cmc, []).append(c)
+            col_order = [1, 2, 3, 4, 5, 6, 7]
+            col_labels = {
+                1: "1 CMC",
+                2: "2 CMC",
+                3: "3 CMC",
+                4: "4 CMC",
+                5: "5 CMC",
+                6: "6+ CMC",
+                7: "Lands",
+            }
+
+        scale = Theme.current_scale
+        CARD_W = int(130 * scale)
+        CARD_H = int(182 * scale)
+        Y_OFFSET = int(28 * scale)
+        X_SPACE = int(140 * scale)
+
+        max_y = 0
+        current_x = Theme.scaled_val(15)
+
+        for col_id in col_order:
+            if col_id not in columns:
+                continue
+            col_cards = columns[col_id]
+            col_cards.sort(key=lambda x: (x.get("cmc", 0), x.get("name", "")))
+
+            canvas.create_text(
+                current_x,
+                Theme.scaled_val(10),
+                text=col_labels[col_id],
+                fill=Theme.TEXT_MAIN,
+                font=Theme.scaled_font(11, "bold"),
+                anchor="nw",
+            )
+
+            current_y = Theme.scaled_val(35)
+            for card in col_cards:
+                for _ in range(card.get("count", 1)):
+                    inst_tag = f"inst_{id(card)}_{current_y}"
+                    overlay_tag = f"overlay_{inst_tag}"
+                    group_tags = ("card", f"cardname_{card['name']}", inst_tag)
+                    overlay_group = (
+                        "card",
+                        f"cardname_{card['name']}",
+                        inst_tag,
+                        overlay_tag,
+                    )
+
+                    # Background rectangle stays in the base group (no overlay tag)
+                    canvas.create_rectangle(
+                        current_x,
+                        current_y,
+                        current_x + CARD_W,
+                        current_y + CARD_H,
+                        fill=Theme.BG_TERTIARY,
+                        outline=Theme.BG_SECONDARY,
+                        tags=group_tags,
+                    )
+
+                    # Name text gets the overlay tag so it appears above the image
+                    canvas.create_text(
+                        current_x + 5,
+                        current_y + 5,
+                        text=card.get("name", ""),
+                        fill=Theme.TEXT_MAIN,
+                        font=Theme.scaled_font(8),
+                        width=CARD_W - 10,
+                        anchor="nw",
+                        tags=overlay_group,
+                    )
+
+                    self._load_canvas_image(
+                        card,
+                        canvas,
+                        current_x,
+                        current_y,
+                        CARD_W,
+                        CARD_H,
+                        group_tags,
+                        overlay_tag,
+                    )
+
+                    gihwr = (
+                        card.get("deck_colors", {})
+                        .get("All Decks", {})
+                        .get("gihwr", 0.0)
+                    )
+                    if gihwr > 0:
+                        bg_col = (
+                            Theme.SUCCESS
+                            if gihwr >= 58.0
+                            else (Theme.WARNING if gihwr >= 54.0 else Theme.ERROR)
+                        )
+                        rect_w = Theme.scaled_val(38)
+                        rect_h = Theme.scaled_val(18)
+                        rx = current_x + CARD_W - rect_w
+                        ry = current_y
+
+                        # Stat box gets the overlay tag
+                        canvas.create_rectangle(
+                            rx,
+                            ry,
+                            rx + rect_w,
+                            ry + rect_h,
+                            fill=bg_col,
+                            outline="",
+                            tags=overlay_group,
+                        )
+                        canvas.create_text(
+                            rx + (rect_w / 2),
+                            ry + (rect_h / 2),
+                            text=f"{gihwr:.1f}",
+                            fill="#ffffff",
+                            font=Theme.scaled_font(8, "bold"),
+                            tags=overlay_group,
+                        )
+
+                    current_y += Y_OFFSET
+
+            max_y = max(max_y, current_y + CARD_H)
+            current_x += X_SPACE
+
+        canvas.configure(scrollregion=(0, 0, current_x, max_y + Theme.scaled_val(20)))
+
+    def _get_color_group(self, card):
+        if "Land" in card.get("types", []):
+            return 7
+        colors = card.get("colors", [])
+        if len(colors) == 0:
+            return 6
+        if len(colors) > 1:
+            return 5
+        mapping = {"W": 0, "U": 1, "B": 2, "R": 3, "G": 4}
+        return mapping.get(colors[0], 6)
+
+    def _load_canvas_image(self, card, canvas, x, y, w, h, tags, overlay_tag):
+        name = card.get("name")
+        urls = card.get("image", [])
+        if not urls and name in constants.BASIC_LANDS:
+            import urllib.parse
+
+            urls = [
+                f"https://api.scryfall.com/cards/named?exact={urllib.parse.quote(name)}&format=image"
+            ]
+        if not urls:
+            return
+
+        img_url = urls[0]
+        if img_url.startswith("/static"):
+            img_url = f"https://www.17lands.com{img_url}"
+        elif "scryfall" in img_url and "format=image" not in img_url:
+            img_url = img_url.replace("/small/", "/large/").replace(
+                "/normal/", "/large/"
+            )
+
+        cache_key = hashlib.md5(img_url.encode("utf-8")).hexdigest()
+
+        if cache_key in self.image_cache:
+            if canvas.winfo_exists():
+                canvas.create_image(
+                    x, y, image=self.image_cache[cache_key], anchor="nw", tags=tags
+                )
+                # Raise ONLY the stat box and text above the image, keeping the background rectangle underneath
+                for t in canvas.find_withtag(overlay_tag):
+                    canvas.tag_raise(t)
+            return
+
+        def fetch():
+            cache_dir = os.path.join(constants.TEMP_FOLDER, "Images")
+            os.makedirs(cache_dir, exist_ok=True)
+            cache_path = os.path.join(cache_dir, f"{cache_key}.jpg")
+            try:
+                if os.path.exists(cache_path):
+                    with open(cache_path, "rb") as f:
+                        img_data = f.read()
+                else:
+                    r = requests.get(
+                        img_url, headers={"User-Agent": "MTGADraftTool/5.0"}, timeout=8
+                    )
+                    r.raise_for_status()
+                    img_data = r.content
+                    with open(cache_path, "wb") as f:
+                        f.write(img_data)
+
+                img = Image.open(io.BytesIO(img_data))
+                img.thumbnail((w, h), Image.Resampling.LANCZOS)
+
+                def apply_img():
+                    if canvas.winfo_exists():
+                        tk_img = ImageTk.PhotoImage(img)
+                        self.image_cache[cache_key] = tk_img
+                        canvas.create_image(x, y, image=tk_img, anchor="nw", tags=tags)
+                        # Raise ONLY the stat box and text above the image, keeping the background rectangle underneath
+                        for t in canvas.find_withtag(overlay_tag):
+                            canvas.tag_raise(t)
+
+                self.after(0, apply_img)
+            except Exception:
+                pass
+
+        self.image_executor.submit(fetch)
+
     def _update_hud(self, main_deck):
         metrics = get_deck_metrics(main_deck)
         self.lbl_comp_stats.config(
@@ -516,22 +1020,25 @@ class SealedStudioWindow(tb.Toplevel):
             "Mountain": "R",
             "Forest": "G",
         }
-        for name, btn in self.basic_buttons.items():
+        for name, btn in self.basic_buttons_list.items():
             btn.configure(text=f"{symbol_map[name]}: {counts[name]}")
+        if hasattr(self, "basic_buttons_vis"):
+            for name, btn in self.basic_buttons_vis.items():
+                btn.configure(text=f"{symbol_map[name]}: {counts[name]}")
 
-    def _bind_dnd(self, tree, is_pool=True):
+    def _bind_dnd_list(self, tree, is_pool=True):
         tree._dnd_bound = True
         tree.bind(
-            "<ButtonPress-1>", lambda e: self._on_drag_start(e, tree, is_pool), add="+"
-        )
-        tree.bind("<B1-Motion>", lambda e: self._on_drag_motion(e, tree), add="+")
-        tree.bind(
-            "<ButtonRelease-1>",
-            lambda e: self._on_drag_release(e, tree, is_pool),
+            "<ButtonPress-1>",
+            lambda e: self._on_list_drag_start(e, tree, is_pool),
             add="+",
         )
-
-        # Right click to show tooltip safely
+        tree.bind("<B1-Motion>", lambda e: self._on_list_drag_motion(e, tree), add="+")
+        tree.bind(
+            "<ButtonRelease-1>",
+            lambda e: self._on_list_drag_release(e, tree, is_pool),
+            add="+",
+        )
         tree.bind(
             "<Button-3>", lambda e: self._on_context_menu(e, tree, is_pool), add="+"
         )
@@ -541,7 +1048,26 @@ class SealedStudioWindow(tb.Toplevel):
             add="+",
         )
 
-    def _on_drag_start(self, event, tree, is_pool):
+    def _bind_canvas_dnd(self, canvas, is_pool=True):
+        canvas.bind(
+            "<ButtonPress-1>",
+            lambda e: self._on_canvas_press(e, canvas, is_pool),
+            add="+",
+        )
+        canvas.bind("<B1-Motion>", self._on_canvas_motion, add="+")
+        canvas.bind("<ButtonRelease-1>", self._on_canvas_release, add="+")
+        canvas.bind(
+            "<Button-3>",
+            lambda e: self._on_canvas_right_click(e, canvas, is_pool),
+            add="+",
+        )
+        canvas.bind(
+            "<Control-Button-1>",
+            lambda e: self._on_canvas_right_click(e, canvas, is_pool),
+            add="+",
+        )
+
+    def _on_list_drag_start(self, event, tree, is_pool):
         self._drag_data = None
         row_id = tree.identify_row(event.y)
         if not row_id:
@@ -556,11 +1082,11 @@ class SealedStudioWindow(tb.Toplevel):
                 "is_pool": is_pool,
             }
 
-    def _on_drag_motion(self, event, tree):
+    def _on_list_drag_motion(self, event, tree):
         if getattr(self, "_drag_data", None):
             tree.configure(cursor="hand2")
 
-    def _on_drag_release(self, event, tree, is_pool):
+    def _on_list_drag_release(self, event, tree, is_pool):
         tree.configure(cursor="")
         if not getattr(self, "_drag_data", None):
             return
@@ -586,8 +1112,77 @@ class SealedStudioWindow(tb.Toplevel):
             else:
                 self.session.move_to_sideboard(card_name)
             self._refresh_data()
-
         self._drag_data = None
+
+    def _on_canvas_press(self, event, canvas, is_pool):
+        item = canvas.find_withtag("current")
+        if not item:
+            return
+        tags = canvas.gettags(item[0])
+        inst_tag = next((t for t in tags if t.startswith("inst_")), None)
+        name_tag = next((t for t in tags if t.startswith("cardname_")), None)
+
+        if inst_tag and name_tag:
+            self._drag_data = {
+                "name": name_tag.replace("cardname_", ""),
+                "inst": inst_tag,
+                "x": event.x_root,
+                "y": event.y_root,
+                "canvas": canvas,
+                "is_pool": is_pool,
+            }
+            for it in canvas.find_withtag(inst_tag):
+                canvas.tag_raise(it)
+
+    def _on_canvas_motion(self, event):
+        if getattr(self, "_drag_data", None):
+            dx = event.x_root - self._drag_data["x"]
+            dy = event.y_root - self._drag_data["y"]
+            self._drag_data["canvas"].move(self._drag_data["inst"], dx, dy)
+            self._drag_data["x"] = event.x_root
+            self._drag_data["y"] = event.y_root
+
+    def _on_canvas_release(self, event):
+        if getattr(self, "_drag_data", None):
+            data = self._drag_data
+            self._drag_data = None
+
+            target = event.widget.winfo_containing(event.x_root, event.y_root)
+
+            if data["is_pool"] and target == self.deck_canvas:
+                self.session.move_to_main(data["name"])
+            elif not data["is_pool"] and target == self.pool_canvas:
+                self.session.move_to_sideboard(data["name"])
+            else:
+                # Click logic (no move)
+                if data["is_pool"]:
+                    self.session.move_to_main(data["name"])
+                else:
+                    self.session.move_to_sideboard(data["name"])
+
+            self._refresh_data()
+
+    def _on_canvas_right_click(self, event, canvas, is_pool):
+        item = canvas.find_withtag("current")
+        if not item:
+            return
+        tags = canvas.gettags(item[0])
+        name_tag = next((t for t in tags if t.startswith("cardname_")), None)
+        if name_tag:
+            name = name_tag.replace("cardname_", "")
+
+            card = next(
+                (c for c in self.session.master_pool if c.get("name") == name), None
+            )
+            if card:
+                CardToolTip.create(
+                    canvas,
+                    card,
+                    self.configuration.features.images_enabled,
+                    constants.UI_SIZE_DICT.get(
+                        self.configuration.settings.ui_size, 1.0
+                    ),
+                )
 
     def _on_context_menu(self, event, tree, is_pool):
         region = tree.identify_region(event.x, event.y)
@@ -601,7 +1196,6 @@ class SealedStudioWindow(tb.Toplevel):
         card_name = tree.item(row_id).get("text")
 
         if card_name:
-            # Find the card data
             card = next(
                 (c for c in self.session.master_pool if c.get("name") == card_name),
                 None,
@@ -654,6 +1248,69 @@ class SealedStudioWindow(tb.Toplevel):
 
         self._refresh_data()
 
+    def _import_deck_from_clipboard(self):
+        try:
+            text = self.clipboard_get()
+            import re
+
+            deck_cards = []
+            for line in text.split("\n"):
+                line = line.strip()
+                if not line or line.lower() in (
+                    "deck",
+                    "sideboard",
+                    "commander",
+                    "companion",
+                ):
+                    continue
+
+                match = re.match(r"^(\d+)\s+([^(]+)", line)
+                if match:
+                    count = int(match.group(1))
+                    name = match.group(2).strip()
+                    deck_cards.append({"name": name, "count": count})
+
+            if not deck_cards:
+                messagebox.showwarning(
+                    "Import Failed",
+                    "No valid MTGA format cards found in clipboard.",
+                    parent=self,
+                )
+                return
+
+            self.session.create_variant("Imported Deck")
+            self.session.variants[
+                self.session.active_variant_name
+            ].main_deck_counts.clear()
+
+            missing_cards = []
+            for req in deck_cards:
+                from src.utils import sanitize_card_name
+
+                clean_name = sanitize_card_name(req["name"])
+                success = self.session.move_to_main(clean_name, req["count"])
+                if not success:
+                    success = self.session.move_to_main(req["name"], req["count"])
+                    if not success:
+                        missing_cards.append(req["name"])
+
+            self._refresh_tabs()
+            self._refresh_data()
+
+            if missing_cards:
+                msg = "Deck imported, but the following cards were skipped because they are not in your pool (or you exceeded your owned quantity limits):\n\n"
+                msg += ", ".join(missing_cards[:10])
+                if len(missing_cards) > 10:
+                    msg += f" ...and {len(missing_cards) - 10} more."
+                messagebox.showwarning("Partial Import", msg, parent=self)
+            else:
+                messagebox.showinfo(
+                    "Success", "Deck imported successfully!", parent=self
+                )
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to import deck: {e}", parent=self)
+
     def _export_active_deck(self):
         main_deck, sideboard = self.session.get_active_deck_lists()
         export_text = copy_deck(main_deck, sideboard)
@@ -664,11 +1321,15 @@ class SealedStudioWindow(tb.Toplevel):
         )
 
     def _export_to_sealeddeck_tech(self):
-        """Automatically builds the payload, calls the Sealeddeck.tech API, and opens the returned URL."""
         main_deck, sideboard = self.session.get_active_deck_lists()
         mtga_payload = copy_deck(main_deck, sideboard)
 
-        self.lbl_deck_title.config(text="EXPORTING TO BROWSER...", bootstyle="warning")
+        lbl = (
+            self.lbl_deck_title_vis
+            if self.view_mode == "visual"
+            else self.lbl_deck_title_list
+        )
+        lbl.config(text="EXPORTING TO BROWSER...", bootstyle="warning")
         self.update_idletasks()
 
         import threading
@@ -696,12 +1357,12 @@ class SealedStudioWindow(tb.Toplevel):
                     self.clipboard_append(mtga_payload)
                     messagebox.showwarning(
                         "API Error",
-                        f"Could not reach Sealeddeck.tech automatically.\n\nYour deck has been copied to the clipboard. You can paste it manually at sealeddeck.tech.",
+                        "Could not reach Sealeddeck.tech automatically.\n\nYour deck has been copied to the clipboard. You can paste it manually at sealeddeck.tech.",
                         parent=self,
                     )
 
                 self.after(0, _err)
             finally:
-                self.after(0, self._refresh_data)  # Restores the label
+                self.after(0, self._refresh_data)
 
         threading.Thread(target=_api_call, daemon=True).start()
