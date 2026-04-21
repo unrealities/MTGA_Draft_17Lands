@@ -75,7 +75,17 @@ class SealedStudioWindow(tb.Toplevel):
             "creatures": tkinter.IntVar(value=1),
             "spells": tkinter.IntVar(value=1),
             "lands": tkinter.IntVar(value=1),
+            "W": tkinter.IntVar(value=1),
+            "U": tkinter.IntVar(value=1),
+            "B": tkinter.IntVar(value=1),
+            "R": tkinter.IntVar(value=1),
+            "G": tkinter.IntVar(value=1),
+            "C": tkinter.IntVar(value=1),
+            "M": tkinter.IntVar(value=1),
         }
+
+        self.pool_sort_var = tkinter.StringVar(value="Color")
+        self.deck_sort_var = tkinter.StringVar(value="CMC")
 
         if "sealed_pool_table" not in self.configuration.settings.column_configs:
             self.configuration.settings.column_configs["sealed_pool_table"] = [
@@ -205,6 +215,19 @@ class SealedStudioWindow(tb.Toplevel):
 
         filter_frame = tb.Frame(pool_header)
         filter_frame.pack(side="right")
+
+        tb.Label(filter_frame, text="Sort:").pack(side="left", padx=2)
+        sort_cb = tb.Combobox(
+            filter_frame,
+            textvariable=self.pool_sort_var,
+            values=["Color", "CMC", "Rarity", "Type"],
+            state="readonly",
+            width=7,
+        )
+        sort_cb.pack(side="left", padx=2)
+        sort_cb.bind("<<ComboboxSelected>>", lambda e: self._refresh_data())
+        tb.Label(filter_frame, text=" | ").pack(side="left")
+
         tb.Checkbutton(
             filter_frame,
             text="Creatures",
@@ -223,6 +246,26 @@ class SealedStudioWindow(tb.Toplevel):
             variable=self.filter_vars["lands"],
             command=self._refresh_data,
         ).pack(side="left", padx=2)
+
+        tb.Label(filter_frame, text=" | ").pack(side="left")
+
+        for c, col in [
+            ("W", "light"),
+            ("U", "info"),
+            ("B", "dark"),
+            ("R", "danger"),
+            ("G", "success"),
+            ("M", "warning"),
+            ("C", "secondary"),
+        ]:
+            btn = tb.Checkbutton(
+                filter_frame,
+                text=c,
+                variable=self.filter_vars[c],
+                bootstyle=f"{col}-toolbutton",
+                command=self._refresh_data,
+            )
+            btn.pack(side="left", padx=1)
 
         self.pool_manager = DynamicTreeviewManager(
             self.list_pane_left,
@@ -281,6 +324,32 @@ class SealedStudioWindow(tb.Toplevel):
             bootstyle="warning",
             command=self._apply_auto_lands,
         ).pack(side="left", padx=Theme.scaled_val(10))
+
+        tb.Button(
+            deck_controls,
+            text="Clear",
+            bootstyle="danger-outline",
+            command=self._clear_deck,
+        ).pack(side="left", padx=5)
+        tb.Button(
+            deck_controls,
+            text="Add All",
+            bootstyle="secondary-outline",
+            command=self._add_all_to_deck,
+        ).pack(side="left", padx=5)
+
+        sort_frame = tb.Frame(deck_controls)
+        sort_frame.pack(side="left", padx=Theme.scaled_val(15))
+        tb.Label(sort_frame, text="Sort:").pack(side="left", padx=2)
+        deck_sort_cb = tb.Combobox(
+            sort_frame,
+            textvariable=self.deck_sort_var,
+            values=["Color", "CMC", "Rarity", "Type"],
+            state="readonly",
+            width=7,
+        )
+        deck_sort_cb.pack(side="left", padx=2)
+        deck_sort_cb.bind("<<ComboboxSelected>>", lambda e: self._refresh_data())
 
         self.basics_frame_list = tb.Frame(deck_controls)
         self.basics_frame_list.pack(side="right")
@@ -375,6 +444,32 @@ class SealedStudioWindow(tb.Toplevel):
             command=self._apply_auto_lands,
         ).pack(side="left", padx=Theme.scaled_val(10))
 
+        tb.Button(
+            deck_controls,
+            text="Clear",
+            bootstyle="danger-outline",
+            command=self._clear_deck,
+        ).pack(side="left", padx=5)
+        tb.Button(
+            deck_controls,
+            text="Add All",
+            bootstyle="secondary-outline",
+            command=self._add_all_to_deck,
+        ).pack(side="left", padx=5)
+
+        sort_frame = tb.Frame(deck_controls)
+        sort_frame.pack(side="left", padx=Theme.scaled_val(15))
+        tb.Label(sort_frame, text="Sort:").pack(side="left", padx=2)
+        deck_sort_cb = tb.Combobox(
+            sort_frame,
+            textvariable=self.deck_sort_var,
+            values=["Color", "CMC", "Rarity", "Type"],
+            state="readonly",
+            width=7,
+        )
+        deck_sort_cb.pack(side="left", padx=2)
+        deck_sort_cb.bind("<<ComboboxSelected>>", lambda e: self._refresh_data())
+
         self.basics_frame_vis = tb.Frame(deck_controls)
         self.basics_frame_vis.pack(side="right")
         self.basic_buttons_vis = {}
@@ -426,6 +521,19 @@ class SealedStudioWindow(tb.Toplevel):
 
         filter_frame = tb.Frame(pool_header)
         filter_frame.pack(side="right")
+
+        tb.Label(filter_frame, text="Sort:").pack(side="left", padx=2)
+        sort_cb = tb.Combobox(
+            filter_frame,
+            textvariable=self.pool_sort_var,
+            values=["Color", "CMC", "Rarity", "Type"],
+            state="readonly",
+            width=7,
+        )
+        sort_cb.pack(side="left", padx=2)
+        sort_cb.bind("<<ComboboxSelected>>", lambda e: self._refresh_data())
+        tb.Label(filter_frame, text=" | ").pack(side="left")
+
         tb.Checkbutton(
             filter_frame,
             text="Creatures",
@@ -444,6 +552,26 @@ class SealedStudioWindow(tb.Toplevel):
             variable=self.filter_vars["lands"],
             command=self._refresh_data,
         ).pack(side="left", padx=2)
+
+        tb.Label(filter_frame, text=" | ").pack(side="left")
+
+        for c, col in [
+            ("W", "light"),
+            ("U", "info"),
+            ("B", "dark"),
+            ("R", "danger"),
+            ("G", "success"),
+            ("M", "warning"),
+            ("C", "secondary"),
+        ]:
+            btn = tb.Checkbutton(
+                filter_frame,
+                text=c,
+                variable=self.filter_vars[c],
+                bootstyle=f"{col}-toolbutton",
+                command=self._refresh_data,
+            )
+            btn.pack(side="left", padx=1)
 
         pool_canvas_container = tb.Frame(pool_frame)
         pool_canvas_container.pack(side="top", fill="both", expand=True)
@@ -632,6 +760,18 @@ class SealedStudioWindow(tb.Toplevel):
         self._refresh_tabs()
         self._refresh_data()
 
+    def _clear_deck(self):
+        main_deck, _ = self.session.get_active_deck_lists()
+        for c in main_deck:
+            self.session.move_to_sideboard(c["name"], c.get("count", 1))
+        self._refresh_data()
+
+    def _add_all_to_deck(self):
+        _, sideboard = self.session.get_active_deck_lists()
+        for c in sideboard:
+            self.session.move_to_main(c["name"], c.get("count", 1))
+        self._refresh_data()
+
     def _refresh_data(self):
         if hasattr(self.app_context, "orchestrator"):
             self.metrics = self.app_context.orchestrator.scanner.retrieve_set_metrics()
@@ -662,19 +802,44 @@ class SealedStudioWindow(tb.Toplevel):
         filtered_sb = []
         for c in sideboard:
             t = c.get("types", [])
-            if "Creature" in t and show_c:
-                filtered_sb.append(c)
-            elif "Land" in t and show_l:
-                filtered_sb.append(c)
-            elif "Creature" not in t and "Land" not in t and show_s:
-                filtered_sb.append(c)
+            is_c = "Creature" in t
+            is_l = "Land" in t
+            is_s = not is_c and not is_l
+
+            # 1. Type filter
+            if is_c and not show_c:
+                continue
+            if is_s and not show_s:
+                continue
+            if is_l and not show_l:
+                continue
+
+            # 2. Color filter
+            colors = c.get("colors", [])
+            is_colorless = len(colors) == 0
+            is_multi = len(colors) > 1
+
+            if is_multi:
+                if not self.filter_vars["M"].get():
+                    continue
+            elif is_colorless:
+                if not self.filter_vars["C"].get():
+                    continue
+            else:
+                col = colors[0]
+                if col in self.filter_vars and not self.filter_vars[col].get():
+                    continue
+
+            filtered_sb.append(c)
 
         if self.view_mode == "list":
             self._populate_tree(self.pool_manager, filtered_sb)
             self._populate_tree(self.deck_manager, main_deck)
         else:
-            self._populate_canvas(self.pool_canvas, filtered_sb, is_pool=True)
-            self._populate_canvas(self.deck_canvas, main_deck, is_pool=False)
+            self._populate_canvas(
+                self.pool_canvas, filtered_sb, self.pool_sort_var.get()
+            )
+            self._populate_canvas(self.deck_canvas, main_deck, self.deck_sort_var.get())
 
         self._update_hud(main_deck)
         self._update_basics_toolbar(main_deck)
@@ -745,13 +910,16 @@ class SealedStudioWindow(tb.Toplevel):
         if hasattr(tree, "reapply_sort"):
             tree.reapply_sort()
 
-    def _populate_canvas(self, canvas, cards, is_pool):
+    def _populate_canvas(self, canvas, cards, sort_by):
         canvas.delete("all")
         if not cards:
             return
 
         columns = {}
-        if is_pool:
+        col_labels = {}
+        col_order = []
+
+        if sort_by == "Color":
             for c in cards:
                 col_id = self._get_color_group(c)
                 columns.setdefault(col_id, []).append(c)
@@ -762,19 +930,20 @@ class SealedStudioWindow(tb.Toplevel):
                 2: "Black",
                 3: "Red",
                 4: "Green",
-                5: "Gold",
+                5: "Multicolor",
                 6: "Colorless",
                 7: "Lands",
             }
-        else:
+        elif sort_by == "CMC":
             for c in cards:
                 if "Land" in c.get("types", []):
                     columns.setdefault(7, []).append(c)
                 else:
                     cmc = min(6, int(c.get("cmc", 0)))
                     columns.setdefault(cmc, []).append(c)
-            col_order = [1, 2, 3, 4, 5, 6, 7]
+            col_order = [0, 1, 2, 3, 4, 5, 6, 7]
             col_labels = {
+                0: "0 CMC",
                 1: "1 CMC",
                 2: "2 CMC",
                 3: "3 CMC",
@@ -783,11 +952,56 @@ class SealedStudioWindow(tb.Toplevel):
                 6: "6+ CMC",
                 7: "Lands",
             }
+        elif sort_by == "Rarity":
+            for c in cards:
+                if "Land" in c.get("types", []) and "Basic" in c.get("types", []):
+                    columns.setdefault(4, []).append(c)
+                    continue
+                rarity = str(c.get("rarity", "common")).lower()
+                if rarity == "common":
+                    columns.setdefault(0, []).append(c)
+                elif rarity == "uncommon":
+                    columns.setdefault(1, []).append(c)
+                elif rarity in ["rare", "mythic"]:
+                    columns.setdefault(2, []).append(c)
+                else:
+                    columns.setdefault(0, []).append(c)
+            col_order = [0, 1, 2, 4]
+            col_labels = {
+                0: "Common",
+                1: "Uncommon",
+                2: "Rare/Mythic",
+                4: "Basic Lands",
+            }
+        elif sort_by == "Type":
+            for c in cards:
+                t = c.get("types", [])
+                if "Creature" in t:
+                    columns.setdefault(0, []).append(c)
+                elif "Instant" in t or "Sorcery" in t:
+                    columns.setdefault(1, []).append(c)
+                elif "Artifact" in t or "Enchantment" in t:
+                    columns.setdefault(2, []).append(c)
+                elif "Planeswalker" in t or "Battle" in t:
+                    columns.setdefault(3, []).append(c)
+                elif "Land" in t:
+                    columns.setdefault(4, []).append(c)
+                else:
+                    columns.setdefault(5, []).append(c)
+            col_order = [0, 1, 2, 3, 4, 5]
+            col_labels = {
+                0: "Creatures",
+                1: "Instants/Sorceries",
+                2: "Artifacts/Enchantments",
+                3: "Planeswalkers/Battles",
+                4: "Lands",
+                5: "Other",
+            }
 
         scale = Theme.current_scale
         CARD_W = int(130 * scale)
         CARD_H = int(182 * scale)
-        Y_OFFSET = int(28 * scale)
+        Y_OFFSET = int(32 * scale)  # Increased spacing to expose title bars beautifully
         X_SPACE = int(140 * scale)
 
         max_y = 0
@@ -799,10 +1013,11 @@ class SealedStudioWindow(tb.Toplevel):
             col_cards = columns[col_id]
             col_cards.sort(key=lambda x: (x.get("cmc", 0), x.get("name", "")))
 
+            col_count = sum(c.get("count", 1) for c in col_cards)
             canvas.create_text(
                 current_x,
                 Theme.scaled_val(10),
-                text=col_labels[col_id],
+                text=f"{col_labels[col_id]} ({col_count})",
                 fill=Theme.TEXT_MAIN,
                 font=Theme.scaled_font(11, "bold"),
                 anchor="nw",
@@ -821,7 +1036,6 @@ class SealedStudioWindow(tb.Toplevel):
                         overlay_tag,
                     )
 
-                    # Background rectangle stays in the base group (no overlay tag)
                     canvas.create_rectangle(
                         current_x,
                         current_y,
@@ -832,8 +1046,8 @@ class SealedStudioWindow(tb.Toplevel):
                         tags=group_tags,
                     )
 
-                    # Name text gets the overlay tag so it appears above the image
-                    canvas.create_text(
+                    # Store the ID of the placeholder text so it can be erased when the image loads
+                    placeholder_text_id = canvas.create_text(
                         current_x + 5,
                         current_y + 5,
                         text=card.get("name", ""),
@@ -853,6 +1067,7 @@ class SealedStudioWindow(tb.Toplevel):
                         CARD_H,
                         group_tags,
                         overlay_tag,
+                        placeholder_text_id,
                     )
 
                     gihwr = (
@@ -866,12 +1081,12 @@ class SealedStudioWindow(tb.Toplevel):
                             if gihwr >= 58.0
                             else (Theme.WARNING if gihwr >= 54.0 else Theme.ERROR)
                         )
-                        rect_w = Theme.scaled_val(38)
-                        rect_h = Theme.scaled_val(18)
-                        rx = current_x + CARD_W - rect_w
-                        ry = current_y
+                        # Much smaller, cleaner badge in the top left so it doesn't cover mana costs
+                        rect_w = Theme.scaled_val(28)
+                        rect_h = Theme.scaled_val(14)
+                        rx = current_x + 2
+                        ry = current_y + 2
 
-                        # Stat box gets the overlay tag
                         canvas.create_rectangle(
                             rx,
                             ry,
@@ -886,7 +1101,7 @@ class SealedStudioWindow(tb.Toplevel):
                             ry + (rect_h / 2),
                             text=f"{gihwr:.1f}",
                             fill="#ffffff",
-                            font=Theme.scaled_font(8, "bold"),
+                            font=Theme.scaled_font(7, "bold"),
                             tags=overlay_group,
                         )
 
@@ -908,7 +1123,7 @@ class SealedStudioWindow(tb.Toplevel):
         mapping = {"W": 0, "U": 1, "B": 2, "R": 3, "G": 4}
         return mapping.get(colors[0], 6)
 
-    def _load_canvas_image(self, card, canvas, x, y, w, h, tags, overlay_tag):
+    def _load_canvas_image(self, card, canvas, x, y, w, h, tags, overlay_tag, text_id):
         name = card.get("name")
         urls = card.get("image", [])
         if not urls and name in constants.BASIC_LANDS:
@@ -935,7 +1150,10 @@ class SealedStudioWindow(tb.Toplevel):
                 canvas.create_image(
                     x, y, image=self.image_cache[cache_key], anchor="nw", tags=tags
                 )
-                # Raise ONLY the stat box and text above the image, keeping the background rectangle underneath
+                canvas.delete(
+                    text_id
+                )  # Delete the placeholder text since the actual art is available
+                # Raise ONLY the stat box above the image
                 for t in canvas.find_withtag(overlay_tag):
                     canvas.tag_raise(t)
             return
@@ -965,7 +1183,10 @@ class SealedStudioWindow(tb.Toplevel):
                         tk_img = ImageTk.PhotoImage(img)
                         self.image_cache[cache_key] = tk_img
                         canvas.create_image(x, y, image=tk_img, anchor="nw", tags=tags)
-                        # Raise ONLY the stat box and text above the image, keeping the background rectangle underneath
+                        canvas.delete(
+                            text_id
+                        )  # Delete the placeholder text since the actual art is available
+                        # Raise ONLY the stat box above the image
                         for t in canvas.find_withtag(overlay_tag):
                             canvas.tag_raise(t)
 
