@@ -658,7 +658,7 @@ class ModernTreeview(ttk.Treeview):
                 i,
                 width=Theme.scaled_val(140) if i == "name" else Theme.scaled_val(50),
                 minwidth=Theme.scaled_val(70) if i == "name" else Theme.scaled_val(30),
-                stretch=(i == "name"),
+                stretch=True,
                 anchor=tkinter.W if i == "name" else tkinter.CENTER,
             )
 
