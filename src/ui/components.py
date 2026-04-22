@@ -39,12 +39,29 @@ def identify_safe_coordinates(root, window_width, window_height, offset_x, offse
 class AutoScrollbar(ttk.Scrollbar):
     """A scrollbar that hides itself if it's not needed. Only works within the grid geometry manager."""
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._is_mapped = True
+        self._job = None
+
     def set(self, lo, hi):
-        if float(lo) <= 0.0 and float(hi) >= 1.0:
-            self.grid_remove()
-        else:
-            self.grid()
         super().set(lo, hi)
+        needed = not (float(lo) <= 0.0 and float(hi) >= 1.0)
+        if needed != self._is_mapped:
+            if self._job is not None:
+                self.after_cancel(self._job)
+            self._job = self.after_idle(self._update_mapping, needed)
+
+    def _update_mapping(self, needed):
+        self._job = None
+        if not self.winfo_exists():
+            return
+        if needed != self._is_mapped:
+            if needed:
+                self.grid()
+            else:
+                self.grid_remove()
+            self._is_mapped = needed
 
     def pack(self, **kw):
         raise tkinter.TclError("AutoScrollbar cannot use pack. Use grid instead.")
@@ -641,7 +658,7 @@ class ModernTreeview(ttk.Treeview):
                 i,
                 width=Theme.scaled_val(140) if i == "name" else Theme.scaled_val(50),
                 minwidth=Theme.scaled_val(70) if i == "name" else Theme.scaled_val(30),
-                stretch=True,
+                stretch=(i == "name"),
                 anchor=tkinter.W if i == "name" else tkinter.CENTER,
             )
 
