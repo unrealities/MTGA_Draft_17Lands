@@ -43,25 +43,25 @@ class AutoScrollbar(ttk.Scrollbar):
         super().__init__(*args, **kwargs)
         self._is_mapped = True
         self._job = None
+        self._needed = True
 
     def set(self, lo, hi):
         super().set(lo, hi)
-        needed = not (float(lo) <= 0.0 and float(hi) >= 1.0)
-        if needed != self._is_mapped:
-            if self._job is not None:
-                self.after_cancel(self._job)
-            self._job = self.after_idle(self._update_mapping, needed)
+        self._needed = not (float(lo) <= 0.0 and float(hi) >= 1.0)
+        if self._needed != self._is_mapped:
+            if self._job is None:
+                self._job = self.after(50, self._update_mapping)
 
-    def _update_mapping(self, needed):
+    def _update_mapping(self):
         self._job = None
         if not self.winfo_exists():
             return
-        if needed != self._is_mapped:
-            if needed:
+        if self._needed != self._is_mapped:
+            if self._needed:
                 self.grid()
             else:
                 self.grid_remove()
-            self._is_mapped = needed
+            self._is_mapped = self._needed
 
     def pack(self, **kw):
         raise tkinter.TclError("AutoScrollbar cannot use pack. Use grid instead.")
@@ -987,6 +987,7 @@ class DynamicTreeviewManager(ttk.Frame):
 
         self.rowconfigure(0, weight=1)
         self.columnconfigure(0, weight=1)
+        self.columnconfigure(1, minsize=Theme.scaled_val(16), weight=0)
 
         self._scrollbar = AutoScrollbar(
             self, orient="vertical", command=self.tree.yview
