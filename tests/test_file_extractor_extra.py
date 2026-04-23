@@ -56,6 +56,8 @@ def test_retrieve_arena_directory():
     from unittest.mock import mock_open
 
     mock_data = (
+        "Garbage line 1\n"
+        "Garbage line 2\n"
         "Some log line 'C:/Program Files/Wizards of the Coast/MTGA/MTGA_Data/Managed'\n"
     )
     with patch("builtins.open", mock_open(read_data=mock_data)):

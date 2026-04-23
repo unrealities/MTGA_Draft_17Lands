@@ -114,6 +114,10 @@ class DashboardFrame(ttk.Frame):
                 "Right-click any table header (like 'GIH WR' or 'NAME') to re-arrange, add, or remove stats. You can even display your downloaded Tier Lists!",
             ),
             (
+                "📁 Custom MTGA Installs:",
+                "If MTG Arena is installed on a custom drive and dataset downloads fail, click 'File -> Locate MTGA Data Folder...' to link your local files.",
+            ),
+            (
                 "⚙️ Preferences:",
                 "Go to File -> Preferences... to change the UI Scale, switch to A-F letter grades, or enable colorful table rows based on mana cost.",
             ),

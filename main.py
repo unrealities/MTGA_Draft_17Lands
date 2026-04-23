@@ -56,10 +56,16 @@ def load_data(args, config, progress_callback):
 
     # 2. GAME FILE INDEXING
     progress_callback("Checking Game Files...")
-    db_loc = args.data or (retrieve_arena_directory(log_path) if log_path else None)
-    if db_loc:
-        config.settings.database_location = db_loc
-        write_configuration(config)
+
+    # Keep user's manually set location if it exists and is valid
+    db_loc = config.settings.database_location
+    if db_loc and os.path.exists(os.path.join(db_loc, "Downloads", "Raw")):
+        pass
+    else:
+        db_loc = args.data or (retrieve_arena_directory(log_path) if log_path else None)
+        if db_loc:
+            config.settings.database_location = db_loc
+            write_configuration(config)
 
     # 3. SYNC OFFICIAL DATASETS
     if config.settings.auto_sync_datasets:

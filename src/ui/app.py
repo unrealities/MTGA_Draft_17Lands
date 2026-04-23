@@ -683,6 +683,9 @@ class DraftApp:
         file_m.add_separator()
         file_m.add_command(label="Read Draft Log...", command=self._read_draft_log)
         file_m.add_command(label="Read Player.log...", command=self._read_player_log)
+        file_m.add_command(
+            label="Locate MTGA Data Folder...", command=self._locate_mtga_data
+        )
         file_m.add_separator()
         file_m.add_command(label="Export Draft (CSV)", command=self._export_csv)
         file_m.add_command(label="Export Draft (JSON)", command=self._export_json)
@@ -1425,6 +1428,25 @@ class DraftApp:
                 self.loading_overlay.show("Loading Player.log")
                 self.loading_overlay.update_status("Queuing file...")
             self.orchestrator.set_file_and_scan(f)
+
+    def _locate_mtga_data(self):
+        folder = filedialog.askdirectory(title="Select MTGA_Data Folder")
+        if folder:
+            if not folder.endswith("MTGA_Data"):
+                if os.path.exists(os.path.join(folder, "MTGA_Data")):
+                    folder = os.path.join(folder, "MTGA_Data")
+
+            if os.path.exists(os.path.join(folder, "Downloads", "Raw")):
+                self.configuration.settings.database_location = folder
+                write_configuration(self.configuration)
+                messagebox.showinfo(
+                    "Success", f"MTGA Data Folder successfully set to:\n{folder}"
+                )
+            else:
+                messagebox.showerror(
+                    "Error",
+                    "Could not find 'Downloads/Raw' in the selected folder.\n\nPlease select the valid MTGA_Data folder.",
+                )
 
     def _open_practice_dialog(self, is_import=False):
         import os
