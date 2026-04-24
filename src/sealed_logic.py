@@ -1,6 +1,6 @@
 """
 src/sealed_logic.py
-Core data structures and Day-1 Heuristic Engine for the Epic Sealed Studio.
+Core data structures and Day-1 Heuristic Engine for the Sealed Studio.
 Manages multi-deck variants and calculates card power without 17Lands data.
 """
 
@@ -108,7 +108,7 @@ class SealedVariant:
 
 
 class SealedSession:
-    """The master state manager for the Epic Sealed Studio."""
+    """The master state manager for the Sealed Studio."""
 
     def __init__(self, session_id: str):
         self.session_id = session_id

@@ -279,7 +279,7 @@ class DashboardFrame(ttk.Frame):
 
         self.btn_sealed_studio = ttk.Button(
             header_frame,
-            text="⚔️ Enter Epic Sealed Studio",
+            text="⚔️ Enter Sealed Studio",
             bootstyle="warning",
             command=self._launch_sealed_studio,
         )

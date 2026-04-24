@@ -1197,6 +1197,11 @@ class DraftApp:
 
         with self.orchestrator.scanner.lock:
             self.orchestrator.scanner.clear_draft(True)
+            if (
+                hasattr(self.orchestrator.scanner, "set_data")
+                and self.orchestrator.scanner.set_data
+            ):
+                self.orchestrator.scanner.set_data.unknown_id_cache.clear()
 
         self.orchestrator.trigger_full_scan()
 
@@ -1439,8 +1444,20 @@ class DraftApp:
             if os.path.exists(os.path.join(folder, "Downloads", "Raw")):
                 self.configuration.settings.database_location = folder
                 write_configuration(self.configuration)
+
+                if (
+                    hasattr(self, "orchestrator")
+                    and self.orchestrator.scanner
+                    and self.orchestrator.scanner.set_data
+                ):
+                    self.orchestrator.scanner.set_data.db_path = folder
+                    self.orchestrator.scanner.set_data.unknown_id_cache.clear()
+                    self.orchestrator.request_math_update()
+                    self._refresh_ui_data()
+
                 messagebox.showinfo(
-                    "Success", f"MTGA Data Folder successfully set to:\n{folder}"
+                    "Success",
+                    f"MTGA Data Folder successfully set to:\n{folder}\n\nYou can now download datasets!",
                 )
             else:
                 messagebox.showerror(

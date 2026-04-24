@@ -47,7 +47,7 @@ class SealedStudioWindow(tb.Toplevel):
         self.configuration = configuration
         self.metrics = metrics
 
-        self.title("Epic Sealed Studio - MTGA Draft Tool")
+        self.title("Sealed Studio - MTGA Draft Tool")
 
         width = Theme.scaled_val(1400)
         height = Theme.scaled_val(900)
@@ -121,7 +121,7 @@ class SealedStudioWindow(tb.Toplevel):
 
         tb.Label(
             header,
-            text="EPIC SEALED STUDIO",
+            text="SEALED STUDIO",
             font=Theme.scaled_font(18, "bold"),
             bootstyle="primary",
         ).pack(side="left")

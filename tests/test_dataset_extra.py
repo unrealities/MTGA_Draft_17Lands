@@ -15,11 +15,9 @@ def test_resolve_unknown_id():
                     mock_connect.return_value = mock_conn
                     mock_conn.cursor.return_value = mock_cursor
 
-                    # Mock finding the table and row
-                    mock_cursor.fetchone.side_effect = [
-                        ("Localizations_enUS",),  # table check
-                        ("Lightning Bolt",),  # row result
-                    ]
+                    # Mock finding the table (fetchall) and row (fetchone)
+                    mock_cursor.fetchall.return_value = [("Localizations_enUS",)]
+                    mock_cursor.fetchone.return_value = ("Lightning Bolt",)
 
                     result = dataset._resolve_unknown_id("123")
                     assert result == "Lightning Bolt"

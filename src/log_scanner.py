@@ -478,6 +478,8 @@ class ArenaScanner:
                 for section in event_sections:
                     if any(ev in section for ev in events) or section.isdigit():
                         continue
+                    if section.upper() in ["TRAD", "COMP", "BOT", "PICK", "TWO"]:
+                        continue
                     if 3 <= len(section) <= 4 and section.isalnum():
                         event_set = [section.upper()]
                         break

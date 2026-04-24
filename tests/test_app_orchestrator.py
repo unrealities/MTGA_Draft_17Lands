@@ -19,6 +19,7 @@ class MockWidget(ttk.Frame):
         self.get_treeview = MagicMock()
         self.update_deck_balance = MagicMock()
         self.update_recommendations = MagicMock()
+        self.update_pool_summary = MagicMock()
 
 
 class TestAppOrchestrator:

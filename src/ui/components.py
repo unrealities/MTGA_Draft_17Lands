@@ -245,8 +245,14 @@ class CardToolTip(tkinter.Toplevel):
             self.destroy()
             return
 
+        self.transient(parent.winfo_toplevel())
         self.wm_overrideredirect(True)
-        self.attributes("-topmost", True)
+
+        try:
+            self.attributes("-topmost", True)
+        except Exception:
+            pass
+
         self.configure(
             bg=Theme.BG_PRIMARY, highlightthickness=1, highlightbackground=Theme.ACCENT
         )
@@ -435,30 +441,35 @@ class CardToolTip(tkinter.Toplevel):
         try:
             self.update_idletasks()
 
-            # Re-verify existence after idle tasks in case a <Leave> event instantly destroyed it
             if not self.winfo_exists():
                 return
 
-            ww = self.winfo_width()
-            wh = self.winfo_height()
+            # Use reqwidth/reqheight because winfo_width/height return 1px before the window is actually drawn.
+            # Since the image frame has a hardcoded size (pack_propagate(False)), the reqheight is perfectly accurate
+            # from the exact moment of creation, avoiding expansion overlaps.
+            ww = self.winfo_reqwidth()
+            wh = self.winfo_reqheight()
 
             sw = self.winfo_screenwidth()
             sh = self.winfo_screenheight()
 
-            # Offset aggressively to prevent cursor hovering over the tooltip immediately, causing a rapid <Leave> flicker
-            offset_x, offset_y = 35, 25
+            offset_x, offset_y = 25, 25
 
+            # Calculate X (Flip left if it bleeds off the right edge)
             if self._mouse_x + offset_x + ww > sw:
-                tx = max(self._mouse_x - offset_x - ww - 10, 0)
+                tx = max(self._mouse_x - offset_x - ww, 0)
             else:
                 tx = max(self._mouse_x + offset_x, 0)
 
+            # Calculate Y (Flip ABOVE the cursor if it bleeds off the bottom edge)
             if self._mouse_y + offset_y + wh > sh:
-                ty = max(self._mouse_y - offset_y - wh - 10, 0)
+                # Force it to spawn completely above the cursor so it doesn't overlap and trigger a <Leave> event
+                ty = max(self._mouse_y - offset_y - wh, 0)
             else:
                 ty = max(self._mouse_y + offset_y, 0)
 
             self.geometry(f"+{tx}+{ty}")
+            self.lift()
         except tkinter.TclError:
             pass
 
@@ -503,6 +514,7 @@ class CardToolTip(tkinter.Toplevel):
             self.img_label.configure(image=self.tk_img)
             # The window height just expanded; recalculate safe bounds to flip it upward if needed
             self._reposition()
+            self.lift()
 
 
 class ModernTreeview(ttk.Treeview):
