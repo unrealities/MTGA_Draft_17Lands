@@ -3,6 +3,7 @@ src/dataset.py
 Data storage and retrieval for card ratings.
 """
 
+import sys
 from src.utils import (
     Result,
     check_file_integrity,
@@ -282,7 +283,16 @@ class Dataset:
                     create_logger().error(f"Scryfall bulk resolve failed: {e}")
 
             for aid in unknown_ids_to_fetch:
-                pass
+                if aid not in result_map:
+                    empty_dict = {
+                        DATA_FIELD_NAME: aid,
+                        DATA_FIELD_MANA_COST: "",
+                        DATA_FIELD_TYPES: [],
+                        DATA_SECTION_IMAGES: [],
+                    }
+                    initialize_card_data(empty_dict)
+                    ratings[aid] = empty_dict
+                    result_map[aid] = empty_dict
 
         # Construct final output preserving the exact order and duplication of the input id_list
         for arena_id in id_list:
