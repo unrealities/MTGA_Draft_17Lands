@@ -24,13 +24,13 @@ def identify_safe_coordinates(root, window_width, window_height, offset_x, offse
             root.winfo_screenheight(),
         )
         if pointer_x + offset_x + window_width > screen_width:
-            location_x = max(pointer_x - offset_x - window_width - 10, 0)
+            location_x = pointer_x - offset_x - window_width - 10
         else:
-            location_x = max(pointer_x + offset_x, 0)
+            location_x = pointer_x + offset_x
         if pointer_y + offset_y + window_height > screen_height:
-            location_y = max(pointer_y - offset_y - window_height - 10, 0)
+            location_y = pointer_y - offset_y - window_height - 10
         else:
-            location_y = max(pointer_y + offset_y, 0)
+            location_y = pointer_y + offset_y
         return location_x, location_y
     except:
         return offset_x, offset_y
@@ -219,12 +219,13 @@ class CardToolTip(tkinter.Toplevel):
     def create(cls, parent, card, images_enabled, scale):
         """Factory method ensures only one tooltip exists globally and avoids flickering loops."""
         if cls._active_tooltip and cls._active_tooltip.winfo_exists():
-            cls._active_tooltip.destroy()
-            cls._active_tooltip = None
+            cls._active_tooltip._close()
         cls._active_tooltip = cls(parent, card, images_enabled, scale)
 
     def __init__(self, parent, card, images_enabled, scale):
         super().__init__(parent)
+        self.parent = parent
+        self._leave_id = None
         try:
             self._build_ui(parent, card, images_enabled, scale)
         except Exception as e:
@@ -425,11 +426,30 @@ class CardToolTip(tkinter.Toplevel):
         self._reposition()
 
         # Bind closing interactions securely
-        parent.bind("<Leave>", self._close, add="+")
+        self._leave_id = self.parent.bind("<Leave>", self._on_parent_leave, add="+")
         self.bind("<Button-1>", self._close)
-        self.bind("<Leave>", self._close)
+
+    def _on_parent_leave(self, event):
+        try:
+            x, y = self.winfo_pointerx(), self.winfo_pointery()
+            rx, ry = self.parent.winfo_rootx(), self.parent.winfo_rooty()
+            rw, rh = self.parent.winfo_width(), self.parent.winfo_height()
+
+            if rx <= x <= rx + rw and ry <= y <= ry + rh:
+                return
+        except Exception:
+            pass
+
+        self._close()
 
     def _close(self, event=None):
+        if self._leave_id:
+            try:
+                self.parent.unbind("<Leave>", self._leave_id)
+            except Exception:
+                pass
+            self._leave_id = None
+
         if self.winfo_exists():
             self.destroy()
 
@@ -457,18 +477,17 @@ class CardToolTip(tkinter.Toplevel):
 
             # Calculate X (Flip left if it bleeds off the right edge)
             if self._mouse_x + offset_x + ww > sw:
-                tx = max(self._mouse_x - offset_x - ww, 0)
+                tx = self._mouse_x - offset_x - ww - 20
             else:
-                tx = max(self._mouse_x + offset_x, 0)
+                tx = self._mouse_x + offset_x
 
             # Calculate Y (Flip ABOVE the cursor if it bleeds off the bottom edge)
             if self._mouse_y + offset_y + wh > sh:
-                # Force it to spawn completely above the cursor so it doesn't overlap and trigger a <Leave> event
-                ty = max(self._mouse_y - offset_y - wh, 0)
+                ty = self._mouse_y - offset_y - wh - 20
             else:
-                ty = max(self._mouse_y + offset_y, 0)
+                ty = self._mouse_y + offset_y
 
-            self.geometry(f"+{tx}+{ty}")
+            self.geometry(f"+{int(tx)}+{int(ty)}")
             self.lift()
         except tkinter.TclError:
             pass

@@ -32,6 +32,33 @@ class Dataset:
         self._name_index = {}
         self._id_index = {}
         self.unknown_id_cache = {}
+        self._fallback_ratings = {}
+        self._load_custom_cache()
+
+    def _load_custom_cache(self):
+        import os
+        import json
+        from src import constants
+
+        cache_path = os.path.join(constants.SETS_FOLDER, "custom_cards.json")
+        if os.path.exists(cache_path):
+            try:
+                with open(cache_path, "r", encoding="utf-8") as f:
+                    self._fallback_ratings = json.load(f)
+            except Exception:
+                pass
+
+    def _save_custom_cache(self):
+        import os
+        import json
+        from src import constants
+
+        cache_path = os.path.join(constants.SETS_FOLDER, "custom_cards.json")
+        try:
+            with open(cache_path, "w", encoding="utf-8") as f:
+                json.dump(self._fallback_ratings, f, indent=4)
+        except Exception:
+            pass
 
     def clear(self) -> None:
         """Clears the dataset and all memory caches."""
@@ -39,6 +66,7 @@ class Dataset:
         self._name_index.clear()
         self._id_index.clear()
         self.unknown_id_cache.clear()
+        self._fallback_ratings.clear()
 
     def _resolve_unknown_id(self, grp_id: str) -> str:
         """Queries the local MTG Arena database to instantly translate unknown IDs."""
@@ -162,7 +190,9 @@ class Dataset:
         if not isinstance(id_list, list):
             return []
         card_data = []
-        ratings = self._dataset["card_ratings"] if self._dataset else {}
+        ratings = (
+            self._dataset["card_ratings"] if self._dataset else self._fallback_ratings
+        )
 
         result_map = {}
         unknown_ids_to_fetch = []
@@ -239,13 +269,14 @@ class Dataset:
                 unknown_ids_to_fetch[i : i + 75]
                 for i in range(0, len(unknown_ids_to_fetch), 75)
             ]
+            made_new_cache_entries = False
             for chunk in chunks:
                 try:
                     payload = {"identifiers": [{"arena_id": int(aid)} for aid in chunk]}
                     resp = requests.post(
                         "https://api.scryfall.com/cards/collection",
                         json=payload,
-                        timeout=5,
+                        timeout=3,
                     )
                     if resp.status_code == 200:
                         data = resp.json()
@@ -253,6 +284,8 @@ class Dataset:
                             aid = str(card.get("arena_id"))
                             name = card.get("name", "").split(" // ")[0]
                             types = card.get("type_line", "")
+                            colors = card.get("colors", [])
+                            cmc = int(card.get("cmc", 0))
 
                             is_basic = "Basic" in types and "Land" in types
 
@@ -260,20 +293,30 @@ class Dataset:
                                 matched_card = self._name_index[name]
                                 ratings[aid] = matched_card
                                 result_map[aid] = matched_card
+                                # Store it in the fallback cache so we don't have to look it up next launch
+                                self._fallback_ratings[aid] = matched_card
+                                made_new_cache_entries = True
                             else:
+                                from src.file_extractor import extract_types
+
+                                parsed_types = extract_types(types)
+                                if is_basic and "Basic" not in parsed_types:
+                                    parsed_types.append("Basic")
+
                                 empty_dict = {
                                     DATA_FIELD_NAME: name,
+                                    DATA_FIELD_CMC: cmc,
                                     DATA_FIELD_MANA_COST: card.get("mana_cost", ""),
-                                    DATA_FIELD_TYPES: (
-                                        ["Land", "Basic"]
-                                        if is_basic
-                                        else (["Land"] if "Land" in types else [])
-                                    ),
+                                    DATA_FIELD_TYPES: parsed_types,
+                                    DATA_FIELD_COLORS: colors,
                                     DATA_SECTION_IMAGES: [],
                                 }
                                 initialize_card_data(empty_dict)
                                 ratings[aid] = empty_dict
                                 result_map[aid] = empty_dict
+
+                                self._fallback_ratings[aid] = empty_dict
+                                made_new_cache_entries = True
 
                             if aid in unknown_ids_to_fetch:
                                 unknown_ids_to_fetch.remove(aid)
@@ -293,6 +336,12 @@ class Dataset:
                     initialize_card_data(empty_dict)
                     ratings[aid] = empty_dict
                     result_map[aid] = empty_dict
+
+                    self._fallback_ratings[aid] = empty_dict
+                    made_new_cache_entries = True
+
+            if made_new_cache_entries:
+                self._save_custom_cache()
 
         # Construct final output preserving the exact order and duplication of the input id_list
         for arena_id in id_list:
