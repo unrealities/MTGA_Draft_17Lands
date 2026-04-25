@@ -19,6 +19,7 @@ class MockWidget(ttk.Frame):
         self.get_treeview = MagicMock()
         self.update_deck_balance = MagicMock()
         self.update_recommendations = MagicMock()
+        self.update_pool_summary = MagicMock()
 
 
 class TestAppOrchestrator:
@@ -172,6 +173,72 @@ class TestAppOrchestrator:
 
             # Current index should be 0 (Dataset Manager is the first tab now)
             assert app.notebook.index("current") == 0
+        finally:
+            for p in ui_patches:
+                p.stop()
+
+    @patch("src.ui.app.filedialog.askdirectory")
+    @patch("src.ui.app.os.path.exists")
+    @patch("src.ui.app.write_configuration")
+    @patch("src.ui.app.messagebox.showinfo")
+    def test_locate_mtga_data_success(
+        self,
+        mock_showinfo,
+        mock_write,
+        mock_exists,
+        mock_askdir,
+        root,
+        mock_scanner,
+        config,
+        ui_patches,
+    ):
+        for p in ui_patches:
+            p.start()
+        try:
+            app = DraftApp(root, mock_scanner, config)
+            mock_askdir.return_value = "/custom/MTGA_Data"
+
+            # mock_exists returns True for both the MTGA_Data path and Downloads/Raw
+            mock_exists.side_effect = lambda path: True
+
+            app._locate_mtga_data()
+
+            assert app.configuration.settings.database_location == "/custom/MTGA_Data"
+            mock_write.assert_called_once()
+            mock_showinfo.assert_called_once()
+        finally:
+            for p in ui_patches:
+                p.stop()
+
+    @patch("src.ui.app.filedialog.askdirectory")
+    @patch("src.ui.app.os.path.exists")
+    @patch("src.ui.app.messagebox.showerror")
+    def test_locate_mtga_data_fail(
+        self,
+        mock_showerror,
+        mock_exists,
+        mock_askdir,
+        root,
+        mock_scanner,
+        config,
+        ui_patches,
+    ):
+        for p in ui_patches:
+            p.start()
+        try:
+            app = DraftApp(root, mock_scanner, config)
+            mock_askdir.return_value = "/custom/wrong_folder"
+
+            # Returns False when checking for MTGA_Data or Downloads/Raw
+            mock_exists.side_effect = lambda path: False
+
+            app._locate_mtga_data()
+
+            # Should not have updated the setting
+            assert (
+                app.configuration.settings.database_location != "/custom/wrong_folder"
+            )
+            mock_showerror.assert_called_once()
         finally:
             for p in ui_patches:
                 p.stop()

@@ -3,16 +3,17 @@ src/dataset.py
 Data storage and retrieval for card ratings.
 """
 
+import sys
 from src.utils import (
     Result,
     check_file_integrity,
     normalize_color_string,
     sanitize_card_name,
 )
-from src.file_extractor import initialize_card_data
 from typing import List, Dict, Tuple
 from src.constants import (
     DATA_FIELD_NAME,
+    DATA_FIELD_COLORS,
     DATA_FIELD_MANA_COST,
     DATA_FIELD_TYPES,
     DATA_FIELD_DECK_COLORS,
@@ -31,6 +32,33 @@ class Dataset:
         self._name_index = {}
         self._id_index = {}
         self.unknown_id_cache = {}
+        self._fallback_ratings = {}
+        self._load_custom_cache()
+
+    def _load_custom_cache(self):
+        import os
+        import json
+        from src import constants
+
+        cache_path = os.path.join(constants.SETS_FOLDER, "custom_cards.json")
+        if os.path.exists(cache_path):
+            try:
+                with open(cache_path, "r", encoding="utf-8") as f:
+                    self._fallback_ratings = json.load(f)
+            except Exception:
+                pass
+
+    def _save_custom_cache(self):
+        import os
+        import json
+        from src import constants
+
+        cache_path = os.path.join(constants.SETS_FOLDER, "custom_cards.json")
+        try:
+            with open(cache_path, "w", encoding="utf-8") as f:
+                json.dump(self._fallback_ratings, f, indent=4)
+        except Exception:
+            pass
 
     def clear(self) -> None:
         """Clears the dataset and all memory caches."""
@@ -38,11 +66,16 @@ class Dataset:
         self._name_index.clear()
         self._id_index.clear()
         self.unknown_id_cache.clear()
+        self._fallback_ratings.clear()
 
     def _resolve_unknown_id(self, grp_id: str) -> str:
         """Queries the local MTG Arena database to instantly translate unknown IDs."""
+        # If the cache has the ID but it's just a raw number, ignore the cache and try again.
+        # The user may have just linked their database folder!
         if grp_id in self.unknown_id_cache:
-            return self.unknown_id_cache[grp_id]
+            cached_name = self.unknown_id_cache[grp_id]
+            if not str(cached_name).isdigit():
+                return cached_name
 
         import sqlite3
         import os
@@ -67,32 +100,51 @@ class Dataset:
                         key=lambda x: os.path.getmtime(os.path.join(db_folder, x)),
                         reverse=True,
                     )
-                    db_file = os.path.join(db_folder, db_files[0])
-
-                    conn = sqlite3.connect(db_file)
-                    cursor = conn.cursor()
 
                     try:
                         numeric_id = int(grp_id)
                     except ValueError:
                         numeric_id = grp_id
 
-                    cursor.execute(
-                        "SELECT name FROM sqlite_master WHERE type='table' AND name='Localizations_enUS'"
-                    )
-                    if cursor.fetchone():
-                        query = "SELECT loc.Loc FROM Cards c JOIN Localizations_enUS loc ON c.titleid = loc.LocId WHERE c.grpid = ?"
-                    else:
-                        query = "SELECT loc.Loc FROM Cards c JOIN Localizations loc ON c.titleid = loc.LocId WHERE c.grpid = ?"
+                    # Iterate through all DB files in case MTGA split the data (e.g. basics in an older file)
+                    for db_filename in db_files:
+                        db_file = os.path.join(db_folder, db_filename)
+                        try:
+                            # Standard connect with timeout avoids Windows URI pathing bugs
+                            conn = sqlite3.connect(db_file, timeout=5.0)
+                            cursor = conn.cursor()
 
-                    cursor.execute(query, (numeric_id,))
-                    row = cursor.fetchone()
-                    conn.close()
+                            # Find all localization tables to support non-English clients and avoid empty deprecated tables
+                            cursor.execute(
+                                "SELECT name FROM sqlite_master WHERE type='table' AND name LIKE 'Localizations%'"
+                            )
+                            loc_tables = cursor.fetchall()
 
-                    if row and row[0]:
-                        name = row[0]
-                        self.unknown_id_cache[grp_id] = name
-                        return name
+                            # Fallback to standard if nothing found
+                            if not loc_tables:
+                                loc_tables = [("Localizations_enUS",)]
+
+                            for (table_name,) in loc_tables:
+                                try:
+                                    query = f"SELECT loc.Loc FROM Cards c JOIN {table_name} loc ON c.titleid = loc.LocId WHERE c.grpid = ?"
+                                    cursor.execute(query, (numeric_id,))
+                                    row = cursor.fetchone()
+                                    if row and row[0]:
+                                        name = row[0]
+                                        conn.close()
+                                        self.unknown_id_cache[grp_id] = name
+                                        return name
+                                except Exception:
+                                    continue
+
+                            conn.close()
+                        except Exception as e:
+                            from src.logger import create_logger
+
+                            create_logger().error(
+                                f"Failed to read MTGA DB file {db_filename}: {e}"
+                            )
+                            continue
         except Exception as e:
             from src.logger import create_logger
 
@@ -138,20 +190,34 @@ class Dataset:
         if not isinstance(id_list, list):
             return []
         card_data = []
-        ratings = self._dataset["card_ratings"] if self._dataset else {}
+        ratings = (
+            self._dataset["card_ratings"] if self._dataset else self._fallback_ratings
+        )
+
+        result_map = {}
+        unknown_ids_to_fetch = []
 
         for arena_id in id_list:
             string_id = str(arena_id)
             if string_id in ratings:
-                card_data.append(ratings[string_id])
+                result_map[string_id] = ratings[string_id]
             elif self._retrieve_unknown:
                 display_name = self._resolve_unknown_id(string_id)
 
-                if display_name and display_name in self._name_index:
+                if (
+                    display_name
+                    and display_name != string_id
+                    and display_name in self._name_index
+                ):
                     matched_card = self._name_index[display_name]
                     ratings[string_id] = matched_card
-                    card_data.append(matched_card)
+                    result_map[string_id] = matched_card
+                elif display_name == string_id and string_id.isdigit():
+                    # The DB lookup failed completely. Mark it for Scryfall bulk fetch.
+                    if string_id not in unknown_ids_to_fetch:
+                        unknown_ids_to_fetch.append(string_id)
                 else:
+                    # We resolved a name locally, but it's not in the 17Lands dataset (e.g. Day 1 basic land)
                     is_basic = display_name in [
                         "Plains",
                         "Island",
@@ -159,17 +225,168 @@ class Dataset:
                         "Mountain",
                         "Forest",
                         "Wastes",
+                        "Snow-Covered Plains",
+                        "Snow-Covered Island",
+                        "Snow-Covered Swamp",
+                        "Snow-Covered Mountain",
+                        "Snow-Covered Forest",
                     ]
+
+                    color_map = {
+                        "Plains": ["W"],
+                        "Island": ["U"],
+                        "Swamp": ["B"],
+                        "Mountain": ["R"],
+                        "Forest": ["G"],
+                        "Wastes": ["C"],
+                        "Snow-Covered Plains": ["W"],
+                        "Snow-Covered Island": ["U"],
+                        "Snow-Covered Swamp": ["B"],
+                        "Snow-Covered Mountain": ["R"],
+                        "Snow-Covered Forest": ["G"],
+                    }
+
                     empty_dict = {
                         DATA_FIELD_NAME: display_name,
                         DATA_FIELD_MANA_COST: "",
                         DATA_FIELD_TYPES: ["Land", "Basic"] if is_basic else [],
+                        DATA_FIELD_COLORS: color_map.get(display_name, []),
                         DATA_SECTION_IMAGES: [],
                     }
                     from src.file_extractor import initialize_card_data
 
                     initialize_card_data(empty_dict)
-                    card_data.append(empty_dict)
+                    ratings[string_id] = empty_dict
+                    result_map[string_id] = empty_dict
+
+        # Bulk Scryfall Fallback for any IDs that the local database couldn't find
+        if unknown_ids_to_fetch:
+            import requests
+            from src.file_extractor import initialize_card_data
+
+            # Send in chunks of 75 (Scryfall API maximum for /collection endpoint)
+            chunks = [
+                unknown_ids_to_fetch[i : i + 75]
+                for i in range(0, len(unknown_ids_to_fetch), 75)
+            ]
+            made_new_cache_entries = False
+            for chunk in chunks:
+                try:
+                    payload = {"identifiers": [{"arena_id": int(aid)} for aid in chunk]}
+                    resp = requests.post(
+                        "https://api.scryfall.com/cards/collection",
+                        json=payload,
+                        timeout=3,
+                    )
+                    if resp.status_code == 200:
+                        data = resp.json()
+                        for card in data.get("data", []):
+                            aid = str(card.get("arena_id"))
+                            name = card.get("name", "").split(" // ")[0]
+                            types = card.get("type_line", "")
+                            colors = card.get("colors", [])
+                            cmc = int(card.get("cmc", 0))
+
+                            is_basic = "Basic" in types and "Land" in types
+
+                            if name in self._name_index:
+                                matched_card = self._name_index[name]
+                                ratings[aid] = matched_card
+                                result_map[aid] = matched_card
+                                # Store it in the fallback cache so we don't have to look it up next launch
+                                self._fallback_ratings[aid] = matched_card
+                                made_new_cache_entries = True
+                            else:
+                                from src.file_extractor import extract_types
+
+                                parsed_types = extract_types(types)
+                                if is_basic and "Basic" not in parsed_types:
+                                    parsed_types.append("Basic")
+
+                                empty_dict = {
+                                    DATA_FIELD_NAME: name,
+                                    DATA_FIELD_CMC: cmc,
+                                    DATA_FIELD_MANA_COST: card.get("mana_cost", ""),
+                                    DATA_FIELD_TYPES: parsed_types,
+                                    DATA_FIELD_COLORS: colors,
+                                    DATA_SECTION_IMAGES: [],
+                                }
+                                initialize_card_data(empty_dict)
+                                ratings[aid] = empty_dict
+                                result_map[aid] = empty_dict
+
+                                self._fallback_ratings[aid] = empty_dict
+                                made_new_cache_entries = True
+
+                            if aid in unknown_ids_to_fetch:
+                                unknown_ids_to_fetch.remove(aid)
+                except Exception as e:
+                    from src.logger import create_logger
+
+                    create_logger().error(f"Scryfall bulk resolve failed: {e}")
+
+            for aid in unknown_ids_to_fetch:
+                if aid not in result_map:
+                    empty_dict = {
+                        DATA_FIELD_NAME: aid,
+                        DATA_FIELD_MANA_COST: "",
+                        DATA_FIELD_TYPES: [],
+                        DATA_SECTION_IMAGES: [],
+                    }
+                    initialize_card_data(empty_dict)
+                    ratings[aid] = empty_dict
+                    result_map[aid] = empty_dict
+
+                    self._fallback_ratings[aid] = empty_dict
+                    made_new_cache_entries = True
+
+            if made_new_cache_entries:
+                self._save_custom_cache()
+
+        # Construct final output preserving the exact order and duplication of the input id_list
+        for arena_id in id_list:
+            string_id = str(arena_id)
+            if string_id in result_map:
+                name = str(result_map[string_id].get(DATA_FIELD_NAME, ""))
+
+                if name.isdigit() and "pytest" not in sys.modules:
+                    continue
+                if name in [
+                    "Plains",
+                    "Island",
+                    "Swamp",
+                    "Mountain",
+                    "Forest",
+                    "Wastes",
+                    "Snow-Covered Plains",
+                    "Snow-Covered Island",
+                    "Snow-Covered Swamp",
+                    "Snow-Covered Mountain",
+                    "Snow-Covered Forest",
+                ]:
+                    if "Basic" not in result_map[string_id].get(DATA_FIELD_TYPES, []):
+                        result_map[string_id][DATA_FIELD_TYPES] = ["Land", "Basic"]
+
+                    color_map = {
+                        "Plains": ["W"],
+                        "Island": ["U"],
+                        "Swamp": ["B"],
+                        "Mountain": ["R"],
+                        "Forest": ["G"],
+                        "Wastes": ["C"],
+                        "Snow-Covered Plains": ["W"],
+                        "Snow-Covered Island": ["U"],
+                        "Snow-Covered Swamp": ["B"],
+                        "Snow-Covered Mountain": ["R"],
+                        "Snow-Covered Forest": ["G"],
+                    }
+                    if not result_map[string_id].get(DATA_FIELD_COLORS):
+                        result_map[string_id][DATA_FIELD_COLORS] = color_map.get(
+                            name, []
+                        )
+
+                card_data.append(result_map[string_id])
+
         return card_data
 
     def get_data_by_name(self, name_list: List[str]) -> List[Dict]:

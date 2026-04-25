@@ -24,7 +24,7 @@ class TestUIComponents:
         root.destroy()
 
     def test_safe_coordinate_calculation(self, root):
-        """Verify identify_safe_coordinates prevents monitor bleed-off."""
+        """Verify identify_safe_coordinates prevents monitor bleed-off and supports negative multi-monitor setups."""
         sw, sh = 1920, 1080
         ww, wh = 300, 400
         with pytest.MonkeyPatch.context() as m:
@@ -35,6 +35,13 @@ class TestUIComponents:
             x, y = identify_safe_coordinates(root, ww, wh, 10, 10)
             assert x + ww <= sw
             assert y + wh <= sh
+
+            # Test Negative Monitor
+            m.setattr(root, "winfo_pointerx", lambda: -1000)
+            m.setattr(root, "winfo_pointery", lambda: -500)
+            nx, ny = identify_safe_coordinates(root, ww, wh, 10, 10)
+            assert nx < 0
+            assert ny < 0
 
     def test_autocomplete_prefix_filtering(self, root):
         """Verify typing 'A' only hits relevant cards."""

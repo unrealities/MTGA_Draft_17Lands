@@ -62,6 +62,7 @@ macOS actively quarantines unsigned apps downloaded from the internet. To run th
 - **Step 3:** In Arena, go to Adjust Options, Account, and check the Detailed Logs (Plugin Support) check box.
 - **Step 4:** Launch the `MTGA_Draft_Tool` application.
 - **Step 5:** Click the **Datasets** tab to download the 17Lands data for the sets you plan to play.
+  - _Note: If MTG Arena is installed on a secondary drive/custom folder and dataset downloads fail, click `File -> Locate MTGA Data Folder...` so the app can find your local card database._
 - **Step 6:** Configure the tool through `File -> Preferences...`.
 - **Step 7:** Start the draft in Arena.
 
@@ -90,6 +91,7 @@ macOS actively quarantines unsigned apps downloaded from the internet. To run th
 - **Dynamic Columns:** You can customize the columns displayed in any table (Pack, Missing, Card Pool, Compare) by **Right-Clicking the column header**. Add specific 17Lands stats or remove ones you don't need. The app remembers your layout.
 - **Themes & Mana Flairs:** Under the `Theme` menu, you can select custom "Mana Flairs" (Forest, Island, Swamp, Mountain, Plains, Wastes) or fall back to your Native OS System theme.
 - **Automated Cloud Datasets:** The application uses a custom Cloud ETL Pipeline that compiles and distributes the latest 17Lands telemetry every day. When you open the app, it instantly syncs the data for active Arena events in the background, meaning you never have to manually scrape data before a draft again. You can also browse the pipeline schedule and manually download historical datasets directly from our [Data Warehouse website](https://unrealities.github.io/MTGA_Draft_17Lands/).
+- **Sealed Studio:** A fully interactive drag-and-drop workspace specifically tailored for Sealed deckbuilding. Automatically generates the top 3 mathematically optimal deck shells for your specific pool.
 
 ## UI Navigation & Tabs
 
@@ -178,6 +180,10 @@ If the log file ever severely desyncs, click the **Reload** button in the main d
 ### Arena Log Issues
 
 If the application cannot detect an active event, click `File -> Read Player.log` and ensure the proper file is selected.
+
+### Custom Installation Folders (Unable to access local Arena Data)
+
+If MTG Arena is installed in a non-standard directory (e.g., a secondary Steam library drive), the application might fail to automatically locate the local MTGA card database, causing dataset downloads to fail. To fix this, click `File -> Locate MTGA Data Folder...` in the top menu bar and select your custom `MTGA_Data` folder.
 
 ## Development & Documentation
 

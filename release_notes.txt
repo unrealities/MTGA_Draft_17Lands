@@ -1,3 +1,14 @@
+===================== RELEASE NOTES 4.15 =====================
+* unrealities: [Alpha Feature] Added a workspace specifically designed for Sealed deckbuilding. Features an interactive visual drag-and-drop mode, detailed list views
+* unrealities: [Feature] AI Sealed Shell Generator: Automatically generate the top 3 mathematically optimal deck shells for your specific Sealed pool (e.g., Best 2-Color, Greedy Splash, Aggro Curve) using the Monte Carlo engine
+* unrealities: [Feature] Offline Day-1 Evaluation Engine: The Advisor can now accurately evaluate cards based purely on Scryfall metadata (CMC, Rarity, Tags) and Tier Lists to generate recommendations instantly on Day 1 before 17Lands data is fully populated.
+* unrealities: [Feature] Practice Mode: Added "Tools" to the top menu bar allowing you to generate a random Sealed pool or import one from your clipboard to practice deckbuilding
+* unrealities: [Feature] Custom MTGA Data Folder Locator: Added a "File -> Locate MTGA Data Folder..." option. If you install MTG Arena on a custom drive (like a secondary Steam library) and datasets fail to download, you can now manually point the app to your game files.
+* unrealities: [UX/UI] Improved application error messaging when local Arena files cannot be automatically located, directing users to the new custom folder locator tool.
+* unrealities: [Bug] Fixed an issue where AutoScrollbars would sometimes throw mapping errors or fail to properly hide/show on resizing.
+* unrealities: [Bug] Resolved bugs regarding caching, file paths, and API fallback logic for smooth Day-1 performance.
+* unrealities: [Bug] Fixed issue where Tooltips for cards near the bottom of the screen would fail to display or instantly disappear.
+
 ===================== RELEASE NOTES 4.14 =====================
 * unrealities: [Feature] Improvements to the Github Pages site. Added direct download links to the "Today's Pipeline Activity" table.
 * unrealities: [Bug] Fixed an issue on the GitHub Pages landing site where the latest release version would get stuck on "Checking...".

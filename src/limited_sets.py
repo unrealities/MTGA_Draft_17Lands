@@ -143,21 +143,25 @@ class LimitedSets:
         except Exception:
             return False
 
-    def retrieve_scryfall_sets(self, retries: int = 3, wait: int = 5) -> SetDictionary:
+    def retrieve_scryfall_sets(self, retries: int = 2, wait: int = 2) -> SetDictionary:
         self.sets_scryfall = SetDictionary()
         url = "https://api.scryfall.com/sets"
 
         while retries:
             try:
                 req = urllib.request.Request(url, headers=API_HEADERS)
-                url_data = urllib.request.urlopen(req, context=self.context).read()
+                url_data = urllib.request.urlopen(
+                    req, context=self.context, timeout=5
+                ).read()
                 set_json_data = json.loads(url_data)
                 self.__process_scryfall_sets(set_json_data["data"])
 
                 while set_json_data["has_more"]:
                     url = set_json_data["next_page"]
                     req = urllib.request.Request(url, headers=API_HEADERS)
-                    url_data = urllib.request.urlopen(req, context=self.context).read()
+                    url_data = urllib.request.urlopen(
+                        req, context=self.context, timeout=5
+                    ).read()
                     set_json_data = json.loads(url_data)
                     self.__process_scryfall_sets(set_json_data["data"])
                 break
@@ -168,14 +172,16 @@ class LimitedSets:
                     time.sleep(wait)
         return self.sets_scryfall
 
-    def retrieve_17lands_sets(self, retries: int = 3, wait: int = 5) -> SetDictionary:
+    def retrieve_17lands_sets(self, retries: int = 2, wait: int = 2) -> SetDictionary:
         self.sets_17lands = SetDictionary()
         url = "https://www.17lands.com/data/filters"
 
         while retries:
             try:
                 req = urllib.request.Request(url, headers=API_HEADERS)
-                url_data = urllib.request.urlopen(req, context=self.context).read()
+                url_data = urllib.request.urlopen(
+                    req, context=self.context, timeout=5
+                ).read()
                 set_json_data = json.loads(url_data)
                 self.__process_17lands_sets(set_json_data)
                 break

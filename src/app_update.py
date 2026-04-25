@@ -45,9 +45,8 @@ class AppUpdate:
         self.version = ""
         self.file_location = ""
         try:
-            # Added 2-second timeout. Startup should never hang on non-critical updates.
             with urllib.request.urlopen(
-                search_location, context=self.context, timeout=2
+                search_location, context=self.context, timeout=3
             ) as response:
                 url_data = response.read()
                 url_json = json.loads(url_data)
