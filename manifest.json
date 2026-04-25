@@ -1,0 +1,239 @@
+{
+  "datasets": {
+    "TMT_PremierDraft_All": {
+      "filename": "TMT_PremierDraft_All_Data.json.gz",
+      "hash": "2460a50f2d9d8334c9bc966ca0850172f62dc845ae1bf3448ce4f2a5fdfeae09",
+      "size_kb": 155,
+      "start_date": "2026-03-03",
+      "end_date": "2026-04-21"
+    },
+    "TMT_PremierDraft_Top": {
+      "filename": "TMT_PremierDraft_Top_Data.json.gz",
+      "hash": "d46514700a310600213abcd4b9c9475e2caec442ba70a824f487abfa81cb2de8",
+      "size_kb": 115,
+      "start_date": "2026-03-03",
+      "end_date": "2026-04-21"
+    },
+    "TMT_TradDraft_All": {
+      "filename": "TMT_TradDraft_All_Data.json.gz",
+      "hash": "a0d4187bc2ffe6bc509c8514d891cb5f74ce3f8e240afc4ba9c5f8d67c9b5e1f",
+      "size_kb": 116,
+      "start_date": "2026-03-03",
+      "end_date": "2026-04-21"
+    },
+    "TMT_TradDraft_Top": {
+      "filename": "TMT_TradDraft_Top_Data.json.gz",
+      "hash": "330a83ed5665b7183d60cbfa4ddf5c5a010a70773bdccaf069b3bc851990e69b",
+      "size_kb": 91,
+      "start_date": "2026-03-03",
+      "end_date": "2026-04-21"
+    },
+    "TMT_PickTwoDraft_All": {
+      "filename": "TMT_PickTwoDraft_All_Data.json.gz",
+      "hash": "62638009762aab8c2b4037ef0820c4a37bed995ec4d43f488abaa1be512c9d4c",
+      "size_kb": 143,
+      "start_date": "2026-03-03",
+      "end_date": "2026-04-21"
+    },
+    "TMT_PickTwoDraft_Top": {
+      "filename": "TMT_PickTwoDraft_Top_Data.json.gz",
+      "hash": "c4cfd10399b24aac5d0728a9057efb4418df07c2a1c95a6eea90b7f6a2f8027f",
+      "size_kb": 74,
+      "start_date": "2026-03-03",
+      "end_date": "2026-04-21"
+    },
+    "FDN_QuickDraft_All": {
+      "filename": "FDN_QuickDraft_All_Data.json.gz",
+      "hash": "7009f998bbc3fb36398cfe7dea4946ca0f4d626f8f0685edbd61541456eb0d72",
+      "size_kb": 150
+    },
+    "FDN_QuickDraft_Top": {
+      "filename": "FDN_QuickDraft_Top_Data.json.gz",
+      "hash": "49d3f2f96a5ee6e251a4bd72bd6fd0426c4d88cab6e62f4ca2c91f98d2c90960",
+      "size_kb": 51
+    },
+    "BLB_PremierDraft_All": {
+      "filename": "BLB_PremierDraft_All_Data.json.gz",
+      "hash": "55fd59d3b0d5b8df6b05810ad25cef2be6310ef2034c43e7a9643fa576ff5f2f",
+      "size_kb": 172
+    },
+    "BLB_PremierDraft_Top": {
+      "filename": "BLB_PremierDraft_Top_Data.json.gz",
+      "hash": "d7f6cb6d182a2c9db0c4f85acb0ad62ddf033c57130f2b896b3f24dc1470c3c3",
+      "size_kb": 126
+    },
+    "TMT_QuickDraft_All": {
+      "filename": "TMT_QuickDraft_All_Data.json.gz",
+      "hash": "37a1f496fcf3933785c61a242f12c2bd90e804d27332800e1895cc0a62250bbb",
+      "size_kb": 132,
+      "start_date": "2026-03-03",
+      "end_date": "2026-04-21"
+    },
+    "TMT_QuickDraft_Top": {
+      "filename": "TMT_QuickDraft_Top_Data.json.gz",
+      "hash": "d88349eec001ddd898efda023b8f5828e80cdb1cd489bbb2aee242e748d6c8af",
+      "size_kb": 74,
+      "start_date": "2026-03-03",
+      "end_date": "2026-04-21"
+    },
+    "FDN_PremierDraft_All": {
+      "filename": "FDN_PremierDraft_All_Data.json.gz",
+      "hash": "1e8a17f12382a104cabb6af757f3c46045c9e0baa325c1e2f0e2045186559b1a",
+      "size_kb": 175,
+      "start_date": "2024-11-12",
+      "end_date": "2026-04-14"
+    },
+    "FDN_PremierDraft_Top": {
+      "filename": "FDN_PremierDraft_Top_Data.json.gz",
+      "hash": "c05ba7a0c7520c78ba977e47194bf7176d34c52392816585d94a52773b5cc068",
+      "size_kb": 123,
+      "start_date": "2024-11-12",
+      "end_date": "2026-04-14"
+    },
+    "Cube - Powered_PremierDraft_All": {
+      "filename": "Cube - Powered_PremierDraft_All_Data.json.gz",
+      "hash": "c3aab1c4fac5ddf9ebb5eb1517964652d3381d3bfe6fd18e128107426a7ac074",
+      "size_kb": 374,
+      "start_date": "2026-03-31",
+      "end_date": "2026-04-21"
+    },
+    "Cube - Powered_PremierDraft_Top": {
+      "filename": "Cube - Powered_PremierDraft_Top_Data.json.gz",
+      "hash": "2abf51cd31a96018dfd8c015e37f3dab7fa77f371845224a08d89e0bba5c9473",
+      "size_kb": 248,
+      "start_date": "2026-03-31",
+      "end_date": "2026-04-21"
+    },
+    "Cube - Powered_TradDraft_All": {
+      "filename": "Cube - Powered_TradDraft_All_Data.json.gz",
+      "hash": "03f47cc4baf0b9145bf465dfd7f13fbd5fec67f09767186372f841c1c436aa8c",
+      "size_kb": 242,
+      "start_date": "2026-03-31",
+      "end_date": "2026-04-21"
+    },
+    "Cube - Powered_TradDraft_Top": {
+      "filename": "Cube - Powered_TradDraft_Top_Data.json.gz",
+      "hash": "2e6059559caa55015257780d9b0f615b612436cdc4ccb9f5412d20be2fe0f517",
+      "size_kb": 155,
+      "start_date": "2026-03-31",
+      "end_date": "2026-04-21"
+    },
+    "BLB_Sealed_All": {
+      "filename": "BLB_Sealed_All_Data.json.gz",
+      "hash": "448764c9f641cd66c137f4b866419775023169d3bcce607ab348f3fb2d72ab09",
+      "size_kb": 98,
+      "start_date": "2024-07-30",
+      "end_date": "2026-04-12"
+    },
+    "BLB_Sealed_Top": {
+      "filename": "BLB_Sealed_Top_Data.json.gz",
+      "hash": "9d9a60c099073f15a4a9dbb09c61db12c820fbf52ee28f85110dbbdcc6e8ba0b",
+      "size_kb": 57,
+      "start_date": "2024-07-30",
+      "end_date": "2026-04-12"
+    },
+    "NEO_PremierDraft_All": {
+      "filename": "NEO_PremierDraft_All_Data.json.gz",
+      "hash": "cbe24b9e26d6c86b0aa05abc96b136a62f364c6cbf5a1c1805ed5cf262127fa1",
+      "size_kb": 242,
+      "start_date": "2022-02-10",
+      "end_date": "2026-04-21"
+    },
+    "NEO_PremierDraft_Top": {
+      "filename": "NEO_PremierDraft_Top_Data.json.gz",
+      "hash": "21f778d02bdbae49f524817d4e7cf48d80791d6eddd765cf2b18f69efb159cc3",
+      "size_kb": 177,
+      "start_date": "2022-02-10",
+      "end_date": "2026-04-21"
+    },
+    "SOS_Sealed_All": {
+      "filename": "SOS_Sealed_All_Data.json.gz",
+      "hash": "4e275f680dfeea7d5374d0da3dc2b2ab87cb5dd5b499cb775b9fce8e930cde16",
+      "size_kb": 125,
+      "start_date": "2026-04-21",
+      "end_date": "2026-04-25"
+    },
+    "SOS_Sealed_Top": {
+      "filename": "SOS_Sealed_Top_Data.json.gz",
+      "hash": "426f3362befc1cf4a40d1ce9774bfe87cf40e83995a6d279b63bdf60a7f9f22d",
+      "size_kb": 100,
+      "start_date": "2026-04-21",
+      "end_date": "2026-04-25"
+    },
+    "SOS_PremierDraft_All": {
+      "filename": "SOS_PremierDraft_All_Data.json.gz",
+      "hash": "0a7fda92f9a6769fa2ee5cce02b6439775770c73f6764ee114a08731efcd7101",
+      "size_kb": 177,
+      "start_date": "2026-04-21",
+      "end_date": "2026-04-25"
+    },
+    "SOS_PremierDraft_Top": {
+      "filename": "SOS_PremierDraft_Top_Data.json.gz",
+      "hash": "18226b3908edf0f3d608a3733ce2a65dd0a56917d4f2b81a080307eb5a09c2fd",
+      "size_kb": 143,
+      "start_date": "2026-04-21",
+      "end_date": "2026-04-25"
+    },
+    "SOS_TradDraft_All": {
+      "filename": "SOS_TradDraft_All_Data.json.gz",
+      "hash": "71262bbc486de345638da31afb2070ce42cc8125efa13de3c803e4c4abb6209f",
+      "size_kb": 138,
+      "start_date": "2026-04-21",
+      "end_date": "2026-04-25"
+    },
+    "SOS_TradDraft_Top": {
+      "filename": "SOS_TradDraft_Top_Data.json.gz",
+      "hash": "7021b1680ccda81dee20a39559d08ac4c239693e89eb8487758e14d9d62898ee",
+      "size_kb": 110,
+      "start_date": "2026-04-21",
+      "end_date": "2026-04-25"
+    },
+    "SOS_PickTwoDraft_All": {
+      "filename": "SOS_PickTwoDraft_All_Data.json.gz",
+      "hash": "d31668f0b9e3f1215a1552c21ef12407549b512d2f67e455f093f31fe4f64f20",
+      "size_kb": 139,
+      "start_date": "2026-04-21",
+      "end_date": "2026-04-25"
+    },
+    "SOS_PickTwoDraft_Top": {
+      "filename": "SOS_PickTwoDraft_Top_Data.json.gz",
+      "hash": "e651955c1a52720a35cf862d0d8cd23ba1762938829a549e9b7af5e705473892",
+      "size_kb": 99,
+      "start_date": "2026-04-21",
+      "end_date": "2026-04-25"
+    },
+    "SOS_TradSealed_All": {
+      "filename": "SOS_TradSealed_All_Data.json.gz",
+      "hash": "3bb065200393c3764a5b886e9b389d302f5e5bbbfc74712a26fc1ab5f795f693",
+      "size_kb": 118,
+      "start_date": "2026-04-21",
+      "end_date": "2026-04-25"
+    },
+    "SOS_TradSealed_Top": {
+      "filename": "SOS_TradSealed_Top_Data.json.gz",
+      "hash": "d67f3b83216b4cb875114c8b0f60cd4c3259e29e57653f49de0d5c0c5dd59de9",
+      "size_kb": 100,
+      "start_date": "2026-04-21",
+      "end_date": "2026-04-25"
+    },
+    "TDM_QuickDraft_All": {
+      "filename": "TDM_QuickDraft_All_Data.json.gz",
+      "hash": "1caf71265c225311220c59111368897e6b6843f39e2f0cd317f7247db6c18755",
+      "size_kb": 191,
+      "start_date": "2025-04-08",
+      "end_date": "2026-04-25"
+    },
+    "TDM_QuickDraft_Top": {
+      "filename": "TDM_QuickDraft_Top_Data.json.gz",
+      "hash": "3396aa3b2d4abd07bb66e7de0257a18d6f500e2dec6a2bd6b71d081ba8b09a19",
+      "size_kb": 86,
+      "start_date": "2025-04-08",
+      "end_date": "2026-04-25"
+    }
+  },
+  "updated_at": "2026-04-25T10:19:32.309246+00:00",
+  "active_sets": [
+    "SOS",
+    "TDM"
+  ]
+}

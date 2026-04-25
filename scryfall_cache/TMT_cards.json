@@ -1,0 +1,5059 @@
+{
+  "Action News Crew": {
+    "arena_id": "",
+    "name": "Action News Crew",
+    "cmc": 2,
+    "mana_cost": "{1}{W}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Human",
+      "Citizen"
+    ],
+    "colors": [
+      "W"
+    ],
+    "color_identity": [
+      "W"
+    ],
+    "rarity": "Common",
+    "image": [
+      "https://cards.scryfall.io/large/front/b/c/bc0f5ca8-47bd-4451-8fd1-a312ff7d31ec.jpg?1771342158"
+    ],
+    "keywords": [
+      "Vigilance",
+      "Channel"
+    ],
+    "oracle_text": "Vigilance\nChannel \u2014 {6}, Discard this card: Put a +1/+1 counter on each creature you control. Draw a card."
+  },
+  "Agent Bishop, Man in Black": {
+    "arena_id": "",
+    "name": "Agent Bishop, Man in Black",
+    "cmc": 3,
+    "mana_cost": "{2}{W}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Human",
+      "Soldier"
+    ],
+    "colors": [
+      "W"
+    ],
+    "color_identity": [
+      "W"
+    ],
+    "rarity": "Rare",
+    "image": [
+      "https://cards.scryfall.io/large/front/9/c/9c769202-178c-442a-a9e2-aa08b5ae5c9a.jpg?1769005601"
+    ],
+    "keywords": [],
+    "oracle_text": "At the beginning of combat on your turn, put a +1/+1 counter on each of up to two target creatures."
+  },
+  "Anchovy & Banana Pizza": {
+    "arena_id": "",
+    "name": "Anchovy & Banana Pizza",
+    "cmc": 4,
+    "mana_cost": "{2}{B}{B}",
+    "types": [
+      "Artifact"
+    ],
+    "subtypes": [
+      "Food"
+    ],
+    "colors": [
+      "B"
+    ],
+    "color_identity": [
+      "B"
+    ],
+    "rarity": "Common",
+    "image": [
+      "https://cards.scryfall.io/large/front/4/4/44443ad2-ef8c-4106-ba1b-ee3fb6fd8b17.jpg?1771586832"
+    ],
+    "keywords": [],
+    "oracle_text": "When this artifact enters, destroy target creature.\n{2}, {T}, Sacrifice this artifact: You gain 3 life."
+  },
+  "April O'Neil, Hacktivist": {
+    "arena_id": "",
+    "name": "April O'Neil, Hacktivist",
+    "cmc": 4,
+    "mana_cost": "{3}{U}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Human",
+      "Scientist"
+    ],
+    "colors": [
+      "U"
+    ],
+    "color_identity": [
+      "U"
+    ],
+    "rarity": "Rare",
+    "image": [
+      "https://cards.scryfall.io/large/front/f/0/f0147f6d-b797-4d5e-aca2-a9d309896eca.jpg?1760102651"
+    ],
+    "keywords": [],
+    "oracle_text": "At the beginning of your end step, draw a card for each card type among spells you've cast this turn."
+  },
+  "April O'Neil, Kunoichi Trainee": {
+    "arena_id": "",
+    "name": "April O'Neil, Kunoichi Trainee",
+    "cmc": 2,
+    "mana_cost": "{1}{W}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Human",
+      "Ninja"
+    ],
+    "colors": [
+      "W"
+    ],
+    "color_identity": [
+      "W"
+    ],
+    "rarity": "Common",
+    "image": [
+      "https://cards.scryfall.io/large/front/8/b/8b1982ea-686b-4acd-b677-47571430efb0.jpg?1771586740"
+    ],
+    "keywords": [
+      "Scry"
+    ],
+    "oracle_text": "When April O'Neil enters, scry 2. (Look at the top two cards of your library, then put any number of them on the bottom and the rest on top in any order.)\nApril O'Neil can't be blocked by creatures with power 3 or greater."
+  },
+  "April, Reporter of the Weird": {
+    "arena_id": "",
+    "name": "April, Reporter of the Weird",
+    "cmc": 3,
+    "mana_cost": "{2}{U}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Human",
+      "Detective"
+    ],
+    "colors": [
+      "U"
+    ],
+    "color_identity": [
+      "U"
+    ],
+    "rarity": "Uncommon",
+    "image": [
+      "https://cards.scryfall.io/large/front/3/1/31aa943f-c9db-43dc-8a72-7ef56f9f5c8b.jpg?1771502549"
+    ],
+    "keywords": [],
+    "oracle_text": "Whenever April deals combat damage to a player, draw that many cards, then discard a card."
+  },
+  "Armaggon, Future Shark": {
+    "arena_id": "",
+    "name": "Armaggon, Future Shark",
+    "cmc": 8,
+    "mana_cost": "{6}{B}{B}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Shark",
+      "Horror",
+      "Mutant"
+    ],
+    "colors": [
+      "B"
+    ],
+    "color_identity": [
+      "B"
+    ],
+    "rarity": "Rare",
+    "image": [
+      "https://cards.scryfall.io/large/front/5/9/5989378b-0eac-43cf-bc83-8f7765536789.jpg?1769005763"
+    ],
+    "keywords": [
+      "Flash"
+    ],
+    "oracle_text": "Flash\nWhen Armaggon enters, destroy up to three target creatures."
+  },
+  "Baxter Stockman": {
+    "arena_id": "",
+    "name": "Baxter Stockman",
+    "cmc": 5,
+    "mana_cost": "{3}{U}{R}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Human",
+      "Scientist"
+    ],
+    "colors": [
+      "R",
+      "U"
+    ],
+    "color_identity": [
+      "R",
+      "U"
+    ],
+    "rarity": "Uncommon",
+    "image": [
+      "https://cards.scryfall.io/large/front/1/1/117b1341-2cf0-466e-b3a8-7e1afa42cd4c.jpg?1771586994"
+    ],
+    "keywords": [],
+    "oracle_text": "When Baxter Stockman enters, create a 1/1 colorless Robot artifact creature token.\nAt the beginning of combat on your turn, target artifact creature you control gets +3/+0 and gains first strike and vigilance until end of turn."
+  },
+  "Bebop & Rocksteady": {
+    "arena_id": "",
+    "name": "Bebop & Rocksteady",
+    "cmc": 3,
+    "mana_cost": "{1}{B/G}{B/G}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Boar",
+      "Rhino",
+      "Mutant"
+    ],
+    "colors": [
+      "B",
+      "G"
+    ],
+    "color_identity": [
+      "B",
+      "G"
+    ],
+    "rarity": "Rare",
+    "image": [
+      "https://cards.scryfall.io/large/front/5/3/535461bd-f763-408b-816f-64b7bfb9210d.jpg?1760102796"
+    ],
+    "keywords": [],
+    "oracle_text": "Whenever Bebop & Rocksteady attack or block, sacrifice a permanent unless you discard a card."
+  },
+  "Bebop, Warthog Warrior": {
+    "arena_id": "",
+    "name": "Bebop, Warthog Warrior",
+    "cmc": 5,
+    "mana_cost": "{4}{B}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Boar",
+      "Mutant",
+      "Warrior"
+    ],
+    "colors": [
+      "B"
+    ],
+    "color_identity": [
+      "B"
+    ],
+    "rarity": "Common",
+    "image": [
+      "https://cards.scryfall.io/large/front/3/7/371ba16d-73f7-450c-8b1f-c05012a4ca93.jpg?1771586838"
+    ],
+    "keywords": [
+      "Landcycling",
+      "Menace",
+      "Typecycling",
+      "Cycling",
+      "Swampcycling"
+    ],
+    "oracle_text": "Menace (This creature can't be blocked except by two or more creatures.)\nRhinos you control have menace.\nSwampcycling {2} ({2}, Discard this card: Search your library for a Swamp card, reveal it, put it into your hand, then shuffle.)"
+  },
+  "Bespoke B\u014d": {
+    "arena_id": "",
+    "name": "Bespoke B\u014d",
+    "cmc": 3,
+    "mana_cost": "{2}{U}",
+    "types": [
+      "Artifact"
+    ],
+    "subtypes": [
+      "Equipment"
+    ],
+    "colors": [
+      "U"
+    ],
+    "color_identity": [
+      "U"
+    ],
+    "rarity": "Uncommon",
+    "image": [
+      "https://cards.scryfall.io/large/front/6/c/6c517308-831b-4e41-a82c-02ddf6383a0c.jpg?1771586788"
+    ],
+    "keywords": [
+      "Equip"
+    ],
+    "oracle_text": "When this Equipment enters, return up to one other target nonland permanent to its owner's hand.\nEquipped creature gets +2/+1 and has vigilance.\nEquip {3} ({3}: Attach to target creature you control. Equip only as a sorcery.)"
+  },
+  "Bot Bashing Time": {
+    "arena_id": "",
+    "name": "Bot Bashing Time",
+    "cmc": 4,
+    "mana_cost": "{3}{R}",
+    "types": [
+      "Sorcery"
+    ],
+    "subtypes": [],
+    "colors": [
+      "R"
+    ],
+    "color_identity": [
+      "R"
+    ],
+    "rarity": "Common",
+    "image": [
+      "https://cards.scryfall.io/large/front/0/8/08b3af61-d516-45ca-aede-2f50ba23cb07.jpg?1771586935"
+    ],
+    "keywords": [],
+    "oracle_text": "Bot Bashing Time deals 6 damage to target creature. If that creature would die this turn, exile it instead."
+  },
+  "Brilliance Unleashed": {
+    "arena_id": "",
+    "name": "Brilliance Unleashed",
+    "cmc": 6,
+    "mana_cost": "{4}{U}{R}",
+    "types": [
+      "Sorcery"
+    ],
+    "subtypes": [],
+    "colors": [
+      "R",
+      "U"
+    ],
+    "color_identity": [
+      "R",
+      "U"
+    ],
+    "rarity": "Uncommon",
+    "image": [
+      "https://cards.scryfall.io/large/front/b/7/b7ab2110-5aad-46c9-8dc4-1eac24b6f46b.jpg?1771587000"
+    ],
+    "keywords": [],
+    "oracle_text": "Choose one or both \u2014\n\u2022 Brilliance Unleashed deals 5 damage to target creature.\n\u2022 Choose target artifact card in your graveyard. Return it to the battlefield if it's an artifact creature card. Otherwise, return it to the battlefield and it's a 3/3 Robot artifact creature with flying."
+  },
+  "Broadcast Takeover": {
+    "arena_id": "",
+    "name": "Broadcast Takeover",
+    "cmc": 5,
+    "mana_cost": "{2}{R}{R}{R}",
+    "types": [
+      "Sorcery"
+    ],
+    "subtypes": [],
+    "colors": [
+      "R"
+    ],
+    "color_identity": [
+      "R"
+    ],
+    "rarity": "Mythic",
+    "image": [
+      "https://cards.scryfall.io/large/front/e/6/e640e930-0907-40f2-9015-88f8c1e8ee5c.jpg?1769005852"
+    ],
+    "keywords": [],
+    "oracle_text": "Gain control of all artifacts your opponents control until end of turn. Untap them. They gain haste until end of turn."
+  },
+  "Buzz Bots": {
+    "arena_id": "",
+    "name": "Buzz Bots",
+    "cmc": 2,
+    "mana_cost": "{1}{U}",
+    "types": [
+      "Creature",
+      "Artifact"
+    ],
+    "subtypes": [
+      "Robot",
+      "Insect"
+    ],
+    "colors": [
+      "U"
+    ],
+    "color_identity": [
+      "U"
+    ],
+    "rarity": "Common",
+    "image": [
+      "https://cards.scryfall.io/large/front/7/c/7c375190-f81b-4ab1-a1b6-fe432796821f.jpg?1771502556"
+    ],
+    "keywords": [
+      "Flying",
+      "Vigilance"
+    ],
+    "oracle_text": "Flying, vigilance\nWhen this creature dies, draw a card."
+  },
+  "Casey Jones, Jury-Rig Justiciar": {
+    "arena_id": "",
+    "name": "Casey Jones, Jury-Rig Justiciar",
+    "cmc": 2,
+    "mana_cost": "{1}{R}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Human",
+      "Berserker"
+    ],
+    "colors": [
+      "R"
+    ],
+    "color_identity": [
+      "R"
+    ],
+    "rarity": "Uncommon",
+    "image": [
+      "https://cards.scryfall.io/large/front/8/0/808a5bc0-0999-47cf-854c-30db6277efe5.jpg?1760114588"
+    ],
+    "keywords": [
+      "Haste"
+    ],
+    "oracle_text": "Haste\nWhen Casey Jones enters, look at the top four cards of your library. You may reveal an artifact card from among them and put it into your hand. Put the rest on the bottom of your library in a random order."
+  },
+  "Casey Jones, Vigilante": {
+    "arena_id": "",
+    "name": "Casey Jones, Vigilante",
+    "cmc": 3,
+    "mana_cost": "{1}{R}{R}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Human",
+      "Berserker"
+    ],
+    "colors": [
+      "R"
+    ],
+    "color_identity": [
+      "R"
+    ],
+    "rarity": "Rare",
+    "image": [
+      "https://cards.scryfall.io/large/front/a/6/a6a3258d-2e9b-4862-b2e3-bbfae9bd4d33.jpg?1769005927"
+    ],
+    "keywords": [],
+    "oracle_text": "When Casey Jones enters, draw three cards. At the beginning of your next upkeep, discard three cards at random."
+  },
+  "Chrome Dome": {
+    "arena_id": "",
+    "name": "Chrome Dome",
+    "cmc": 2,
+    "mana_cost": "{2}",
+    "types": [
+      "Creature",
+      "Artifact"
+    ],
+    "subtypes": [
+      "Robot",
+      "Ninja"
+    ],
+    "colors": [],
+    "color_identity": [],
+    "rarity": "Rare",
+    "image": [
+      "https://cards.scryfall.io/large/front/9/9/994a01eb-2689-49e7-be23-0713da9da9a8.jpg?1769006406"
+    ],
+    "keywords": [],
+    "oracle_text": "Other artifact creatures you control get +1/+0.\n{5}: Create a token that's a copy of another target artifact you control. That token gains haste. Sacrifice it at the beginning of the next end step."
+  },
+  "Cool but Rude": {
+    "arena_id": "",
+    "name": "Cool but Rude",
+    "cmc": 2,
+    "mana_cost": "{1}{R}",
+    "types": [
+      "Enchantment"
+    ],
+    "subtypes": [
+      "Class"
+    ],
+    "colors": [
+      "R"
+    ],
+    "color_identity": [
+      "R"
+    ],
+    "rarity": "Rare",
+    "image": [
+      "https://cards.scryfall.io/large/front/a/5/a566ab2d-6ec8-4833-8ad6-210378b1a20e.jpg?1769005892"
+    ],
+    "keywords": [],
+    "oracle_text": "(Gain the next level as a sorcery to add its ability.)\nWhenever you attack, you may discard a card. If you do, draw a card.\n{1}{R}: Level 2\nWhenever you discard a card, this Class deals 2 damage to each opponent.\n{1}{R}: Level 3\nWhen this Class becomes level 3, search your library for a card, put it into your hand, shuffle, then discard a card at random."
+  },
+  "Courier of Comestibles": {
+    "arena_id": "",
+    "name": "Courier of Comestibles",
+    "cmc": 2,
+    "mana_cost": "{1}{G}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Human",
+      "Citizen"
+    ],
+    "colors": [
+      "G"
+    ],
+    "color_identity": [
+      "G"
+    ],
+    "rarity": "Uncommon",
+    "image": [
+      "https://cards.scryfall.io/large/front/5/3/53f5f704-2265-42bb-bff5-fd9d85bc2bfb.jpg?1771342389"
+    ],
+    "keywords": [
+      "Food"
+    ],
+    "oracle_text": "When this creature enters, you may search your library for a Food card, reveal it, put it into your hand, then shuffle. If you don't put a card into your hand this way, create a Food token. (It's an artifact with \"{2}, {T}, Sacrifice this token: You gain 3 life.\")"
+  },
+  "Cowabunga!": {
+    "arena_id": "",
+    "name": "Cowabunga!",
+    "cmc": 1,
+    "mana_cost": "{G}",
+    "types": [
+      "Sorcery"
+    ],
+    "subtypes": [],
+    "colors": [
+      "G"
+    ],
+    "color_identity": [
+      "G"
+    ],
+    "rarity": "Common",
+    "image": [
+      "https://cards.scryfall.io/large/front/0/f/0ffce972-bed9-445a-a9a0-4816f156d88d.jpg?1771342415"
+    ],
+    "keywords": [],
+    "oracle_text": "Look at the top four cards of your library. You may reveal a Mutant, Ninja, Turtle, or land card from among them and put it into your hand. Put the rest on the bottom of your library in a random order."
+  },
+  "Crustacean Commando": {
+    "arena_id": "",
+    "name": "Crustacean Commando",
+    "cmc": 2,
+    "mana_cost": "{1}{U}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Crab",
+      "Mutant",
+      "Soldier"
+    ],
+    "colors": [
+      "U"
+    ],
+    "color_identity": [
+      "U"
+    ],
+    "rarity": "Common",
+    "image": [
+      "https://cards.scryfall.io/large/front/9/5/9528cc07-df4b-417f-ad65-c2fae6fc2d49.jpg?1771502563"
+    ],
+    "keywords": [],
+    "oracle_text": "When this creature enters, create a Mutagen token. (It's an artifact with \"{1}, {T}, Sacrifice this token: Put a +1/+1 counter on target creature. Activate only as a sorcery.\")"
+  },
+  "Dark Leo & Shredder": {
+    "arena_id": "",
+    "name": "Dark Leo & Shredder",
+    "cmc": 2,
+    "mana_cost": "{W}{B}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Mutant",
+      "Ninja",
+      "Turtle",
+      "Human"
+    ],
+    "colors": [
+      "B",
+      "W"
+    ],
+    "color_identity": [
+      "B",
+      "W"
+    ],
+    "rarity": "Mythic",
+    "image": [
+      "https://cards.scryfall.io/large/front/b/a/bab93474-2f98-49a1-874f-b794bf81bd0c.jpg?1769006250"
+    ],
+    "keywords": [
+      "Sneak"
+    ],
+    "oracle_text": "Sneak {W}{B}\nAttacking Ninjas you control have deathtouch.\nWhenever Dark Leo & Shredder deal combat damage to a player, create a 1/1 black Ninja creature token. Then if you control five or more Ninjas, that player loses half their life, rounded up."
+  },
+  "Death in the Family": {
+    "arena_id": "",
+    "name": "Death in the Family",
+    "cmc": 2,
+    "mana_cost": "{1}{B}",
+    "types": [
+      "Instant"
+    ],
+    "subtypes": [],
+    "colors": [
+      "B"
+    ],
+    "color_identity": [
+      "B"
+    ],
+    "rarity": "Uncommon",
+    "image": [
+      "https://cards.scryfall.io/large/front/2/e/2e4f2148-d398-4f3d-9c59-81c87b6a4588.jpg?1771586845"
+    ],
+    "keywords": [],
+    "oracle_text": "Exile target creature with mana value 3 or less."
+  },
+  "Dimensional Exile": {
+    "arena_id": "",
+    "name": "Dimensional Exile",
+    "cmc": 2,
+    "mana_cost": "{1}{W}",
+    "types": [
+      "Enchantment"
+    ],
+    "subtypes": [
+      "Aura"
+    ],
+    "colors": [
+      "W"
+    ],
+    "color_identity": [
+      "W"
+    ],
+    "rarity": "Uncommon",
+    "image": [
+      "https://cards.scryfall.io/large/front/b/e/be8d96fb-a1be-4fff-b844-e38d185884e1.jpg?1771342164"
+    ],
+    "keywords": [
+      "Enchant"
+    ],
+    "oracle_text": "Enchant basic land you control\nWhen this Aura enters, exile target creature an opponent controls until this Aura leaves the battlefield."
+  },
+  "Dimension X": {
+    "arena_id": "",
+    "name": "Dimension X",
+    "cmc": 0,
+    "mana_cost": "",
+    "types": [
+      "Land"
+    ],
+    "subtypes": [],
+    "colors": [],
+    "color_identity": [
+      "R",
+      "W"
+    ],
+    "rarity": "Common",
+    "image": [
+      "https://cards.scryfall.io/large/front/1/c/1c244fc2-70f0-4149-b0d2-d49fc6bac2b0.jpg?1771587085"
+    ],
+    "keywords": [],
+    "oracle_text": "This land enters tapped.\nWhen this land enters, you gain 1 life.\n{T}: Add {R} or {W}."
+  },
+  "Does Machines": {
+    "arena_id": "",
+    "name": "Does Machines",
+    "cmc": 2,
+    "mana_cost": "{1}{U}",
+    "types": [
+      "Enchantment"
+    ],
+    "subtypes": [
+      "Class"
+    ],
+    "colors": [
+      "U"
+    ],
+    "color_identity": [
+      "U"
+    ],
+    "rarity": "Rare",
+    "image": [
+      "https://cards.scryfall.io/large/front/9/8/989da63a-2cbd-41a9-9bbb-99f4ad1c6a25.jpg?1774102268"
+    ],
+    "keywords": [
+      "Mill"
+    ],
+    "oracle_text": "(Gain the next level as a sorcery to add its ability.)\nWhen this Class enters, mill two cards, draw two cards, then discard two cards.\n{1}{U}: Level 2\nWhen this Class becomes level 2, return up to two target artifact cards from your graveyard to your hand.\n{4}{U}: Level 3\nAt the beginning of combat on your turn, put three +1/+1 counters on target artifact you control. If it isn't a creature, it becomes a 0/0 Robot creature in addition to its other types."
+  },
+  "Donatello, Gadget Master": {
+    "arena_id": "",
+    "name": "Donatello, Gadget Master",
+    "cmc": 3,
+    "mana_cost": "{2}{U}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Mutant",
+      "Ninja",
+      "Turtle"
+    ],
+    "colors": [
+      "U"
+    ],
+    "color_identity": [
+      "U"
+    ],
+    "rarity": "Rare",
+    "image": [
+      "https://cards.scryfall.io/large/front/8/b/8b5dd830-dab8-4628-845f-3d17973f9ffa.jpg?1769005622"
+    ],
+    "keywords": [
+      "Sneak"
+    ],
+    "oracle_text": "Sneak {1}{U} (You may cast this spell for {1}{U} if you also return an unblocked attacker you control to hand during the declare blockers step. He enters tapped and attacking.)\nWhenever Donatello deals combat damage to a player, create a token that's a copy of target artifact you control."
+  },
+  "Donatello, Mutant Mechanic": {
+    "arena_id": "",
+    "name": "Donatello, Mutant Mechanic",
+    "cmc": 4,
+    "mana_cost": "{3}{U}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Mutant",
+      "Ninja",
+      "Turtle"
+    ],
+    "colors": [
+      "U"
+    ],
+    "color_identity": [
+      "U"
+    ],
+    "rarity": "Mythic",
+    "image": [
+      "https://cards.scryfall.io/large/front/3/2/3271b821-8efc-49e2-96fd-c48e2b2585c6.jpg?1769005688"
+    ],
+    "keywords": [],
+    "oracle_text": "{T}: Put three +1/+1 counters on target artifact you control. If it isn't a creature, it becomes a 0/0 Robot creature in addition to its other types. Activate only as a sorcery.\nWhenever an artifact you control is put into a graveyard from the battlefield, if it had counters on it, put those counters on up to one target artifact or creature you control."
+  },
+  "Donatello's Technique": {
+    "arena_id": "",
+    "name": "Donatello's Technique",
+    "cmc": 3,
+    "mana_cost": "{2}{U}",
+    "types": [
+      "Sorcery"
+    ],
+    "subtypes": [],
+    "colors": [
+      "U"
+    ],
+    "color_identity": [
+      "U"
+    ],
+    "rarity": "Uncommon",
+    "image": [
+      "https://cards.scryfall.io/large/front/e/5/e570082f-8129-44d2-b471-ec7f46a98dbd.jpg?1771586794"
+    ],
+    "keywords": [
+      "Sneak"
+    ],
+    "oracle_text": "Sneak {U} (You may cast this spell for {U} if you also return an unblocked attacker you control to hand during the declare blockers step.)\nDraw two cards."
+  },
+  "Donatello, Turtle Techie": {
+    "arena_id": "",
+    "name": "Donatello, Turtle Techie",
+    "cmc": 4,
+    "mana_cost": "{3}{U}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Mutant",
+      "Ninja",
+      "Turtle"
+    ],
+    "colors": [
+      "U"
+    ],
+    "color_identity": [
+      "U"
+    ],
+    "rarity": "Common",
+    "image": [
+      "https://cards.scryfall.io/large/front/6/8/683cfef0-f164-4db8-b83f-79eb804e50ae.jpg?1771502569"
+    ],
+    "keywords": [],
+    "oracle_text": "When Donatello enters, if you control an artifact, draw a card."
+  },
+  "Donatello, Way with Machines": {
+    "arena_id": "",
+    "name": "Donatello, Way with Machines",
+    "cmc": 3,
+    "mana_cost": "{2}{U}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Mutant",
+      "Ninja",
+      "Turtle"
+    ],
+    "colors": [
+      "U"
+    ],
+    "color_identity": [
+      "U"
+    ],
+    "rarity": "Uncommon",
+    "image": [
+      "https://cards.scryfall.io/large/front/a/3/a3a5b63a-3263-4f06-a643-808c38f64c77.jpg?1771502576"
+    ],
+    "keywords": [
+      "Flying"
+    ],
+    "oracle_text": "Flying\nWhenever an artifact you control enters, put a +1/+1 counter on Donatello."
+  },
+  "Don & Leo, Problem Solvers": {
+    "arena_id": "",
+    "name": "Don & Leo, Problem Solvers",
+    "cmc": 5,
+    "mana_cost": "{3}{W/U}{W/U}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Mutant",
+      "Ninja",
+      "Turtle"
+    ],
+    "colors": [
+      "U",
+      "W"
+    ],
+    "color_identity": [
+      "U",
+      "W"
+    ],
+    "rarity": "Rare",
+    "image": [
+      "https://cards.scryfall.io/large/front/d/2/d239beaf-4f5b-494e-be5c-ffa8b6e28bde.jpg?1769006269"
+    ],
+    "keywords": [
+      "Vigilance"
+    ],
+    "oracle_text": "Vigilance\nAt the beginning of your end step, exile up to one target artifact you control and up to one target creature you control. Then return them to the battlefield under their owners' control."
+  },
+  "Don & Raph, Hard Science": {
+    "arena_id": "",
+    "name": "Don & Raph, Hard Science",
+    "cmc": 3,
+    "mana_cost": "{1}{U/R}{U/R}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Mutant",
+      "Ninja",
+      "Turtle"
+    ],
+    "colors": [
+      "R",
+      "U"
+    ],
+    "color_identity": [
+      "R",
+      "U"
+    ],
+    "rarity": "Rare",
+    "image": [
+      "https://cards.scryfall.io/large/front/4/f/4f38126c-26a9-4447-801f-4f19e84c4aa5.jpg?1769006276"
+    ],
+    "keywords": [
+      "Menace"
+    ],
+    "oracle_text": "Menace\nWhenever Don & Raph attack, the next noncreature spell you cast this turn has affinity for artifacts. (It costs {1} less to cast for each artifact you control.)"
+  },
+  "Dream Beavers": {
+    "arena_id": "",
+    "name": "Dream Beavers",
+    "cmc": 1,
+    "mana_cost": "{B}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Beaver",
+      "Nightmare"
+    ],
+    "colors": [
+      "B"
+    ],
+    "color_identity": [
+      "B"
+    ],
+    "rarity": "Uncommon",
+    "image": [
+      "https://cards.scryfall.io/large/front/6/0/600e3bc1-9777-4057-a11e-4f61582636c6.jpg?1771586853"
+    ],
+    "keywords": [
+      "Scry",
+      "Flying"
+    ],
+    "oracle_text": "Flying\nWhen this creature enters, each opponent loses 1 life and you gain 1 life. Scry 1. (Look at the top card of your library. You may put that card on the bottom.)"
+  },
+  "East Wind Avatar": {
+    "arena_id": "",
+    "name": "East Wind Avatar",
+    "cmc": 4,
+    "mana_cost": "{3}{W}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Bird",
+      "Spirit",
+      "Avatar"
+    ],
+    "colors": [
+      "W"
+    ],
+    "color_identity": [
+      "W"
+    ],
+    "rarity": "Common",
+    "image": [
+      "https://cards.scryfall.io/large/front/c/9/c9d5b56c-ad2a-4958-8783-4eceb8733610.jpg?1771502461"
+    ],
+    "keywords": [
+      "Flying",
+      "Vigilance",
+      "Alliance"
+    ],
+    "oracle_text": "Flying, vigilance\nAlliance \u2014 Whenever another creature you control enters, this creature gets +1/+0 until end of turn."
+  },
+  "EPF Point Squad": {
+    "arena_id": "",
+    "name": "EPF Point Squad",
+    "cmc": 3,
+    "mana_cost": "{1}{R/W}{R/W}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Human",
+      "Soldier"
+    ],
+    "colors": [
+      "R",
+      "W"
+    ],
+    "color_identity": [
+      "R",
+      "W"
+    ],
+    "rarity": "Common",
+    "image": [
+      "https://cards.scryfall.io/large/front/f/a/faab52c0-ce79-40af-a156-b193a62d439e.jpg?1771502756"
+    ],
+    "keywords": [
+      "Alliance"
+    ],
+    "oracle_text": "Alliance \u2014 Whenever another creature you control enters, put a +1/+1 counter on this creature."
+  },
+  "Escape Tunnel": {
+    "arena_id": "",
+    "name": "Escape Tunnel",
+    "cmc": 0,
+    "mana_cost": "",
+    "types": [
+      "Land"
+    ],
+    "subtypes": [],
+    "colors": [],
+    "color_identity": [],
+    "rarity": "Common",
+    "image": [
+      "https://cards.scryfall.io/large/front/5/d/5df90940-15ea-418c-8547-6c75d69ec6d3.jpg?1771424732"
+    ],
+    "keywords": [],
+    "oracle_text": "{T}, Sacrifice this land: Search your library for a basic land card, put it onto the battlefield tapped, then shuffle.\n{T}, Sacrifice this land: Target creature with power 2 or less can't be blocked this turn."
+  },
+  "Everything Pizza": {
+    "arena_id": "",
+    "name": "Everything Pizza",
+    "cmc": 2,
+    "mana_cost": "{2}",
+    "types": [
+      "Artifact"
+    ],
+    "subtypes": [
+      "Food"
+    ],
+    "colors": [],
+    "color_identity": [
+      "B",
+      "G",
+      "R",
+      "U",
+      "W"
+    ],
+    "rarity": "Uncommon",
+    "image": [
+      "https://cards.scryfall.io/large/front/d/f/df2cdaa5-9ea0-4aa5-89d3-9edf40fa2a39.jpg?1771476702"
+    ],
+    "keywords": [],
+    "oracle_text": "When this artifact enters, search your library for a basic land card, reveal it, put it into your hand, then shuffle.\n{2}{W}{U}{B}{R}{G}, {T}, Sacrifice this artifact: Target player gains 3 life and draws a card. Each of your opponents discards a card. This artifact deals 3 damage to any target. Put three +1/+1 counters on up to one target creature."
+  },
+  "Featherbrained Filcher": {
+    "arena_id": "",
+    "name": "Featherbrained Filcher",
+    "cmc": 1,
+    "mana_cost": "{W}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Bird",
+      "Mutant"
+    ],
+    "colors": [
+      "W"
+    ],
+    "color_identity": [
+      "W"
+    ],
+    "rarity": "Uncommon",
+    "image": [
+      "https://cards.scryfall.io/large/front/7/8/78c55706-4d00-4b97-965c-0b2d0963e59d.jpg?1771513766"
+    ],
+    "keywords": [
+      "Flying",
+      "Food"
+    ],
+    "oracle_text": "Flying\nWhen this creature leaves the battlefield, create a Food token. (It's an artifact with \"{2}, {T}, Sacrifice this token: You gain 3 life.\")"
+  },
+  "Foot Elite": {
+    "arena_id": "",
+    "name": "Foot Elite",
+    "cmc": 3,
+    "mana_cost": "{2}{W/B}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Human",
+      "Ninja"
+    ],
+    "colors": [
+      "B",
+      "W"
+    ],
+    "color_identity": [
+      "B",
+      "W"
+    ],
+    "rarity": "Common",
+    "image": [
+      "https://cards.scryfall.io/large/front/2/4/24bd571e-652a-4e7c-afc6-a45f0ccf62f6.jpg?1771342404"
+    ],
+    "keywords": [],
+    "oracle_text": "Whenever this creature attacks, another target creature you control gets +1/+0 and gains indestructible until end of turn. (Damage and effects that say \"destroy\" don't destroy it.)"
+  },
+  "Foot Headquarters": {
+    "arena_id": "",
+    "name": "Foot Headquarters",
+    "cmc": 0,
+    "mana_cost": "",
+    "types": [
+      "Land"
+    ],
+    "subtypes": [],
+    "colors": [],
+    "color_identity": [
+      "B",
+      "W"
+    ],
+    "rarity": "Common",
+    "image": [
+      "https://cards.scryfall.io/large/front/4/5/45e68113-3f05-4547-947d-4cb9ebfa73c7.jpg?1771587092"
+    ],
+    "keywords": [],
+    "oracle_text": "This land enters tapped.\nWhen this land enters, you gain 1 life.\n{T}: Add {W} or {B}."
+  },
+  "Foot Mystic": {
+    "arena_id": "",
+    "name": "Foot Mystic",
+    "cmc": 4,
+    "mana_cost": "{3}{B}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Human",
+      "Ninja",
+      "Warlock"
+    ],
+    "colors": [
+      "B"
+    ],
+    "color_identity": [
+      "B"
+    ],
+    "rarity": "Common",
+    "image": [
+      "https://cards.scryfall.io/large/front/6/1/61e40a18-6cc8-436d-826b-1cf8cd037df3.jpg?1771586860"
+    ],
+    "keywords": [
+      "Disappear",
+      "Lifelink"
+    ],
+    "oracle_text": "Lifelink\nDisappear \u2014 When this creature enters, if a permanent left the battlefield under your control this turn, create a 1/1 black Ninja creature token."
+  },
+  "Foot Ninjas": {
+    "arena_id": "",
+    "name": "Foot Ninjas",
+    "cmc": 6,
+    "mana_cost": "{4}{W/B}{W/B}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Human",
+      "Ninja"
+    ],
+    "colors": [
+      "B",
+      "W"
+    ],
+    "color_identity": [
+      "B",
+      "W"
+    ],
+    "rarity": "Common",
+    "image": [
+      "https://cards.scryfall.io/large/front/a/b/abb1ab9c-b067-4b75-8e5b-a893b7948df1.jpg?1771503783"
+    ],
+    "keywords": [
+      "Sneak"
+    ],
+    "oracle_text": "Sneak {3}{W/B} (You may cast this spell for {3}{W/B} if you also return an unblocked attacker you control to hand during the declare blockers step. It enters tapped and attacking.)\nWhen this creature enters, you gain 3 life."
+  },
+  "Forest": {
+    "arena_id": "",
+    "name": "Forest",
+    "cmc": 0,
+    "mana_cost": "",
+    "types": [
+      "Land"
+    ],
+    "subtypes": [
+      "Forest"
+    ],
+    "colors": [],
+    "color_identity": [
+      "G"
+    ],
+    "rarity": "Common",
+    "image": [
+      "https://cards.scryfall.io/large/front/3/b/3b84ec1e-ccce-4b8b-9302-b26f84cfa469.jpg?1771345178"
+    ],
+    "keywords": [],
+    "oracle_text": "({T}: Add {G}.)"
+  },
+  "Frog Butler": {
+    "arena_id": "",
+    "name": "Frog Butler",
+    "cmc": 2,
+    "mana_cost": "{1}{G}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Frog",
+      "Spirit"
+    ],
+    "colors": [
+      "G"
+    ],
+    "color_identity": [
+      "G"
+    ],
+    "rarity": "Common",
+    "image": [
+      "https://cards.scryfall.io/large/front/d/1/d1a72d09-9cfc-463a-a9ec-3359003d54da.jpg?1771502693"
+    ],
+    "keywords": [
+      "Deathtouch"
+    ],
+    "oracle_text": "Deathtouch\n{T}: Add one mana of any color.\n{2}: This creature gains reach until end of turn."
+  },
+  "Fugitive Droid": {
+    "arena_id": "",
+    "name": "Fugitive Droid",
+    "cmc": 1,
+    "mana_cost": "{U}",
+    "types": [
+      "Creature",
+      "Artifact"
+    ],
+    "subtypes": [
+      "Robot",
+      "Scientist"
+    ],
+    "colors": [
+      "U"
+    ],
+    "color_identity": [
+      "U"
+    ],
+    "rarity": "Uncommon",
+    "image": [
+      "https://cards.scryfall.io/large/front/5/0/50c4e65f-00dc-4fc5-bd5c-8482c2848f4c.jpg?1771586801"
+    ],
+    "keywords": [],
+    "oracle_text": "This creature can't be blocked if an artifact entered the battlefield under your control this turn.\n{U}, Sacrifice this creature: Counter target spell that targets an artifact or creature you control."
+  },
+  "General Traag, Heart of Stone": {
+    "arena_id": "",
+    "name": "General Traag, Heart of Stone",
+    "cmc": 5,
+    "mana_cost": "{3}{R}{R}",
+    "types": [
+      "Creature",
+      "Artifact"
+    ],
+    "subtypes": [
+      "Elemental",
+      "Soldier"
+    ],
+    "colors": [
+      "R"
+    ],
+    "color_identity": [
+      "R"
+    ],
+    "rarity": "Uncommon",
+    "image": [
+      "https://cards.scryfall.io/large/front/e/0/e02e971f-6008-4c82-acd2-2aed13009ccb.jpg?1771502622"
+    ],
+    "keywords": [
+      "Trample"
+    ],
+    "oracle_text": "Trample\nWhen General Traag enters, you may sacrifice another artifact. When you do, General Traag deals 4 damage to target creature."
+  },
+  "Genghis Frog": {
+    "arena_id": "",
+    "name": "Genghis Frog",
+    "cmc": 2,
+    "mana_cost": "{G}{U}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Frog",
+      "Mutant",
+      "Rogue"
+    ],
+    "colors": [
+      "G",
+      "U"
+    ],
+    "color_identity": [
+      "G",
+      "U"
+    ],
+    "rarity": "Uncommon",
+    "image": [
+      "https://cards.scryfall.io/large/front/7/d/7df26085-eedb-4bdd-a60a-aabfbe9c3157.jpg?1771342425"
+    ],
+    "keywords": [
+      "Trample"
+    ],
+    "oracle_text": "Trample\nWhenever Genghis Frog or another Mutant you control enters, create a Mutagen token. (It's an artifact with \"{1}, {T}, Sacrifice this token: Put a +1/+1 counter on target creature. Activate only as a sorcery.\")"
+  },
+  "Go Ninja Go": {
+    "arena_id": "",
+    "name": "Go Ninja Go",
+    "cmc": 2,
+    "mana_cost": "{R}{W}",
+    "types": [
+      "Sorcery"
+    ],
+    "subtypes": [],
+    "colors": [
+      "R",
+      "W"
+    ],
+    "color_identity": [
+      "R",
+      "W"
+    ],
+    "rarity": "Uncommon",
+    "image": [
+      "https://cards.scryfall.io/large/front/9/0/90e68cd8-ea76-4bd1-9199-474da9c3e8bf.jpg?1771587007"
+    ],
+    "keywords": [],
+    "oracle_text": "Choose one or both \u2014\n\u2022 Exile target creature you control, then return it to the battlefield under its owner's control.\n\u2022 Go Ninja Go deals damage equal to the greatest power among creatures you control to target creature an opponent controls."
+  },
+  "Groundchuck & Dirtbag": {
+    "arena_id": "",
+    "name": "Groundchuck & Dirtbag",
+    "cmc": 6,
+    "mana_cost": "{4}{G}{G}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Ox",
+      "Mole",
+      "Mutant"
+    ],
+    "colors": [
+      "G"
+    ],
+    "color_identity": [
+      "G"
+    ],
+    "rarity": "Rare",
+    "image": [
+      "https://cards.scryfall.io/large/front/1/5/1563592e-0f21-4488-a3ec-ca766386e423.jpg?1769006182"
+    ],
+    "keywords": [
+      "Trample"
+    ],
+    "oracle_text": "Trample\nWhenever you tap a land for mana, add {G}."
+  },
+  "Grounded for Life": {
+    "arena_id": "",
+    "name": "Grounded for Life",
+    "cmc": 5,
+    "mana_cost": "{4}{W}",
+    "types": [
+      "Instant"
+    ],
+    "subtypes": [],
+    "colors": [
+      "W"
+    ],
+    "color_identity": [
+      "W"
+    ],
+    "rarity": "Common",
+    "image": [
+      "https://cards.scryfall.io/large/front/7/2/72388199-85fa-4eba-9a9c-c2904e6da9ed.jpg?1771502482"
+    ],
+    "keywords": [],
+    "oracle_text": "This spell costs {3} less to cast if it targets a tapped creature.\nDestroy target creature."
+  },
+  "Guac & Marshmallow Pizza": {
+    "arena_id": "",
+    "name": "Guac & Marshmallow Pizza",
+    "cmc": 1,
+    "mana_cost": "{G}",
+    "types": [
+      "Artifact"
+    ],
+    "subtypes": [
+      "Food"
+    ],
+    "colors": [
+      "G"
+    ],
+    "color_identity": [
+      "G"
+    ],
+    "rarity": "Common",
+    "image": [
+      "https://cards.scryfall.io/large/front/a/5/a5405de0-16c9-4e5a-8ceb-00508e212f12.jpg?1771502701"
+    ],
+    "keywords": [
+      "Flash"
+    ],
+    "oracle_text": "Flash\nWhen this artifact enters, target creature gets +2/+2 until end of turn. Untap it.\n{2}, {T}, Sacrifice this artifact: You gain 3 life."
+  },
+  "Hamato Guardian Stance": {
+    "arena_id": "",
+    "name": "Hamato Guardian Stance",
+    "cmc": 1,
+    "mana_cost": "{W}",
+    "types": [
+      "Instant"
+    ],
+    "subtypes": [],
+    "colors": [
+      "W"
+    ],
+    "color_identity": [
+      "W"
+    ],
+    "rarity": "Common",
+    "image": [
+      "https://cards.scryfall.io/large/front/7/3/735b540b-b472-46fa-a232-d444cabf6c4c.jpg?1771502490"
+    ],
+    "keywords": [
+      "Scry"
+    ],
+    "oracle_text": "Target creature gets +1/+3 and gains flying until end of turn. Scry 1. (Look at the top card of your library. You may put that card on the bottom.)"
+  },
+  "Hard-Won Jitte": {
+    "arena_id": "",
+    "name": "Hard-Won Jitte",
+    "cmc": 2,
+    "mana_cost": "{1}{R}",
+    "types": [
+      "Artifact"
+    ],
+    "subtypes": [
+      "Equipment"
+    ],
+    "colors": [
+      "R"
+    ],
+    "color_identity": [
+      "R"
+    ],
+    "rarity": "Uncommon",
+    "image": [
+      "https://cards.scryfall.io/large/front/5/d/5d3dc219-f024-49de-b88d-dc1e9e84184c.jpg?1771342392"
+    ],
+    "keywords": [
+      "Equip"
+    ],
+    "oracle_text": "Equipped creature has double strike.\nEquip {2} ({2}: Attach to target creature you control. Equip only as a sorcery.)"
+  },
+  "Henchbots": {
+    "arena_id": "",
+    "name": "Henchbots",
+    "cmc": 4,
+    "mana_cost": "{4}",
+    "types": [
+      "Creature",
+      "Artifact"
+    ],
+    "subtypes": [
+      "Robot"
+    ],
+    "colors": [],
+    "color_identity": [],
+    "rarity": "Uncommon",
+    "image": [
+      "https://cards.scryfall.io/large/front/d/7/d77aa46e-fa57-4427-b0a3-0a957dc994dc.jpg?1771502803"
+    ],
+    "keywords": [],
+    "oracle_text": "When this creature enters, exile target tapped creature an opponent controls until this creature leaves the battlefield."
+  },
+  "High-Flying Ace": {
+    "arena_id": "",
+    "name": "High-Flying Ace",
+    "cmc": 3,
+    "mana_cost": "{2}{W}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Bird",
+      "Mutant"
+    ],
+    "colors": [
+      "W"
+    ],
+    "color_identity": [
+      "W"
+    ],
+    "rarity": "Common",
+    "image": [
+      "https://cards.scryfall.io/large/front/e/9/e927eb0b-1c69-421a-8acd-01e92f729ffb.jpg?1771502498"
+    ],
+    "keywords": [
+      "Flying"
+    ],
+    "oracle_text": "Flying\n{3}{W}: Target creature without flying gains flying until end of turn. Activate only as a sorcery."
+  },
+  "Ice Cream Kitty": {
+    "arena_id": "",
+    "name": "Ice Cream Kitty",
+    "cmc": 2,
+    "mana_cost": "{1}{B/G}",
+    "types": [
+      "Creature",
+      "Artifact"
+    ],
+    "subtypes": [
+      "Food",
+      "Cat",
+      "Mutant"
+    ],
+    "colors": [
+      "B",
+      "G"
+    ],
+    "color_identity": [
+      "B",
+      "G"
+    ],
+    "rarity": "Common",
+    "image": [
+      "https://cards.scryfall.io/large/front/6/6/66081fd3-2457-4602-96c4-3075ddfec1c2.jpg?1771587014"
+    ],
+    "keywords": [],
+    "oracle_text": "{2}, Sacrifice another creature or token: Draw a card. Activate only as a sorcery.\n{2}, {T}, Sacrifice this creature: You gain 3 life."
+  },
+  "Illegitimate Business": {
+    "arena_id": "",
+    "name": "Illegitimate Business",
+    "cmc": 0,
+    "mana_cost": "",
+    "types": [
+      "Land"
+    ],
+    "subtypes": [],
+    "colors": [],
+    "color_identity": [
+      "B",
+      "G"
+    ],
+    "rarity": "Common",
+    "image": [
+      "https://cards.scryfall.io/large/front/7/1/71597acf-1ce6-46a8-b6c0-88755c8a377c.jpg?1771587098"
+    ],
+    "keywords": [],
+    "oracle_text": "This land enters tapped.\nWhen this land enters, you gain 1 life.\n{T}: Add {B} or {G}."
+  },
+  "Improvised Arsenal": {
+    "arena_id": "",
+    "name": "Improvised Arsenal",
+    "cmc": 2,
+    "mana_cost": "{1}{R}",
+    "types": [
+      "Artifact"
+    ],
+    "subtypes": [
+      "Equipment"
+    ],
+    "colors": [
+      "R"
+    ],
+    "color_identity": [
+      "R"
+    ],
+    "rarity": "Rare",
+    "image": [
+      "https://cards.scryfall.io/large/front/0/0/003265d9-b2fc-4916-afc8-53ed2d6aa053.jpg?1769006146"
+    ],
+    "keywords": [
+      "Equip"
+    ],
+    "oracle_text": "Equipped creature gets +1/+0 for each artifact you control.\n{4}{R}: Create a token that's a copy of this Equipment.\nEquip {R}"
+  },
+  "Insectoid Exterminator": {
+    "arena_id": "",
+    "name": "Insectoid Exterminator",
+    "cmc": 3,
+    "mana_cost": "{2}{B}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Insect",
+      "Mutant"
+    ],
+    "colors": [
+      "B"
+    ],
+    "color_identity": [
+      "B"
+    ],
+    "rarity": "Common",
+    "image": [
+      "https://cards.scryfall.io/large/front/f/f/ff26f7ff-7f70-4204-9b48-de9e21dc89ec.jpg?1771586866"
+    ],
+    "keywords": [
+      "Scry",
+      "Flying",
+      "Disappear"
+    ],
+    "oracle_text": "Flying\nDisappear \u2014 At the beginning of your end step, if a permanent left the battlefield under your control this turn, scry 1. (Look at the top card of your library. You may put that card on the bottom.)"
+  },
+  "Island": {
+    "arena_id": "",
+    "name": "Island",
+    "cmc": 0,
+    "mana_cost": "",
+    "types": [
+      "Land"
+    ],
+    "subtypes": [
+      "Island"
+    ],
+    "colors": [],
+    "color_identity": [
+      "U"
+    ],
+    "rarity": "Common",
+    "image": [
+      "https://cards.scryfall.io/large/front/8/3/836f371b-34f5-40e8-a806-e457841e5bc7.jpg?1771345160"
+    ],
+    "keywords": [],
+    "oracle_text": "({T}: Add {U}.)"
+  },
+  "Jennika, Bad Apple Big Sister": {
+    "arena_id": "",
+    "name": "Jennika, Bad Apple Big Sister",
+    "cmc": 5,
+    "mana_cost": "{4}{W}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Mutant",
+      "Ninja",
+      "Turtle"
+    ],
+    "colors": [
+      "W"
+    ],
+    "color_identity": [
+      "W"
+    ],
+    "rarity": "Common",
+    "image": [
+      "https://cards.scryfall.io/large/front/a/5/a5b83101-e3ef-4ffe-a886-4fc2b57a0947.jpg?1771502505"
+    ],
+    "keywords": [
+      "Plainscycling",
+      "Landcycling",
+      "Typecycling",
+      "Cycling"
+    ],
+    "oracle_text": "When Jennika enters, create a 2/2 red Mutant creature token.\nPlainscycling {2} ({2}, Discard this card: Search your library for a Plains card, reveal it, put it into your hand, then shuffle.)"
+  },
+  "Jennika's Technique": {
+    "arena_id": "",
+    "name": "Jennika's Technique",
+    "cmc": 3,
+    "mana_cost": "{2}{R}",
+    "types": [
+      "Instant"
+    ],
+    "subtypes": [],
+    "colors": [
+      "R"
+    ],
+    "color_identity": [
+      "R"
+    ],
+    "rarity": "Uncommon",
+    "image": [
+      "https://cards.scryfall.io/large/front/d/f/df559199-c8b9-455b-aa07-0a042348de96.jpg?1771502629"
+    ],
+    "keywords": [
+      "Sneak"
+    ],
+    "oracle_text": "Sneak {R} (You may cast this spell for {R} if you also return an unblocked attacker you control to hand during the declare blockers step.)\nJennika's Technique deals 2 damage to each creature."
+  },
+  "Karai, Future of the Foot": {
+    "arena_id": "",
+    "name": "Karai, Future of the Foot",
+    "cmc": 3,
+    "mana_cost": "{1}{W}{B}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Human",
+      "Ninja"
+    ],
+    "colors": [
+      "B",
+      "W"
+    ],
+    "color_identity": [
+      "B",
+      "W"
+    ],
+    "rarity": "Uncommon",
+    "image": [
+      "https://cards.scryfall.io/large/front/0/d/0dded2d4-1640-4431-809e-403b51b27db6.jpg?1771342417"
+    ],
+    "keywords": [
+      "Sneak"
+    ],
+    "oracle_text": "Sneak {2}{W}{B} (You may cast this spell for {2}{W}{B} if you also return an unblocked attacker you control to hand during the declare blockers step. She enters tapped and attacking.)\nWhenever Karai deals combat damage to a player, return target creature card from your graveyard to your hand. If her sneak cost was paid this turn, instead return that card to the battlefield."
+  },
+  "Karai's Technique": {
+    "arena_id": "",
+    "name": "Karai's Technique",
+    "cmc": 3,
+    "mana_cost": "{1}{W}{B}",
+    "types": [
+      "Sorcery"
+    ],
+    "subtypes": [],
+    "colors": [
+      "B",
+      "W"
+    ],
+    "color_identity": [
+      "B",
+      "W"
+    ],
+    "rarity": "Uncommon",
+    "image": [
+      "https://cards.scryfall.io/large/front/0/3/037fe188-3355-4724-b2eb-e2448fc55607.jpg?1771587021"
+    ],
+    "keywords": [
+      "Sneak"
+    ],
+    "oracle_text": "Sneak {W}{B} (You may cast this spell for {W}{B} if you also return an unblocked attacker you control to hand during the declare blockers step.)\nChoose one or both \u2014\n\u2022 Target creature gets +3/+3 until end of turn.\n\u2022 Target creature gets -3/-3 until end of turn."
+  },
+  "Kitsune, Dragon's Daughter": {
+    "arena_id": "",
+    "name": "Kitsune, Dragon's Daughter",
+    "cmc": 6,
+    "mana_cost": "{4}{U}{U}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Fox",
+      "Warlock",
+      "Avatar"
+    ],
+    "colors": [
+      "U"
+    ],
+    "color_identity": [
+      "U"
+    ],
+    "rarity": "Rare",
+    "image": [
+      "https://cards.scryfall.io/large/front/a/8/a87a9257-4535-4286-8b59-a842ac45d05e.jpg?1769005699"
+    ],
+    "keywords": [
+      "Vigilance"
+    ],
+    "oracle_text": "Vigilance\nWhenever Kitsune enters or deals combat damage to a player, you may exchange control of two other target creatures controlled by different players."
+  },
+  "Kitsune's Technique": {
+    "arena_id": "",
+    "name": "Kitsune's Technique",
+    "cmc": 6,
+    "mana_cost": "{4}{U}{U}",
+    "types": [
+      "Instant"
+    ],
+    "subtypes": [],
+    "colors": [
+      "U"
+    ],
+    "color_identity": [
+      "U"
+    ],
+    "rarity": "Rare",
+    "image": [
+      "https://cards.scryfall.io/large/front/9/c/9ca5327e-df90-483c-875f-73a23781f56d.jpg?1769005745"
+    ],
+    "keywords": [
+      "Mill",
+      "Sneak"
+    ],
+    "oracle_text": "Sneak {1}{U} (You may cast this spell for {1}{U} if you also return an unblocked attacker you control to hand during the declare blockers step.)\nTarget opponent mills half their library, rounded up."
+  },
+  "Koya, Death from Above": {
+    "arena_id": "",
+    "name": "Koya, Death from Above",
+    "cmc": 3,
+    "mana_cost": "{2}{W}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Mutant",
+      "Ninja",
+      "Bird"
+    ],
+    "colors": [
+      "W"
+    ],
+    "color_identity": [
+      "B",
+      "W"
+    ],
+    "rarity": "Uncommon",
+    "image": [
+      "https://cards.scryfall.io/large/front/7/a/7a4f1ccc-2225-4cd0-abef-0eb7a8eae9cf.jpg?1771586885"
+    ],
+    "keywords": [
+      "Flying"
+    ],
+    "oracle_text": "Flying\nWhen Koya enters, exile up to one other target creature. At the beginning of the next end step, you may pay {3}{B}. If you don't, return that card to the battlefield under its owner's control."
+  },
+  "Krang, Master Mind": {
+    "arena_id": "",
+    "name": "Krang, Master Mind",
+    "cmc": 8,
+    "mana_cost": "{6}{U}{U}",
+    "types": [
+      "Creature",
+      "Artifact"
+    ],
+    "subtypes": [
+      "Utrom",
+      "Warrior"
+    ],
+    "colors": [
+      "U"
+    ],
+    "color_identity": [
+      "U"
+    ],
+    "rarity": "Rare",
+    "image": [
+      "https://cards.scryfall.io/large/front/d/2/d27fa497-e842-4812-80fe-28517544e1c5.jpg?1760102684"
+    ],
+    "keywords": [
+      "Affinity"
+    ],
+    "oracle_text": "Affinity for artifacts (This spell costs {1} less to cast for each artifact you control.)\nWhen Krang enters, if you have fewer than four cards in hand, draw cards equal to the difference.\nKrang gets +1/+0 for each other artifact you control."
+  },
+  "Krang & Shredder": {
+    "arena_id": "",
+    "name": "Krang & Shredder",
+    "cmc": 6,
+    "mana_cost": "{4}{U/B}{U/B}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Utrom",
+      "Human",
+      "Ninja"
+    ],
+    "colors": [
+      "B",
+      "U"
+    ],
+    "color_identity": [
+      "B",
+      "U"
+    ],
+    "rarity": "Rare",
+    "image": [
+      "https://cards.scryfall.io/large/front/9/b/9b5437e2-e3f4-4c19-a2aa-a75f65a001bb.jpg?1769006256"
+    ],
+    "keywords": [
+      "Disappear"
+    ],
+    "oracle_text": "Whenever Krang & Shredder enter or attack, each opponent exiles cards from the top of their library until they exile a nonland card.\nDisappear \u2014 At the beginning of your end step, if a permanent left the battlefield under your control this turn, you may cast a card exiled with Krang & Shredder without paying its mana cost."
+  },
+  "Krang, Utrom Warlord": {
+    "arena_id": "",
+    "name": "Krang, Utrom Warlord",
+    "cmc": 9,
+    "mana_cost": "{9}",
+    "types": [
+      "Creature",
+      "Artifact"
+    ],
+    "subtypes": [
+      "Utrom",
+      "Robot"
+    ],
+    "colors": [],
+    "color_identity": [],
+    "rarity": "Mythic",
+    "image": [
+      "https://cards.scryfall.io/large/front/8/8/88d36c32-d6f9-46e4-9cc8-08e6c0ff05d2.jpg?1769006413"
+    ],
+    "keywords": [
+      "Flying",
+      "Indestructible",
+      "Haste",
+      "Trample"
+    ],
+    "oracle_text": "Flying, trample, indestructible, haste\nOther artifact creatures you control have flying, trample, indestructible, and haste."
+  },
+  "Leader's Talent": {
+    "arena_id": "",
+    "name": "Leader's Talent",
+    "cmc": 2,
+    "mana_cost": "{1}{W}",
+    "types": [
+      "Enchantment"
+    ],
+    "subtypes": [
+      "Class"
+    ],
+    "colors": [
+      "W"
+    ],
+    "color_identity": [
+      "W"
+    ],
+    "rarity": "Rare",
+    "image": [
+      "https://cards.scryfall.io/large/front/4/c/4cbcb622-1aff-460f-b8fa-4502d991e0ad.jpg?1769005523"
+    ],
+    "keywords": [],
+    "oracle_text": "(Gain the next level as a sorcery to add its ability.)\nWhenever you attack, put a +1/+1 counter on target attacking creature.\n{2}{W}: Level 2\nWhenever a creature you control leaves the battlefield, if it had a counter on it, you gain 2 life.\n{3}{W}: Level 3\nWhenever you cast a spell, put a +1/+1 counter on each creature you control."
+  },
+  "Leatherhead, Swamp Stalker": {
+    "arena_id": "",
+    "name": "Leatherhead, Swamp Stalker",
+    "cmc": 4,
+    "mana_cost": "{2}{G}{G}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Crocodile",
+      "Mutant",
+      "Rogue"
+    ],
+    "colors": [
+      "G"
+    ],
+    "color_identity": [
+      "G"
+    ],
+    "rarity": "Rare",
+    "image": [
+      "https://cards.scryfall.io/large/front/b/1/b1f6b5b5-12ca-468d-bc53-dd0cde60e7b6.jpg?1769006176"
+    ],
+    "keywords": [
+      "Trample"
+    ],
+    "oracle_text": "Trample\nLeatherhead enters with a hexproof counter on her.\nWhenever Leatherhead deals combat damage to a player, you may remove a counter from her. When you do, destroy target artifact or enchantment that player controls."
+  },
+  "Leonardo, Big Brother": {
+    "arena_id": "",
+    "name": "Leonardo, Big Brother",
+    "cmc": 3,
+    "mana_cost": "{2}{W}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Mutant",
+      "Ninja",
+      "Turtle"
+    ],
+    "colors": [
+      "W"
+    ],
+    "color_identity": [
+      "W"
+    ],
+    "rarity": "Common",
+    "image": [
+      "https://cards.scryfall.io/large/front/e/8/e802838f-cc8c-4313-8c3b-32a6a7248e64.jpg?1771502512"
+    ],
+    "keywords": [
+      "Sneak"
+    ],
+    "oracle_text": "Sneak {W} (You may cast this spell for {W} if you also return an unblocked attacker you control to hand during the declare blockers step. He enters tapped and attacking.)\nLeonardo gets +1/+0 for each other creature you control."
+  },
+  "Leonardo, Cutting Edge": {
+    "arena_id": "",
+    "name": "Leonardo, Cutting Edge",
+    "cmc": 2,
+    "mana_cost": "{1}{W}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Mutant",
+      "Ninja",
+      "Turtle"
+    ],
+    "colors": [
+      "W"
+    ],
+    "color_identity": [
+      "W"
+    ],
+    "rarity": "Rare",
+    "image": [
+      "https://cards.scryfall.io/large/front/7/4/74c11ee3-19d1-4ad5-a727-1d74c565d6a5.jpg?1769005535"
+    ],
+    "keywords": [
+      "Lifelink",
+      "Sneak"
+    ],
+    "oracle_text": "Sneak {W} (You may cast this spell for {W} if you also return an unblocked attacker you control to hand during the declare blockers step. He enters tapped and attacking.)\nLifelink\nWhenever you gain life, put a +1/+1 counter on Leonardo."
+  },
+  "Leonardo, Leader in Blue": {
+    "arena_id": "",
+    "name": "Leonardo, Leader in Blue",
+    "cmc": 1,
+    "mana_cost": "{W}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Mutant",
+      "Ninja",
+      "Turtle"
+    ],
+    "colors": [
+      "W"
+    ],
+    "color_identity": [
+      "W"
+    ],
+    "rarity": "Uncommon",
+    "image": [
+      "https://cards.scryfall.io/large/front/d/6/d6eaae35-d513-43d8-be2d-b97c15e25937.jpg?1771502519"
+    ],
+    "keywords": [
+      "Sneak"
+    ],
+    "oracle_text": "Sneak {3}{W}{W} (You may cast this spell for {3}{W}{W} if you also return an unblocked attacker you control to hand during the declare blockers step. He enters tapped and attacking.)\nWhen Leonardo enters, if his sneak cost was paid, creatures you control get +2/+0 until end of turn.\n{1}{W}: Leonardo gains first strike until end of turn."
+  },
+  "Leonardo, Sewer Samurai": {
+    "arena_id": "",
+    "name": "Leonardo, Sewer Samurai",
+    "cmc": 4,
+    "mana_cost": "{3}{W}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Mutant",
+      "Ninja",
+      "Turtle",
+      "Samurai"
+    ],
+    "colors": [
+      "W"
+    ],
+    "color_identity": [
+      "W"
+    ],
+    "rarity": "Mythic",
+    "image": [
+      "https://cards.scryfall.io/large/front/0/e/0e3a0a26-c163-4f31-bed8-1be52a35feea.jpg?1764512256"
+    ],
+    "keywords": [
+      "Double strike",
+      "Sneak"
+    ],
+    "oracle_text": "Sneak {2}{W}{W}\nDouble strike\nDuring your turn, you may cast creature spells with power or toughness 1 or less from your graveyard. If you cast a spell this way, that creature enters with a finality counter on it. (If a creature with a finality counter on it would die, exile it instead.)"
+  },
+  "Leonardo's Technique": {
+    "arena_id": "",
+    "name": "Leonardo's Technique",
+    "cmc": 4,
+    "mana_cost": "{3}{W}",
+    "types": [
+      "Sorcery"
+    ],
+    "subtypes": [],
+    "colors": [
+      "W"
+    ],
+    "color_identity": [
+      "W"
+    ],
+    "rarity": "Rare",
+    "image": [
+      "https://cards.scryfall.io/large/front/4/0/405e4057-e26c-4882-89a9-706868548c37.jpg?1769005546"
+    ],
+    "keywords": [
+      "Sneak"
+    ],
+    "oracle_text": "Sneak {1}{W} (You may cast this spell for {1}{W} if you also return an unblocked attacker you control to hand during the declare blockers step.)\nReturn one or two target creature cards each with mana value 3 or less from your graveyard to the battlefield."
+  },
+  "Lessons from Life": {
+    "arena_id": "",
+    "name": "Lessons from Life",
+    "cmc": 4,
+    "mana_cost": "{2}{G}{U}",
+    "types": [
+      "Sorcery"
+    ],
+    "subtypes": [],
+    "colors": [
+      "G",
+      "U"
+    ],
+    "color_identity": [
+      "G",
+      "U"
+    ],
+    "rarity": "Uncommon",
+    "image": [
+      "https://cards.scryfall.io/large/front/0/f/0f886117-aff3-4db7-9cf5-7cbe94c8cd02.jpg?1771424719"
+    ],
+    "keywords": [],
+    "oracle_text": "Draw three cards. You may put a land card from your hand onto the battlefield tapped."
+  },
+  "Lita, Little Orphan Amphibian": {
+    "arena_id": "",
+    "name": "Lita, Little Orphan Amphibian",
+    "cmc": 2,
+    "mana_cost": "{1}{W}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Mutant",
+      "Ninja",
+      "Turtle"
+    ],
+    "colors": [
+      "W"
+    ],
+    "color_identity": [
+      "W"
+    ],
+    "rarity": "Uncommon",
+    "image": [
+      "https://cards.scryfall.io/large/front/9/f/9fbaabb5-e981-4cbf-888c-46449412711f.jpg?1771424706"
+    ],
+    "keywords": [
+      "Alliance",
+      "Food",
+      "Scry"
+    ],
+    "oracle_text": "Alliance \u2014 Whenever another creature you control enters, choose one that hasn't been chosen this turn.\n\u2022 Put a +1/+1 counter on Lita.\n\u2022 Create a Food token. (It's an artifact with \"{2}, {T}, Sacrifice this token: You gain 3 life.\")\n\u2022 Scry 1."
+  },
+  "Lord Dregg, Insect Invader": {
+    "arena_id": "",
+    "name": "Lord Dregg, Insect Invader",
+    "cmc": 4,
+    "mana_cost": "{3}{B}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Insect",
+      "Warrior"
+    ],
+    "colors": [
+      "B"
+    ],
+    "color_identity": [
+      "B",
+      "G"
+    ],
+    "rarity": "Uncommon",
+    "image": [
+      "https://cards.scryfall.io/large/front/8/d/8d1a9c8a-d0b6-4d83-a168-8078de4b14c7.jpg?1771586872"
+    ],
+    "keywords": [
+      "Flying",
+      "Disappear"
+    ],
+    "oracle_text": "Flying\nDisappear \u2014 At the beginning of your end step, if a permanent left the battlefield under your control this turn, create a 1/1 black Insect Warrior creature token with flying.\n{3}{G}, Sacrifice a token: Draw a card."
+  },
+  "Madame Null, Power Broker": {
+    "arena_id": "",
+    "name": "Madame Null, Power Broker",
+    "cmc": 3,
+    "mana_cost": "{2}{B}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Demon",
+      "Advisor"
+    ],
+    "colors": [
+      "B"
+    ],
+    "color_identity": [
+      "B"
+    ],
+    "rarity": "Rare",
+    "image": [
+      "https://cards.scryfall.io/large/front/4/e/4e712d5c-d6fe-40bb-b8e5-5f50c6ea8d4f.jpg?1769005736"
+    ],
+    "keywords": [
+      "Deathtouch"
+    ],
+    "oracle_text": "Deathtouch\nWhenever another creature you control enters, you may pay life equal to its power. If you do, put that many +1/+1 counters on it."
+  },
+  "Make Your Move": {
+    "arena_id": "",
+    "name": "Make Your Move",
+    "cmc": 3,
+    "mana_cost": "{2}{W}",
+    "types": [
+      "Instant"
+    ],
+    "subtypes": [],
+    "colors": [
+      "W"
+    ],
+    "color_identity": [
+      "W"
+    ],
+    "rarity": "Common",
+    "image": [
+      "https://cards.scryfall.io/large/front/e/d/ed8bdd98-6377-40cf-b381-cee38b1bda2a.jpg?1771502526"
+    ],
+    "keywords": [],
+    "oracle_text": "Destroy target artifact, enchantment, or creature with power 4 or greater."
+  },
+  "Manhole Missile": {
+    "arena_id": "",
+    "name": "Manhole Missile",
+    "cmc": 2,
+    "mana_cost": "{1}{R}",
+    "types": [
+      "Instant"
+    ],
+    "subtypes": [],
+    "colors": [
+      "R"
+    ],
+    "color_identity": [
+      "R"
+    ],
+    "rarity": "Common",
+    "image": [
+      "https://cards.scryfall.io/large/front/2/4/243e392b-48b0-4e90-ae22-9a696f45e878.jpg?1771502635"
+    ],
+    "keywords": [],
+    "oracle_text": "Manhole Missile deals 3 damage to target creature. You may put a card from your hand on the bottom of your library. If you do, draw a card."
+  },
+  "Mechanized Ninja Cavalry": {
+    "arena_id": "",
+    "name": "Mechanized Ninja Cavalry",
+    "cmc": 2,
+    "mana_cost": "{1}{R/W}",
+    "types": [
+      "Creature",
+      "Artifact"
+    ],
+    "subtypes": [
+      "Robot",
+      "Ninja"
+    ],
+    "colors": [
+      "R",
+      "W"
+    ],
+    "color_identity": [
+      "R",
+      "W"
+    ],
+    "rarity": "Common",
+    "image": [
+      "https://cards.scryfall.io/large/front/2/c/2cb65388-dc6c-4e2a-93ac-49ea484849e9.jpg?1771502774"
+    ],
+    "keywords": [],
+    "oracle_text": "When this creature enters, create a 1/1 colorless Robot artifact creature token."
+  },
+  "Metalhead": {
+    "arena_id": "",
+    "name": "Metalhead",
+    "cmc": 5,
+    "mana_cost": "{4}{U}",
+    "types": [
+      "Creature",
+      "Artifact"
+    ],
+    "subtypes": [
+      "Robot",
+      "Turtle"
+    ],
+    "colors": [
+      "U"
+    ],
+    "color_identity": [
+      "R",
+      "U"
+    ],
+    "rarity": "Uncommon",
+    "image": [
+      "https://cards.scryfall.io/large/front/3/c/3c2d8b09-8694-45ab-be01-f8dc17378cf0.jpg?1771586807"
+    ],
+    "keywords": [],
+    "oracle_text": "When Metalhead enters, return up to one other target artifact or creature to its owner's hand.\n{R}, Sacrifice another artifact: Put a +1/+1 counter on Metalhead. He gains menace and haste until end of turn."
+  },
+  "Michelangelo, Game Master": {
+    "arena_id": "",
+    "name": "Michelangelo, Game Master",
+    "cmc": 3,
+    "mana_cost": "{2}{G}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Mutant",
+      "Ninja",
+      "Turtle"
+    ],
+    "colors": [
+      "G"
+    ],
+    "color_identity": [
+      "G"
+    ],
+    "rarity": "Common",
+    "image": [
+      "https://cards.scryfall.io/large/front/2/e/2e914c3d-2eed-48bf-af9a-a8998fd5111d.jpg?1771502708"
+    ],
+    "keywords": [
+      "Disappear"
+    ],
+    "oracle_text": "Disappear \u2014 At the beginning of your end step, if a permanent left the battlefield under your control this turn, put a +1/+1 counter on Michelangelo."
+  },
+  "Michelangelo, Improviser": {
+    "arena_id": "",
+    "name": "Michelangelo, Improviser",
+    "cmc": 4,
+    "mana_cost": "{3}{G}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Mutant",
+      "Ninja",
+      "Turtle"
+    ],
+    "colors": [
+      "G"
+    ],
+    "color_identity": [
+      "G"
+    ],
+    "rarity": "Mythic",
+    "image": [
+      "https://cards.scryfall.io/large/front/9/5/955848c0-5092-4e13-97c9-5978d44d5586.jpg?1769006201"
+    ],
+    "keywords": [
+      "Sneak"
+    ],
+    "oracle_text": "Sneak {2}{G}{G} (You may cast this spell for {2}{G}{G} if you also return an unblocked attacker you control to hand during the declare blockers step. He enters tapped and attacking.)\nWhenever Michelangelo deals combat damage to a player, you may put a creature card and/or a land card from your hand onto the battlefield."
+  },
+  "Michelangelo, Mutant BFF": {
+    "arena_id": "",
+    "name": "Michelangelo, Mutant BFF",
+    "cmc": 4,
+    "mana_cost": "{2}{G}{G}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Mutant",
+      "Ninja",
+      "Turtle"
+    ],
+    "colors": [
+      "G"
+    ],
+    "color_identity": [
+      "G"
+    ],
+    "rarity": "Uncommon",
+    "image": [
+      "https://cards.scryfall.io/large/front/0/2/02f7281f-b50c-4a1c-a2fc-3caeb6ab7d41.jpg?1771502715"
+    ],
+    "keywords": [],
+    "oracle_text": "Each creature you control with a counter on it can't be blocked by more than one creature.\nWhenever Michelangelo enters or attacks, create a Mutagen token. (It's an artifact with \"{1}, {T}, Sacrifice this token: Put a +1/+1 counter on target creature. Activate only as a sorcery.\")"
+  },
+  "Michelangelo's Technique": {
+    "arena_id": "",
+    "name": "Michelangelo's Technique",
+    "cmc": 5,
+    "mana_cost": "{4}{G}",
+    "types": [
+      "Sorcery"
+    ],
+    "subtypes": [],
+    "colors": [
+      "G"
+    ],
+    "color_identity": [
+      "G"
+    ],
+    "rarity": "Rare",
+    "image": [
+      "https://cards.scryfall.io/large/front/3/a/3a63c06a-7c59-4b72-b916-e5b6ad78c684.jpg?1769006772"
+    ],
+    "keywords": [
+      "Sneak"
+    ],
+    "oracle_text": "Sneak {3}{G} (You may cast this spell for {3}{G} if you also return an unblocked attacker you control to hand during the declare blockers step.)\nLook at the top eight cards of your library. Put up to two creature cards with total mana value 6 or less from among them onto the battlefield and the rest on the bottom of your library in a random order."
+  },
+  "Michelangelo, Weirdness to 11": {
+    "arena_id": "",
+    "name": "Michelangelo, Weirdness to 11",
+    "cmc": 2,
+    "mana_cost": "{1}{G}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Mutant",
+      "Ninja",
+      "Turtle"
+    ],
+    "colors": [
+      "G"
+    ],
+    "color_identity": [
+      "G"
+    ],
+    "rarity": "Rare",
+    "image": [
+      "https://cards.scryfall.io/large/front/1/8/18477047-218d-4b2a-a086-37431b6a3025.jpg?1769006195"
+    ],
+    "keywords": [],
+    "oracle_text": "When Michelangelo enters, create a Mutagen token. (It's an artifact with \"{1}, {T}, Sacrifice this token: Put a +1/+1 counter on target creature. Activate only as a sorcery.\")\nIf one or more +1/+1 counters would be put on a creature you control, that many plus one +1/+1 counters are put on it instead."
+  },
+  "Mighty Mutanimals": {
+    "arena_id": "",
+    "name": "Mighty Mutanimals",
+    "cmc": 4,
+    "mana_cost": "{2}{W}{W}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Mutant",
+      "Rebel"
+    ],
+    "colors": [
+      "W"
+    ],
+    "color_identity": [
+      "W"
+    ],
+    "rarity": "Uncommon",
+    "image": [
+      "https://cards.scryfall.io/large/front/5/d/5dd5369c-174c-450b-b776-553866787f8f.jpg?1771502533"
+    ],
+    "keywords": [
+      "Alliance"
+    ],
+    "oracle_text": "When this creature enters, create a 2/2 red Mutant creature token.\nAlliance \u2014 Whenever another creature you control enters, put a +1/+1 counter on target creature you control."
+  },
+  "Mikey & Don, Party Planners": {
+    "arena_id": "",
+    "name": "Mikey & Don, Party Planners",
+    "cmc": 4,
+    "mana_cost": "{2}{G/U}{G/U}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Mutant",
+      "Ninja",
+      "Turtle"
+    ],
+    "colors": [
+      "G",
+      "U"
+    ],
+    "color_identity": [
+      "G",
+      "U"
+    ],
+    "rarity": "Rare",
+    "image": [
+      "https://cards.scryfall.io/large/front/6/3/6353df1a-9a1b-41fd-985b-8c8acba36c23.jpg?1769006263"
+    ],
+    "keywords": [
+      "Ward"
+    ],
+    "oracle_text": "Ward {2}\nYou may look at the top card of your library any time.\nYou may play lands and cast Mutant, Ninja, or Turtle spells from the top of your library. If you cast a creature spell this way, that creature enters with an additional +1/+1 counter on it."
+  },
+  "Mikey & Leo, Chaos & Order": {
+    "arena_id": "",
+    "name": "Mikey & Leo, Chaos & Order",
+    "cmc": 2,
+    "mana_cost": "{G/W}{G/W}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Mutant",
+      "Ninja",
+      "Turtle"
+    ],
+    "colors": [
+      "G",
+      "W"
+    ],
+    "color_identity": [
+      "G",
+      "W"
+    ],
+    "rarity": "Rare",
+    "image": [
+      "https://cards.scryfall.io/large/front/9/c/9cfeb2b4-937c-4bcc-bb03-467cc0effba2.jpg?1769006353"
+    ],
+    "keywords": [],
+    "oracle_text": "Whenever you put a counter on a creature you control, draw a card. This ability triggers only once each turn."
+  },
+  "Mind Transfer Protocol": {
+    "arena_id": "",
+    "name": "Mind Transfer Protocol",
+    "cmc": 3,
+    "mana_cost": "{2}{U}",
+    "types": [
+      "Instant"
+    ],
+    "subtypes": [],
+    "colors": [
+      "U"
+    ],
+    "color_identity": [
+      "U"
+    ],
+    "rarity": "Common",
+    "image": [
+      "https://cards.scryfall.io/large/front/2/d/2ddfcc4d-dd5f-42f1-8f33-a8e8b5354534.jpg?1771502582"
+    ],
+    "keywords": [],
+    "oracle_text": "Until end of turn, target artifact or creature becomes an artifact creature with base power and toughness 4/5.\nDraw a card."
+  },
+  "Mona Lisa, Science Geek": {
+    "arena_id": "",
+    "name": "Mona Lisa, Science Geek",
+    "cmc": 3,
+    "mana_cost": "{2}{G}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Lizard",
+      "Mutant"
+    ],
+    "colors": [
+      "G"
+    ],
+    "color_identity": [
+      "G"
+    ],
+    "rarity": "Uncommon",
+    "image": [
+      "https://cards.scryfall.io/large/front/c/2/c2164204-120c-4dff-86ac-46ca9012ccd9.jpg?1771424712"
+    ],
+    "keywords": [
+      "Reach"
+    ],
+    "oracle_text": "Reach\n{T}: Add X mana of any one color, where X is Mona Lisa's power."
+  },
+  "Mondo Gecko": {
+    "arena_id": "",
+    "name": "Mondo Gecko",
+    "cmc": 3,
+    "mana_cost": "{1}{U}{U}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Lizard",
+      "Mutant"
+    ],
+    "colors": [
+      "U"
+    ],
+    "color_identity": [
+      "U"
+    ],
+    "rarity": "Mythic",
+    "image": [
+      "https://cards.scryfall.io/large/front/6/6/665e44f9-bc0d-40aa-83a4-f7fe64f2506d.jpg?1769005708"
+    ],
+    "keywords": [],
+    "oracle_text": "{1}, Discard a card: Until end of turn, Mondo Gecko becomes the color of your choice and gains hexproof from that color.\nWhenever Mondo Gecko deals combat damage to a player, draw a card for each color among permanents you control."
+  },
+  "Mountain": {
+    "arena_id": "",
+    "name": "Mountain",
+    "cmc": 0,
+    "mana_cost": "",
+    "types": [
+      "Land"
+    ],
+    "subtypes": [
+      "Mountain"
+    ],
+    "colors": [],
+    "color_identity": [
+      "R"
+    ],
+    "rarity": "Common",
+    "image": [
+      "https://cards.scryfall.io/large/front/0/2/021fa322-f38c-4d94-8122-5b13425106d9.jpg?1771345172"
+    ],
+    "keywords": [],
+    "oracle_text": "({T}: Add {R}.)"
+  },
+  "Mouser Attack!": {
+    "arena_id": "",
+    "name": "Mouser Attack!",
+    "cmc": 2,
+    "mana_cost": "{1}{R}",
+    "types": [
+      "Instant"
+    ],
+    "subtypes": [],
+    "colors": [
+      "R"
+    ],
+    "color_identity": [
+      "R"
+    ],
+    "rarity": "Common",
+    "image": [
+      "https://cards.scryfall.io/large/front/0/5/058490f4-0ada-45e6-b4f0-e433537f52d6.jpg?1771502642"
+    ],
+    "keywords": [],
+    "oracle_text": "Choose one \u2014\n\u2022 Create a 1/1 colorless Robot artifact creature token.\n\u2022 Target creature gets +3/+0 and gains first strike until end of turn."
+  },
+  "Mouser Foundry": {
+    "arena_id": "",
+    "name": "Mouser Foundry",
+    "cmc": 2,
+    "mana_cost": "{1}{R}",
+    "types": [
+      "Artifact"
+    ],
+    "subtypes": [],
+    "colors": [
+      "R"
+    ],
+    "color_identity": [
+      "R"
+    ],
+    "rarity": "Common",
+    "image": [
+      "https://cards.scryfall.io/large/front/8/a/8aae3bd6-a935-44a5-aa4d-a525b00cbf50.jpg?1771502649"
+    ],
+    "keywords": [],
+    "oracle_text": "When this artifact enters or leaves the battlefield, create a 1/1 colorless Robot artifact creature token.\n{4}{R}, Sacrifice this artifact: It deals 3 damage to target creature."
+  },
+  "Mouser Mark III": {
+    "arena_id": "",
+    "name": "Mouser Mark III",
+    "cmc": 2,
+    "mana_cost": "{1}{U/R}",
+    "types": [
+      "Creature",
+      "Artifact"
+    ],
+    "subtypes": [
+      "Robot"
+    ],
+    "colors": [
+      "R",
+      "U"
+    ],
+    "color_identity": [
+      "R",
+      "U"
+    ],
+    "rarity": "Common",
+    "image": [
+      "https://cards.scryfall.io/large/front/6/0/608a13b4-0b94-4be5-ac4b-e939901e8419.jpg?1771502784"
+    ],
+    "keywords": [],
+    "oracle_text": "This creature can't attack unless you control another artifact."
+  },
+  "Mutagen Man, Living Ooze": {
+    "arena_id": "",
+    "name": "Mutagen Man, Living Ooze",
+    "cmc": 2,
+    "mana_cost": "{X}{G}{G}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Ooze",
+      "Mutant"
+    ],
+    "colors": [
+      "G"
+    ],
+    "color_identity": [
+      "G"
+    ],
+    "rarity": "Rare",
+    "image": [
+      "https://cards.scryfall.io/large/front/9/f/9f9085f0-3702-462c-8c81-b4576236792d.jpg?1769006218"
+    ],
+    "keywords": [
+      "Trample"
+    ],
+    "oracle_text": "Trample\nActivated abilities of artifact tokens you control cost {1} less to activate.\nWhen Mutagen Man enters, create X Mutagen tokens. (They're artifacts with \"{1}, {T}, Sacrifice this token: Put a +1/+1 counter on target creature. Activate only as a sorcery.\")"
+  },
+  "Mutant Chain Reaction": {
+    "arena_id": "",
+    "name": "Mutant Chain Reaction",
+    "cmc": 3,
+    "mana_cost": "{2}{G}",
+    "types": [
+      "Sorcery"
+    ],
+    "subtypes": [],
+    "colors": [
+      "G"
+    ],
+    "color_identity": [
+      "G"
+    ],
+    "rarity": "Common",
+    "image": [
+      "https://cards.scryfall.io/large/front/8/7/8763e0ee-a48e-424f-8bce-132582d5944b.jpg?1771342410"
+    ],
+    "keywords": [],
+    "oracle_text": "Destroy up to one target artifact, enchantment, or creature with flying. Create a Mutagen token. (It's an artifact with \"{1}, {T}, Sacrifice this token: Put a +1/+1 counter on target creature. Activate only as a sorcery.\")"
+  },
+  "Mutant Town": {
+    "arena_id": "",
+    "name": "Mutant Town",
+    "cmc": 0,
+    "mana_cost": "",
+    "types": [
+      "Land"
+    ],
+    "subtypes": [],
+    "colors": [],
+    "color_identity": [
+      "G",
+      "U"
+    ],
+    "rarity": "Common",
+    "image": [
+      "https://cards.scryfall.io/large/front/c/6/c6eac43d-08b6-45a4-803b-10a321a241d7.jpg?1771587105"
+    ],
+    "keywords": [],
+    "oracle_text": "This land enters tapped.\nWhen this land enters, you gain 1 life.\n{T}: Add {G} or {U}."
+  },
+  "Mutant Town Musicians": {
+    "arena_id": "",
+    "name": "Mutant Town Musicians",
+    "cmc": 3,
+    "mana_cost": "{2}{R}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Mutant",
+      "Bard",
+      "Performer"
+    ],
+    "colors": [
+      "R"
+    ],
+    "color_identity": [
+      "R"
+    ],
+    "rarity": "Common",
+    "image": [
+      "https://cards.scryfall.io/large/front/2/d/2dbe9207-06e8-4837-8227-0f960490771b.jpg?1771766034"
+    ],
+    "keywords": [
+      "Alliance",
+      "Trample"
+    ],
+    "oracle_text": "Trample\nAlliance \u2014 Whenever another creature you control enters, this creature gets +1/+0 until end of turn."
+  },
+  "Negate": {
+    "arena_id": "",
+    "name": "Negate",
+    "cmc": 2,
+    "mana_cost": "{1}{U}",
+    "types": [
+      "Instant"
+    ],
+    "subtypes": [],
+    "colors": [
+      "U"
+    ],
+    "color_identity": [
+      "U"
+    ],
+    "rarity": "Common",
+    "image": [
+      "https://cards.scryfall.io/large/front/5/2/52d58fe4-6070-4022-9cd7-c35a11b44525.jpg?1771342360"
+    ],
+    "keywords": [],
+    "oracle_text": "Counter target noncreature spell."
+  },
+  "New Generation's Technique": {
+    "arena_id": "",
+    "name": "New Generation's Technique",
+    "cmc": 4,
+    "mana_cost": "{3}{G}",
+    "types": [
+      "Sorcery"
+    ],
+    "subtypes": [],
+    "colors": [
+      "G"
+    ],
+    "color_identity": [
+      "G"
+    ],
+    "rarity": "Uncommon",
+    "image": [
+      "https://cards.scryfall.io/large/front/f/1/f1616a07-e4a1-4574-b341-d6b31d76b3c5.jpg?1771586961"
+    ],
+    "keywords": [
+      "Sneak"
+    ],
+    "oracle_text": "Sneak {2}{G} (You may cast this spell for {2}{G} if you also return an unblocked attacker you control to hand during the declare blockers step.)\nSearch your library for up to two basic land cards, put them onto the battlefield tapped, then shuffle."
+  },
+  "Ninja Teen": {
+    "arena_id": "",
+    "name": "Ninja Teen",
+    "cmc": 3,
+    "mana_cost": "{2}{B}",
+    "types": [
+      "Enchantment"
+    ],
+    "subtypes": [
+      "Class"
+    ],
+    "colors": [
+      "B"
+    ],
+    "color_identity": [
+      "B"
+    ],
+    "rarity": "Rare",
+    "image": [
+      "https://cards.scryfall.io/large/front/0/8/0825a28f-f60b-4f80-83e3-cad6f9b266ce.jpg?1769005903"
+    ],
+    "keywords": [],
+    "oracle_text": "(Gain the next level as a sorcery to add its ability.)\nWhenever a creature you control leaves the battlefield, each opponent loses 1 life.\n{1}{B}: Level 2\nCreatures you control get +1/+0 and have menace.\n{B}: Level 3\nCreature cards in your graveyard have sneak {3}{B}.\nYou may cast creature spells from your graveyard using their sneak abilities."
+  },
+  "Nobody": {
+    "arena_id": "",
+    "name": "Nobody",
+    "cmc": 3,
+    "mana_cost": "{1}{U/R}{U/R}",
+    "types": [
+      "Creature",
+      "Artifact"
+    ],
+    "subtypes": [
+      "Human",
+      "Hero"
+    ],
+    "colors": [
+      "R",
+      "U"
+    ],
+    "color_identity": [
+      "R",
+      "U"
+    ],
+    "rarity": "Common",
+    "image": [
+      "https://cards.scryfall.io/large/front/0/9/0966b8ff-61d3-4394-a357-97c35f042a29.jpg?1771587036"
+    ],
+    "keywords": [
+      "Scry"
+    ],
+    "oracle_text": "When this creature enters, return up to one other target artifact you control to its owner's hand. Scry 1. (Look at the top card of your library. You may put that card on the bottom.)"
+  },
+  "Northampton Farm": {
+    "arena_id": "",
+    "name": "Northampton Farm",
+    "cmc": 0,
+    "mana_cost": "",
+    "types": [
+      "Land"
+    ],
+    "subtypes": [],
+    "colors": [],
+    "color_identity": [],
+    "rarity": "Rare",
+    "image": [
+      "https://cards.scryfall.io/large/front/d/b/dbca168e-095f-4fbc-88f8-3048d83caf94.jpg?1769006600"
+    ],
+    "keywords": [],
+    "oracle_text": "{T}: Add {C}.\n{1}, {T}: Exile target creature you own.\n{2}, {T}, Sacrifice this land: Return a creature card exiled with this land to the battlefield under your control. Return each other card exiled with this land to its owner's hand."
+  },
+  "North Wind Avatar": {
+    "arena_id": "",
+    "name": "North Wind Avatar",
+    "cmc": 5,
+    "mana_cost": "{2}{U}{U}{R}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Dragon",
+      "Spirit",
+      "Avatar"
+    ],
+    "colors": [
+      "R",
+      "U"
+    ],
+    "color_identity": [
+      "R",
+      "U"
+    ],
+    "rarity": "Mythic",
+    "image": [
+      "https://cards.scryfall.io/large/front/4/1/41439cfe-bb3e-42f3-9d81-de9db537ce68.jpg?1769006359"
+    ],
+    "keywords": [
+      "Flying"
+    ],
+    "oracle_text": "Flying\nWhen this creature enters, if you cast it, you may put a card you own from outside the game into your hand."
+  },
+  "Novel Nunchaku": {
+    "arena_id": "",
+    "name": "Novel Nunchaku",
+    "cmc": 3,
+    "mana_cost": "{2}{G}",
+    "types": [
+      "Artifact"
+    ],
+    "subtypes": [
+      "Equipment"
+    ],
+    "colors": [
+      "G"
+    ],
+    "color_identity": [
+      "G"
+    ],
+    "rarity": "Uncommon",
+    "image": [
+      "https://cards.scryfall.io/large/front/f/3/f37ef012-c566-4d16-acf8-6079244907be.jpg?1771502723"
+    ],
+    "keywords": [
+      "Fight",
+      "Equip"
+    ],
+    "oracle_text": "When this Equipment enters, attach it to target creature you control. When you do, equipped creature fights up to one target creature an opponent controls. (Each deals damage equal to its power to the other.)\nEquipped creature gets +1/+1 and has trample.\nEquip {3} ({3}: Attach to target creature you control. Equip only as a sorcery.)"
+  },
+  "Null Group Biological Assets": {
+    "arena_id": "",
+    "name": "Null Group Biological Assets",
+    "cmc": 3,
+    "mana_cost": "{2}{R}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Mutant",
+      "Mercenary"
+    ],
+    "colors": [
+      "R"
+    ],
+    "color_identity": [
+      "R"
+    ],
+    "rarity": "Common",
+    "image": [
+      "https://cards.scryfall.io/large/front/e/b/eb44c134-fcd8-4ad8-841c-f1723ba93216.jpg?1771502666"
+    ],
+    "keywords": [],
+    "oracle_text": "During your turn, this creature has first strike.\nWhenever this creature attacks, you may discard a card. If you do, draw a card."
+  },
+  "Old Hob, Alleycat Blues": {
+    "arena_id": "",
+    "name": "Old Hob, Alleycat Blues",
+    "cmc": 5,
+    "mana_cost": "{4}{R}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Cat",
+      "Mutant",
+      "Rebel"
+    ],
+    "colors": [
+      "R"
+    ],
+    "color_identity": [
+      "R",
+      "W"
+    ],
+    "rarity": "Uncommon",
+    "image": [
+      "https://cards.scryfall.io/large/front/1/5/1515eed9-3b21-42f0-ab57-de5df19317af.jpg?1771586941"
+    ],
+    "keywords": [],
+    "oracle_text": "At the beginning of combat on your turn, create a 2/2 red Mutant creature token. It gains haste until end of turn. Destroy it at the beginning of the next end step.\n{1}{W}: Target attacking creature token gains indestructible until end of turn."
+  },
+  "Omni-Cheese Pizza": {
+    "arena_id": "",
+    "name": "Omni-Cheese Pizza",
+    "cmc": 2,
+    "mana_cost": "{2}",
+    "types": [
+      "Artifact"
+    ],
+    "subtypes": [
+      "Food"
+    ],
+    "colors": [],
+    "color_identity": [],
+    "rarity": "Common",
+    "image": [
+      "https://cards.scryfall.io/large/front/f/2/f2c8397c-2014-4a43-9ed7-41795880011f.jpg?1771587071"
+    ],
+    "keywords": [],
+    "oracle_text": "When this artifact enters, draw a card.\n{1}, {T}, Sacrifice this artifact: Add one mana of any color.\n{2}, {T}, Sacrifice this artifact: You gain 3 life."
+  },
+  "Ooze Spill": {
+    "arena_id": "",
+    "name": "Ooze Spill",
+    "cmc": 3,
+    "mana_cost": "{1}{U}{U}",
+    "types": [
+      "Instant"
+    ],
+    "subtypes": [],
+    "colors": [
+      "U"
+    ],
+    "color_identity": [
+      "U"
+    ],
+    "rarity": "Uncommon",
+    "image": [
+      "https://cards.scryfall.io/large/front/b/e/beef76b7-856e-48ab-bc73-e4f456c3a100.jpg?1771586813"
+    ],
+    "keywords": [],
+    "oracle_text": "Counter target spell. Create a Mutagen token. (It's an artifact with \"{1}, {T}, Sacrifice this token: Put a +1/+1 counter on target creature. Activate only as a sorcery.\")"
+  },
+  "Oroku Saki, Shredder Rising": {
+    "arena_id": "",
+    "name": "Oroku Saki, Shredder Rising",
+    "cmc": 3,
+    "mana_cost": "{2}{B}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Human",
+      "Ninja"
+    ],
+    "colors": [
+      "B"
+    ],
+    "color_identity": [
+      "B"
+    ],
+    "rarity": "Common",
+    "image": [
+      "https://cards.scryfall.io/large/front/e/6/e65ff1f4-a061-4c31-a78e-92af6e7bc56f.jpg?1771586878"
+    ],
+    "keywords": [
+      "Sneak"
+    ],
+    "oracle_text": "Sneak {1}{B} (You may cast this spell for {1}{B} if you also return an unblocked attacker you control to hand during the declare blockers step. He enters tapped and attacking.)\nWhenever Oroku Saki deals combat damage to a player, you draw a card and lose 1 life."
+  },
+  "Pain 101": {
+    "arena_id": "",
+    "name": "Pain 101",
+    "cmc": 2,
+    "mana_cost": "{1}{B}",
+    "types": [
+      "Instant"
+    ],
+    "subtypes": [],
+    "colors": [
+      "B"
+    ],
+    "color_identity": [
+      "B"
+    ],
+    "rarity": "Common",
+    "image": [
+      "https://cards.scryfall.io/large/front/a/1/a1c70bf2-b2bd-4585-ba50-304f4dad8e62.jpg?1771586891"
+    ],
+    "keywords": [],
+    "oracle_text": "Until end of turn, target creature gains deathtouch and \"When this creature dies, return it to the battlefield tapped under its owner's control.\""
+  },
+  "Paramecia Coloniex": {
+    "arena_id": "",
+    "name": "Paramecia Coloniex",
+    "cmc": 2,
+    "mana_cost": "{1}{B}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Zombie",
+      "Worm"
+    ],
+    "colors": [
+      "B"
+    ],
+    "color_identity": [
+      "B"
+    ],
+    "rarity": "Uncommon",
+    "image": [
+      "https://cards.scryfall.io/large/front/6/5/654e2646-78ac-4b08-bed1-3c71355d55fc.jpg?1771586897"
+    ],
+    "keywords": [
+      "Mill"
+    ],
+    "oracle_text": "When this creature enters, mill three cards. (Put the top three cards of your library into your graveyard.)\nWhen this creature dies, you may exile it. When you do, put target creature card from your graveyard on top of your library."
+  },
+  "Party Dude": {
+    "arena_id": "",
+    "name": "Party Dude",
+    "cmc": 1,
+    "mana_cost": "{G}",
+    "types": [
+      "Enchantment"
+    ],
+    "subtypes": [
+      "Class"
+    ],
+    "colors": [
+      "G"
+    ],
+    "color_identity": [
+      "G"
+    ],
+    "rarity": "Rare",
+    "image": [
+      "https://cards.scryfall.io/large/front/d/2/d27b6f2a-84df-4097-a66a-8e463db47f58.jpg?1769006231"
+    ],
+    "keywords": [
+      "Food"
+    ],
+    "oracle_text": "(Gain the next level as a sorcery to add its ability.)\nWhen this Class enters, each player creates a Food token.\n{1}{G}: Level 2\nWhenever an artifact an opponent controls is put into a graveyard from the battlefield, draw a card.\n{4}{G}: Level 3\nWhenever one or more of your opponents are attacked, up to one target attacking creature gets +X/+X until end of turn, where X is the number of cards in your hand."
+  },
+  "Pizza Face, Gastromancer": {
+    "arena_id": "",
+    "name": "Pizza Face, Gastromancer",
+    "cmc": 5,
+    "mana_cost": "{3}{B}{G}",
+    "types": [
+      "Creature",
+      "Artifact"
+    ],
+    "subtypes": [
+      "Food",
+      "Mutant"
+    ],
+    "colors": [
+      "B",
+      "G"
+    ],
+    "color_identity": [
+      "B",
+      "G"
+    ],
+    "rarity": "Uncommon",
+    "image": [
+      "https://cards.scryfall.io/large/front/b/0/b03cf0bb-3207-4e8e-bb3f-e3e4367aa86e.jpg?1771599896"
+    ],
+    "keywords": [
+      "Disappear",
+      "Food"
+    ],
+    "oracle_text": "When Pizza Face enters, create a Food token.\nDisappear \u2014 At the beginning of your end step, if a permanent left the battlefield under your control this turn, put three +1/+1 counters on up to one other target artifact or creature. If it isn't a creature, it becomes a 0/0 Mutant creature in addition to its other types.\n{10}, {T}, Sacrifice Pizza Face: You gain 15 life."
+  },
+  "Plains": {
+    "arena_id": "",
+    "name": "Plains",
+    "cmc": 0,
+    "mana_cost": "",
+    "types": [
+      "Land"
+    ],
+    "subtypes": [
+      "Plains"
+    ],
+    "colors": [],
+    "color_identity": [
+      "W"
+    ],
+    "rarity": "Common",
+    "image": [
+      "https://cards.scryfall.io/large/front/2/d/2dfe1926-c0d5-40a2-b1aa-988524aefc31.jpg?1771345154"
+    ],
+    "keywords": [],
+    "oracle_text": "({T}: Add {W}.)"
+  },
+  "Prehistoric Pet": {
+    "arena_id": "",
+    "name": "Prehistoric Pet",
+    "cmc": 1,
+    "mana_cost": "{W}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Dinosaur",
+      "Ninja"
+    ],
+    "colors": [
+      "W"
+    ],
+    "color_identity": [
+      "W"
+    ],
+    "rarity": "Rare",
+    "image": [
+      "https://cards.scryfall.io/large/front/1/4/148e6acd-a96a-4bea-8cfe-a129cd8d1003.jpg?1769005558"
+    ],
+    "keywords": [],
+    "oracle_text": "This creature can't be blocked by creatures with greater power.\n{1}{W}, {T}: Return another target creature you control to its owner's hand. Activate only during your turn."
+  },
+  "Primordial Pachyderm": {
+    "arena_id": "",
+    "name": "Primordial Pachyderm",
+    "cmc": 4,
+    "mana_cost": "{3}{G}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Elephant",
+      "Avatar"
+    ],
+    "colors": [
+      "G"
+    ],
+    "color_identity": [
+      "G"
+    ],
+    "rarity": "Common",
+    "image": [
+      "https://cards.scryfall.io/large/front/e/1/e1a866e6-4108-4290-9680-8f1652fbcf77.jpg?1771502730"
+    ],
+    "keywords": [
+      "Reach",
+      "Trample"
+    ],
+    "oracle_text": "Reach, trample\nWhen this creature enters, you gain 2 life."
+  },
+  "Punk Frogs": {
+    "arena_id": "",
+    "name": "Punk Frogs",
+    "cmc": 5,
+    "mana_cost": "{3}{G/U}{G/U}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Frog",
+      "Mutant",
+      "Rebel"
+    ],
+    "colors": [
+      "G",
+      "U"
+    ],
+    "color_identity": [
+      "G",
+      "U"
+    ],
+    "rarity": "Common",
+    "image": [
+      "https://cards.scryfall.io/large/front/3/7/375c91a3-53c4-4f2d-bf7b-2c79a219d3ae.jpg?1771587049"
+    ],
+    "keywords": [
+      "Ward"
+    ],
+    "oracle_text": "Ward {3} (Whenever this creature becomes the target of a spell or ability an opponent controls, counter it unless that player pays {3}.)"
+  },
+  "Purple Dragon Punks": {
+    "arena_id": "",
+    "name": "Purple Dragon Punks",
+    "cmc": 2,
+    "mana_cost": "{1}{R}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Human",
+      "Rogue"
+    ],
+    "colors": [
+      "R"
+    ],
+    "color_identity": [
+      "R"
+    ],
+    "rarity": "Common",
+    "image": [
+      "https://cards.scryfall.io/large/front/b/b/bbe1d7e5-68e2-4458-aa3f-5e97fa8e7cae.jpg?1771586948"
+    ],
+    "keywords": [],
+    "oracle_text": "{T}: Add {R}. Spend this mana only to cast an artifact spell or to activate an ability."
+  },
+  "Putrid Pals": {
+    "arena_id": "",
+    "name": "Putrid Pals",
+    "cmc": 4,
+    "mana_cost": "{2}{B/G}{B/G}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Human",
+      "Ooze",
+      "Mutant"
+    ],
+    "colors": [
+      "B",
+      "G"
+    ],
+    "color_identity": [
+      "B",
+      "G"
+    ],
+    "rarity": "Common",
+    "image": [
+      "https://cards.scryfall.io/large/front/4/2/42cdb88d-675a-43bb-b85c-51c4cc526315.jpg?1771587057"
+    ],
+    "keywords": [
+      "Disappear",
+      "Deathtouch"
+    ],
+    "oracle_text": "Deathtouch\nDisappear \u2014 This creature enters with two +1/+1 counters on it if a permanent left the battlefield under your control this turn."
+  },
+  "Quintessential Katana": {
+    "arena_id": "",
+    "name": "Quintessential Katana",
+    "cmc": 1,
+    "mana_cost": "{W}",
+    "types": [
+      "Artifact"
+    ],
+    "subtypes": [
+      "Equipment"
+    ],
+    "colors": [
+      "W"
+    ],
+    "color_identity": [
+      "W"
+    ],
+    "rarity": "Uncommon",
+    "image": [
+      "https://cards.scryfall.io/large/front/e/f/ef9e227e-c581-479c-a962-2f191352b07f.jpg?1771502541"
+    ],
+    "keywords": [
+      "Equip"
+    ],
+    "oracle_text": "Equipped creature gets +1/+1 and has \"Whenever this creature deals combat damage, untap it and you gain 2 life.\"\nWhenever a Ninja you control enters, you may attach this Equipment to it.\nEquip {2} ({2}: Attach to target creature you control. Equip only as a sorcery.)"
+  },
+  "Ragamuffin Raptor": {
+    "arena_id": "",
+    "name": "Ragamuffin Raptor",
+    "cmc": 5,
+    "mana_cost": "{4}{G}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Dinosaur"
+    ],
+    "colors": [
+      "G"
+    ],
+    "color_identity": [
+      "G"
+    ],
+    "rarity": "Common",
+    "image": [
+      "https://cards.scryfall.io/large/front/2/e/2edc1d40-3154-4ec0-88c7-faf35fd5e560.jpg?1772578991"
+    ],
+    "keywords": [],
+    "oracle_text": "When this creature enters, return up to one target creature or Food card from your graveyard to your hand."
+  },
+  "Raphael, Most Attitude": {
+    "arena_id": "",
+    "name": "Raphael, Most Attitude",
+    "cmc": 4,
+    "mana_cost": "{3}{R}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Mutant",
+      "Ninja",
+      "Turtle"
+    ],
+    "colors": [
+      "R"
+    ],
+    "color_identity": [
+      "R"
+    ],
+    "rarity": "Uncommon",
+    "image": [
+      "https://cards.scryfall.io/large/front/8/8/88385a87-f931-409f-8a21-250f0866d63d.jpg?1771502673"
+    ],
+    "keywords": [
+      "Alliance",
+      "Menace"
+    ],
+    "oracle_text": "Menace (This creature can't be blocked except by two or more creatures.)\nAlliance \u2014 Whenever another creature you control enters, you may exile the top card of your library.\nWhenever Raphael attacks, until end of turn, you may play a card exiled with Raphael."
+  },
+  "Raphael, Ninja Destroyer": {
+    "arena_id": "",
+    "name": "Raphael, Ninja Destroyer",
+    "cmc": 4,
+    "mana_cost": "{2}{R}{R}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Mutant",
+      "Ninja",
+      "Turtle"
+    ],
+    "colors": [
+      "R"
+    ],
+    "color_identity": [
+      "R"
+    ],
+    "rarity": "Mythic",
+    "image": [
+      "https://cards.scryfall.io/large/front/e/e/eeffadda-cb71-4434-89bf-36db1a36da0b.jpg?1769006156"
+    ],
+    "keywords": [
+      "Enrage"
+    ],
+    "oracle_text": "Raphael must be blocked if able.\nEnrage \u2014 Whenever Raphael is dealt damage, add that much {R}. Until end of turn, you don't lose this mana as steps and phases end."
+  },
+  "Raphael's Technique": {
+    "arena_id": "",
+    "name": "Raphael's Technique",
+    "cmc": 6,
+    "mana_cost": "{4}{R}{R}",
+    "types": [
+      "Instant"
+    ],
+    "subtypes": [],
+    "colors": [
+      "R"
+    ],
+    "color_identity": [
+      "R"
+    ],
+    "rarity": "Rare",
+    "image": [
+      "https://cards.scryfall.io/large/front/7/c/7ce8b00f-5a4f-4206-8eb3-e79308e91f47.jpg?1760102758"
+    ],
+    "keywords": [
+      "Sneak"
+    ],
+    "oracle_text": "Sneak {2}{R} (You may cast this spell for {2}{R} if you also return an unblocked attacker you control to hand during the declare blockers step.)\nEach player may discard their hand and draw seven cards."
+  },
+  "Raphael, the Nightwatcher": {
+    "arena_id": "",
+    "name": "Raphael, the Nightwatcher",
+    "cmc": 4,
+    "mana_cost": "{2}{R}{R}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Mutant",
+      "Ninja",
+      "Turtle"
+    ],
+    "colors": [
+      "R"
+    ],
+    "color_identity": [
+      "R"
+    ],
+    "rarity": "Rare",
+    "image": [
+      "https://cards.scryfall.io/large/front/6/a/6af50b50-3776-4383-b493-7c5dd732c965.jpg?1769006162"
+    ],
+    "keywords": [
+      "Sneak"
+    ],
+    "oracle_text": "Sneak {1}{R}{R} (You may cast this spell for {1}{R}{R} if you also return an unblocked attacker you control to hand during the declare blockers step. He enters tapped and attacking.)\nAttacking creatures you control have double strike."
+  },
+  "Raphael, Tough Turtle": {
+    "arena_id": "",
+    "name": "Raphael, Tough Turtle",
+    "cmc": 2,
+    "mana_cost": "{1}{R}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Mutant",
+      "Ninja",
+      "Turtle"
+    ],
+    "colors": [
+      "R"
+    ],
+    "color_identity": [
+      "R"
+    ],
+    "rarity": "Common",
+    "image": [
+      "https://cards.scryfall.io/large/front/f/2/f24c90c8-ed04-4b4e-8b19-c7d07a90c6b8.jpg?1771342404"
+    ],
+    "keywords": [
+      "Alliance"
+    ],
+    "oracle_text": "Alliance \u2014 Whenever another creature you control enters, Raphael deals 1 damage to target opponent."
+  },
+  "Raph & Leo, Sibling Rivals": {
+    "arena_id": "",
+    "name": "Raph & Leo, Sibling Rivals",
+    "cmc": 3,
+    "mana_cost": "{1}{R/W}{R/W}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Mutant",
+      "Ninja",
+      "Turtle"
+    ],
+    "colors": [
+      "R",
+      "W"
+    ],
+    "color_identity": [
+      "R",
+      "W"
+    ],
+    "rarity": "Rare",
+    "image": [
+      "https://cards.scryfall.io/large/front/4/9/49293f77-5d7b-4106-b485-db6ce0ed37e6.jpg?1769006383"
+    ],
+    "keywords": [],
+    "oracle_text": "Whenever Raph & Leo attack, if it's the first combat phase of the turn, untap one or two target attacking creatures. After this phase, there is an additional combat phase."
+  },
+  "Raph & Mikey, Troublemakers": {
+    "arena_id": "",
+    "name": "Raph & Mikey, Troublemakers",
+    "cmc": 7,
+    "mana_cost": "{5}{R/G}{R/G}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Mutant",
+      "Ninja",
+      "Turtle"
+    ],
+    "colors": [
+      "G",
+      "R"
+    ],
+    "color_identity": [
+      "G",
+      "R"
+    ],
+    "rarity": "Rare",
+    "image": [
+      "https://cards.scryfall.io/large/front/8/7/8795fba4-0ff3-4c04-a81c-60408608a00c.jpg?1769006366"
+    ],
+    "keywords": [
+      "Haste",
+      "Trample"
+    ],
+    "oracle_text": "Trample, haste\nWhenever Raph & Mikey attack, reveal cards from the top of your library until you reveal a creature card. Put that card onto the battlefield tapped and attacking and the rest on the bottom of your library in a random order."
+  },
+  "Rat King, Verminister": {
+    "arena_id": "",
+    "name": "Rat King, Verminister",
+    "cmc": 2,
+    "mana_cost": "{1}{B}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Rat",
+      "Avatar"
+    ],
+    "colors": [
+      "B"
+    ],
+    "color_identity": [
+      "B"
+    ],
+    "rarity": "Rare",
+    "image": [
+      "https://cards.scryfall.io/large/front/b/e/be464d88-8933-46e8-97b0-3be05f1976a3.jpg?1769005882"
+    ],
+    "keywords": [
+      "Disappear"
+    ],
+    "oracle_text": "Disappear \u2014 At the beginning of your end step, if a permanent left the battlefield under your control this turn, create a 1/1 black Rat creature token and put a +1/+1 counter on Rat King.\n{T}, Sacrifice three Rats: Return target creature card and all other cards with the same name as that card from your graveyard to the battlefield tapped."
+  },
+  "Ravenous Robots": {
+    "arena_id": "",
+    "name": "Ravenous Robots",
+    "cmc": 2,
+    "mana_cost": "{1}{R}",
+    "types": [
+      "Creature",
+      "Artifact"
+    ],
+    "subtypes": [
+      "Robot"
+    ],
+    "colors": [
+      "R"
+    ],
+    "color_identity": [
+      "R"
+    ],
+    "rarity": "Rare",
+    "image": [
+      "https://cards.scryfall.io/large/front/3/b/3b303ea3-9f4d-4c28-9446-285a23f841a0.jpg?1769006169"
+    ],
+    "keywords": [],
+    "oracle_text": "Whenever you cast an artifact spell, create a 1/1 colorless Robot artifact creature token.\n{R}, {T}: Creature tokens you control gain haste until end of turn."
+  },
+  "Ray Fillet, Man Ray": {
+    "arena_id": "",
+    "name": "Ray Fillet, Man Ray",
+    "cmc": 4,
+    "mana_cost": "{3}{U}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Fish",
+      "Mutant"
+    ],
+    "colors": [
+      "U"
+    ],
+    "color_identity": [
+      "U"
+    ],
+    "rarity": "Uncommon",
+    "image": [
+      "https://cards.scryfall.io/large/front/1/4/14e0892c-a556-43c3-974f-6be44188da2e.jpg?1771502589"
+    ],
+    "keywords": [
+      "Flying"
+    ],
+    "oracle_text": "Flying\nWhen Ray Fillet enters, create a Mutagen token. (It's an artifact with \"{1}, {T}, Sacrifice this token: Put a +1/+1 counter on target creature. Activate only as a sorcery.\")\n{2}, Remove a +1/+1 counter from a creature you control: Draw a card."
+  },
+  "Renet, Temporal Apprentice": {
+    "arena_id": "",
+    "name": "Renet, Temporal Apprentice",
+    "cmc": 5,
+    "mana_cost": "{3}{U}{U}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Human",
+      "Wizard"
+    ],
+    "colors": [
+      "U"
+    ],
+    "color_identity": [
+      "U"
+    ],
+    "rarity": "Rare",
+    "image": [
+      "https://cards.scryfall.io/large/front/2/a/2ae30766-c858-4f4e-a042-14af55698cb2.jpg?1769005718"
+    ],
+    "keywords": [
+      "Flash"
+    ],
+    "oracle_text": "Flash\nWhen Renet enters, return each other nonland permanent that entered this turn to its owner's hand."
+  },
+  "Retro-Mutation": {
+    "arena_id": "",
+    "name": "Retro-Mutation",
+    "cmc": 3,
+    "mana_cost": "{2}{U}",
+    "types": [
+      "Enchantment"
+    ],
+    "subtypes": [
+      "Aura"
+    ],
+    "colors": [
+      "U"
+    ],
+    "color_identity": [
+      "U"
+    ],
+    "rarity": "Common",
+    "image": [
+      "https://cards.scryfall.io/large/front/4/a/4af284ba-fa54-43c5-8c76-3e1128957452.jpg?1771586820"
+    ],
+    "keywords": [
+      "Enchant",
+      "Flash"
+    ],
+    "oracle_text": "Flash\nEnchant creature\nEnchanted creature is a Turtle with base power and toughness 0/1. It can't attack and loses all abilities. (It also loses all other creature types.)"
+  },
+  "Return to the Sewers": {
+    "arena_id": "",
+    "name": "Return to the Sewers",
+    "cmc": 4,
+    "mana_cost": "{3}{U}",
+    "types": [
+      "Instant"
+    ],
+    "subtypes": [],
+    "colors": [
+      "U"
+    ],
+    "color_identity": [
+      "U"
+    ],
+    "rarity": "Common",
+    "image": [
+      "https://cards.scryfall.io/large/front/5/2/52e99505-17dc-4051-99f6-e23559fc6c95.jpg?1771586826"
+    ],
+    "keywords": [],
+    "oracle_text": "Target creature's owner puts it on their choice of the top or bottom of their library. You create a Mutagen token. (It's an artifact with \"{1}, {T}, Sacrifice this token: Put a +1/+1 counter on target creature. Activate only as a sorcery.\")"
+  },
+  "Rock Soldiers": {
+    "arena_id": "",
+    "name": "Rock Soldiers",
+    "cmc": 4,
+    "mana_cost": "{3}{R}",
+    "types": [
+      "Creature",
+      "Artifact"
+    ],
+    "subtypes": [
+      "Elemental",
+      "Soldier"
+    ],
+    "colors": [
+      "R"
+    ],
+    "color_identity": [
+      "R"
+    ],
+    "rarity": "Common",
+    "image": [
+      "https://cards.scryfall.io/large/front/0/f/0fada65d-fd8d-4be9-b2bb-ea5cac78fdd7.jpg?1771586954"
+    ],
+    "keywords": [],
+    "oracle_text": "When this creature enters, destroy up to one target noncreature artifact."
+  },
+  "Rocksteady, Crash Courser": {
+    "arena_id": "",
+    "name": "Rocksteady, Crash Courser",
+    "cmc": 6,
+    "mana_cost": "{4}{G}{G}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Rhino",
+      "Mutant"
+    ],
+    "colors": [
+      "G"
+    ],
+    "color_identity": [
+      "G"
+    ],
+    "rarity": "Common",
+    "image": [
+      "https://cards.scryfall.io/large/front/e/b/ebbb5756-80fa-406f-8daa-be1f5a6c3c80.jpg?1771586968"
+    ],
+    "keywords": [
+      "Landcycling",
+      "Forestcycling",
+      "Typecycling",
+      "Cycling"
+    ],
+    "oracle_text": "Rocksteady can't be blocked by more than one creature.\nBoars you control can't be blocked by more than one creature.\nForestcycling {2} ({2}, Discard this card: Search your library for a Forest card, reveal it, put it into your hand, then shuffle.)"
+  },
+  "Sally Pride, Lioness Leader": {
+    "arena_id": "",
+    "name": "Sally Pride, Lioness Leader",
+    "cmc": 5,
+    "mana_cost": "{3}{W}{W}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Cat",
+      "Mutant",
+      "Rebel"
+    ],
+    "colors": [
+      "W"
+    ],
+    "color_identity": [
+      "W"
+    ],
+    "rarity": "Rare",
+    "image": [
+      "https://cards.scryfall.io/large/front/b/c/bcd8ee6b-7142-4548-8b7a-691a36411851.jpg?1769005568"
+    ],
+    "keywords": [],
+    "oracle_text": "When Sally Pride enters, create X 2/2 red Mutant creature tokens, where X is the number of nontoken creatures you control.\nWhenever Sally Pride attacks, put a +1/+1 counter on each creature you control."
+  },
+  "Savanti Romero, Time's Exile": {
+    "arena_id": "",
+    "name": "Savanti Romero, Time's Exile",
+    "cmc": 5,
+    "mana_cost": "{3}{B}{B}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Demon",
+      "Wizard"
+    ],
+    "colors": [
+      "B"
+    ],
+    "color_identity": [
+      "B"
+    ],
+    "rarity": "Rare",
+    "image": [
+      "https://cards.scryfall.io/large/front/0/1/01cb8ded-7f77-4b75-b799-23e9f5efb513.jpg?1769005872"
+    ],
+    "keywords": [
+      "Trample"
+    ],
+    "oracle_text": "Trample\nAt the beginning of combat on your turn, put a +1/+1 counter on Savanti Romero. Then you draw X cards and lose X life, where X is the number of counters on Savanti Romero."
+  },
+  "Saved by the Shell": {
+    "arena_id": "",
+    "name": "Saved by the Shell",
+    "cmc": 2,
+    "mana_cost": "{1}{G}",
+    "types": [
+      "Instant"
+    ],
+    "subtypes": [],
+    "colors": [
+      "G"
+    ],
+    "color_identity": [
+      "G"
+    ],
+    "rarity": "Uncommon",
+    "image": [
+      "https://cards.scryfall.io/large/front/f/6/f6314c7f-41dc-4bbd-99db-3a8a1d2977b2.jpg?1771586974"
+    ],
+    "keywords": [],
+    "oracle_text": "This spell costs {1} less to cast if you control a Turtle.\nPut a +1/+1 counter on target creature you control. It gains trample, hexproof, and indestructible until end of turn."
+  },
+  "Sewer-veillance Cam": {
+    "arena_id": "",
+    "name": "Sewer-veillance Cam",
+    "cmc": 1,
+    "mana_cost": "{U}",
+    "types": [
+      "Artifact"
+    ],
+    "subtypes": [],
+    "colors": [
+      "U"
+    ],
+    "color_identity": [
+      "U"
+    ],
+    "rarity": "Common",
+    "image": [
+      "https://cards.scryfall.io/large/front/a/b/ab47a37b-b66d-4f70-9bf0-4d5ed6b518f3.jpg?1771502595"
+    ],
+    "keywords": [
+      "Flash"
+    ],
+    "oracle_text": "Flash\nWhen this artifact enters or leaves the battlefield, you may tap or untap target creature.\n{3}{U}, Sacrifice this artifact: Draw two cards."
+  },
+  "Shark Shredder, Killer Clone": {
+    "arena_id": "",
+    "name": "Shark Shredder, Killer Clone",
+    "cmc": 4,
+    "mana_cost": "{2}{B}{B}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Shark",
+      "Octopus",
+      "Ninja"
+    ],
+    "colors": [
+      "B"
+    ],
+    "color_identity": [
+      "B"
+    ],
+    "rarity": "Rare",
+    "image": [
+      "https://cards.scryfall.io/large/front/8/f/8f946b3d-7d2a-4210-a909-d16078757e3b.jpg?1769006593"
+    ],
+    "keywords": [
+      "First strike",
+      "Sneak"
+    ],
+    "oracle_text": "Sneak {3}{B}{B}\nFirst strike\nWhenever Shark Shredder deals combat damage to a player, put up to one target creature card from that player's graveyard onto the battlefield under your control. It enters tapped and attacking that player."
+  },
+  "Shredder's Armor": {
+    "arena_id": "",
+    "name": "Shredder's Armor",
+    "cmc": 2,
+    "mana_cost": "{1}{B}",
+    "types": [
+      "Artifact"
+    ],
+    "subtypes": [
+      "Equipment"
+    ],
+    "colors": [
+      "B"
+    ],
+    "color_identity": [
+      "B"
+    ],
+    "rarity": "Uncommon",
+    "image": [
+      "https://cards.scryfall.io/large/front/d/2/d2cbe512-725f-4884-ac49-a98a78e7d14e.jpg?1771586903"
+    ],
+    "keywords": [
+      "Equip"
+    ],
+    "oracle_text": "Equipped creature gets +2/+1.\nWhen this Equipment enters, attach it to target creature you control.\nEquip\u2014Sacrifice another nonland permanent. Activate only once each turn."
+  },
+  "Shredder's Revenge": {
+    "arena_id": "",
+    "name": "Shredder's Revenge",
+    "cmc": 3,
+    "mana_cost": "{2}{B}",
+    "types": [
+      "Sorcery"
+    ],
+    "subtypes": [],
+    "colors": [
+      "B"
+    ],
+    "color_identity": [
+      "B"
+    ],
+    "rarity": "Common",
+    "image": [
+      "https://cards.scryfall.io/large/front/7/2/72fadf47-2e0b-4b24-b1bc-7c86780716b6.jpg?1771342364"
+    ],
+    "keywords": [],
+    "oracle_text": "Choose one \u2014\n\u2022 Target player discards two cards.\n\u2022 Target player draws two cards and loses 2 life."
+  },
+  "Shredder's Technique": {
+    "arena_id": "",
+    "name": "Shredder's Technique",
+    "cmc": 3,
+    "mana_cost": "{2}{B}",
+    "types": [
+      "Sorcery"
+    ],
+    "subtypes": [],
+    "colors": [
+      "B"
+    ],
+    "color_identity": [
+      "B"
+    ],
+    "rarity": "Uncommon",
+    "image": [
+      "https://cards.scryfall.io/large/front/9/9/99a24349-7d11-421b-a161-c1edbb8f53b1.jpg?1771342367"
+    ],
+    "keywords": [
+      "Sneak"
+    ],
+    "oracle_text": "Sneak {B} (You may cast this spell for {B} if you also return an unblocked attacker you control to hand during the declare blockers step.)\nDestroy target creature or enchantment. If an enchantment was destroyed this way, you lose 2 life."
+  },
+  "Shredder, Unrelenting": {
+    "arena_id": "",
+    "name": "Shredder, Unrelenting",
+    "cmc": 5,
+    "mana_cost": "{4}{B}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Human",
+      "Ninja"
+    ],
+    "colors": [
+      "B"
+    ],
+    "color_identity": [
+      "B"
+    ],
+    "rarity": "Uncommon",
+    "image": [
+      "https://cards.scryfall.io/large/front/8/8/88a48867-5c65-483c-92b0-f70c53ea2a9e.jpg?1771502616"
+    ],
+    "keywords": [
+      "Sneak",
+      "Deathtouch"
+    ],
+    "oracle_text": "Sneak {3}{B} (You may cast this spell for {3}{B} if you also return an unblocked attacker you control to hand during the declare blockers step. He enters tapped and attacking.)\nDeathtouch\nWhenever Shredder enters or attacks, another target creature you control gains deathtouch until end of turn."
+  },
+  "Skateboard": {
+    "arena_id": "",
+    "name": "Skateboard",
+    "cmc": 1,
+    "mana_cost": "{1}",
+    "types": [
+      "Artifact"
+    ],
+    "subtypes": [
+      "Equipment"
+    ],
+    "colors": [],
+    "color_identity": [],
+    "rarity": "Uncommon",
+    "image": [
+      "https://cards.scryfall.io/large/front/d/e/deadb6d8-3eea-4261-a07c-8536df89e85c.jpg?1771502813"
+    ],
+    "keywords": [
+      "Equip"
+    ],
+    "oracle_text": "When this Equipment enters, tap target permanent.\nEquipped creature gets +1/+0 and has haste.\nEquip {1} ({1}: Attach to target creature you control. Equip only as a sorcery.)"
+  },
+  "Slash, Reptile Rampager": {
+    "arena_id": "",
+    "name": "Slash, Reptile Rampager",
+    "cmc": 5,
+    "mana_cost": "{3}{R}{R}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Mutant",
+      "Berserker",
+      "Turtle"
+    ],
+    "colors": [
+      "R"
+    ],
+    "color_identity": [
+      "R"
+    ],
+    "rarity": "Rare",
+    "image": [
+      "https://cards.scryfall.io/large/front/0/2/025aafbc-5b24-4f5b-9b4a-81f6b9cb5ef3.jpg?1769006188"
+    ],
+    "keywords": [
+      "Alliance"
+    ],
+    "oracle_text": "Alliance \u2014 Whenever another creature you control enters, Slash deals 2 damage to each opponent.\nWhenever Slash attacks, create a 2/2 red Mutant creature token."
+  },
+  "Slithering Cryptid": {
+    "arena_id": "",
+    "name": "Slithering Cryptid",
+    "cmc": 3,
+    "mana_cost": "{2}{G/U}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Fish",
+      "Mutant"
+    ],
+    "colors": [
+      "G",
+      "U"
+    ],
+    "color_identity": [
+      "G",
+      "U"
+    ],
+    "rarity": "Common",
+    "image": [
+      "https://cards.scryfall.io/large/front/6/d/6d35cb39-8832-4cf1-be73-8de49fbea529.jpg?1771502794"
+    ],
+    "keywords": [],
+    "oracle_text": "When this creature enters, create a Mutagen token. (It's an artifact with \"{1}, {T}, Sacrifice this token: Put a +1/+1 counter on target creature. Activate only as a sorcery.\")"
+  },
+  "South Wind Avatar": {
+    "arena_id": "",
+    "name": "South Wind Avatar",
+    "cmc": 4,
+    "mana_cost": "{3}{B}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Snake",
+      "Spirit",
+      "Avatar"
+    ],
+    "colors": [
+      "B"
+    ],
+    "color_identity": [
+      "B"
+    ],
+    "rarity": "Rare",
+    "image": [
+      "https://cards.scryfall.io/large/front/c/1/c17bc07c-7147-4c84-aa0b-8a0865fba94e.jpg?1769005861"
+    ],
+    "keywords": [
+      "Deathtouch"
+    ],
+    "oracle_text": "Deathtouch\nWhenever another creature you control dies, you gain life equal to its toughness.\nWhenever you gain life, each opponent loses 1 life."
+  },
+  "Spicy Oatmeal Pizza": {
+    "arena_id": "",
+    "name": "Spicy Oatmeal Pizza",
+    "cmc": 3,
+    "mana_cost": "{2}{R}",
+    "types": [
+      "Artifact"
+    ],
+    "subtypes": [
+      "Food"
+    ],
+    "colors": [
+      "R"
+    ],
+    "color_identity": [
+      "R"
+    ],
+    "rarity": "Uncommon",
+    "image": [
+      "https://cards.scryfall.io/large/front/c/4/c4aeb45b-13ed-43ad-a366-7be10dec6222.jpg?1771342407"
+    ],
+    "keywords": [],
+    "oracle_text": "When this artifact enters, it deals 4 damage to any target and 3 damage to you.\n{2}, {T}, Sacrifice this artifact: You gain 3 life."
+  },
+  "Splinter, Hamato Yoshi": {
+    "arena_id": "",
+    "name": "Splinter, Hamato Yoshi",
+    "cmc": 2,
+    "mana_cost": "{1}{B}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Mutant",
+      "Ninja",
+      "Rat"
+    ],
+    "colors": [
+      "B"
+    ],
+    "color_identity": [
+      "B"
+    ],
+    "rarity": "Uncommon",
+    "image": [
+      "https://cards.scryfall.io/large/front/9/e/9ea9d072-aa98-405e-a475-26f93cc37e53.jpg?1771586909"
+    ],
+    "keywords": [
+      "Menace",
+      "Sneak"
+    ],
+    "oracle_text": "Sneak {B} (You may cast this spell for {B} if you also return an unblocked attacker you control to hand during the declare blockers step. He enters tapped and attacking.)\nMenace (This creature can't be blocked except by two or more creatures.)\nOther Ninjas you control get +1/+1."
+  },
+  "Splinter, Radical Rat": {
+    "arena_id": "",
+    "name": "Splinter, Radical Rat",
+    "cmc": 3,
+    "mana_cost": "{1}{W/B}{W/B}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Mutant",
+      "Ninja",
+      "Rat"
+    ],
+    "colors": [
+      "B",
+      "W"
+    ],
+    "color_identity": [
+      "B",
+      "U",
+      "W"
+    ],
+    "rarity": "Rare",
+    "image": [
+      "https://cards.scryfall.io/large/front/f/0/f0797466-c527-4d35-86bc-e0e90fd04073.jpg?1769024412"
+    ],
+    "keywords": [],
+    "oracle_text": "If an ability of a Ninja creature you control triggers, that ability triggers an additional time.\n{1}{U}: Target Ninja can't be blocked this turn."
+  },
+  "Splinter's Technique": {
+    "arena_id": "",
+    "name": "Splinter's Technique",
+    "cmc": 4,
+    "mana_cost": "{3}{B}",
+    "types": [
+      "Sorcery"
+    ],
+    "subtypes": [],
+    "colors": [
+      "B"
+    ],
+    "color_identity": [
+      "B"
+    ],
+    "rarity": "Rare",
+    "image": [
+      "https://cards.scryfall.io/large/front/f/d/fd3a5465-074a-4688-b79b-68e232076581.jpg?1769006137"
+    ],
+    "keywords": [
+      "Sneak"
+    ],
+    "oracle_text": "Sneak {1}{B} (You may cast this spell for {1}{B} if you also return an unblocked attacker you control to hand during the declare blockers step.)\nSearch your library for a card, put that card into your hand, then shuffle."
+  },
+  "Squirrelanoids": {
+    "arena_id": "",
+    "name": "Squirrelanoids",
+    "cmc": 1,
+    "mana_cost": "{B}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Squirrel",
+      "Mutant"
+    ],
+    "colors": [
+      "B"
+    ],
+    "color_identity": [
+      "B"
+    ],
+    "rarity": "Common",
+    "image": [
+      "https://cards.scryfall.io/large/front/b/e/be08d2b0-375b-434f-9e6d-060809e0ed34.jpg?1771586916"
+    ],
+    "keywords": [
+      "Deathtouch"
+    ],
+    "oracle_text": "Deathtouch"
+  },
+  "Stockman, Mad Fly-entist": {
+    "arena_id": "",
+    "name": "Stockman, Mad Fly-entist",
+    "cmc": 5,
+    "mana_cost": "{4}{U}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Insect",
+      "Mutant",
+      "Scientist"
+    ],
+    "colors": [
+      "U"
+    ],
+    "color_identity": [
+      "U"
+    ],
+    "rarity": "Common",
+    "image": [
+      "https://cards.scryfall.io/large/front/0/1/01ca65e2-898e-4150-a6bf-e61b183fd98a.jpg?1771502603"
+    ],
+    "keywords": [
+      "Flying",
+      "Islandcycling",
+      "Landcycling",
+      "Typecycling",
+      "Cycling"
+    ],
+    "oracle_text": "Flying\nWhen Stockman enters, draw a card, then discard a card.\nIslandcycling {2} ({2}, Discard this card: Search your library for an Island card, reveal it, put it into your hand, then shuffle.)"
+  },
+  "Stomped by the Foot": {
+    "arena_id": "",
+    "name": "Stomped by the Foot",
+    "cmc": 2,
+    "mana_cost": "{1}{B}",
+    "types": [
+      "Instant"
+    ],
+    "subtypes": [],
+    "colors": [
+      "B"
+    ],
+    "color_identity": [
+      "B"
+    ],
+    "rarity": "Common",
+    "image": [
+      "https://cards.scryfall.io/large/front/3/f/3fdec16f-77f5-4792-9698-b9099a204028.jpg?1771586922"
+    ],
+    "keywords": [
+      "Kicker"
+    ],
+    "oracle_text": "Kicker\u2014Sacrifice an artifact or creature. (You may sacrifice an artifact or creature in addition to any other costs as you cast this spell.)\nTarget creature gets -2/-2 until end of turn. If this spell was kicked, that creature gets -5/-5 until end of turn instead."
+  },
+  "Super Shredder": {
+    "arena_id": "",
+    "name": "Super Shredder",
+    "cmc": 2,
+    "mana_cost": "{1}{B}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Mutant",
+      "Ninja",
+      "Human"
+    ],
+    "colors": [
+      "B"
+    ],
+    "color_identity": [
+      "B"
+    ],
+    "rarity": "Mythic",
+    "image": [
+      "https://cards.scryfall.io/large/front/3/7/37a497b8-e908-4ddc-996e-a8470df72afb.jpg?1760102707"
+    ],
+    "keywords": [
+      "Menace"
+    ],
+    "oracle_text": "Menace\nWhenever another permanent leaves the battlefield, put a +1/+1 counter on Super Shredder."
+  },
+  "Swamp": {
+    "arena_id": "",
+    "name": "Swamp",
+    "cmc": 0,
+    "mana_cost": "",
+    "types": [
+      "Land"
+    ],
+    "subtypes": [
+      "Swamp"
+    ],
+    "colors": [],
+    "color_identity": [
+      "B"
+    ],
+    "rarity": "Common",
+    "image": [
+      "https://cards.scryfall.io/large/front/e/4/e43ac31a-942e-4871-be29-426e19e52701.jpg?1771345166"
+    ],
+    "keywords": [],
+    "oracle_text": "({T}: Add {B}.)"
+  },
+  "Tainted Treats": {
+    "arena_id": "",
+    "name": "Tainted Treats",
+    "cmc": 3,
+    "mana_cost": "{1}{B}{G}",
+    "types": [
+      "Instant"
+    ],
+    "subtypes": [],
+    "colors": [
+      "B",
+      "G"
+    ],
+    "color_identity": [
+      "B",
+      "G"
+    ],
+    "rarity": "Uncommon",
+    "image": [
+      "https://cards.scryfall.io/large/front/f/a/fa684608-ecd3-43e2-99a1-71318f133e29.jpg?1771587064"
+    ],
+    "keywords": [
+      "Food"
+    ],
+    "oracle_text": "Destroy target artifact or creature. If its mana value was 4 or less, create a Food token. (It's an artifact with \"{2}, {T}, Sacrifice this token: You gain 3 life.\")"
+  },
+  "TCRI Building": {
+    "arena_id": "",
+    "name": "TCRI Building",
+    "cmc": 0,
+    "mana_cost": "",
+    "types": [
+      "Land"
+    ],
+    "subtypes": [],
+    "colors": [],
+    "color_identity": [
+      "R",
+      "U"
+    ],
+    "rarity": "Common",
+    "image": [
+      "https://cards.scryfall.io/large/front/8/8/8817a1d6-ef39-4e7c-8277-74aea012803b.jpg?1771587112"
+    ],
+    "keywords": [],
+    "oracle_text": "This land enters tapped.\nWhen this land enters, you gain 1 life.\n{T}: Add {U} or {R}."
+  },
+  "Technodrome": {
+    "arena_id": "",
+    "name": "Technodrome",
+    "cmc": 2,
+    "mana_cost": "{2}",
+    "types": [
+      "Creature",
+      "Artifact"
+    ],
+    "subtypes": [
+      "Construct"
+    ],
+    "colors": [],
+    "color_identity": [],
+    "rarity": "Mythic",
+    "image": [
+      "https://cards.scryfall.io/large/front/2/8/287f5ab0-b15b-4507-8a24-585f9a9841ad.jpg?1769006421"
+    ],
+    "keywords": [
+      "Reach",
+      "Trample"
+    ],
+    "oracle_text": "Reach, trample\nThis creature can't attack or block unless its power is 6 or greater.\n{T}, Sacrifice another artifact: Draw a card. Put a +1/+1 counter on this creature."
+  },
+  "Tenderize": {
+    "arena_id": "",
+    "name": "Tenderize",
+    "cmc": 2,
+    "mana_cost": "{1}{G}",
+    "types": [
+      "Instant"
+    ],
+    "subtypes": [],
+    "colors": [
+      "G"
+    ],
+    "color_identity": [
+      "G"
+    ],
+    "rarity": "Common",
+    "image": [
+      "https://cards.scryfall.io/large/front/b/c/bc19807b-09e8-4923-abc3-d4bbe8cde5fc.jpg?1771502744"
+    ],
+    "keywords": [],
+    "oracle_text": "Target creature you control deals damage equal to its power to target creature an opponent controls."
+  },
+  "The Cloning of Shredder": {
+    "arena_id": "",
+    "name": "The Cloning of Shredder",
+    "cmc": 6,
+    "mana_cost": "{4}{B}{B}",
+    "types": [
+      "Enchantment"
+    ],
+    "subtypes": [
+      "Saga"
+    ],
+    "colors": [
+      "B"
+    ],
+    "color_identity": [
+      "B"
+    ],
+    "rarity": "Mythic",
+    "image": [
+      "https://cards.scryfall.io/large/front/9/4/94449d88-2df4-4850-8ffa-d6d193835dda.jpg?1771603451"
+    ],
+    "keywords": [],
+    "oracle_text": "(As this Saga enters and after your draw step, add a lore counter. Sacrifice after III.)\nI \u2014 Exile target creature card from your graveyard. Create a token that's a copy of it, except it isn't legendary and is a Mutant in addition to its other types.\nII, III \u2014 Create a token that's a copy of a card exiled with this Saga, except it isn't legendary and is a Mutant in addition to its other types."
+  },
+  "The Last Ronin": {
+    "arena_id": "",
+    "name": "The Last Ronin",
+    "cmc": 6,
+    "mana_cost": "{4}{B}{G}",
+    "types": [
+      "Enchantment"
+    ],
+    "subtypes": [
+      "Saga"
+    ],
+    "colors": [
+      "B",
+      "G"
+    ],
+    "color_identity": [
+      "B",
+      "G"
+    ],
+    "rarity": "Mythic",
+    "image": [
+      "https://cards.scryfall.io/large/front/7/2/72ab3ccf-3ddb-4dd1-9cfb-98802a18d954.jpg?1771603465"
+    ],
+    "keywords": [
+      "Mill"
+    ],
+    "oracle_text": "(As this Saga enters and after your draw step, add a lore counter. Sacrifice after III.)\nI \u2014 Destroy all creatures.\nII \u2014 Mill four cards. When you do, return target creature card from your graveyard to your hand.\nIII \u2014 Whenever a creature you control attacks alone this turn, put three +1/+1 counters on it. It gains trample, lifelink, and indestructible until end of turn."
+  },
+  "The Last Ronin's Technique": {
+    "arena_id": "",
+    "name": "The Last Ronin's Technique",
+    "cmc": 4,
+    "mana_cost": "{3}{W}",
+    "types": [
+      "Instant"
+    ],
+    "subtypes": [],
+    "colors": [
+      "W"
+    ],
+    "color_identity": [
+      "W"
+    ],
+    "rarity": "Uncommon",
+    "image": [
+      "https://cards.scryfall.io/large/front/d/f/dfb18239-d373-4795-8598-c82abae2cb62.jpg?1771342217"
+    ],
+    "keywords": [
+      "Sneak"
+    ],
+    "oracle_text": "Sneak {1}{W} (You may cast this spell for {1}{W} if you also return an unblocked attacker you control to hand during the declare blockers step.)\nCreate three 1/1 white Ninja Turtle Spirit creature tokens. If this spell's sneak cost was paid, they enter tapped and attacking."
+  },
+  "The Neutrinos": {
+    "arena_id": "",
+    "name": "The Neutrinos",
+    "cmc": 4,
+    "mana_cost": "{2}{R}{W}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Elf",
+      "Rebel"
+    ],
+    "colors": [
+      "R",
+      "W"
+    ],
+    "color_identity": [
+      "R",
+      "W"
+    ],
+    "rarity": "Uncommon",
+    "image": [
+      "https://cards.scryfall.io/large/front/1/3/1308dadc-08a9-40bd-98a4-fb66d792e27d.jpg?1771587028"
+    ],
+    "keywords": [
+      "Flying",
+      "Alliance"
+    ],
+    "oracle_text": "Flying\nAlliance \u2014 Whenever another creature you control enters, The Neutrinos get +1/+0 until end of turn.\nWhenever The Neutrinos attack, exile up to one target creature you own, then return it to the battlefield under your control tapped and attacking."
+  },
+  "The Ooze": {
+    "arena_id": "",
+    "name": "The Ooze",
+    "cmc": 2,
+    "mana_cost": "{2}",
+    "types": [
+      "Artifact"
+    ],
+    "subtypes": [],
+    "colors": [],
+    "color_identity": [],
+    "rarity": "Rare",
+    "image": [
+      "https://cards.scryfall.io/large/front/1/f/1f9bd4da-4626-40ba-95f4-14e3de36f989.jpg?1769006428"
+    ],
+    "keywords": [],
+    "oracle_text": "Whenever a creature you control with a +1/+1 counter on it leaves the battlefield, create a Mutagen token for each +1/+1 counter on it. (A Mutagen token is an artifact with \"{1}, {T}, Sacrifice this token: Put a +1/+1 counter on target creature. Activate only as a sorcery.\")\n{T}: Exile target card from a graveyard. Create a Mutagen token."
+  },
+  "Tokka & Rahzar, Terrible Twos": {
+    "arena_id": "",
+    "name": "Tokka & Rahzar, Terrible Twos",
+    "cmc": 2,
+    "mana_cost": "{B/R}{B/R}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Turtle",
+      "Wolf",
+      "Mutant"
+    ],
+    "colors": [
+      "B",
+      "R"
+    ],
+    "color_identity": [
+      "B",
+      "R"
+    ],
+    "rarity": "Rare",
+    "image": [
+      "https://cards.scryfall.io/large/front/2/8/284f9012-a58d-41da-be7c-962dca052711.jpg?1769006390"
+    ],
+    "keywords": [
+      "Menace"
+    ],
+    "oracle_text": "This spell can't be countered.\nMenace\nWhenever a player casts a spell, if the amount of mana spent to cast it was less than its mana value, Tokka & Rahzar deal 3 damage to that player."
+  },
+  "Transdimensional Bovine": {
+    "arena_id": "",
+    "name": "Transdimensional Bovine",
+    "cmc": 3,
+    "mana_cost": "{2}{G}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Ox",
+      "Avatar"
+    ],
+    "colors": [
+      "G"
+    ],
+    "color_identity": [
+      "G"
+    ],
+    "rarity": "Rare",
+    "image": [
+      "https://cards.scryfall.io/large/front/d/e/de124563-205c-4f40-8c13-4ae203599912.jpg?1769006238"
+    ],
+    "keywords": [
+      "Flying"
+    ],
+    "oracle_text": "Flying\n{T}: Add two mana of any one color."
+  },
+  "Triceraton Commander": {
+    "arena_id": "",
+    "name": "Triceraton Commander",
+    "cmc": 2,
+    "mana_cost": "{X}{X}{W}{W}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Dinosaur",
+      "Soldier"
+    ],
+    "colors": [
+      "W"
+    ],
+    "color_identity": [
+      "W"
+    ],
+    "rarity": "Mythic",
+    "image": [
+      "https://cards.scryfall.io/large/front/6/4/6445b690-71ce-4371-ae9c-bac0e70dda81.jpg?1769005579"
+    ],
+    "keywords": [
+      "Flying"
+    ],
+    "oracle_text": "Flying\nWhenever this creature attacks, Dinosaurs you control other than this creature get +1/+1 and gain flying until end of turn.\nWhen this creature enters, create X 2/2 white Dinosaur Soldier creature tokens."
+  },
+  "Tunnel Rats": {
+    "arena_id": "",
+    "name": "Tunnel Rats",
+    "cmc": 2,
+    "mana_cost": "{1}{B}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Rat"
+    ],
+    "colors": [
+      "B"
+    ],
+    "color_identity": [
+      "B"
+    ],
+    "rarity": "Common",
+    "image": [
+      "https://cards.scryfall.io/large/front/7/0/70faf7d8-008a-454a-a21b-702aa661b8f9.jpg?1771586928"
+    ],
+    "keywords": [],
+    "oracle_text": "{4}{B}: Return this card from your graveyard to the battlefield tapped."
+  },
+  "Turncoat Kunoichi": {
+    "arena_id": "",
+    "name": "Turncoat Kunoichi",
+    "cmc": 3,
+    "mana_cost": "{2}{W}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Mutant",
+      "Ninja",
+      "Fox"
+    ],
+    "colors": [
+      "W"
+    ],
+    "color_identity": [
+      "B",
+      "W"
+    ],
+    "rarity": "Rare",
+    "image": [
+      "https://cards.scryfall.io/large/front/3/a/3ae61336-a4ee-40cd-9a18-392d96b873a4.jpg?1769685362"
+    ],
+    "keywords": [
+      "Sneak"
+    ],
+    "oracle_text": "Sneak {2}{W}{B} (You may cast this spell for {2}{W}{B} if you also return an unblocked attacker you control to hand during the declare blockers step. It enters tapped and attacking.)\nWhen this creature enters, choose target creature an opponent controls. Exile that creature until this creature leaves the battlefield. If this creature's sneak cost was paid, instead exile the chosen creature."
+  },
+  "Turtle Blimp": {
+    "arena_id": "",
+    "name": "Turtle Blimp",
+    "cmc": 5,
+    "mana_cost": "{5}",
+    "types": [
+      "Artifact"
+    ],
+    "subtypes": [
+      "Vehicle"
+    ],
+    "colors": [],
+    "color_identity": [],
+    "rarity": "Uncommon",
+    "image": [
+      "https://cards.scryfall.io/large/front/6/e/6e118fc5-b0ae-4592-8292-d611856ae203.jpg?1771587078"
+    ],
+    "keywords": [
+      "Flying",
+      "Crew"
+    ],
+    "oracle_text": "Flying\nWhen this Vehicle enters, create a 2/2 red Mutant creature token.\nCrew 2 (Tap any number of creatures you control with total power 2 or more: This Vehicle becomes an artifact creature until end of turn.)"
+  },
+  "Turtle Lair": {
+    "arena_id": "",
+    "name": "Turtle Lair",
+    "cmc": 0,
+    "mana_cost": "",
+    "types": [
+      "Land"
+    ],
+    "subtypes": [],
+    "colors": [],
+    "color_identity": [],
+    "rarity": "Uncommon",
+    "image": [
+      "https://cards.scryfall.io/large/front/c/5/c50c4580-979b-4863-86b9-16e258198972.jpg?1771424738"
+    ],
+    "keywords": [],
+    "oracle_text": "{T}: Add {C}.\n{T}: Add one mana of any color. Spend this mana only to cast a Ninja or Turtle spell.\n{3}, {T}: Target Ninja or Turtle can't be blocked this turn."
+  },
+  "Turtle Power!": {
+    "arena_id": "",
+    "name": "Turtle Power!",
+    "cmc": 3,
+    "mana_cost": "{2}{G}",
+    "types": [
+      "Enchantment"
+    ],
+    "subtypes": [],
+    "colors": [
+      "G"
+    ],
+    "color_identity": [
+      "G"
+    ],
+    "rarity": "Rare",
+    "image": [
+      "https://cards.scryfall.io/large/front/4/0/4079ca90-dcc3-4184-9dfc-a626e0776332.jpg?1769006224"
+    ],
+    "keywords": [
+      "Flash"
+    ],
+    "oracle_text": "Flash\nTurtles you control get +2/+2."
+  },
+  "Turtles Forever": {
+    "arena_id": "",
+    "name": "Turtles Forever",
+    "cmc": 4,
+    "mana_cost": "{3}{W}",
+    "types": [
+      "Instant"
+    ],
+    "subtypes": [],
+    "colors": [
+      "W"
+    ],
+    "color_identity": [
+      "W"
+    ],
+    "rarity": "Rare",
+    "image": [
+      "https://cards.scryfall.io/large/front/f/0/f0db974a-3289-4727-9aaf-e9cca9113c87.jpg?1760102536"
+    ],
+    "keywords": [],
+    "oracle_text": "Search your library and/or outside the game for exactly four legendary creature cards you own with different names, then reveal those cards. An opponent chooses two of them. Put the chosen cards into your hand and shuffle the rest into your library."
+  },
+  "Turtles in Time": {
+    "arena_id": "",
+    "name": "Turtles in Time",
+    "cmc": 7,
+    "mana_cost": "{5}{U}{U}",
+    "types": [
+      "Sorcery"
+    ],
+    "subtypes": [],
+    "colors": [
+      "U"
+    ],
+    "color_identity": [
+      "U"
+    ],
+    "rarity": "Mythic",
+    "image": [
+      "https://cards.scryfall.io/large/front/b/d/bdb3efe7-7b12-4503-83e9-7977eb099db5.jpg?1769005754"
+    ],
+    "keywords": [],
+    "oracle_text": "Return all creatures to their owners' hands. Each player may shuffle their hand and graveyard into their library, then each player who does draws seven cards.\nExile Turtles in Time."
+  },
+  "Turtle Van": {
+    "arena_id": "",
+    "name": "Turtle Van",
+    "cmc": 3,
+    "mana_cost": "{3}",
+    "types": [
+      "Artifact"
+    ],
+    "subtypes": [
+      "Vehicle"
+    ],
+    "colors": [],
+    "color_identity": [],
+    "rarity": "Rare",
+    "image": [
+      "https://cards.scryfall.io/large/front/f/c/fce6a8b6-b43c-4045-9378-97b2463f9b4d.jpg?1769006474"
+    ],
+    "keywords": [
+      "Crew"
+    ],
+    "oracle_text": "Whenever this Vehicle attacks, put a +1/+1 counter on target creature that crewed it this turn. Then if that creature is a Mutant, Ninja, or Turtle, double the number of +1/+1 counters on it.\nCrew 1 (Tap any number of creatures you control with total power 1 or more: This Vehicle becomes an artifact creature until end of turn.)"
+  },
+  "Uneasy Alliance": {
+    "arena_id": "",
+    "name": "Uneasy Alliance",
+    "cmc": 2,
+    "mana_cost": "{1}{W}",
+    "types": [
+      "Enchantment"
+    ],
+    "subtypes": [
+      "Aura"
+    ],
+    "colors": [
+      "W"
+    ],
+    "color_identity": [
+      "W"
+    ],
+    "rarity": "Common",
+    "image": [
+      "https://cards.scryfall.io/large/front/5/d/5d9a4f9a-1e3a-4de8-a7c0-7158c6703b4e.jpg?1771586776"
+    ],
+    "keywords": [
+      "Enchant"
+    ],
+    "oracle_text": "Enchant creature\nEnchanted creature can't attack or block.\n{5}, Sacrifice this Aura: Exile enchanted creature. You create a 1/1 black Ninja creature token. Activate only as a sorcery."
+  },
+  "Utrom Scientists": {
+    "arena_id": "",
+    "name": "Utrom Scientists",
+    "cmc": 3,
+    "mana_cost": "{2}{U}",
+    "types": [
+      "Creature",
+      "Artifact"
+    ],
+    "subtypes": [
+      "Utrom",
+      "Robot",
+      "Scientist"
+    ],
+    "colors": [
+      "U"
+    ],
+    "color_identity": [
+      "U"
+    ],
+    "rarity": "Common",
+    "image": [
+      "https://cards.scryfall.io/large/front/6/d/6da89625-5278-49d4-813b-a1a631f114f5.jpg?1771502610"
+    ],
+    "keywords": [],
+    "oracle_text": "When this creature enters, tap up to one target creature and put a stun counter on it. (If a permanent with a stun counter would become untapped, remove one from it instead.)"
+  },
+  "Venus, Torn Between Worlds": {
+    "arena_id": "",
+    "name": "Venus, Torn Between Worlds",
+    "cmc": 5,
+    "mana_cost": "{4}{G}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Mutant",
+      "Frog",
+      "Turtle"
+    ],
+    "colors": [
+      "G"
+    ],
+    "color_identity": [
+      "G",
+      "U"
+    ],
+    "rarity": "Uncommon",
+    "image": [
+      "https://cards.scryfall.io/large/front/f/c/fcb59b16-3d76-478e-9306-969dd2cb1b5a.jpg?1771586980"
+    ],
+    "keywords": [],
+    "oracle_text": "Whenever Venus is dealt damage, put that many +1/+1 counters on her. (She must survive the damage to get the counters.)\nWhenever a creature you control with a counter on it deals combat damage to a player, you may pay {U}. If you do, draw a card."
+  },
+  "Weather Maker": {
+    "arena_id": "",
+    "name": "Weather Maker",
+    "cmc": 3,
+    "mana_cost": "{3}",
+    "types": [
+      "Artifact"
+    ],
+    "subtypes": [],
+    "colors": [],
+    "color_identity": [],
+    "rarity": "Rare",
+    "image": [
+      "https://cards.scryfall.io/large/front/a/a/aaba62c1-760b-491b-8047-869bb1d3f67e.jpg?1769006491"
+    ],
+    "keywords": [
+      "Landfall"
+    ],
+    "oracle_text": "Landfall \u2014 Whenever a land you control enters, put a charge counter on this artifact.\n{T}: Add one mana of any color.\n{T}, Remove two charge counters from this artifact: Add {C}{C}.\n{T}, Remove three charge counters from this artifact: It deals 3 damage to any target."
+  },
+  "West Wind Avatar": {
+    "arena_id": "",
+    "name": "West Wind Avatar",
+    "cmc": 7,
+    "mana_cost": "{5}{G}{G}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Cat",
+      "Spirit",
+      "Avatar"
+    ],
+    "colors": [
+      "G"
+    ],
+    "color_identity": [
+      "G"
+    ],
+    "rarity": "Uncommon",
+    "image": [
+      "https://cards.scryfall.io/large/front/f/4/f4b8f7e6-9bff-430b-b2f5-4308d57d1194.jpg?1771586987"
+    ],
+    "keywords": [
+      "Disappear",
+      "Trample"
+    ],
+    "oracle_text": "Trample\nWhenever this creature enters or attacks, you may sacrifice a token or a land. If you do, you gain 3 life.\nDisappear \u2014 At the beginning of your end step, if a permanent left the battlefield under your control this turn, draw a card."
+  },
+  "Wingnut, Bat on the Belfry": {
+    "arena_id": "",
+    "name": "Wingnut, Bat on the Belfry",
+    "cmc": 2,
+    "mana_cost": "{1}{R}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Bat",
+      "Mutant"
+    ],
+    "colors": [
+      "R"
+    ],
+    "color_identity": [
+      "R"
+    ],
+    "rarity": "Uncommon",
+    "image": [
+      "https://cards.scryfall.io/large/front/4/0/40b9b1d0-b7d1-473e-b6a9-a29d527c2f35.jpg?1771502679"
+    ],
+    "keywords": [
+      "Alliance",
+      "Menace"
+    ],
+    "oracle_text": "Alliance \u2014 Whenever another creature you control enters, Wingnut gains your choice of flying, menace, or haste until end of turn.\nWhenever Wingnut attacks, each other attacking creature gets +1/+0 until end of turn."
+  },
+  "Zog, Triceraton Castaway": {
+    "arena_id": "",
+    "name": "Zog, Triceraton Castaway",
+    "cmc": 5,
+    "mana_cost": "{4}{R}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Dinosaur",
+      "Soldier"
+    ],
+    "colors": [
+      "R"
+    ],
+    "color_identity": [
+      "R"
+    ],
+    "rarity": "Common",
+    "image": [
+      "https://cards.scryfall.io/large/front/a/8/a83a70ba-448e-45f3-b23b-6f38af54811f.jpg?1771502686"
+    ],
+    "keywords": [
+      "Mountaincycling",
+      "Reach",
+      "Landcycling",
+      "Trample",
+      "Typecycling",
+      "Cycling"
+    ],
+    "oracle_text": "Reach, trample\nWhen Zog enters, target creature can't block this turn.\nMountaincycling {2} ({2}, Discard this card: Search your library for a Mountain card, reveal it, put it into your hand, then shuffle.)"
+  },
+  "Zoo Escapees": {
+    "arena_id": "",
+    "name": "Zoo Escapees",
+    "cmc": 2,
+    "mana_cost": "{1}{G}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Boar",
+      "Rhino"
+    ],
+    "colors": [
+      "G"
+    ],
+    "color_identity": [
+      "G"
+    ],
+    "rarity": "Common",
+    "image": [
+      "https://cards.scryfall.io/large/front/f/5/f57ba8ff-2f8c-4ca1-9b13-42a7cc213e99.jpg?1771502750"
+    ],
+    "keywords": [],
+    "oracle_text": "When this creature leaves the battlefield, create a Mutagen token. (It's an artifact with \"{1}, {T}, Sacrifice this token: Put a +1/+1 counter on target creature. Activate only as a sorcery.\")"
+  }
+}
