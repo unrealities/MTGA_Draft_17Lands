@@ -710,8 +710,8 @@ class ModernTreeview(ttk.Treeview):
             self.heading(i, text=display_text)
             self.column(
                 i,
-                width=Theme.scaled_val(140) if i == "name" else Theme.scaled_val(50),
-                minwidth=Theme.scaled_val(70) if i == "name" else Theme.scaled_val(30),
+                width=Theme.scaled_val(160) if i == "name" else Theme.scaled_val(50),
+                minwidth=Theme.scaled_val(120) if i == "name" else Theme.scaled_val(30),
                 stretch=True,
                 anchor=tkinter.W if i == "name" else tkinter.CENTER,
             )
@@ -1041,7 +1041,7 @@ class DynamicTreeviewManager(ttk.Frame):
 
         self.rowconfigure(0, weight=1)
         self.columnconfigure(0, weight=1)
-        self.columnconfigure(1, minsize=Theme.scaled_val(16), weight=0)
+        self.columnconfigure(1, weight=0)
 
         self._scrollbar = AutoScrollbar(
             self, orient="vertical", command=self.tree.yview
@@ -1050,6 +1050,14 @@ class DynamicTreeviewManager(ttk.Frame):
 
         self.tree.grid(row=0, column=0, sticky="nsew")
         self._scrollbar.grid(row=0, column=1, sticky="ns")
+
+        # Dynamically lock the column width to the scrollbar's exact size to prevent resizing loops
+        def _sync_column_width(e):
+            req = self._scrollbar.winfo_reqwidth()
+            if req > 1:
+                self.columnconfigure(1, minsize=req)
+
+        self._scrollbar.bind("<Configure>", _sync_column_width, add="+")
 
         if not self.static_columns:
             self.tree.bind("<Button-3>", self._show_context_menu, add="+")
