@@ -60,12 +60,12 @@ class TestAppOrchestrator:
     def ui_patches(self):
         """Standard set of patches for DraftApp UI sub-components."""
         return [
-            patch("src.ui.app.DashboardFrame", side_effect=MockWidget),
-            patch("src.ui.app.TakenCardsPanel", side_effect=MockWidget),
-            patch("src.ui.app.SuggestDeckPanel", side_effect=MockWidget),
-            patch("src.ui.app.ComparePanel", side_effect=MockWidget),
-            patch("src.ui.app.DownloadWindow", side_effect=MockWidget),
-            patch("src.ui.app.TierListWindow", side_effect=MockWidget),
+            patch("src.ui.app_layout.DashboardFrame", side_effect=MockWidget),
+            patch("src.ui.app_layout.TakenCardsPanel", side_effect=MockWidget),
+            patch("src.ui.app_layout.SuggestDeckPanel", side_effect=MockWidget),
+            patch("src.ui.app_layout.ComparePanel", side_effect=MockWidget),
+            patch("src.ui.app_layout.DownloadWindow", side_effect=MockWidget),
+            patch("src.ui.app_layout.TierListWindow", side_effect=MockWidget),
             patch("src.ui.app.Notifications"),
             # CRITICAL: Prevent the infinite update loop from scheduling itself
             patch("src.ui.app.DraftApp._schedule_update"),
