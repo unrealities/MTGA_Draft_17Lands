@@ -21,6 +21,22 @@ def _safe_setlocale(category, loc=None):
 locale.setlocale = _safe_setlocale
 
 import ttkbootstrap as ttk
+from ttkbootstrap.localization import msgs
+
+# Intercept TclErrors thrown by ttkbootstrap's localization engine on systems with outdated/missing msgcat Tcl packages.
+# This prevents a fatal crash on startup (e.g., invalid command name "::msgcat::mcmset") and allows the app to launch normally.
+_orig_initialize_localities = msgs.initialize_localities
+
+
+def _safe_initialize_localities(*args, **kwargs):
+    try:
+        _orig_initialize_localities(*args, **kwargs)
+    except Exception:
+        pass
+
+
+msgs.initialize_localities = _safe_initialize_localities
+
 import argparse
 import os
 import sys
