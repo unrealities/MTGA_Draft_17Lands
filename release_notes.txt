@@ -1,3 +1,6 @@
+===================== RELEASE NOTES 4.16 =====================
+* [TODO]: Add release notes here
+
 ===================== RELEASE NOTES 4.15 =====================
 * unrealities: [Major Feature] Mana Base Optimization: The "Auto-Lands" and AI Deck Optimizer now actively simulate dozens of mathematical land permutations instead of relying on static heuristics
 * unrealities: [Alpha Feature] Added a workspace specifically designed for Sealed deckbuilding. Features an interactive visual drag-and-drop mode, detailed list views.
