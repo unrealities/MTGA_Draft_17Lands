@@ -65,3 +65,86 @@ def test_retrieve_arena_directory():
             with patch("sys.platform", "win32"):
                 res = retrieve_arena_directory("log.txt")
                 assert res == "C:/Program Files/Wizards of the Coast/MTGA/MTGA_Data"
+
+
+@patch("src.file_extractor.FileExtractor.export_card_data", return_value="output.json")
+@patch("src.file_extractor.FileExtractor._inject_community_tags", return_value=[])
+@patch(
+    "src.file_extractor.FileExtractor._retrieve_local_arena_data",
+    return_value=(True, "Success", 1024),
+)
+@patch("src.file_extractor.Seventeenlands.download_set_data")
+def test_download_card_data_success_pipeline(
+    mock_17l, mock_local_data, mock_tags, mock_export
+):
+    """Verify the entire file extractor pipeline processes successfully when components align."""
+    extractor = FileExtractor(None, MagicMock(), MagicMock(), MagicMock())
+    extractor.selected_sets = MagicMock(
+        seventeenlands=["OTJ"], arena=["OTJ"], set_code="OTJ"
+    )
+    extractor.draft = "PremierDraft"
+    extractor.start_date = "2024-01-01"
+    extractor.end_date = "2024-02-01"
+
+    # Mock local arena cards
+    extractor.card_dict = {
+        "123": {"name": "Lightning Bolt", "set": "OTJ"},
+        "999": {
+            "name": "Basic Plains",
+            "set": "OTJ",
+        },  # Should trigger fallback initialization
+    }
+
+    # Mock 17Lands response
+    mock_17l.return_value = {
+        "Lightning Bolt": {
+            "deck_colors": {"All Decks": {"gihwr": 60.0}},
+            "image": ["img_url"],
+        }
+    }
+
+    # Force a color target
+    extractor.combined_data["color_ratings"] = {"All Decks": 55.0}
+
+    success, msg, size = extractor.download_card_data(0)
+
+    assert success is True
+    assert "Download Successful" in msg
+    assert "123" in extractor.combined_data["card_ratings"]
+    assert (
+        extractor.combined_data["card_ratings"]["123"]["deck_colors"]["All Decks"][
+            "gihwr"
+        ]
+        == 60.0
+    )
+
+
+@patch(
+    "src.file_extractor.FileExtractor._retrieve_local_arena_data",
+    return_value=(True, "Success", 1024),
+)
+@patch("src.file_extractor.Seventeenlands.download_set_data")
+def test_download_card_data_api_failure_graceful_fallback(mock_17l, mock_local_data):
+    """Verify that a 404 from 17Lands (e.g. Day 1 release) still saves the local card data for tooltips."""
+    extractor = FileExtractor(None, MagicMock(), MagicMock(), MagicMock())
+    extractor.selected_sets = MagicMock(
+        seventeenlands=["OTJ"], arena=["OTJ"], set_code="OTJ"
+    )
+
+    extractor.card_dict = {"123": {"name": "New Card", "set": "OTJ"}}
+
+    # Simulate 17Lands not having data yet
+    mock_17l.side_effect = Exception("HTTP 404 Not Found")
+
+    # We must patch export so it doesn't try to write to a real directory
+    with patch(
+        "src.file_extractor.FileExtractor.export_card_data", return_value="output.json"
+    ):
+        success, msg, size = extractor.download_card_data(0)
+
+    # App MUST return True so it saves the JSON. The UI needs this JSON for card text/tooltips!
+    assert success is True
+    assert "17Lands data not yet available" in msg
+    assert "123" in extractor.combined_data["card_ratings"]
+    # Verify card was initialized safely
+    assert "All Decks" in extractor.combined_data["card_ratings"]["123"]["deck_colors"]

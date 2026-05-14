@@ -194,3 +194,42 @@ class TestDashboardFrame:
             dashboard.update_stats([])
         except Exception as e:
             pytest.fail(f"DashboardFrame crashed on empty data: {e}")
+
+    def test_curve_plot_all_zeroes(self, root, mock_config):
+        """Verify the curve plot handles a completely empty deck without dividing by zero."""
+        dashboard = DashboardFrame(
+            root, mock_config, MagicMock(), MagicMock(), MagicMock()
+        )
+
+        empty_distribution = [0, 0, 0, 0, 0, 0, 0]
+
+        try:
+            dashboard.update_stats(empty_distribution)
+        except ZeroDivisionError:
+            pytest.fail("ManaCurvePlot crashed on empty distribution.")
+
+    def test_type_pie_chart_all_zeroes(self, root, mock_config):
+        """Verify the type pie chart handles a completely empty deck without dividing by zero."""
+        dashboard = DashboardFrame(
+            root, mock_config, MagicMock(), MagicMock(), MagicMock()
+        )
+
+        # Emulate no cards taken
+        try:
+            dashboard.update_deck_balance([])
+        except ZeroDivisionError:
+            pytest.fail("TypePieChart crashed on empty deck.")
+
+    def test_sidebar_drag_persistence(self, root, mock_config):
+        """Verify dragging the sidebar sash saves the position to the configuration."""
+        dashboard = DashboardFrame(
+            root, mock_config, MagicMock(), MagicMock(), MagicMock()
+        )
+
+        # Mock sashpos to return 500 since headless Tkinter hasn't drawn the window to calculate real geometry
+        dashboard.h_splitter.sashpos = MagicMock(return_value=500)
+
+        # Trigger the event
+        dashboard._on_sash_drag_end(MagicMock())
+
+        assert mock_config.settings.dashboard_sash == 500
