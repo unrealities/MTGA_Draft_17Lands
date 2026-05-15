@@ -180,3 +180,62 @@ def test_extract_scryfall_adventure_and_supertypes(mock_client):
     assert "Creature" in primary_card["types"]
     assert "Instant" in primary_card["types"]
     assert "Adventure" in primary_card["subtypes"]
+
+
+def test_extract_scryfall_by_names(mock_client):
+    """Verify bulk fetching bonus sheet cards resolves correctly."""
+    from server.extract import extract_scryfall_by_names
+
+    mock_response = MagicMock()
+    mock_response.status_code = 200
+    mock_response.json.return_value = {
+        "data": [
+            {
+                "name": "Crackle with Power",
+                "arena_id": 888,
+                "cmc": 3,
+                "type_line": "Sorcery",
+                "mana_cost": "{X}{X}{X}{R}",
+                "colors": ["R"],
+            }
+        ],
+        "next_page": None,
+    }
+    mock_client.respectful_get.return_value = mock_response
+
+    names = ["Crackle with Power", "Missing Card"]
+    cards = extract_scryfall_by_names(mock_client, names)
+
+    assert "Crackle with Power" in cards
+
+    c = cards["Crackle with Power"]
+    assert c["arena_ids"] == [888]
+    assert c["cmc"] == 3
+    assert "Sorcery" in c["types"]
+    assert "R" in c["colors"]
+
+
+def test_get_historical_start_dates_success(mock_client):
+    """Verify we can fetch the 17Lands filter file to determine when a set truly started logging data."""
+    from server.extract import get_historical_start_dates
+
+    mock_response = MagicMock()
+    mock_response.json.return_value = {
+        "start_dates": {"M10": "2019-01-01T00:00:00Z", "OTJ": "2024-04-16T15:00:00Z"}
+    }
+    mock_client.respectful_get.return_value = mock_response
+
+    dates = get_historical_start_dates(mock_client)
+
+    assert "M10" in dates
+    assert dates["OTJ"] == "2024-04-16T15:00:00Z"
+
+
+def test_get_historical_start_dates_failure(mock_client):
+    """Verify network crashes safely return an empty dictionary to prevent pipeline halting."""
+    from server.extract import get_historical_start_dates
+
+    mock_client.respectful_get.side_effect = Exception("HTTP 500 Server Error")
+
+    dates = get_historical_start_dates(mock_client)
+    assert dates == {}  # Safe fallback

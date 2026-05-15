@@ -419,3 +419,48 @@ def test_draft_state_recovery(function_scanner):
     assert new_scanner.current_pick == 1
     assert new_scanner.current_draft_id == "87b408d1-43e0-4fb5-8c74-a1257fde087c"
     assert len(new_scanner.pack_cards[0]) == len(function_scanner.pack_cards[0])
+
+
+def test_cards_per_pick_logic(session_scanner):
+    """Verify that Pick-Two events correctly identify they allow 2 cards per pick."""
+    from src import constants
+
+    # Regular Draft
+    session_scanner.draft_type = constants.LIMITED_TYPE_DRAFT_PREMIER_V2
+    assert session_scanner.cards_per_pick == 1
+
+    # Pick Two Draft
+    session_scanner.draft_type = constants.LIMITED_TYPE_DRAFT_PICK_TWO
+    assert session_scanner.cards_per_pick == 2
+
+
+def test_process_pack_data_duplicate_protection(session_scanner):
+    """Verify that feeding the exact same pack data twice is ignored."""
+    session_scanner.clear_draft(True)
+    session_scanner.draft_type = 2
+    session_scanner.number_of_players = 8
+
+    # First time -> should return True (New high watermark)
+    res1 = session_scanner._process_pack_data(pack=1, pick=1, pack_cards=["1", "2"])
+    assert res1 is True
+
+    # Second time with EXACT same cards -> should return False (Duplicate)
+    res2 = session_scanner._process_pack_data(pack=1, pick=1, pack_cards=["1", "2"])
+    assert res2 is False
+
+
+def test_log_suspend(session_scanner):
+    """Verify that log suspension changes the internal logger level to critical."""
+    import logging
+
+    # Enable logging first
+    session_scanner.log_enable(True)
+    assert session_scanner.draft_log.level == logging.INFO
+
+    # Suspend it
+    session_scanner.log_suspend(True)
+    assert session_scanner.draft_log.level == logging.CRITICAL
+
+    # Unsuspend it
+    session_scanner.log_suspend(False)
+    assert session_scanner.draft_log.level == logging.INFO
