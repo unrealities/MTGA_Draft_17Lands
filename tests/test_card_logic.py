@@ -7,7 +7,7 @@ from src.configuration import Configuration, Settings
 from src.card_logic import CardResult
 from src.dataset import Dataset
 from src.tier_list import TierList, Meta, Rating
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 from src.card_logic import export_draft_to_csv, export_draft_to_json
 from src.constants import BASE_DIR
 
@@ -208,3 +208,31 @@ def test_export_draft_to_csv_edge_cases():
     # 3. Stats should be empty strings/zeros, not crash
     # IWD is the last column (Index 10)
     assert row[10].strip() == ""
+
+
+def test_get_functional_cmc_mechanics():
+    """Verify the functional CMC parser handles Disguise, Spree, Cost Reduction, and missing data safely."""
+    from src.card_logic import get_functional_cmc
+
+    # 1. Disguise / Morph (Should be max 3)
+    assert get_functional_cmc({"cmc": 5, "oracle_text": "disguise {2}{G}"}) == 3
+    assert get_functional_cmc({"cmc": 4, "oracle_text": "face down as a 2/2"}) == 3
+
+    # 2. General Cost Reduction
+    assert (
+        get_functional_cmc(
+            {"cmc": 8, "oracle_text": "this spell costs {1} and {U} less"}
+        )
+        == 6
+    )
+    assert get_functional_cmc({"cmc": 5, "oracle_text": "costs 2 less to cast"}) == 3
+
+    # 3. New Mechanics (Spree, Blitz, Cleave)
+    assert (
+        get_functional_cmc({"cmc": 6, "oracle_text": "spree"}) == 4
+    )  # Reduced by 2 as a baseline for alt-casting
+    assert get_functional_cmc({"cmc": 5, "oracle_text": "blitz {1}{R}"}) == 3
+
+    # 4. Empty/Missing Data
+    assert get_functional_cmc({}) == 0
+    assert get_functional_cmc({"cmc": 2, "oracle_text": None}) == 2

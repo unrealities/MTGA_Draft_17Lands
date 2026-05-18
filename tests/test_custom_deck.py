@@ -212,3 +212,76 @@ class TestCustomDeckPanel:
 
         # Verify Curve calculation: ( (4*2) + (1*1) ) / 3 spells = 9 / 3 = 3.0
         assert "Avg CMC: 3.00" in combined_text
+
+        @patch("src.ui.windows.custom_deck.requests.get")
+        @patch("src.ui.windows.custom_deck.Image.open")
+        @patch("src.ui.windows.custom_deck.ImageTk.PhotoImage")
+        def test_fetch_and_show_image_network(self, mock_photo, mock_img_open, mock_get, root):
+            """Verify the background thread downloads images and attaches them to the canvas."""
+            app_context = MagicMock()
+            panel = CustomDeckPanel(root, MagicMock(), Configuration(), app_context)
+            
+            # Fake network response
+            mock_resp = MagicMock()
+            mock_resp.content = b"fake_image_data"
+            mock_get.return_value = mock_resp
+            
+            # Override executor to run synchronously
+            panel.image_executor.submit = lambda fn, *args, **kwargs: fn(*args, **kwargs)
+            
+            mock_frame = tkinter.Frame(root)
+            card = {"name": "Lightning Bolt", "image": ["https://mock.url/bolt.jpg"]}
+            
+            # Prevent file I/O errors by mocking the open function and os.path.exists
+            with patch("builtins.open", MagicMock()), patch("os.path.exists", return_value=False), patch("os.makedirs"):
+                panel._fetch_and_show_image(card, mock_frame, 100, 100)
+                
+                # Allow Tkinter `after` calls to process on the main thread
+                root.update()
+                
+                mock_get.assert_called_once()
+                mock_img_open.assert_called_once()
+                mock_photo.assert_called_once()
+                
+                # Verify the image label was added to the frame
+                assert len(mock_frame.winfo_children()) == 1
+
+        def test_drag_and_drop_list_bindings(self, root):
+            """Verify right-click and double-click handlers on the treeviews."""
+            app_context = MagicMock()
+            panel = CustomDeckPanel(root, MagicMock(), Configuration(), app_context)
+            
+            # Seed deck
+            panel.deck_list = [{"name": "Test Card", "count": 1}]
+            panel.sb_list = [{"name": "SB Card", "count": 1}]
+            panel._update_tables()
+            
+            # Mock tree identification to bypass Tkinter rendering boundaries
+            panel.deck_manager.tree.identify_row = MagicMock(return_value="0")
+            panel.deck_manager.tree.item = MagicMock(return_value={"text": "Test Card"})
+            
+            # 1. Double Click moves card to Sideboard
+            with patch.object(panel, "_move_card") as mock_move:
+                panel._on_double_click(MagicMock(y=10), panel.deck_manager.tree, is_sb=False)
+                mock_move.assert_called_with(panel.deck_list, panel.sb_list, "Test Card")
+                
+            # 2. Right Click opens tooltip
+            with patch("src.ui.windows.custom_deck.CardToolTip.create") as mock_tooltip:
+                panel._on_right_click(MagicMock(x=10, y=10), panel.deck_manager.tree, is_sb=False)
+                mock_tooltip.assert_called_once()
+                
+        def test_copy_to_clipboard(self, root):
+            """Verify the copy button successfully formats the deck and pushes to the OS clipboard."""
+            app_context = MagicMock()
+            panel = CustomDeckPanel(root, MagicMock(), Configuration(), app_context)
+            
+            panel.deck_list = [{"name": "Lightning Bolt", "count": 4}]
+            panel.sb_list = [{"name": "Mountain", "count": 1}]
+            
+            panel._copy_to_clipboard()
+            
+            # Read clipboard
+            clipboard_data = root.clipboard_get()
+            assert "4 Lightning Bolt" in clipboard_data
+            assert "Sideboard" in clipboard_data
+            assert "1 Mountain" in clipboard_data

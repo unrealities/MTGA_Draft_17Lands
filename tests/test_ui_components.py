@@ -6,6 +6,7 @@ Verified: Sorting Toggle, Coordinate Safety, Alphabetical Wrap-around, and Zebra
 
 import pytest
 import tkinter
+from unittest.mock import patch, MagicMock
 from src.ui.components import (
     AutocompleteEntry,
     ModernTreeview,
@@ -153,3 +154,117 @@ class TestUIComponents:
 
         entry._on_key_release(KeyEvent())
         assert not entry.hits
+
+    @patch("src.configuration.write_configuration")
+    def test_dynamic_treeview_column_management(self, mock_write, root):
+        """Verify the DynamicTreeviewManager can add, remove, and reset columns."""
+        from src.ui.components import DynamicTreeviewManager
+        from src.configuration import Configuration
+
+        config = Configuration()
+        config.settings.column_configs["test_view"] = ["name", "gihwr"]
+
+        manager = DynamicTreeviewManager(root, "test_view", config, lambda: None)
+
+        # 1. Test Add Column
+        manager._add_column("alsa")
+        assert "alsa" in manager.active_fields
+        assert "alsa" in config.settings.column_configs["test_view"]
+        mock_write.assert_called()
+
+        # 2. Test Remove Column
+        manager._remove_column_by_name("gihwr")
+        assert "gihwr" not in manager.active_fields
+        assert "gihwr" not in config.settings.column_configs["test_view"]
+
+        # 3. Test Reset Defaults
+        manager._reset_defaults()
+        assert manager.active_fields == ["name", "value", "gihwr"]
+
+    def test_collapsible_frame_toggle(self, root):
+        """Verify the CollapsibleFrame correctly expands and collapses its content."""
+        from src.ui.components import CollapsibleFrame
+        from src.configuration import Configuration
+
+        config = Configuration()
+        frame = CollapsibleFrame(
+            root,
+            title="TEST",
+            expanded=True,
+            configuration=config,
+            setting_key="test_panel",
+        )
+
+        # Starts expanded
+        assert frame.expanded is True
+        assert frame.content_frame.winfo_manager() != ""
+
+        # Toggle to hide
+        frame.toggle()
+        assert frame.expanded is False
+        assert (
+            frame.content_frame.winfo_manager() == ""
+        )  # pack_forget() removes the geometry manager
+        assert config.settings.collapsible_states["test_panel"] is False
+
+    def test_card_pile_rendering(self, root):
+        """Verify the visual CardPile successfully parses card objects into UI rectangles."""
+        from src.ui.components import CardPile
+        from unittest.mock import MagicMock
+
+        mock_app = MagicMock()
+        pile = CardPile(root, "CMC 2", mock_app)
+
+        card_data = {
+            "name": "Grizzly Bears",
+            "count": 2,
+            "mana_cost": "{1}{G}",
+            "deck_colors": {"All Decks": {"gihwr": 55.0}},
+        }
+
+        # Call the render function
+        pile.add_card(card_data)
+
+        # Verify the container was populated with the Tkinter Frame for the card
+        children = pile.container.winfo_children()
+        assert len(children) == 1
+
+        # Drill into the card frame to verify the text was rendered
+        card_frame = children[0]
+        labels = [
+            w for w in card_frame.winfo_children() if isinstance(w, tkinter.Label)
+        ]
+        assert len(labels) == 1
+        assert "2x Grizzly Bears" in labels[0].cget("text")
+
+    @patch("src.ui.components.CardToolTip._reposition")
+    def test_card_tooltip_instantiation(self, mock_repo, root):
+        """Verify the complex CardToolTip overlay spawns without throwing layout errors."""
+        from src.ui.components import CardToolTip
+
+        # Ensure we don't accidentally block it by passing a Basic Land
+        card_data = {
+            "name": "Lightning Bolt",
+            "rarity": "uncommon",
+            "types": ["Instant"],
+            "deck_colors": {"All Decks": {"gihwr": 62.0, "iwd": 5.0, "alsa": 2.1}},
+        }
+
+        try:
+            # We must use scale=1.0 to ensure layout math holds
+            CardToolTip.create(root, card_data, images_enabled=False, scale=1.0)
+
+            tooltip = CardToolTip._active_tooltip
+            assert tooltip is not None
+            assert tooltip.winfo_exists()
+
+            # Verify the data was mapped
+            assert "Lightning Bolt" in tooltip.winfo_children()[0].winfo_children()[
+                0
+            ].cget("text")
+
+            # Cleanup
+            tooltip._close()
+            assert not tooltip.winfo_exists()
+        except Exception as e:
+            pytest.fail(f"CardToolTip crashed on initialization: {e}")
