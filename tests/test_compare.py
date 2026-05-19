@@ -118,3 +118,19 @@ class TestComparePanel:
             assert len(panel.compare_list) == 0
         except Exception as e:
             pytest.fail(f"ComparePanel crashed on invalid card search: {e}")
+
+    @patch("src.ui.windows.compare.CardToolTip.create")
+    def test_on_selection(self, mock_tooltip, root, mock_draft):
+        """Verify clicking a card in the table launches the tooltip overlay."""
+        panel = ComparePanel(root, mock_draft, Configuration())
+        panel.entry_card.insert(0, "Lightning Bolt")
+        panel._add_card()
+
+        panel.table.identify_region = MagicMock(return_value="cell")
+        panel.table.selection = MagicMock(return_value=["item1"])
+        panel.table.item = MagicMock(return_value={"text": "Lightning Bolt"})
+
+        panel._on_selection(MagicMock(x=10, y=10))
+
+        mock_tooltip.assert_called_once()
+        assert mock_tooltip.call_args[0][1]["name"] == "Lightning Bolt"

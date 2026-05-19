@@ -66,6 +66,49 @@ def test_check_live_log_ignores_static_file(mock_exists, mock_getsize, orchestra
         mock_open.assert_not_called()  # No file I/O performed
 
 
+def test_orchestrator_flags(orchestrator):
+    """Verify the flag setters are working properly."""
+    assert not orchestrator._force_full_scan_event.is_set()
+    orchestrator.trigger_full_scan()
+    assert orchestrator._force_full_scan_event.is_set()
+
+    assert not orchestrator._stop_event.is_set()
+    orchestrator.stop()
+    assert orchestrator._stop_event.is_set()
+
+    assert not orchestrator._force_math_event.is_set()
+    orchestrator.request_math_update()
+    assert orchestrator._force_math_event.is_set()
+
+
+@patch("src.ui.orchestrator.time.sleep", return_value=None)
+def test_orchestrator_run_loop(mock_sleep, orchestrator):
+    """Verify the run loop correctly consumes events and file swaps."""
+    # Trigger the flags
+    orchestrator.request_math_update()
+    orchestrator.trigger_full_scan()
+
+    # Queue a file swap
+    orchestrator.set_file_and_scan("fake.log")
+
+    # Prevent actually reading the hard drive
+    orchestrator.scanner.set_arena_file = MagicMock()
+    orchestrator.scanner.draft_start_search = MagicMock(return_value=False)
+    orchestrator.sync_dataset_to_event = MagicMock()
+
+    # Stop loop after one iteration by changing the return value of is_set
+    orchestrator._stop_event.is_set = MagicMock(side_effect=[False, True])
+
+    orchestrator.run()
+
+    # Assertions
+    orchestrator.scanner.set_arena_file.assert_called_with("fake.log")
+    # Events should be cleared after the loop executes
+    assert not orchestrator._force_full_scan_event.is_set()
+    assert not orchestrator._force_math_event.is_set()
+    assert orchestrator.update_queue.qsize() > 0
+
+
 def test_file_swap_queue_processing(orchestrator):
     """Verify that thread-safe requests from the UI to read historical logs are processed."""
 
@@ -92,3 +135,46 @@ def test_file_swap_queue_processing(orchestrator):
 
     # Verify scanner was updated
     orchestrator.scanner.set_arena_file.assert_called_with("historical_draft_2.log")
+
+
+def test_orchestrator_flags(orchestrator):
+    """Verify the flag setters are working properly."""
+    assert not orchestrator._force_full_scan_event.is_set()
+    orchestrator.trigger_full_scan()
+    assert orchestrator._force_full_scan_event.is_set()
+
+    assert not orchestrator._stop_event.is_set()
+    orchestrator.stop()
+    assert orchestrator._stop_event.is_set()
+
+    assert not orchestrator._force_math_event.is_set()
+    orchestrator.request_math_update()
+    assert orchestrator._force_math_event.is_set()
+
+
+@patch("src.ui.orchestrator.time.sleep", return_value=None)
+def test_orchestrator_run_loop(mock_sleep, orchestrator):
+    """Verify the run loop correctly consumes events and file swaps."""
+    # Trigger the flags
+    orchestrator.request_math_update()
+    orchestrator.trigger_full_scan()
+
+    # Queue a file swap
+    orchestrator.set_file_and_scan("fake.log")
+
+    # Prevent actually reading the hard drive
+    orchestrator.scanner.set_arena_file = MagicMock()
+    orchestrator.scanner.draft_start_search = MagicMock(return_value=False)
+    orchestrator.sync_dataset_to_event = MagicMock()
+
+    # Stop loop after one iteration by changing the return value of is_set
+    orchestrator._stop_event.is_set = MagicMock(side_effect=[False, True])
+
+    orchestrator.run()
+
+    # Assertions
+    orchestrator.scanner.set_arena_file.assert_called_with("fake.log")
+    # Events should be cleared after the loop executes
+    assert not orchestrator._force_full_scan_event.is_set()
+    assert not orchestrator._force_math_event.is_set()
+    assert orchestrator.update_queue.qsize() > 0

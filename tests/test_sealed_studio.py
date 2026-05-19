@@ -115,6 +115,149 @@ class TestSealedStudio:
             assert "Shock" not in names
             assert "Grizzly Bears" in names  # Creatures still checked
 
+    def test_list_mode_drag_and_drop(self, root, mock_app_context, mock_pool):
+        with patch("src.ui.windows.sealed_studio.ThreadPoolExecutor"):
+            studio = SealedStudioWindow(
+                root, mock_app_context, Configuration(), mock_pool, MagicMock()
+            )
+
+            # Start drag
+            studio._drag_data = {"name": "Shock", "x": 10, "y": 10, "is_pool": True}
+
+            class MockEvent:
+                x_root = 100
+                y_root = 100
+
+            # Mock coordinate check
+            with patch.object(
+                studio.deck_manager, "winfo_rootx", return_value=50
+            ), patch.object(
+                studio.deck_manager, "winfo_rooty", return_value=50
+            ), patch.object(
+                studio.deck_manager, "winfo_width", return_value=200
+            ), patch.object(
+                studio.deck_manager, "winfo_height", return_value=200
+            ):
+
+                studio._on_list_drag_release(
+                    MockEvent(), studio.pool_manager.tree, is_pool=True
+                )
+
+            # Shock should be moved from pool to main
+            main, sb = studio.session.get_active_deck_lists()
+            assert any(c["name"] == "Shock" for c in main)
+            assert not any(c["name"] == "Shock" for c in sb)
+
+    def test_canvas_mode_double_click(self, root, mock_app_context, mock_pool):
+        with patch("src.ui.windows.sealed_studio.ThreadPoolExecutor"):
+            studio = SealedStudioWindow(
+                root, mock_app_context, Configuration(), mock_pool, MagicMock()
+            )
+
+            # Mock canvas identifying the card
+            studio.pool_canvas.find_withtag = MagicMock(return_value=[1])
+            studio.pool_canvas.gettags = MagicMock(return_value=("cardname_Shock",))
+
+            class MockEvent:
+                pass
+
+            studio._on_canvas_double_click(
+                MockEvent(), studio.pool_canvas, is_pool=True
+            )
+
+            main, sb = studio.session.get_active_deck_lists()
+            assert any(c["name"] == "Shock" for c in main)
+
+    def test_create_rename_delete_tabs(self, root, mock_app_context, mock_pool):
+        """Verify the Sealed Studio variants can be managed via Notebook headers."""
+        with patch("src.ui.windows.sealed_studio.ThreadPoolExecutor"):
+            studio = SealedStudioWindow(
+                root, mock_app_context, Configuration(), mock_pool, MagicMock()
+            )
+
+            # Create
+            with patch(
+                "src.ui.windows.sealed_studio.simpledialog.askstring",
+                return_value="New Deck",
+            ):
+                studio._create_new_tab()
+            assert "New Deck" in studio.session.variants
+
+            # Rename
+            with patch(
+                "src.ui.windows.sealed_studio.simpledialog.askstring",
+                return_value="Renamed Deck",
+            ):
+                studio._rename_tab()
+            assert "Renamed Deck" in studio.session.variants
+            assert "New Deck" not in studio.session.variants
+
+            # Delete
+            with patch("tkinter.messagebox.askyesno", return_value=True):
+                studio._delete_tab()
+            assert "Renamed Deck" not in studio.session.variants
+
+    def test_export_to_clipboard(self, root, mock_app_context, mock_pool):
+        """Verify export pulls from the active session variant."""
+        with patch("src.ui.windows.sealed_studio.ThreadPoolExecutor"):
+            studio = SealedStudioWindow(
+                root, mock_app_context, Configuration(), mock_pool, MagicMock()
+            )
+            # Main deck gets built with 5 Plains and 2 Bears in setup
+            studio._export_active_deck()
+            assert "Grizzly Bears" in root.clipboard_get()
+
+    @patch("src.ui.windows.sealed_studio.requests.post")
+    @patch("src.ui.windows.sealed_studio.open_file")
+    def test_export_to_sealeddeck(
+        self, mock_open_file, mock_post, root, mock_app_context, mock_pool
+    ):
+        """Verify pushing a deck to sealeddeck.tech and opening the browser."""
+        with patch("src.ui.windows.sealed_studio.ThreadPoolExecutor"):
+            studio = SealedStudioWindow(
+                root, mock_app_context, Configuration(), mock_pool, MagicMock()
+            )
+
+            # Mock successful API response
+            mock_response = MagicMock()
+            mock_response.status_code = 200
+            mock_response.json.return_value = {"url": "https://sealeddeck.tech/123"}
+            mock_post.return_value = mock_response
+
+            # Create a fake Thread class that executes the target synchronously
+            def sync_thread(target=None, *args, **kwargs):
+                mock_instance = MagicMock()
+                if target:
+                    # When .start() is called, execute the function synchronously
+                    mock_instance.start = lambda: target()
+                return mock_instance
+
+            # Patch the global threading module directly since the import happens inside the function
+            with patch("threading.Thread", side_effect=sync_thread):
+                studio._export_to_sealeddeck_tech()
+                root.update()
+
+            mock_open_file.assert_called_once_with("https://sealeddeck.tech/123")
+
+    def test_clear_and_add_all(self, root, mock_app_context, mock_pool):
+        """Verify Clear and Add All buttons bulk move cards between arrays."""
+        with patch("src.ui.windows.sealed_studio.ThreadPoolExecutor"):
+            studio = SealedStudioWindow(
+                root, mock_app_context, Configuration(), mock_pool, MagicMock()
+            )
+
+            # Clear Deck
+            studio._clear_deck()
+            main, sb = studio.session.get_active_deck_lists()
+            assert len(main) == 0
+            assert len(sb) > 0
+
+            # Add All
+            studio._add_all_to_deck()
+            main, sb = studio.session.get_active_deck_lists()
+            assert len(sb) == 0
+            assert len(main) > 0
+
     def test_add_basic_lands_ui(self, root, mock_app_context, mock_pool):
         """Verify the basic land buttons inject lands into the active variant."""
         with patch("src.ui.windows.sealed_studio.ThreadPoolExecutor"):

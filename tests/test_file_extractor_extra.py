@@ -38,6 +38,31 @@ def test_retrieve_17lands_data_fail():
                 assert result is False
 
 
+@patch(
+    "src.file_extractor.FileExtractor._retrieve_local_arena_data",
+    return_value=(True, "OK", 100),
+)
+@patch("src.file_extractor.FileExtractor.retrieve_17lands_data", return_value=True)
+@patch("src.file_extractor.FileExtractor._assemble_set")
+def test_download_expansion(mock_assemble, mock_17lands, mock_local):
+    from src.file_extractor import FileExtractor
+
+    extractor = FileExtractor(None, MagicMock(), MagicMock(), MagicMock())
+    extractor.selected_sets = MagicMock(seventeenlands=["M10"])
+    extractor.draft = "PremierDraft"
+    extractor.start_date = "2020-01-01"
+    extractor.end_date = "2020-02-01"
+    extractor.user_group = "All"
+
+    # We use patch on time.sleep to make the while loop execution instant
+    with patch("time.sleep"):
+        res, msg, size = extractor._download_expansion(0)
+
+    assert res is True
+    assert size == 100
+    mock_assemble.assert_called_once()
+
+
 def test_check_set_data():
     from src.file_extractor import check_set_data
 
