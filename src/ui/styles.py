@@ -173,7 +173,9 @@ class Theme:
                 native_engine = (
                     "aqua"
                     if sys.platform == "darwin"
-                    else "vista" if sys.platform == "win32" else "clam"
+                    else "vista"
+                    if sys.platform == "win32"
+                    else "clam"
                 )
                 try:
                     current = root.tk.call("ttk::style", "theme", "use")

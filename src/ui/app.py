@@ -96,8 +96,9 @@ class DraftApp:
         # 6. VIRTUAL EVENT BINDINGS
         self.root.bind(
             "<<ShowDataTab>>",
-            lambda e: self._ensure_tabs_visible()
-            or self.notebook.select(self.panel_data),
+            lambda e: (
+                self._ensure_tabs_visible() or self.notebook.select(self.panel_data)
+            ),
         )
 
         # 7. FINAL WINDOW PROTOCOL & METADATA

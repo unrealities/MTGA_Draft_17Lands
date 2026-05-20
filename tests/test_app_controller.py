@@ -17,7 +17,11 @@ class TestAppController:
         scanner.lock.acquire.return_value = True
         scanner.retrieve_current_limited_event.return_value = ("OTJ", "PremierDraft")
         scanner.retrieve_current_pack_and_pick.return_value = (1, 1)
-        scanner.retrieve_set_metrics.return_value = MagicMock()
+
+        mock_metrics = MagicMock()
+        mock_metrics.get_metrics.return_value = (55.0, 4.0)
+        scanner.retrieve_set_metrics.return_value = mock_metrics
+
         scanner.retrieve_tier_data.return_value = {}
         scanner.retrieve_taken_cards.return_value = []
         scanner.retrieve_current_pack_cards.return_value = []
@@ -84,6 +88,22 @@ class TestAppController:
 
         mock_app.notifications.check_dataset.assert_called_once()
         mock_thread.assert_called_once()
+
+    def test_on_dataset_update_clears_cache(self, mock_app):
+        """Verify loading a new dataset invalidates the mathematical cache."""
+        controller = AppController(mock_app)
+
+        mock_app.configuration.card_data.latest_dataset = "M10_Data.json"
+
+        with patch("os.path.exists", return_value=True):
+            with patch("src.card_logic.clear_deck_cache") as mock_clear:
+                with patch.object(controller, "refresh_ui_data") as mock_refresh:
+                    controller.on_dataset_update()
+
+                    # Should have reset the cache, requested math update, and triggered UI refresh
+                    mock_clear.assert_called_once()
+                    mock_app.orchestrator.request_math_update.assert_called_once()
+                    mock_refresh.assert_called_once()
 
     def test_refresh_ui_data_skips_if_locked(self, mock_app):
         """Verify the UI skips rendering if the background thread holds the scanner lock."""

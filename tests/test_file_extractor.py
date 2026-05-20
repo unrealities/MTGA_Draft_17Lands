@@ -210,6 +210,43 @@ def test_harvest_set_tags_cube_unpacking():
     assert len(errors) == 0, "Expected Cube errors list to be empty"
 
 
+def test_process_card_data(file_extractor):
+    """Verify _process_card_data correctly merges 17Lands stats into the card object."""
+    from src import constants
+
+    # Setup 17Lands parsed ratings
+    file_extractor.card_ratings = {
+        "Lightning Bolt": {
+            constants.DATA_SECTION_IMAGES: ["img.jpg"],
+            constants.DATA_SECTION_RATINGS: [
+                {
+                    "All Decks": {
+                        constants.DATA_FIELD_GIHWR: 60.0,
+                        constants.DATA_FIELD_ALSA: 2.0,
+                    }
+                },
+                {"UR": {constants.DATA_FIELD_GIHWR: 62.0}},
+            ],
+        }
+    }
+
+    # Local card object
+    card = {constants.DATA_FIELD_NAME: "Lightning Bolt", constants.DATA_FIELD_CMC: 1}
+
+    result = file_extractor._process_card_data(card)
+
+    assert result is True
+    assert card[constants.DATA_SECTION_IMAGES] == ["img.jpg"]
+    assert "All Decks" in card[constants.DATA_FIELD_DECK_COLORS]
+    assert (
+        card[constants.DATA_FIELD_DECK_COLORS]["All Decks"][constants.DATA_FIELD_GIHWR]
+        == 60.0
+    )
+    assert (
+        card[constants.DATA_FIELD_DECK_COLORS]["UR"][constants.DATA_FIELD_GIHWR] == 62.0
+    )
+
+
 def test_harvest_set_tags_cube_case_insensitivity():
     """
     Verify that the safety guard catches 'cube' regardless of casing.

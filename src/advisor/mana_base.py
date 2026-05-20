@@ -12,9 +12,10 @@ def calculate_dynamic_mana_base(spells, non_basic_lands, colors, forced_count=17
     if forced_count <= 0:
         return []
 
-    strict_pips, max_pip_in_single_card = {c: 0 for c in constants.CARD_COLORS}, {
-        c: 0 for c in constants.CARD_COLORS
-    }
+    strict_pips, max_pip_in_single_card = (
+        {c: 0 for c in constants.CARD_COLORS},
+        {c: 0 for c in constants.CARD_COLORS},
+    )
     lowest_cmc = {c: 99 for c in constants.CARD_COLORS}
     hybrid_pips = []
 
@@ -326,9 +327,10 @@ def select_useful_lands(pool, target_colors, metrics=None):
         if name in constants.BASIC_LANDS or "Land" not in types or "Basic" in types:
             continue
 
-        text, card_colors = str(
-            card.get("oracle_text", card.get("text", ""))
-        ).lower(), card.get("colors", [])
+        text, card_colors = (
+            str(card.get("oracle_text", card.get("text", ""))).lower(),
+            card.get("colors", []),
+        )
         is_universal = any(
             phrase in text for phrase in constants.FIXING_KEYWORDS
         ) or any(fn in name.lower() for fn in constants.FIXING_NAMES)

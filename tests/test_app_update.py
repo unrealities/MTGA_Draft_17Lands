@@ -148,9 +148,9 @@ def test_live_github_api_verification(app_update, valid_search_location_latest):
 
     # If these asserts fail, GitHub changed their API schema and broke the app updater
     assert app_update.version != "", "Live API schema changed! Could not parse version."
-    assert (
-        app_update.file_location != ""
-    ), "Live API schema changed! Could not parse download URL."
+    assert app_update.file_location != "", (
+        "Live API schema changed! Could not parse download URL."
+    )
     assert isinstance(float(app_update.version), float)
 
 

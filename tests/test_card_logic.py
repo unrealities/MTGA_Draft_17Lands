@@ -176,6 +176,24 @@ def test_export_draft_to_json():
     assert data[0]["Cards"][0]["Picked"] == True
 
 
+def test_card_result_empty_metrics(card_result):
+    """Verify CardResult gracefully handles cards missing standard metric keys."""
+    # A card lacking 'deck_colors' entirely
+    card_data = {"name": "Blank Card", "colors": ["W"]}
+
+    res = card_result.return_results(
+        [card_data], ["All Decks"], ["gihwr", "alsa", "colors", "name"]
+    )
+
+    assert len(res) == 1
+
+    # 0 is gihwr, 1 is alsa, 2 is colors, 3 is name
+    assert res[0]["results"][0] == "-"  # gihwr
+    assert res[0]["results"][1] == "-"  # alsa
+    assert res[0]["results"][2] == "W"  # colors
+    assert res[0]["results"][3] == "Blank Card"  # name
+
+
 def test_export_draft_to_csv_edge_cases():
     """Verify export handles missing picks, unicode names, and empty stats."""
     history = [{"Pack": 1, "Pick": 1, "Cards": ["999"]}]

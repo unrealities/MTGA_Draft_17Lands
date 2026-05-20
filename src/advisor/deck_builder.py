@@ -665,8 +665,9 @@ def build_variant_consistency(pool, colors, metrics, tier_data=None):
         if is_castable(c, colors, strict=True) and "Land" not in c.get("types", [])
     ]
     candidates.sort(key=lambda x: get_card_rating(x, colors, metrics), reverse=True)
-    spells, non_basic_lands = candidates[:23], select_useful_lands(
-        pool, colors, metrics
+    spells, non_basic_lands = (
+        candidates[:23],
+        select_useful_lands(pool, colors, metrics),
     )
 
     total_lands_needed = 40 - len(spells)
@@ -783,8 +784,9 @@ def build_variant_curve(pool, colors, metrics, tier_data=None):
         return base
 
     candidates.sort(key=tempo_rating, reverse=True)
-    spells, non_basic_lands = candidates[:24], select_useful_lands(
-        pool, colors, metrics
+    spells, non_basic_lands = (
+        candidates[:24],
+        select_useful_lands(pool, colors, metrics),
     )
 
     total_lands_needed = 40 - len(spells)
@@ -808,8 +810,9 @@ def build_variant_soup(pool, metrics, tier_data=None):
     candidates = [c for c in pool if "Land" not in c.get("types", [])]
 
     def soup_rating(card):
-        base, tags = get_card_rating(card, ["All Decks"], metrics, tier_data), card.get(
-            "tags", []
+        base, tags = (
+            get_card_rating(card, ["All Decks"], metrics, tier_data),
+            card.get("tags", []),
         )
         text, name = (
             str(card.get("oracle_text", card.get("text", ""))).lower(),

@@ -126,9 +126,9 @@ class TestLogPipelineIntegration:
                 break
             time.sleep(0.1)
 
-        assert (
-            ready
-        ), f"Failed to detect OTJ. Current detected code: '{app.detected_set_code}'"
+        assert ready, (
+            f"Failed to detect OTJ. Current detected code: '{app.detected_set_code}'"
+        )
 
         p1p1 = (
             r'[UnityCrossThreadLogger]Draft.Notify {"draftId":"1","SelfPick":1,"SelfPack":1,'

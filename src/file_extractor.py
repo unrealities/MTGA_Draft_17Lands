@@ -743,9 +743,9 @@ class FileExtractor(UIProgress):
                         else ("", 0)
                     )
                     card_data[card_set][group_id][constants.DATA_FIELD_CMC] = cmc
-                    card_data[card_set][group_id][
-                        constants.DATA_FIELD_MANA_COST
-                    ] = mana_cost
+                    card_data[card_set][group_id][constants.DATA_FIELD_MANA_COST] = (
+                        mana_cost
+                    )
                     card_data[card_set][group_id][constants.DATA_FIELD_TYPES].extend(
                         [
                             int(x)
@@ -800,7 +800,6 @@ class FileExtractor(UIProgress):
     def _process_linked_faces(self, card, card_data, card_set, group_id):
         """"""
         try:
-
             if card[constants.LOCAL_CARDS_KEY_LINKED_FACES]:
                 linked_ids = [
                     int(x)
@@ -840,7 +839,6 @@ class FileExtractor(UIProgress):
                                 ]
                                 == 6
                             ):
-
                                 mana_cost, cmc = decode_mana_cost(
                                     card[constants.LOCAL_CARDS_KEY_CASTING_COST]
                                 )
@@ -873,7 +871,6 @@ class FileExtractor(UIProgress):
                                 and card[constants.LOCAL_CARDS_KEY_LINKED_FACE_TYPE]
                                 == 6
                             ):
-
                                 if (
                                     card_data[card_set][linked_id][
                                         constants.DATA_FIELD_CMC
@@ -1040,9 +1037,9 @@ class FileExtractor(UIProgress):
                             mapped_types.remove(constants.CARD_TYPE_CREATURE)
                             mapped_types.insert(0, constants.CARD_TYPE_CREATURE)
 
-                        card_data[card_set][card][
-                            constants.DATA_FIELD_TYPES
-                        ] = mapped_types
+                        card_data[card_set][card][constants.DATA_FIELD_TYPES] = (
+                            mapped_types
+                        )
 
                         # 3. MAP SUBTYPES (Tribes like Ninja, Turtle, Human)
                         mapped_subs = []

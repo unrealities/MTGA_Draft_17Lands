@@ -1,6 +1,7 @@
 import pytest
 from unittest.mock import MagicMock, patch
 from src.file_extractor import FileExtractor
+from src.utils import Result
 
 
 def test_retrieve_17lands_data_success():
@@ -61,6 +62,77 @@ def test_download_expansion(mock_assemble, mock_17lands, mock_local):
     assert res is True
     assert size == 100
     mock_assemble.assert_called_once()
+
+
+@patch("src.file_extractor.os.path.exists", return_value=True)
+@patch("src.file_extractor.open", new_callable=MagicMock)
+def test_retrieve_stored_data(mock_open, mock_exists):
+    """Verify the file extractor can read and filter the temporary card database."""
+    from src.file_extractor import FileExtractor
+    import json
+
+    extractor = FileExtractor(None, MagicMock(), MagicMock(), MagicMock())
+
+    # Mock the JSON content
+    mock_data = {"M10": {"1001": {"name": "Bolt"}}, "OTJ": {"2002": {"name": "Snake"}}}
+
+    # Setup mock file to return JSON
+    mock_open.return_value.__enter__.return_value.read.return_value = json.dumps(
+        mock_data
+    )
+
+    # Requesting a specific set
+    res = extractor._retrieve_stored_data(["M10"])
+    assert res is True
+    assert "1001" in extractor.card_dict
+    assert extractor.card_dict["1001"]["name"] == "Bolt"
+    assert extractor.card_dict["1001"]["set"] == "M10"
+    assert "2002" not in extractor.card_dict
+
+    # Requesting ALL sets
+    extractor.card_dict = {}
+    res2 = extractor._retrieve_stored_data(["ALL"])
+    assert res2 is True
+    assert "1001" in extractor.card_dict
+    assert "2002" in extractor.card_dict
+
+
+def test_initialize_17lands_data():
+    """Verify that card items without 17Lands metrics are populated with default 0.0 metrics to prevent UI KeyErrors."""
+    from src.file_extractor import FileExtractor
+    from src.constants import DATA_FIELD_DECK_COLORS
+
+    extractor = FileExtractor(None, MagicMock(), MagicMock(), MagicMock())
+    extractor.card_dict = {"1001": {"name": "Bolt", "cmc": 1}}
+
+    extractor._initialize_17lands_data()
+
+    assert DATA_FIELD_DECK_COLORS in extractor.card_dict["1001"]
+    assert "All Decks" in extractor.card_dict["1001"][DATA_FIELD_DECK_COLORS]
+    assert extractor.card_dict["1001"]["types"] == []
+
+
+@patch("src.file_extractor.check_file_integrity", return_value=(Result.VALID, {}))
+@patch("src.utils.invalidate_local_set_cache")
+@patch("src.file_extractor.json.dump")
+@patch("src.file_extractor.open", new_callable=MagicMock)
+def test_export_card_data(mock_open, mock_dump, mock_invalidate, mock_integrity):
+    """Verify that dataset exports create the correctly formatted filename and invalidate the UI's fast-cache."""
+    from src.file_extractor import FileExtractor
+
+    extractor = FileExtractor(None, MagicMock(), MagicMock(), MagicMock())
+    extractor.start_date = "2024-01-01"
+    extractor.end_date = "2024-02-01"
+    extractor.draft = "PremierDraft"
+    extractor.user_group = "All"
+    extractor.selected_sets = MagicMock()
+    extractor.selected_sets.seventeenlands = ["OTJ"]
+
+    filename = extractor.export_card_data()
+
+    assert "OTJ_PremierDraft_All_Custom-20240101-20240201_Data.json" in filename
+    mock_dump.assert_called_once()
+    mock_invalidate.assert_called_once()
 
 
 def test_check_set_data():

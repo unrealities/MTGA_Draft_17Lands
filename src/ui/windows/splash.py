@@ -93,7 +93,7 @@ class SplashWindow:
         self.splash.update_idletasks()
         sw, sh = self.splash.winfo_screenwidth(), self.splash.winfo_screenheight()
         w, h = self.splash.winfo_width(), self.splash.winfo_height()
-        self.splash.geometry(f"+{(sw-w)//2}+{(sh-h)//2}")
+        self.splash.geometry(f"+{(sw - w) // 2}+{(sh - h) // 2}")
 
     def _run_task(self) -> None:
         """Runs the payload in a background thread and queues the result."""

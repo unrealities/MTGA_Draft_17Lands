@@ -117,6 +117,61 @@ class TestSuggestDeckPanel:
             # Verify table has Etali
             assert panel.current_deck_list[0]["name"] == "Etali"
 
+    def test_calculate_suggestions_not_enough_cards(self, root, mock_draft):
+        """Verify that having fewer than 22 spells cleanly exits the builder."""
+        panel = SuggestDeckPanel(root, mock_draft, Configuration())
+
+        # Less than 22 playable spells
+        mock_draft.retrieve_taken_cards.return_value = [
+            {"name": "Bolt", "types": ["Instant"]}
+        ] * 5
+
+        panel._calculate_suggestions()
+
+        assert "Not enough spells drafted yet" in panel.var_archetype.get()
+
+    def test_handle_builder_error(self, root, mock_draft):
+        """Verify that if the AI engine throws an exception, the UI reports it cleanly."""
+        panel = SuggestDeckPanel(root, mock_draft, Configuration())
+
+        panel._handle_builder_error("Test Exception")
+
+        assert panel.var_archetype.get() == "Builder Error"
+        assert len(panel.suggestions) == 0
+
+    def test_clear_table_logic(self, root, mock_draft, mock_variants):
+        """Verify that clearing the view wipes out tables, stats, and canvases."""
+        panel = SuggestDeckPanel(root, mock_draft, Configuration())
+        panel.suggestions = mock_variants
+        panel._render_deck("BG Consistent")
+
+        # Add something to the stats and sim frames
+        from tkinter import ttk
+
+        ttk.Label(panel.sim_frame, text="Sim").pack()
+
+        panel._clear_table()
+
+        # Verify wiping
+        assert len(panel.current_deck_list) == 0
+        assert len(panel.current_sb_list) == 0
+        assert len(panel.table.get_children()) == 0
+        assert len(panel.sim_frame.winfo_children()) == 0
+        assert len(panel.stats_frame.winfo_children()) == 0
+
+    def test_tab_change_triggers_sample_hand(self, root, mock_draft):
+        """Verify switching to the Simulation tab attempts to draw a sample hand."""
+        panel = SuggestDeckPanel(root, mock_draft, Configuration())
+
+        with patch.object(panel, "_draw_sample_hand") as mock_draw:
+            panel.notebook.select = MagicMock(return_value="tab3")
+            # notebook.tab(id, "text") returns a string directly in Tkinter
+            panel.notebook.tab = MagicMock(return_value=" SIMULATION & SAMPLE HAND ")
+            panel._on_tab_changed(None)
+
+            # We assert it was called because the user navigated to the tab
+            mock_draw.assert_called_once()
+
     def test_render_deck_and_stats(self, root, mock_draft, mock_variants):
         from tkinter import ttk
 

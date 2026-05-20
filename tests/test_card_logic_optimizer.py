@@ -88,16 +88,16 @@ def test_optimize_deck_swaps_clunky_card_for_cheap_premium(mock_sim, base_deck_a
 
     # Assertions
     assert len(final_deck) == 40, "Optimized deck must remain exactly 40 cards."
-    assert (
-        "Premium 2-Drop" in final_names
-    ), "Optimizer failed to include the premium sideboard card."
-    assert (
-        "Clunky Behemoth" not in final_names
-    ), "Optimizer failed to cut the clunky high-CMC card."
+    assert "Premium 2-Drop" in final_names, (
+        "Optimizer failed to include the premium sideboard card."
+    )
+    assert "Clunky Behemoth" not in final_names, (
+        "Optimizer failed to cut the clunky high-CMC card."
+    )
     assert "Clunky Behemoth" in sb_names, "Cut card was not moved to the sideboard."
-    assert (
-        "Curve Lower" in opt_note
-    ), "Optimization note did not correctly identify the action taken."
+    assert "Curve Lower" in opt_note, (
+        "Optimization note did not correctly identify the action taken."
+    )
 
     # Verify that the simulator was called multiple times (once per permutation + final run)
     assert mock_sim.call_count > 2

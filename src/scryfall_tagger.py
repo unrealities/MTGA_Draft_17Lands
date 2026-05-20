@@ -80,7 +80,7 @@ class ScryfallTagger:
             # Update UI with live progress
             if progress_callback:
                 progress_callback(
-                    f"Harvesting Tags: '{tag_name}' ({i+1}/{total_tags})", 100
+                    f"Harvesting Tags: '{tag_name}' ({i + 1}/{total_tags})", 100
                 )
 
             q = f"set:{set_code} ({query_string})"
@@ -137,7 +137,7 @@ class ScryfallTagger:
                     break
                 except requests.exceptions.RequestException as e:
                     logger.warning(
-                        f"Network issue querying Scryfall ({e}). Retries left: {retries-1}"
+                        f"Network issue querying Scryfall ({e}). Retries left: {retries - 1}"
                     )
                     retries -= 1
                     time.sleep(2)

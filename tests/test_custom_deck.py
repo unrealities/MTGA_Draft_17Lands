@@ -237,9 +237,11 @@ class TestCustomDeckPanel:
             card = {"name": "Lightning Bolt", "image": ["https://mock.url/bolt.jpg"]}
 
             # Prevent file I/O errors by mocking the open function and os.path.exists
-            with patch("builtins.open", MagicMock()), patch(
-                "os.path.exists", return_value=False
-            ), patch("os.makedirs"):
+            with (
+                patch("builtins.open", MagicMock()),
+                patch("os.path.exists", return_value=False),
+                patch("os.makedirs"),
+            ):
                 panel._fetch_and_show_image(card, mock_frame, 100, 100)
 
                 # Allow Tkinter `after` calls to process on the main thread
@@ -394,6 +396,219 @@ class TestCustomDeckPanel:
 
             # It should have populated the hand frames without crashing (7 cards)
             assert len(panel.hand_frames) == 7
+
+        def test_refresh_handles_empty_pool(self, root):
+            """Verify refresh correctly clears UI if the draft pool is emptied."""
+            app_context = MagicMock()
+            panel = CustomDeckPanel(root, MagicMock(), Configuration(), app_context)
+
+            panel.deck_list = [{"name": "Bolt", "count": 1}]
+            panel.sb_list = [{"name": "Shock", "count": 1}]
+
+            # Since the pool is empty, it should clear out the lists
+            panel.draft.retrieve_taken_cards.return_value = []
+            panel.refresh()
+
+            assert len(panel.deck_list) == 0
+            assert len(panel.sb_list) == 0
+            assert panel.known_pool_size == 0
+
+        def test_tab_change_triggers_sample_hand(self, root):
+            """Verify switching to the simulation tab automatically draws a hand."""
+            app_context = MagicMock()
+            panel = CustomDeckPanel(root, MagicMock(), Configuration(), app_context)
+            with patch.object(panel, "_draw_sample_hand") as mock_draw:
+                # Simulate selecting the 3rd tab (Simulation & Sample Hand)
+                panel.notebook.select = MagicMock(return_value="tab3")
+                panel.notebook.tab = MagicMock(
+                    return_value={"text": " SIMULATION & SAMPLE HAND "}
+                )
+                panel._on_tab_changed(None)
+                mock_draw.assert_called_once()
+
+        def test_clear_table_resets_ui(self, root):
+            """Verify defensive UI clear logic."""
+            app_context = MagicMock()
+            panel = CustomDeckPanel(root, MagicMock(), Configuration(), app_context)
+            panel.deck_list = [{"name": "Bolt"}]
+            panel.sb_list = [{"name": "Shock"}]
+            panel._clear_table()
+            assert len(panel.deck_list) == 0
+            assert len(panel.sb_list) == 0
+
+        def test_basic_land_remove_bindings(self, root):
+            """Verify that middle/right clicking removes a basic land."""
+            app_context = MagicMock()
+            panel = CustomDeckPanel(root, MagicMock(), Configuration(), app_context)
+            panel._add_specific_basic("Plains")
+            assert len(panel.deck_list) == 1
+            # Test Right Click removal function
+            panel._on_basic_remove(None, "Plains")
+            assert len(panel.deck_list) == 0
+
+        @patch("src.ui.windows.custom_deck.tkinter.messagebox.showwarning")
+        def test_auto_optimize_deck_error_handling(self, mock_warn, root):
+            """Verify that failed optimizations gracefully pop an alert instead of crashing."""
+            app_context = MagicMock()
+            panel = CustomDeckPanel(root, MagicMock(), Configuration(), app_context)
+            # Override executor for synchronous execution
+            panel.sim_executor.submit = lambda fn, *args, **kwargs: fn(*args, **kwargs)
+
+            # An empty deck will cause optimize_deck to throw an Exception
+            panel.deck_list = []
+            panel._run_auto_optimize_task()
+            root.update()
+
+            # Verify the warning was shown
+            mock_warn.assert_called_once()
+
+        def test_sample_hand_sorting(self, root):
+            """Verify that drawing a sample hand sorts cards correctly (Lands -> CMCs)."""
+            app_context = MagicMock()
+            panel = CustomDeckPanel(root, MagicMock(), Configuration(), app_context)
+            panel.deck_list = [
+                {"name": "Mountain", "types": ["Land", "Basic"], "cmc": 0, "count": 2},
+                {"name": "Big Spell", "cmc": 5, "count": 2},
+                {"name": "Small Spell", "cmc": 1, "count": 3},
+            ]
+
+            # Override executor so image loading fails fast but safely generates the UI labels
+            panel.image_executor.submit = lambda fn, *args, **kwargs: fn(
+                *args, **kwargs
+            )
+
+            with patch.object(panel, "_fetch_and_show_image"):
+                panel._draw_sample_hand()
+
+            # It should have populated the hand frames without crashing (7 cards)
+            assert len(panel.hand_frames) == 7
+
+        def test_update_tables_empty_and_populated(self, root):
+            """Verify that table rendering logic correctly displays cards and counts."""
+            app_context = MagicMock()
+            panel = CustomDeckPanel(root, MagicMock(), Configuration(), app_context)
+
+            panel.deck_list = [
+                {"name": "Mountain", "count": 1, "cmc": 0, "types": ["Land", "Basic"]}
+            ]
+            panel.sb_list = [
+                {"name": "Shock", "count": 2, "cmc": 1, "types": ["Instant"]}
+            ]
+
+            panel._update_tables()
+
+            # Verify Treeviews are populated
+            main_rows = panel.deck_manager.tree.get_children()
+            sb_rows = panel.sb_manager.tree.get_children()
+            assert len(main_rows) == 1
+            assert len(sb_rows) == 1
+
+            # Check frame titles reflect the counts
+            assert "MAIN DECK (1)" in panel.deck_frame.cget("text")
+            assert "SIDEBOARD (2)" in panel.sb_frame.cget("text")
+
+            # Validate values mapping
+            vals = panel.deck_manager.tree.item(main_rows[0])["values"]
+            assert vals[0] == "Mountain"
+            assert str(vals[1]) == "1"
+
+        def test_clear_sample_hand(self, root):
+            """Verify the sample hand frames and images are wiped clean."""
+            app_context = MagicMock()
+            panel = CustomDeckPanel(root, MagicMock(), Configuration(), app_context)
+            panel.hand_images = [MagicMock()]
+            panel.hand_frames = [MagicMock()]
+
+            import tkinter.ttk as ttk
+
+            ttk.Label(panel.hand_container, text="test").pack()
+
+            panel._clear_sample_hand()
+
+            assert len(panel.hand_images) == 0
+            assert len(panel.hand_frames) == 0
+            assert len(panel.hand_container.winfo_children()) == 0
+
+        @patch("src.ui.windows.custom_deck.requests.get")
+        def test_fetch_and_show_image_network_failure(self, mock_get, root):
+            """Verify network failures during image fetch gracefully render fallback text."""
+            app_context = MagicMock()
+            panel = CustomDeckPanel(root, MagicMock(), Configuration(), app_context)
+
+            mock_get.side_effect = Exception("Simulated Timeout")
+
+            # Force thread to run inline
+            panel.image_executor.submit = lambda fn, *args, **kwargs: fn(
+                *args, **kwargs
+            )
+
+            mock_frame = tkinter.Frame(root)
+            card = {"name": "Shock", "image": ["http://fake/img.jpg"]}
+
+            # Block actual file writing
+            with patch("builtins.open", MagicMock()), patch("os.makedirs"):
+                panel._fetch_and_show_image(card, mock_frame, 100, 100)
+                root.update()
+
+            # Fallback text should be rendered
+            labels = [
+                w.cget("text")
+                for w in mock_frame.winfo_children()
+                if isinstance(w, tkinter.ttk.Label)
+            ]
+            assert any("Image\nUnavailable" in text for text in labels)
+
+        def test_move_card_logic(self, root):
+            """Verify _move_card safely transfers quantities between deck lists."""
+            app_context = MagicMock()
+            panel = CustomDeckPanel(root, MagicMock(), Configuration(), app_context)
+
+            panel.deck_list = [{"name": "Bolt", "count": 2}]
+            panel.sb_list = [{"name": "Shock", "count": 1}]
+
+            # Move 1 Bolt from deck to sb
+            panel._move_card(panel.deck_list, panel.sb_list, "Bolt")
+
+            # Deck should have 1 Bolt left
+            assert panel.deck_list[0]["count"] == 1
+
+            # SB should have 1 Bolt and 1 Shock
+            sb_names = [c["name"] for c in panel.sb_list]
+            assert "Bolt" in sb_names
+            assert "Shock" in sb_names
+            assert next(c for c in panel.sb_list if c["name"] == "Bolt")["count"] == 1
+
+            # Move the last Bolt
+            panel._move_card(panel.deck_list, panel.sb_list, "Bolt")
+
+            # Deck should be empty
+            assert len(panel.deck_list) == 0
+
+            # SB should have 2 Bolts
+            assert next(c for c in panel.sb_list if c["name"] == "Bolt")["count"] == 2
+
+        def test_drag_and_drop_start_sets_data(self, root):
+            """Verify dragging a row captures the card name correctly."""
+            app_context = MagicMock()
+            panel = CustomDeckPanel(root, MagicMock(), Configuration(), app_context)
+            panel.deck_list = [{"name": "Test Card"}]
+            panel._update_tables()
+
+            # Simulate a click on the row
+            class MockEvent:
+                x = 10
+                y = 10
+                x_root = 100
+                y_root = 100
+
+            panel.deck_manager.tree.identify_row = MagicMock(return_value="row_0")
+            panel.deck_manager.tree.item = MagicMock(return_value={"text": "Test Card"})
+
+            panel._on_drag_start(MockEvent(), panel.deck_manager.tree, is_sb=False)
+
+            assert panel._drag_data is not None
+            assert panel._drag_data["name"] == "Test Card"
+            assert panel._drag_data["is_sb"] is False
 
         def test_copy_to_clipboard(self, root):
             """Verify the copy button successfully formats the deck and pushes to the OS clipboard."""

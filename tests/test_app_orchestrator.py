@@ -141,12 +141,11 @@ class TestAppOrchestrator:
         for p in ui_patches:
             p.start()
         try:
-            with patch("src.ui.menu_bar.messagebox"), patch(
-                "src.ui.menu_bar.filedialog.asksaveasfile"
-            ) as mock_dialog, patch(
-                "src.card_logic.export_draft_to_csv"
-            ) as mock_export:
-
+            with (
+                patch("src.ui.menu_bar.messagebox"),
+                patch("src.ui.menu_bar.filedialog.asksaveasfile") as mock_dialog,
+                patch("src.card_logic.export_draft_to_csv") as mock_export,
+            ):
                 app = DraftApp(root, mock_scanner, config)
                 mock_file = MagicMock()
                 mock_dialog.return_value = mock_file

@@ -74,53 +74,57 @@ def event_test_cases(input_scanner, event_label, entry_label, expected, entry_st
 
     # Verify that a new event was detected
     new_event = input_scanner.draft_start_search()
-    assert (
-        expected.new_event == new_event
-    ), f"Test Failed: New Event, Set: {event_label}, {entry_label}, Expected: {expected.new_event}, Actual: {new_event}"
+    assert expected.new_event == new_event, (
+        f"Test Failed: New Event, Set: {event_label}, {entry_label}, Expected: {expected.new_event}, Actual: {new_event}"
+    )
 
     # Verify that new event data was collected
     data_update = input_scanner.draft_data_search()
-    assert (
-        expected.data_update == data_update
-    ), f"Test Failed: Data Update, Set: {event_label}, {entry_label}, Expected: {expected.data_update}, Actual: {data_update}"
+    assert expected.data_update == data_update, (
+        f"Test Failed: Data Update, Set: {event_label}, {entry_label}, Expected: {expected.data_update}, Actual: {data_update}"
+    )
 
     # Verify the current set and event
     current_set, current_event = input_scanner.retrieve_current_limited_event()
     assert (expected.current_set, expected.current_event) == (
         current_set,
         current_event,
-    ), f"Test Failed: Set and Event, Set: {event_label}, {entry_label}, Expected: {(expected.current_set, expected.current_event)}, Actual: {(current_set, current_event)}"
+    ), (
+        f"Test Failed: Set and Event, Set: {event_label}, {entry_label}, Expected: {(expected.current_set, expected.current_event)}, Actual: {(current_set, current_event)}"
+    )
 
     # Verify the current pack, pick
     current_pack, current_pick = input_scanner.retrieve_current_pack_and_pick()
     assert (expected.current_pack, expected.current_pick) == (
         current_pack,
         current_pick,
-    ), f"Test Failed: Pack/Pick, Set: {event_label}, {entry_label}, Expected: {(expected.current_pack, expected.current_pick)}, Actual: {(current_pack, current_pick)}"
+    ), (
+        f"Test Failed: Pack/Pick, Set: {event_label}, {entry_label}, Expected: {(expected.current_pack, expected.current_pick)}, Actual: {(current_pack, current_pick)}"
+    )
 
     # Verify the pack cards
     pack = [x["name"] for x in input_scanner.retrieve_current_pack_cards()]
-    assert (
-        expected.pack == pack
-    ), f"Test Failed: Pack Cards, Set: {event_label}, {entry_label}, Expected: {expected.pack}, Actual: {pack}"
+    assert expected.pack == pack, (
+        f"Test Failed: Pack Cards, Set: {event_label}, {entry_label}, Expected: {expected.pack}, Actual: {pack}"
+    )
 
     # Verify the card pool
     card_pool = [x["name"] for x in input_scanner.retrieve_taken_cards()]
-    assert (
-        expected.card_pool == card_pool
-    ), f"Test Failed: Card Pool, Set: {event_label}, {entry_label}, Expected: {expected.card_pool}, Actual: {card_pool}"
+    assert expected.card_pool == card_pool, (
+        f"Test Failed: Card Pool, Set: {event_label}, {entry_label}, Expected: {expected.card_pool}, Actual: {card_pool}"
+    )
 
     # Verify the missing cards
     missing = [x["name"] for x in input_scanner.retrieve_current_missing_cards()]
-    assert (
-        expected.missing == missing
-    ), f"Test Failed: Missing, Set: {event_label}, {entry_label}, Expected: {expected.missing}, Actual: {missing}"
+    assert expected.missing == missing, (
+        f"Test Failed: Missing, Set: {event_label}, {entry_label}, Expected: {expected.missing}, Actual: {missing}"
+    )
 
     # Verify picks
     picks = [x["name"] for x in input_scanner.retrieve_current_picked_cards()]
-    assert (
-        expected.picks == picks
-    ), f"Test Failed: Picks, Set: {event_label}, {entry_label}, Expected: {expected.picks}, Actual: {picks}"
+    assert expected.picks == picks, (
+        f"Test Failed: Picks, Set: {event_label}, {entry_label}, Expected: {expected.picks}, Actual: {picks}"
+    )
 
 
 @pytest.mark.parametrize(
@@ -376,6 +380,25 @@ def test_draft_history_recording(function_scanner):
     # 4. Verify Clear Draft resets history
     function_scanner.clear_draft(True)
     assert len(function_scanner.retrieve_draft_history()) == 0
+
+
+def test_process_json_sanitization(function_scanner):
+    """Verify malformed JSON strings emitted by MTGA are intercepted and sanitized."""
+    from src.utils import process_json
+
+    # In MTGA, sometimes they write a string inside a string without escaping quotes:
+    # "request":"{"EventName":"Draft"}"
+    malformed_payload = (
+        '{"id": "1", "request": "{\\"EventName\\": \\"PremierDraft\\"}"}'
+    )
+
+    result = process_json(malformed_payload)
+
+    # Verify the string was converted to a nested dictionary
+    assert isinstance(result, dict)
+    assert "request" in result
+    assert isinstance(result["request"], dict)
+    assert result["request"]["EventName"] == "PremierDraft"
 
 
 def test_draft_state_recovery(function_scanner):
