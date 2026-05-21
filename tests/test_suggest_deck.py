@@ -139,6 +139,49 @@ class TestSuggestDeckPanel:
         assert panel.var_archetype.get() == "Builder Error"
         assert len(panel.suggestions) == 0
 
+    def test_finalize_build_empty(self, root, mock_draft):
+        """Verify that if the AI engine returns an empty dict, the UI handles it cleanly."""
+        panel = SuggestDeckPanel(root, mock_draft, Configuration())
+
+        panel._finalize_build({})
+
+        assert "Not enough on-color playables" in panel.var_archetype.get()
+        assert panel.is_building is False
+
+    def test_update_tables_all_columns_coverage(self, root, mock_draft, mock_variants):
+        """Verify that all specific column fields are parsed without KeyErrors in the AI Builder tab."""
+        config = Configuration()
+
+        panel = SuggestDeckPanel(root, mock_draft, config)
+        panel.suggestions = mock_variants
+
+        # Override active fields manually since SuggestDeckPanel uses static_columns
+        panel.table_manager.active_fields = [
+            "name",
+            "count",
+            "cmc",
+            "types",
+            "colors",
+            "tags",
+            "gihwr",
+        ]
+
+        # Add tags to the mock variant
+        panel.suggestions["BG Consistent"]["deck_cards"][0]["tags"] = [
+            "removal",
+            "card_advantage",
+        ]
+
+        panel._render_deck("BG Consistent")
+
+        rows = panel.table.get_children()
+        assert len(rows) == 1
+        vals = panel.table.item(rows[0])["values"]
+
+        assert vals[0] == "Mosswood Dreadknight"
+        # Tag visual mapping ensures the emoji or name is present
+        assert "🎯" in str(vals[5]) or "Removal" in str(vals[5])
+
     def test_clear_table_logic(self, root, mock_draft, mock_variants):
         """Verify that clearing the view wipes out tables, stats, and canvases."""
         panel = SuggestDeckPanel(root, mock_draft, Configuration())
@@ -158,6 +201,44 @@ class TestSuggestDeckPanel:
         assert len(panel.table.get_children()) == 0
         assert len(panel.sim_frame.winfo_children()) == 0
         assert len(panel.stats_frame.winfo_children()) == 0
+
+    @patch("src.ui.windows.suggest_deck.CardToolTip.create")
+    def test_on_selection(self, mock_tooltip, root, mock_draft, mock_variants):
+        panel = SuggestDeckPanel(root, mock_draft, Configuration())
+        panel.suggestions = mock_variants
+        panel._render_deck("BG Consistent")
+
+        # Simulate click
+        panel.table.identify_region = MagicMock(return_value="cell")
+        panel.table.selection = MagicMock(return_value=["item1"])
+        panel.table.item = MagicMock(
+            return_value={
+                "text": "Mosswood Dreadknight",
+                "values": ["Mosswood Dreadknight"],
+            }
+        )
+
+        class MockEvent:
+            x = 10
+            y = 10
+
+        panel._on_selection(MockEvent(), is_sb=False)
+
+        mock_tooltip.assert_called_once()
+        assert mock_tooltip.call_args[0][1]["name"] == "Mosswood Dreadknight"
+
+    @patch(
+        "src.ui.windows.suggest_deck.copy_deck",
+        return_value="Deck\n1 Mosswood Dreadknight",
+    )
+    def test_copy_to_clipboard(self, mock_copy, root, mock_draft, mock_variants):
+        panel = SuggestDeckPanel(root, mock_draft, Configuration())
+        panel.suggestions = mock_variants
+        panel.var_archetype.set("BG Consistent")
+
+        panel._copy_to_clipboard()
+
+        assert "Mosswood Dreadknight" in root.clipboard_get()
 
     def test_tab_change_triggers_sample_hand(self, root, mock_draft):
         """Verify switching to the Simulation tab attempts to draw a sample hand."""
@@ -198,72 +279,3 @@ class TestSuggestDeckPanel:
         labels = get_all_text(panel.stats_frame)
         assert any("Black (B): 1" in l for l in labels)
         assert any("Green (G): 1" in l for l in labels)
-
-    @patch("src.ui.windows.suggest_deck.CardToolTip.create")
-    def test_on_selection(self, mock_tooltip, root, mock_draft, mock_variants):
-        panel = SuggestDeckPanel(root, mock_draft, Configuration())
-        panel.suggestions = mock_variants
-        panel._render_deck("BG Consistent")
-
-        # Simulate click
-        panel.table.identify_region = MagicMock(return_value="cell")
-        panel.table.selection = MagicMock(return_value=["item1"])
-        panel.table.item = MagicMock(
-            return_value={
-                "text": "Mosswood Dreadknight",
-                "values": ["Mosswood Dreadknight"],
-            }
-        )
-
-        class MockEvent:
-            x = 10
-            y = 10
-
-        panel._on_selection(MockEvent(), is_sb=False)
-
-        mock_tooltip.assert_called_once()
-        assert mock_tooltip.call_args[0][1]["name"] == "Mosswood Dreadknight"
-
-    @patch(
-        "src.ui.windows.suggest_deck.copy_deck",
-        return_value="Deck\n1 Mosswood Dreadknight",
-    )
-    def test_copy_to_clipboard(self, mock_copy, root, mock_draft, mock_variants):
-        panel = SuggestDeckPanel(root, mock_draft, Configuration())
-        panel.suggestions = mock_variants
-        panel.var_archetype.set("BG Consistent")
-
-        panel._copy_to_clipboard()
-
-        assert "Mosswood Dreadknight" in root.clipboard_get()
-
-    @patch("src.ui.windows.suggest_deck.CardToolTip.create")
-    def test_on_selection(self, mock_tooltip, root, mock_draft, mock_variants):
-        panel = SuggestDeckPanel(root, mock_draft, Configuration())
-        panel.suggestions = mock_variants
-        panel._render_deck("BG Consistent")
-
-        # Simulate click
-        panel.table.identify_region = MagicMock(return_value="cell")
-        panel.table.selection = MagicMock(return_value=["item1"])
-        panel.table.item = MagicMock(
-            return_value={
-                "text": "Mosswood Dreadknight",
-                "values": ["Mosswood Dreadknight"],
-            }
-        )
-
-        panel._on_selection(MagicMock(x=10, y=10), is_sb=False)
-
-        mock_tooltip.assert_called_once()
-        assert mock_tooltip.call_args[0][1]["name"] == "Mosswood Dreadknight"
-
-    def test_copy_to_clipboard(self, root, mock_draft, mock_variants):
-        panel = SuggestDeckPanel(root, mock_draft, Configuration())
-        panel.suggestions = mock_variants
-        panel.var_archetype.set("BG Consistent")
-
-        panel._copy_to_clipboard()
-
-        # Validate formatting output correctly populated clipboard
-        assert "Mosswood Dreadknight" in root.clipboard_get()

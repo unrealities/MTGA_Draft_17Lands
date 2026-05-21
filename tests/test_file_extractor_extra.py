@@ -135,6 +135,39 @@ def test_export_card_data(mock_open, mock_dump, mock_invalidate, mock_integrity)
     mock_invalidate.assert_called_once()
 
 
+@patch(
+    "src.file_extractor.FileExtractor._retrieve_local_arena_data",
+    return_value=(False, "Failed", 0),
+)
+def test_download_expansion_local_fail(mock_local):
+    """Verify that failing to retrieve local data stops the expansion download."""
+    from src.file_extractor import FileExtractor
+
+    extractor = FileExtractor(None, MagicMock(), MagicMock(), MagicMock())
+    extractor.selected_sets = MagicMock(seventeenlands=["M10"])
+
+    res, msg, size = extractor._download_expansion(0)
+    assert res is False
+    assert msg == "Failed"
+
+
+@patch(
+    "src.file_extractor.FileExtractor._retrieve_local_arena_data",
+    return_value=(True, "Success", 100),
+)
+@patch("src.file_extractor.FileExtractor.retrieve_17lands_data", return_value=False)
+def test_download_expansion_17lands_fail(mock_17lands, mock_local):
+    """Verify that failing to retrieve 17Lands data stops the expansion download."""
+    from src.file_extractor import FileExtractor
+
+    extractor = FileExtractor(None, MagicMock(), MagicMock(), MagicMock())
+    extractor.selected_sets = MagicMock(seventeenlands=["M10"])
+
+    res, msg, size = extractor._download_expansion(0)
+    assert res is False
+    assert msg == "Couldn't Collect 17Lands Data"
+
+
 def test_check_set_data():
     from src.file_extractor import check_set_data
 

@@ -319,3 +319,18 @@ def test_fetch_archetype_with_cache_miss_writes_to_disk(
     # Verify the cache file was actually created by the method
     cache_path = tmp_path / "otj_premierdraft_2024-01-01_2024-02-01_all_all.json"
     assert cache_path.exists()
+
+
+def test_download_color_ratings_http_errors(mock_session, seventeenlands):
+    """Verify that download_color_ratings explicitly traps rate limit and forbidden errors."""
+    session, response = mock_session
+
+    # 429 Too Many Requests
+    response.status_code = 429
+    with pytest.raises(Exception, match="Rate Limited"):
+        seventeenlands.download_color_ratings("TLA", "Draft", "Start", "End", "All")
+
+    # 403 Forbidden (WAF Block)
+    response.status_code = 403
+    with pytest.raises(Exception, match="Access Denied"):
+        seventeenlands.download_color_ratings("TLA", "Draft", "Start", "End", "All")

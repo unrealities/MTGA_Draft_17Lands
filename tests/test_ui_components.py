@@ -14,6 +14,8 @@ from src.ui.components import (
 )
 from src.ui.styles import Theme
 from src import constants
+from src.ui.components import DynamicTreeviewManager
+from src.configuration import Configuration
 
 
 class TestUIComponents:
@@ -157,10 +159,6 @@ class TestUIComponents:
 
     @patch("src.configuration.write_configuration")
     def test_dynamic_treeview_column_management(self, mock_write, root):
-        """Verify the DynamicTreeviewManager can add, remove, and reset columns."""
-        from src.ui.components import DynamicTreeviewManager
-        from src.configuration import Configuration
-
         config = Configuration()
         config.settings.column_configs["test_view"] = ["name", "gihwr"]
 
@@ -184,7 +182,6 @@ class TestUIComponents:
     def test_collapsible_frame_toggle(self, root):
         """Verify the CollapsibleFrame correctly expands and collapses its content."""
         from src.ui.components import CollapsibleFrame
-        from src.configuration import Configuration
 
         config = Configuration()
         frame = CollapsibleFrame(
@@ -271,8 +268,6 @@ class TestUIComponents:
 
     def test_dynamic_treeview_column_drag_and_drop(self, root):
         """Verify columns can be dragged and reordered by users."""
-        from src.ui.components import DynamicTreeviewManager
-        from src.configuration import Configuration
 
         config = Configuration()
         config.settings.column_configs["test_view"] = ["name", "gihwr", "value"]
@@ -331,8 +326,56 @@ class TestUIComponents:
 
     def test_dynamic_treeview_context_menu(self, root):
         """Verify right-clicking headers spawns the column configuration menu."""
-        from src.ui.components import DynamicTreeviewManager
-        from src.configuration import Configuration
+
+        config = Configuration()
+        config.settings.column_configs["test_view"] = ["name", "gihwr"]
+
+        manager = DynamicTreeviewManager(root, "test_view", config, lambda: None)
+
+        class MockEvent:
+            x = 10
+            y = 10
+            x_root = 100
+            y_root = 100
+
+        manager.tree.identify_region = MagicMock(return_value="heading")
+        # Click on GIHWR column (#2)
+        manager.tree.identify_column = MagicMock(return_value="#2")
+
+        with patch("tkinter.Menu.post") as mock_post:
+            manager._show_context_menu(MockEvent())
+            mock_post.assert_called_once_with(100, 100)
+
+    def test_signal_meter_and_curve_plot_redraw(self, root):
+        """Verify graphical charts update smoothly via data pushes and theme changes."""
+        from src.ui.components import SignalMeter, ManaCurvePlot, TypePieChart
+        from unittest.mock import MagicMock
+
+        meter = SignalMeter(root)
+        # Force a valid width so the draw routine isn't skipped
+        meter.canvas.winfo_width = MagicMock(return_value=200)
+
+        meter.update_values({"W": 50.0, "U": 0.0})
+        # Verifies the canvas painted something
+        assert len(meter.canvas.find_all()) > 0
+
+        curve = ManaCurvePlot(root, ideal_distribution=[0, 0, 4, 3, 2, 1, 0])
+        curve.canvas.winfo_width = MagicMock(return_value=200)
+
+        curve.update_curve([1, 1, 1, 1, 1, 1, 1])
+        assert len(curve.canvas.find_all()) > 0
+
+        pie = TypePieChart(root)
+        pie.canvas.winfo_width = MagicMock(return_value=200)
+        pie.update_counts({"Creature": 10, "Instant": 5})
+        assert len(pie.canvas.find_all()) > 0
+
+        # Trigger theme change virtual event
+        root.event_generate("<<ThemeChanged>>")
+        root.update()
+
+        assert meter.canvas.cget("bg") == Theme.BG_PRIMARY
+        assert curve.canvas.cget("bg") == Theme.BG_PRIMARY
 
         config = Configuration()
         config.settings.column_configs["test_view"] = ["name", "gihwr"]

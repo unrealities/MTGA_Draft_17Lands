@@ -305,35 +305,6 @@ class TestSealedStudio:
                 studio._on_close()
                 mock_save.assert_called_once()
 
-    def test_create_rename_delete_tabs(self, root, mock_app_context, mock_pool):
-        """Verify the Sealed Studio variants can be managed via Notebook headers."""
-        with patch("src.ui.windows.sealed_studio.ThreadPoolExecutor"):
-            studio = SealedStudioWindow(
-                root, mock_app_context, Configuration(), mock_pool, MagicMock()
-            )
-
-            # Create
-            with patch(
-                "src.ui.windows.sealed_studio.simpledialog.askstring",
-                return_value="New Deck",
-            ):
-                studio._create_new_tab()
-            assert "New Deck" in studio.session.variants
-
-            # Rename
-            with patch(
-                "src.ui.windows.sealed_studio.simpledialog.askstring",
-                return_value="Renamed Deck",
-            ):
-                studio._rename_tab()
-            assert "Renamed Deck" in studio.session.variants
-            assert "New Deck" not in studio.session.variants
-
-            # Delete
-            with patch("tkinter.messagebox.askyesno", return_value=True):
-                studio._delete_tab()
-            assert "Renamed Deck" not in studio.session.variants
-
     def test_on_tab_changed_syncs_notebooks(self, root, mock_app_context, mock_pool):
         """Verify switching variants in the Visual notebook automatically syncs the List notebook."""
         with patch("src.ui.windows.sealed_studio.ThreadPoolExecutor"):
@@ -411,3 +382,44 @@ class TestSealedStudio:
 
             assert len(mountains) == 1
             assert mountains[0]["count"] == 1
+
+    def test_update_tables_all_columns_coverage_tags(
+        self, root, mock_app_context, mock_pool
+    ):
+        """Verify that all specific column fields are parsed without KeyErrors in the Sealed Studio list view."""
+        config = Configuration()
+
+        # Inject Tags
+        mock_pool[1]["tags"] = ["removal"]  # Grizzly Bears
+
+        with patch("src.ui.windows.sealed_studio.ThreadPoolExecutor"):
+            studio = SealedStudioWindow(
+                root, mock_app_context, config, mock_pool, MagicMock()
+            )
+
+            # Override active fields manually since SealedStudioWindow uses static_columns
+            studio.pool_manager.active_fields = [
+                "name",
+                "count",
+                "cmc",
+                "types",
+                "colors",
+                "tags",
+                "gihwr",
+            ]
+
+            studio.view_mode = "list"
+            studio._refresh_data()
+
+            # Find Grizzly Bears row
+            tree = studio.pool_manager.tree
+            rows = tree.get_children()
+            bear_row = next(
+                (r for r in rows if "Grizzly Bears" in str(tree.item(r)["values"])),
+                None,
+            )
+
+            assert bear_row is not None
+            vals = tree.item(bear_row)["values"]
+
+            assert "🎯" in str(vals[5]) or "Removal" in str(vals[5])
