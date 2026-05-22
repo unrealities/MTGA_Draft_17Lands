@@ -160,9 +160,13 @@ def main():
             prepend_release_notes(REL_NOTES_PATH, new_ver)
             print(f"Prepended header to {REL_NOTES_PATH}")
 
+            # 5. Update pyproject.toml via Poetry
+            print("Updating pyproject.toml...")
+            run_cmd(["poetry", "version", str(new_ver)])
+
             print(f"\nSUCCESS! Version bumped: {current_ver} -> {new_ver}")
 
-        # 5. Auto-Commit
+        # 6. Auto-Commit
         response = input(
             f"\nWould you like to automatically commit and push these changes to your branch? (y/N): "
         )
@@ -173,7 +177,14 @@ def main():
                     commit_msg = f"chore: prep release version {new_ver}"
                 else:
                     run_cmd(
-                        ["git", "add", CONSTANTS_PATH, INSTALLER_PATH, REL_NOTES_PATH]
+                        [
+                            "git",
+                            "add",
+                            CONSTANTS_PATH,
+                            INSTALLER_PATH,
+                            REL_NOTES_PATH,
+                            "pyproject.toml",
+                        ]
                     )
                     commit_msg = f"chore: bump version to {new_ver}"
 

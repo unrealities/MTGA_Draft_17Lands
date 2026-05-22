@@ -91,18 +91,19 @@ class TestDraftApp:
         """Verify that modifying the settings window instantly updates the main root attributes."""
         config = Configuration()
         with patch("src.ui.app_layout.AppLayoutManager.build"):
-            app = DraftApp(root, mock_scanner, config)
+            # Mock the attributes call to prevent headless Xvfb environments from rejecting window manager commands
+            with patch.object(root, "attributes") as mock_attr:
+                app = DraftApp(root, mock_scanner, config)
 
-            # Default is False
-            assert root.attributes("-topmost") == 0
+                # Default is False (Called during DraftApp __init__)
+                mock_attr.assert_any_call("-topmost", False)
 
-            # Update config and trigger the callback manually (as the settings window would)
-            config.settings.always_on_top = True
-            with patch("src.ui.windows.settings.SettingsWindow"):
-                app._open_settings()
-                # The callback _on_settings_changed is buried in the closure, so we test the result
-                # by calling it directly if we can, or just triggering the root logic.
+                # Update config and trigger the callback manually (as the settings window would)
+                config.settings.always_on_top = True
+                with patch("src.ui.windows.settings.SettingsWindow"):
+                    app._open_settings()
 
-                # To test the closure, we simulate the exact logic it runs:
-                root.attributes("-topmost", config.settings.always_on_top)
-                assert root.attributes("-topmost") == 1
+                    # To test the closure, we simulate the exact logic it runs:
+                    root.attributes("-topmost", config.settings.always_on_top)
+
+                    mock_attr.assert_any_call("-topmost", True)
