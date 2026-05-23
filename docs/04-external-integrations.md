@@ -1,6 +1,6 @@
 # External Integrations & APIs
 
-**Status:** Implementation Spec | **Dependencies:** `requests`, `PIL`, `sqlite3`
+**Status:** Implementation Spec | **Dependencies:** Managed via `pyproject.toml` (Poetry)
 
 ## 1. 17Lands.com API (Statistical Data)
 

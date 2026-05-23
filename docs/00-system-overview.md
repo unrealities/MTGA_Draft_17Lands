@@ -1,6 +1,6 @@
 # System Overview & Architecture
 
-**Status:** Active | **Current Version:** Python 4.15 | **Target:** Architecture Specification
+**Status:** Active | **Current Version:** 4.16 | **Target:** Architecture Specification
 
 ## 1. Introduction
 
