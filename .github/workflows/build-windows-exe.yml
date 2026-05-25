@@ -19,6 +19,11 @@ jobs:
 
       - name: Install Poetry
         uses: snok/install-poetry@v1
+        with:
+          virtualenvs-in-project: true
+
+      - name: Add Poetry to PATH (Windows)
+        run: echo "$USERPROFILE\.local\bin" | Out-File -FilePath $env:GITHUB_PATH -Append
 
       - name: Install Python dependencies
         run: poetry install --no-interaction
