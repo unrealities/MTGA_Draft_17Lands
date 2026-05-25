@@ -115,7 +115,7 @@
                 "Sealed"
             ],
             "start_date": "2026-04-21",
-            "end_date": "2026-05-13"
+            "end_date": "2026-06-01"
         },
         {
             "set_code": "SOS",
@@ -123,7 +123,7 @@
                 "TradSealed"
             ],
             "start_date": "2026-04-21",
-            "end_date": "2026-05-04"
+            "end_date": "2026-05-18"
         },
         {
             "set_code": "STX",
@@ -144,6 +144,7 @@
         {
             "set_code": "TDM",
             "formats": [
+                "PremierDraft",
                 "Sealed"
             ],
             "start_date": "2026-06-09",
@@ -220,7 +221,23 @@
                 "ContenderDraft"
             ],
             "start_date": "2026-05-22",
-            "end_date": "2026-05-28"
+            "end_date": "2026-05-29"
+        },
+        {
+            "set_code": "Y25SOS",
+            "formats": [
+                "PremierDraft"
+            ],
+            "start_date": "2026-05-26",
+            "end_date": "2026-06-02"
+        },
+        {
+            "set_code": "FDN",
+            "formats": [
+                "Sealed"
+            ],
+            "start_date": "2026-06-12",
+            "end_date": "2026-06-15"
         }
     ]
 }
