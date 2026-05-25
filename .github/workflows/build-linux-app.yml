@@ -25,7 +25,7 @@ jobs:
           python-version: ${{ matrix.python-version }}
 
       - name: Install Poetry
-        uses: snok/install-poetry
+        uses: snok/install-poetry@v1
         with:
           version: 2.4
 
