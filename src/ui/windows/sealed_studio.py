@@ -1334,8 +1334,9 @@ class SealedStudioWindow(tb.Toplevel):
         if not getattr(self, "_drag_data", None):
             return
 
-        dx, dy = abs(event.x_root - self._drag_data["x"]), abs(
-            event.y_root - self._drag_data["y"]
+        dx, dy = (
+            abs(event.x_root - self._drag_data["x"]),
+            abs(event.y_root - self._drag_data["y"]),
         )
         card_name = self._drag_data["name"]
 

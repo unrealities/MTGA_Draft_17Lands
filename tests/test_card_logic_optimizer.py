@@ -88,16 +88,16 @@ def test_optimize_deck_swaps_clunky_card_for_cheap_premium(mock_sim, base_deck_a
 
     # Assertions
     assert len(final_deck) == 40, "Optimized deck must remain exactly 40 cards."
-    assert (
-        "Premium 2-Drop" in final_names
-    ), "Optimizer failed to include the premium sideboard card."
-    assert (
-        "Clunky Behemoth" not in final_names
-    ), "Optimizer failed to cut the clunky high-CMC card."
+    assert "Premium 2-Drop" in final_names, (
+        "Optimizer failed to include the premium sideboard card."
+    )
+    assert "Clunky Behemoth" not in final_names, (
+        "Optimizer failed to cut the clunky high-CMC card."
+    )
     assert "Clunky Behemoth" in sb_names, "Cut card was not moved to the sideboard."
-    assert (
-        "Curve Lower" in opt_note
-    ), "Optimization note did not correctly identify the action taken."
+    assert "Curve Lower" in opt_note, (
+        "Optimization note did not correctly identify the action taken."
+    )
 
     # Verify that the simulator was called multiple times (once per permutation + final run)
     assert mock_sim.call_count > 2
@@ -113,3 +113,56 @@ def test_optimize_deck_rejects_invalid_deck_sizes():
 
     assert final_stats is None
     assert final_deck == deck
+
+
+def test_optimize_deck_permutation_generation(base_deck_and_sb):
+    """Verify the optimizer successfully generates permutations for 18 lands and fixing swaps."""
+    base_deck, base_sb = base_deck_and_sb
+
+    # Remove one basic land and replace it with a terrible colorless land to trigger "Fix Mana Base"
+    base_deck.pop(0)
+    base_deck.append(
+        {
+            "name": "Terrible Desert",
+            "types": ["Land"],
+            "colors": [],
+            "deck_colors": {"All Decks": {"gihwr": 40.0}},
+        }
+    )
+
+    # Add a terrible spell to trigger "Play 18 Lands"
+    worst_spell = base_deck[17]
+    worst_spell["deck_colors"]["All Decks"]["gihwr"] = 30.0
+
+    # Track the variations sent to the simulator
+    permutations_tested = []
+
+    def mock_sim(deck, *args, **kwargs):
+        # We uniquely identify the permutation by checking if the colorless land or terrible spell was cut
+        names = [c["name"] for c in deck]
+        if "Terrible Desert" not in names:
+            permutations_tested.append("Fixed Mana")
+        if worst_spell["name"] not in names:
+            if "Premium 2-Drop" in names:
+                permutations_tested.append("Swapped Spell")
+            else:
+                permutations_tested.append("18 Lands")
+        return {
+            "cast_t2": 50,
+            "cast_t3": 50,
+            "cast_t4": 50,
+            "curve_out": 10,
+            "mulligans": 5,
+            "screw_t3": 10,
+            "screw_t4": 10,
+            "color_screw_t3": 5,
+            "flood_t5": 10,
+            "avg_hand_size": 6.8,
+        }
+
+    with patch("src.advisor.deck_builder.simulate_deck", side_effect=mock_sim):
+        optimize_deck(base_deck, base_sb, "G", ["G"])
+
+    # Verify that the logic branched into creating the specific permutations
+    assert "Fixed Mana" in permutations_tested
+    assert "18 Lands" in permutations_tested

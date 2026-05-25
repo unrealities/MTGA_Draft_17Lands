@@ -189,7 +189,7 @@ def extract_17lands_data(
 
     for i, color in enumerate(valid_archetypes):
         logger.info(
-            f"   [{i+1}/{len(valid_archetypes)}] Fetching {color} stats ({user_group})..."
+            f"   [{i + 1}/{len(valid_archetypes)}] Fetching {color} stats ({user_group})..."
         )
 
         params = {

@@ -50,9 +50,10 @@ class TestSplashWindow:
         def broken_task(progress_cb):
             raise RuntimeError("Database Locked")
 
-        with patch("tkinter.Toplevel.wm_overrideredirect"), patch(
-            "tkinter.messagebox.showerror"
-        ) as mock_err:
+        with (
+            patch("tkinter.Toplevel.wm_overrideredirect"),
+            patch("tkinter.messagebox.showerror") as mock_err,
+        ):
             splash = SplashWindow(root, broken_task, MagicMock())
 
             for _ in range(20):

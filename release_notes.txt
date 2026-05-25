@@ -1,3 +1,12 @@
+===================== RELEASE NOTES 4.16 =====================
+* unrealities: [Feature] Added full support for **Contender Draft**, MTG Arena's new high-stakes Best-of-1 Limited format.
+* unrealities: [Development] Completely migrated the project's dependency management from Pip (`requirements.txt`) to **Python Poetry**. This drastically improves deterministic builds across Windows, macOS, and Linux, and unifies the local development environment.
+* unrealities: [Development] Massive overhaul of the automated testing suite. Added dozens of deep-logic UI, integration, and mathematical tests, successfully pushing the overall codebase test coverage above 80%.
+* unrealities: [Bug] Fixed an issue where the background thread handling exports to Sealeddeck.tech from the Sealed Studio could throw a `NameError` due to scope nesting.
+* unrealities: [Bug] Fixed a potential UI crash in headless/Linux environments where the X11 window manager rejects "Always on Top" floating window commands.
+* unrealities: [Bug] Fixed a database mapping issue where integer-based color symbols were incorrectly compared as strings during local MTG Arena data extraction.
+* unrealities: [Documentation] Completely refreshed the `README.md` and `/docs` to reflect the new Poetry installation commands, updated features, and cleaned up legacy troubleshooting steps.
+
 ===================== RELEASE NOTES 4.15 =====================
 * unrealities: [Major Feature] Mana Base Optimization: The "Auto-Lands" and AI Deck Optimizer now actively simulate dozens of mathematical land permutations instead of relying on static heuristics
 * unrealities: [Alpha Feature] Added a workspace specifically designed for Sealed deckbuilding. Features an interactive visual drag-and-drop mode, detailed list views.

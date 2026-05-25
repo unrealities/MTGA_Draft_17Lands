@@ -173,8 +173,9 @@ def calculate_holistic_score(deck, colors, pool_size, metrics, tier_data=None):
     }
     subtypes, changeling_count = {}, 0
     for c in spells:
-        text, count = str(c.get("oracle_text", c.get("text", ""))).lower(), c.get(
-            "count", 1
+        text, count = (
+            str(c.get("oracle_text", c.get("text", ""))).lower(),
+            c.get("count", 1),
         )
         if "changeling" in text:
             changeling_count += count

@@ -68,5 +68,12 @@ Because 17Lands does not immediately have data for every color pair on Day 1 of 
 1. Every card must have an `"All Decks"` archetype.
 2. Every card must possess keys for all 26 possible archetypes (e.g., `UB`, `WUBRG`). 
 3. If 17Lands did not return data for an archetype, `transform.py` injects a placeholder object with `0.0` values. This prevents the Desktop App from throwing fatal `KeyError` exceptions when a user changes their deck filter in the UI. 
-4. The pipeline combines `mtga_id` (from 17Lands) and `arena_ids` (from Scryfall) into a single array to ensure Showcase, Retro, and Alternate Art card styles are successfully matched by the local MTG Arena log scanner.
-```
+4. The pipeline combines mtga_id (from 17Lands) and arena_ids (from Scryfall) into a single array to ensure Showcase, Retro, and Alternate Art card styles are successfully matched by the local MTG Arena log scanner.
+
+## 7. Local Development
+
+To run the ETL pipeline locally for testing:
+
+1. Ensure your dependencies are installed via `poetry install`.
+2. Run the pipeline module: `poetry run python -m server.main`.
+3. The compressed datasets and manifest will be output to the local `build/` directory.

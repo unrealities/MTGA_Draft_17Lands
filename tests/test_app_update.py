@@ -148,9 +148,9 @@ def test_live_github_api_verification(app_update, valid_search_location_latest):
 
     # If these asserts fail, GitHub changed their API schema and broke the app updater
     assert app_update.version != "", "Live API schema changed! Could not parse version."
-    assert (
-        app_update.file_location != ""
-    ), "Live API schema changed! Could not parse download URL."
+    assert app_update.file_location != "", (
+        "Live API schema changed! Could not parse download URL."
+    )
     assert isinstance(float(app_update.version), float)
 
 
@@ -210,3 +210,37 @@ def test_download_file_failure(
 
     output_location = app_update.download_file(invalid_input_url, output_filename)
     assert output_location == ""
+
+
+@patch("src.app_update.urllib.request.urlopen")
+@patch("src.app_update.os.replace")
+def test_download_file_tar_gz_fallback(
+    mock_replace, mock_urlopen, app_update, tmp_path, monkeypatch
+):
+    """Verify that downloading a tar.gz on Linux bypasses zip extraction and simply replaces the file."""
+
+    monkeypatch.setattr("src.app_update.DOWNLOADS_FOLDER", str(tmp_path))
+
+    # Mock the network response
+    mock_response = MagicMock()
+    mock_response.__enter__.return_value = mock_response
+    mock_urlopen.return_value = mock_response
+
+    input_url = "https://github.com/example/release.tar.gz"
+    output_filename = "MTGA_Draft_Tool_Linux.tar.gz"
+
+    # We write a dummy file to act as the downloaded temp file so os.path.exists passes
+    def side_effect_replace(src, dst):
+        with open(dst, "w") as f:
+            f.write("success")
+
+    mock_replace.side_effect = side_effect_replace
+
+    # Prevent the test from writing garbage to your real hard drive via copyfileobj
+    with patch("src.app_update.shutil.copyfileobj"):
+        # Explicitly make sure zipfile check is false
+        with patch("src.app_update.zipfile.is_zipfile", return_value=False):
+            result = app_update.download_file(input_url, output_filename)
+
+    assert result == str(tmp_path / output_filename)
+    mock_replace.assert_called_once()

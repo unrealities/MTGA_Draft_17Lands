@@ -1060,8 +1060,9 @@ class CustomDeckPanel(ttk.Frame):
         if not getattr(self, "_drag_data", None):
             return
 
-        dx, dy = abs(event.x_root - self._drag_data["x"]), abs(
-            event.y_root - self._drag_data["y"]
+        dx, dy = (
+            abs(event.x_root - self._drag_data["x"]),
+            abs(event.y_root - self._drag_data["y"]),
         )
         card_name = self._drag_data["name"]
 
@@ -1573,7 +1574,7 @@ class CustomDeckPanel(ttk.Frame):
             cnt = curve[i]
             ttk.Label(
                 curve_frame,
-                text=f"{lbl:<8} {'█'*cnt} ({cnt})",
+                text=f"{lbl:<8} {'█' * cnt} ({cnt})",
                 font=Theme.scaled_font(10, family=constants.FONT_MONO_SPACE),
             ).pack(anchor="w", pady=Theme.scaled_val(1))
 

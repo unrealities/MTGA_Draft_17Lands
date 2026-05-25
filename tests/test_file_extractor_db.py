@@ -86,6 +86,72 @@ def test_retrieve_local_arena_data_success(
     assert card["cmc"] == 1
 
 
+def test_process_linked_faces(extractor):
+    """Verify dual-faced cards are properly processed and linked."""
+    card_data = {
+        "M10": {
+            100: {
+                "name": ["Front Face"],
+                "cmc": 4,
+                "mana_cost": "{3}{W}",
+                "isprimarycard": 1,
+                "linkedfacetype": 6,
+                "types": [1],  # Creature
+            },
+            101: {
+                "name": ["Back Face"],
+                "cmc": 2,
+                "mana_cost": "{1}{W}",
+                "isprimarycard": 0,
+                "linkedfacetype": 6,
+                "types": [2],  # Instant
+            },
+        }
+    }
+
+    # Simulate DB rows
+    card_row_back = {
+        "linkedfacegrpids": "100",
+        "isprimarycard": 0,
+        "linkedfacetype": 6,
+        "types": "2",
+        "oldschoolmanatext": "o1oW",
+    }
+
+    # Process back face first, which updates the front face (id 100)
+    extractor._process_linked_faces(card_row_back, card_data, "M10", 101)
+
+    # Front face should now inherit the lower CMC of the back face for adventures/MDFCs
+    assert card_data["M10"][100]["cmc"] == 2
+    assert card_data["M10"][100]["mana_cost"] == "{1}{W}"
+
+
+def test_assemble_stored_data_success(extractor):
+    """Verify database enumeration dictionaries are mapped back to card JSON objects."""
+    card_text = {1: "Lightning Bolt", 100: "Instant", 200: "Burn", 300: "Red"}
+    card_enums = {
+        "types": {"10": 100},  # CardType 10 -> LocId 100
+        "subtypes": {"20": 200},  # SubType 20 -> LocId 200
+        "colors": {1: 300},  # Color 1 -> LocId 300 (Kept as Int!)
+    }
+
+    card_data = {
+        "M10": {1001: {"name": [1], "types": [10], "subtypes": [20], "colors": [1]}}
+    }
+
+    with patch("src.file_extractor.open", new_callable=MagicMock()):
+        with patch("src.file_extractor.json.dump"):
+            res = extractor._assemble_stored_data(card_text, card_enums, card_data)
+            assert res is True
+
+            # Verify mapping occurred
+            c = card_data["M10"][1001]
+            assert c["name"] == "Lightning Bolt"
+            assert "Instant" in c["types"]
+            assert "Burn" in c["subtypes"]
+            assert "R" in c["colors"]
+
+
 def test_extract_types_identifies_all_categories():
     """Verify string-based type extraction handles complex typelines."""
     from src.file_extractor import extract_types

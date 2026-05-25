@@ -100,14 +100,14 @@ def test_greedy_double_pip_bomb_splash(mock_metrics):
         pool, ["W", "B"], mock_metrics
     )
 
-    assert (
-        splash_color_fix == "U"
-    ), "Should actively embrace the 3UU bomb when fixing is heavy."
+    assert splash_color_fix == "U", (
+        "Should actively embrace the 3UU bomb when fixing is heavy."
+    )
 
     # Verify the Monte Carlo actually accepts the treasure dork as a valid mana source
     stats = simulate_deck(greedy_deck_fix, iterations=500)
 
     # Because we have duals and treasure dorks, our cast_t2 and cast_t3 rates for the core WB deck should remain relatively high despite the U splash!
-    assert (
-        stats["cast_t2"] > 40.0
-    ), "Core WB velocity destroyed by splash! Auto-Lands allocated basics poorly."
+    assert stats["cast_t2"] > 40.0, (
+        "Core WB velocity destroyed by splash! Auto-Lands allocated basics poorly."
+    )

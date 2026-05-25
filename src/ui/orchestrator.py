@@ -98,7 +98,6 @@ class DraftOrchestrator(threading.Thread):
     def run(self):
         logger.info("Background Watchdog started.")
         while not self._stop_event.is_set():
-
             # Automatically snap back to the live draft log ONLY if a draft event is detected
             if getattr(self, "live_log_path", None) and os.path.exists(
                 self.live_log_path

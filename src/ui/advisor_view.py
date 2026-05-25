@@ -179,8 +179,8 @@ class AdvisorPanel(tb.Frame):
                     w.configure(cursor="hand2")
                     w.bind(
                         "<Button-1>",
-                        lambda e, n=rec.card_name, wdg=item_frame: self.on_click_callback(
-                            n, wdg
+                        lambda e, n=rec.card_name, wdg=item_frame: (
+                            self.on_click_callback(n, wdg)
                         ),
                     )
 

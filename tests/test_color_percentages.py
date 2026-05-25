@@ -46,11 +46,11 @@ class TestColorPercentagesUI:
 
         patches = [
             patch("src.ui.app.Notifications"),
-            patch("src.ui.app.DownloadWindow", side_effect=create_mock_frame),
-            patch("src.ui.app.TakenCardsPanel", side_effect=create_mock_frame),
-            patch("src.ui.app.SuggestDeckPanel", side_effect=create_mock_frame),
-            patch("src.ui.app.ComparePanel", side_effect=create_mock_frame),
-            patch("src.ui.app.TierListWindow", side_effect=create_mock_frame),
+            patch("src.ui.app_layout.DownloadWindow", side_effect=create_mock_frame),
+            patch("src.ui.app_layout.TakenCardsPanel", side_effect=create_mock_frame),
+            patch("src.ui.app_layout.SuggestDeckPanel", side_effect=create_mock_frame),
+            patch("src.ui.app_layout.ComparePanel", side_effect=create_mock_frame),
+            patch("src.ui.app_layout.TierListWindow", side_effect=create_mock_frame),
         ]
         return patches
 

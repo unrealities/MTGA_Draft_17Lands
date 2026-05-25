@@ -20,6 +20,7 @@ from src.constants import (
     COLOR_NAMES_DICT,
     WIN_RATE_OPTIONS,
     WIN_RATE_FIELDS_DICT,
+    DATA_FIELD_CMC,
 )
 
 

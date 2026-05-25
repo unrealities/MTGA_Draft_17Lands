@@ -186,3 +186,54 @@ def test_evaluate_value_over_replacement(mock_metrics):
 
     assert len(recs) == 1
     assert any("High VOR: Scarce R 2-Drops" in reason for reason in recs[0].reasoning)
+
+
+def test_composition_bonus_heuristics(mock_metrics):
+    advisor = DraftAdvisor(mock_metrics, [])
+
+    # Setup pool metrics to trigger specific heuristic thresholds
+    advisor.pool_metrics = {
+        "heavy_drops": 4,
+        "creature_count": 5,
+        "artifacts": 4,
+        "graveyard_enablers": 3,
+        "counters_enablers": 3,
+        "fixing_count": 0,
+        "off_color_playables": 2,
+        "splash_targets": ["U"],
+        "hard_removal_count": 1,
+        "early_plays": 2,
+    }
+    advisor.TOTAL_PICKS = 45
+    advisor.pool = [1] * 20  # Simulate mid-draft (Pick 20)
+
+    # 1. Heavy Drops Penalty
+    mult, reason = advisor._calculate_composition_bonus(
+        {"cmc": 6, "types": ["Creature"]}, pack=2
+    )
+    assert mult == 0.7
+    assert "Curve Too Heavy" in reason
+
+    # 2. Creature Quota Bonus
+    mult, reason = advisor._calculate_composition_bonus(
+        {"cmc": 3, "types": ["Creature"]}, pack=2
+    )
+    assert mult == 1.25
+    assert "Critical: Needs Creatures" in reason
+
+    # 3. Artifact Synergy
+    mult, reason = advisor._calculate_composition_bonus(
+        {"cmc": 3, "tags": ["synergy_artifacts"]}, pack=2
+    )
+    assert mult == 1.2
+    assert "Artifact Synergy" in reason
+
+    # 4. Fixing Hunger (Because off_color_playables > fixing_count)
+    mult, reason = advisor._calculate_composition_bonus({"types": ["Land"]}, pack=2)
+    assert mult == 1.4
+    assert "Critical: Needs Fixing" in reason
+
+    # 5. Removal Hunger
+    mult, reason = advisor._calculate_composition_bonus({"tags": ["removal"]}, pack=2)
+    assert mult == 1.3
+    assert "Critical: Needs Removal" in reason

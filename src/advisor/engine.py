@@ -290,11 +290,13 @@ class DraftAdvisor:
         return sorted(recommendations, key=lambda x: x.contextual_score, reverse=True)
 
     def _identify_main_colors(self) -> Tuple[List[str], Dict[str, float]]:
-        color_weights, color_counts = {c: 0.0 for c in constants.CARD_COLORS}, {
-            c: 0 for c in constants.CARD_COLORS
-        }
-        playable_threshold, total_pool_size = self.global_mean - self.global_std, len(
-            self.pool
+        color_weights, color_counts = (
+            {c: 0.0 for c in constants.CARD_COLORS},
+            {c: 0 for c in constants.CARD_COLORS},
+        )
+        playable_threshold, total_pool_size = (
+            self.global_mean - self.global_std,
+            len(self.pool),
         )
         for idx, c in enumerate(self.pool):
             try:

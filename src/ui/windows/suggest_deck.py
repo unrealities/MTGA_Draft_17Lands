@@ -1045,7 +1045,6 @@ class SuggestDeckPanel(ttk.Frame):
 
                 row_values = []
                 for field in manager.active_fields:
-
                     if field == "name":
                         row_values.append(name)
                     elif field == "count":

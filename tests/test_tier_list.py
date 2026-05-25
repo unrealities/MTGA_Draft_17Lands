@@ -99,3 +99,34 @@ def test_tier_list_retrieve_files(
     assert len(files) == 1
     assert files[0][0] == "OTJ"
     assert files[0][1] == "OTJ Review"
+
+
+def test_tier_list_from_file_corrupt_json(tmp_path):
+    """Verify that a corrupted local tier list file doesn't crash the loader."""
+    filepath = str(tmp_path / "Tier_MKM_123.txt")
+    with open(filepath, "w") as f:
+        f.write("{ invalid json formatting")
+
+    tl = TierList.from_file(filepath)
+    assert tl is None
+
+
+def test_tier_list_retrieve_data_graceful_skip(tmp_path, monkeypatch):
+    """Verify retrieve_data skips corrupt files but successfully loads good ones."""
+    import src.tier_list
+
+    monkeypatch.setattr("src.tier_list.TIER_FOLDER", str(tmp_path))
+    src.tier_list._TIER_CACHE["mtime"] = 0.0  # Force reload
+
+    # Write one bad file, one good file
+    with open(str(tmp_path / "Tier_MKM_1.txt"), "w") as f:
+        f.write("garbage")
+
+    valid_tl = TierList(meta=Meta(set="OTJ", label="Good"), ratings={})
+    valid_tl.to_file(str(tmp_path / "Tier_OTJ_2.txt"))
+
+    data, options = TierList.retrieve_data()
+
+    # Should contain exactly 1 tier list (the good one)
+    assert len(data) == 1
+    assert any("OTJ" in key for key in options.keys())

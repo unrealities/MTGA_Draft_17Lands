@@ -29,6 +29,7 @@ CHECKED_SETS_COMBINED = {
             "TradSealed",
             "PremierDraft",
             "TradDraft",
+            "ContenderDraft",
         ],
     ),
     "Outlaws of Thunder Junction": SetInfo(
@@ -45,6 +46,7 @@ CHECKED_SETS_COMBINED = {
             "TradSealed",
             "PickTwoDraft",
             "PickTwoTradDraft",
+            "ContenderDraft",
         ],
     ),
     "Wilds of Eldraine": SetInfo(
@@ -61,6 +63,7 @@ CHECKED_SETS_COMBINED = {
             "TradSealed",
             "PickTwoDraft",
             "PickTwoTradDraft",
+            "ContenderDraft",
         ],
     ),
     "March of the Machine": SetInfo(
@@ -77,6 +80,7 @@ CHECKED_SETS_COMBINED = {
             "TradSealed",
             "PickTwoDraft",
             "PickTwoTradDraft",
+            "ContenderDraft",
         ],
     ),
     "March of the Machine: The Aftermath": SetInfo(
@@ -93,6 +97,7 @@ CHECKED_SETS_COMBINED = {
             "TradSealed",
             "PickTwoDraft",
             "PickTwoTradDraft",
+            "ContenderDraft",
         ],
     ),
     "Shadows over Innistrad Remastered": SetInfo(
@@ -109,6 +114,7 @@ CHECKED_SETS_COMBINED = {
             "QuickDraft",
             "PickTwoDraft",
             "PickTwoTradDraft",
+            "ContenderDraft",
         ],
     ),
     "Phyrexia: All Will Be One": SetInfo(
@@ -125,6 +131,7 @@ CHECKED_SETS_COMBINED = {
             "TradSealed",
             "PickTwoDraft",
             "PickTwoTradDraft",
+            "ContenderDraft",
         ],
     ),
     "Alchemy: Phyrexia": SetInfo(
@@ -141,6 +148,7 @@ CHECKED_SETS_COMBINED = {
             "TradSealed",
             "PickTwoDraft",
             "PickTwoTradDraft",
+            "ContenderDraft",
         ],
     ),
     "The Brothers' War": SetInfo(
@@ -157,6 +165,7 @@ CHECKED_SETS_COMBINED = {
             "TradSealed",
             "PickTwoDraft",
             "PickTwoTradDraft",
+            "ContenderDraft",
         ],
     ),
     "Alchemy: The Brothers' War": SetInfo(
@@ -173,6 +182,7 @@ CHECKED_SETS_COMBINED = {
             "TradSealed",
             "PickTwoDraft",
             "PickTwoTradDraft",
+            "ContenderDraft",
         ],
     ),
     "CORE": SetInfo(
@@ -189,6 +199,7 @@ CHECKED_SETS_COMBINED = {
             "TradSealed",
             "PickTwoDraft",
             "PickTwoTradDraft",
+            "ContenderDraft",
         ],
     ),
 }
@@ -233,6 +244,7 @@ CHECKED_SETS_17LANDS = {
             "TradSealed",
             "PremierDraft",
             "TradDraft",
+            "ContenderDraft",
         ],
     ),
     "Cube - Powered": SetInfo(
@@ -249,6 +261,7 @@ CHECKED_SETS_17LANDS = {
             "TradSealed",
             "PickTwoDraft",
             "PickTwoTradDraft",
+            "ContenderDraft",
         ],
     ),
     "Cube": SetInfo(
@@ -265,6 +278,7 @@ CHECKED_SETS_17LANDS = {
             "TradSealed",
             "PickTwoDraft",
             "PickTwoTradDraft",
+            "ContenderDraft",
         ],
     ),
     "OTJ": SetInfo(
@@ -281,6 +295,7 @@ CHECKED_SETS_17LANDS = {
             "TradSealed",
             "PickTwoDraft",
             "PickTwoTradDraft",
+            "ContenderDraft",
         ],
     ),
     "WOE": SetInfo(
@@ -297,6 +312,7 @@ CHECKED_SETS_17LANDS = {
             "TradSealed",
             "PickTwoDraft",
             "PickTwoTradDraft",
+            "ContenderDraft",
         ],
     ),
     "MOM": SetInfo(
@@ -313,6 +329,7 @@ CHECKED_SETS_17LANDS = {
             "TradSealed",
             "PickTwoDraft",
             "PickTwoTradDraft",
+            "ContenderDraft",
         ],
     ),
     "MAT": SetInfo(
@@ -329,6 +346,7 @@ CHECKED_SETS_17LANDS = {
             "TradSealed",
             "PickTwoDraft",
             "PickTwoTradDraft",
+            "ContenderDraft",
         ],
     ),
     "SIR": SetInfo(
@@ -345,6 +363,7 @@ CHECKED_SETS_17LANDS = {
             "QuickDraft",
             "PickTwoDraft",
             "PickTwoTradDraft",
+            "ContenderDraft",
         ],
     ),
     "ONE": SetInfo(
@@ -361,6 +380,7 @@ CHECKED_SETS_17LANDS = {
             "TradSealed",
             "PickTwoDraft",
             "PickTwoTradDraft",
+            "ContenderDraft",
         ],
     ),
     "Y23ONE": SetInfo(
@@ -377,6 +397,7 @@ CHECKED_SETS_17LANDS = {
             "TradSealed",
             "PickTwoDraft",
             "PickTwoTradDraft",
+            "ContenderDraft",
         ],
     ),
     "BRO": SetInfo(
@@ -393,6 +414,7 @@ CHECKED_SETS_17LANDS = {
             "TradSealed",
             "PickTwoDraft",
             "PickTwoTradDraft",
+            "ContenderDraft",
         ],
     ),
     "Y23BRO": SetInfo(
@@ -409,6 +431,7 @@ CHECKED_SETS_17LANDS = {
             "TradSealed",
             "PickTwoDraft",
             "PickTwoTradDraft",
+            "ContenderDraft",
         ],
     ),
 }

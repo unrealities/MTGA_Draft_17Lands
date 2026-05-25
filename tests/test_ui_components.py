@@ -6,6 +6,7 @@ Verified: Sorting Toggle, Coordinate Safety, Alphabetical Wrap-around, and Zebra
 
 import pytest
 import tkinter
+from unittest.mock import patch, MagicMock
 from src.ui.components import (
     AutocompleteEntry,
     ModernTreeview,
@@ -13,6 +14,8 @@ from src.ui.components import (
 )
 from src.ui.styles import Theme
 from src import constants
+from src.ui.components import DynamicTreeviewManager
+from src.configuration import Configuration
 
 
 class TestUIComponents:
@@ -153,3 +156,271 @@ class TestUIComponents:
 
         entry._on_key_release(KeyEvent())
         assert not entry.hits
+
+    @patch("src.configuration.write_configuration")
+    def test_dynamic_treeview_column_management(self, mock_write, root):
+        config = Configuration()
+        config.settings.column_configs["test_view"] = ["name", "gihwr"]
+
+        manager = DynamicTreeviewManager(root, "test_view", config, lambda: None)
+
+        # 1. Test Add Column
+        manager._add_column("alsa")
+        assert "alsa" in manager.active_fields
+        assert "alsa" in config.settings.column_configs["test_view"]
+        mock_write.assert_called()
+
+        # 2. Test Remove Column
+        manager._remove_column_by_name("gihwr")
+        assert "gihwr" not in manager.active_fields
+        assert "gihwr" not in config.settings.column_configs["test_view"]
+
+        # 3. Test Reset Defaults
+        manager._reset_defaults()
+        assert manager.active_fields == ["name", "value", "gihwr"]
+
+    def test_collapsible_frame_toggle(self, root):
+        """Verify the CollapsibleFrame correctly expands and collapses its content."""
+        from src.ui.components import CollapsibleFrame
+
+        config = Configuration()
+        frame = CollapsibleFrame(
+            root,
+            title="TEST",
+            expanded=True,
+            configuration=config,
+            setting_key="test_panel",
+        )
+
+        # Starts expanded
+        assert frame.expanded is True
+        assert frame.content_frame.winfo_manager() != ""
+
+        # Toggle to hide
+        frame.toggle()
+        assert frame.expanded is False
+        assert (
+            frame.content_frame.winfo_manager() == ""
+        )  # pack_forget() removes the geometry manager
+        assert config.settings.collapsible_states["test_panel"] is False
+
+    def test_card_pile_rendering(self, root):
+        """Verify the visual CardPile successfully parses card objects into UI rectangles."""
+        from src.ui.components import CardPile
+        from unittest.mock import MagicMock
+
+        mock_app = MagicMock()
+        pile = CardPile(root, "CMC 2", mock_app)
+
+        card_data = {
+            "name": "Grizzly Bears",
+            "count": 2,
+            "mana_cost": "{1}{G}",
+            "deck_colors": {"All Decks": {"gihwr": 55.0}},
+        }
+
+        # Call the render function
+        pile.add_card(card_data)
+
+        # Verify the container was populated with the Tkinter Frame for the card
+        children = pile.container.winfo_children()
+        assert len(children) == 1
+
+        # Drill into the card frame to verify the text was rendered
+        card_frame = children[0]
+        labels = [
+            w for w in card_frame.winfo_children() if isinstance(w, tkinter.Label)
+        ]
+        assert len(labels) == 1
+        assert "2x Grizzly Bears" in labels[0].cget("text")
+
+    @patch("src.ui.components.CardToolTip._reposition")
+    def test_card_tooltip_instantiation(self, mock_repo, root):
+        """Verify the complex CardToolTip overlay spawns without throwing layout errors."""
+        from src.ui.components import CardToolTip
+
+        # Ensure we don't accidentally block it by passing a Basic Land
+        card_data = {
+            "name": "Lightning Bolt",
+            "rarity": "uncommon",
+            "types": ["Instant"],
+            "deck_colors": {"All Decks": {"gihwr": 62.0, "iwd": 5.0, "alsa": 2.1}},
+        }
+
+        try:
+            # We must use scale=1.0 to ensure layout math holds
+            CardToolTip.create(root, card_data, images_enabled=False, scale=1.0)
+
+            tooltip = CardToolTip._active_tooltip
+            assert tooltip is not None
+            assert tooltip.winfo_exists()
+
+            # Verify the data was mapped
+            assert "Lightning Bolt" in tooltip.winfo_children()[0].winfo_children()[
+                0
+            ].cget("text")
+
+            # Cleanup
+            tooltip._close()
+            assert not tooltip.winfo_exists()
+        except Exception as e:
+            pytest.fail(f"CardToolTip crashed on initialization: {e}")
+
+    def test_dynamic_treeview_column_drag_and_drop(self, root):
+        """Verify columns can be dragged and reordered by users."""
+
+        config = Configuration()
+        config.settings.column_configs["test_view"] = ["name", "gihwr", "value"]
+
+        manager = DynamicTreeviewManager(root, "test_view", config, lambda: None)
+        tree = manager.tree
+
+        # Headless Tkinter doesn't fully populate internal display properties until drawn,
+        # so we mock the display order retrieval function for this isolated test.
+        with patch.object(
+            tree, "_get_display_order", return_value=["name", "gihwr", "value"]
+        ):
+
+            class MockEvent:
+                def __init__(self, x):
+                    self.x = x
+                    self.y = 10
+
+            # Mock identifying columns
+            # Column 1 = Name, Column 2 = GIHWR, Column 3 = Value
+            tree.identify_region = MagicMock(return_value="heading")
+            tree.identify_column = MagicMock(return_value="#2")
+
+            # 1. Start drag on GIHWR
+            tree._on_header_press(MockEvent(100))
+            assert tree._drag_col == "gihwr"
+
+            # 2. Drag it far enough to register motion
+            tree._on_header_motion(MockEvent(150))
+            assert tree._dragging is True
+
+            # 3. Release it over Column 3 (Value)
+            tree.identify_column = MagicMock(return_value="#3")
+            tree._on_header_release(MockEvent(150))
+
+            # The config object should have been updated by the move
+            saved_order = config.settings.column_display_orders["test_view"]
+            # Expect order to be: name, value, gihwr (because gihwr was dropped over value's index)
+            assert saved_order == ["name", "value", "gihwr"]
+
+    def test_scrolled_frame_initialization(self, root):
+        """Verify ScrolledFrame layout and coordinate binding."""
+        from src.ui.components import ScrolledFrame
+
+        frame = ScrolledFrame(root)
+
+        # Test resize bindings
+        class MockEvent:
+            height = 500
+
+        frame.canvas.event_generate("<Configure>", height=500)
+
+        assert frame.canvas.winfo_exists()
+        assert frame.scrollbar.winfo_exists()
+        assert frame.scrollable_frame.winfo_exists()
+
+    def test_dynamic_treeview_context_menu(self, root):
+        """Verify right-clicking headers spawns the column configuration menu."""
+
+        config = Configuration()
+        config.settings.column_configs["test_view"] = ["name", "gihwr"]
+
+        manager = DynamicTreeviewManager(root, "test_view", config, lambda: None)
+
+        class MockEvent:
+            x = 10
+            y = 10
+            x_root = 100
+            y_root = 100
+
+        manager.tree.identify_region = MagicMock(return_value="heading")
+        # Click on GIHWR column (#2)
+        manager.tree.identify_column = MagicMock(return_value="#2")
+
+        with patch("tkinter.Menu.post") as mock_post:
+            manager._show_context_menu(MockEvent())
+            mock_post.assert_called_once_with(100, 100)
+
+    def test_signal_meter_and_curve_plot_redraw(self, root):
+        """Verify graphical charts update smoothly via data pushes and theme changes."""
+        from src.ui.components import SignalMeter, ManaCurvePlot, TypePieChart
+        from unittest.mock import MagicMock
+
+        meter = SignalMeter(root)
+        # Force a valid width so the draw routine isn't skipped
+        meter.canvas.winfo_width = MagicMock(return_value=200)
+
+        meter.update_values({"W": 50.0, "U": 0.0})
+        # Verifies the canvas painted something
+        assert len(meter.canvas.find_all()) > 0
+
+        curve = ManaCurvePlot(root, ideal_distribution=[0, 0, 4, 3, 2, 1, 0])
+        curve.canvas.winfo_width = MagicMock(return_value=200)
+
+        curve.update_curve([1, 1, 1, 1, 1, 1, 1])
+        assert len(curve.canvas.find_all()) > 0
+
+        pie = TypePieChart(root)
+        pie.canvas.winfo_width = MagicMock(return_value=200)
+        pie.update_counts({"Creature": 10, "Instant": 5})
+        assert len(pie.canvas.find_all()) > 0
+
+        # Trigger theme change virtual event
+        root.event_generate("<<ThemeChanged>>")
+        root.update()
+
+        assert meter.canvas.cget("bg") == Theme.BG_PRIMARY
+        assert curve.canvas.cget("bg") == Theme.BG_PRIMARY
+
+        config = Configuration()
+        config.settings.column_configs["test_view"] = ["name", "gihwr"]
+
+        manager = DynamicTreeviewManager(root, "test_view", config, lambda: None)
+
+        class MockEvent:
+            x = 10
+            y = 10
+            x_root = 100
+            y_root = 100
+
+        manager.tree.identify_region = MagicMock(return_value="heading")
+        # Click on GIHWR column (#2)
+        manager.tree.identify_column = MagicMock(return_value="#2")
+
+        with patch("tkinter.Menu.post") as mock_post:
+            manager._show_context_menu(MockEvent())
+            mock_post.assert_called_once_with(100, 100)
+        """Verify the complex CardToolTip overlay spawns without throwing layout errors."""
+        from src.ui.components import CardToolTip
+
+        # Ensure we don't accidentally block it by passing a Basic Land
+        card_data = {
+            "name": "Lightning Bolt",
+            "rarity": "uncommon",
+            "types": ["Instant"],
+            "deck_colors": {"All Decks": {"gihwr": 62.0, "iwd": 5.0, "alsa": 2.1}},
+        }
+
+        try:
+            # We must use scale=1.0 to ensure layout math holds
+            CardToolTip.create(root, card_data, images_enabled=False, scale=1.0)
+
+            tooltip = CardToolTip._active_tooltip
+            assert tooltip is not None
+            assert tooltip.winfo_exists()
+
+            # Verify the data was mapped
+            assert "Lightning Bolt" in tooltip.winfo_children()[0].winfo_children()[
+                0
+            ].cget("text")
+
+            # Cleanup
+            tooltip._close()
+            assert not tooltip.winfo_exists()
+        except Exception as e:
+            pytest.fail(f"CardToolTip crashed on initialization: {e}")

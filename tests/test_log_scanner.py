@@ -74,53 +74,57 @@ def event_test_cases(input_scanner, event_label, entry_label, expected, entry_st
 
     # Verify that a new event was detected
     new_event = input_scanner.draft_start_search()
-    assert (
-        expected.new_event == new_event
-    ), f"Test Failed: New Event, Set: {event_label}, {entry_label}, Expected: {expected.new_event}, Actual: {new_event}"
+    assert expected.new_event == new_event, (
+        f"Test Failed: New Event, Set: {event_label}, {entry_label}, Expected: {expected.new_event}, Actual: {new_event}"
+    )
 
     # Verify that new event data was collected
     data_update = input_scanner.draft_data_search()
-    assert (
-        expected.data_update == data_update
-    ), f"Test Failed: Data Update, Set: {event_label}, {entry_label}, Expected: {expected.data_update}, Actual: {data_update}"
+    assert expected.data_update == data_update, (
+        f"Test Failed: Data Update, Set: {event_label}, {entry_label}, Expected: {expected.data_update}, Actual: {data_update}"
+    )
 
     # Verify the current set and event
     current_set, current_event = input_scanner.retrieve_current_limited_event()
     assert (expected.current_set, expected.current_event) == (
         current_set,
         current_event,
-    ), f"Test Failed: Set and Event, Set: {event_label}, {entry_label}, Expected: {(expected.current_set, expected.current_event)}, Actual: {(current_set, current_event)}"
+    ), (
+        f"Test Failed: Set and Event, Set: {event_label}, {entry_label}, Expected: {(expected.current_set, expected.current_event)}, Actual: {(current_set, current_event)}"
+    )
 
     # Verify the current pack, pick
     current_pack, current_pick = input_scanner.retrieve_current_pack_and_pick()
     assert (expected.current_pack, expected.current_pick) == (
         current_pack,
         current_pick,
-    ), f"Test Failed: Pack/Pick, Set: {event_label}, {entry_label}, Expected: {(expected.current_pack, expected.current_pick)}, Actual: {(current_pack, current_pick)}"
+    ), (
+        f"Test Failed: Pack/Pick, Set: {event_label}, {entry_label}, Expected: {(expected.current_pack, expected.current_pick)}, Actual: {(current_pack, current_pick)}"
+    )
 
     # Verify the pack cards
     pack = [x["name"] for x in input_scanner.retrieve_current_pack_cards()]
-    assert (
-        expected.pack == pack
-    ), f"Test Failed: Pack Cards, Set: {event_label}, {entry_label}, Expected: {expected.pack}, Actual: {pack}"
+    assert expected.pack == pack, (
+        f"Test Failed: Pack Cards, Set: {event_label}, {entry_label}, Expected: {expected.pack}, Actual: {pack}"
+    )
 
     # Verify the card pool
     card_pool = [x["name"] for x in input_scanner.retrieve_taken_cards()]
-    assert (
-        expected.card_pool == card_pool
-    ), f"Test Failed: Card Pool, Set: {event_label}, {entry_label}, Expected: {expected.card_pool}, Actual: {card_pool}"
+    assert expected.card_pool == card_pool, (
+        f"Test Failed: Card Pool, Set: {event_label}, {entry_label}, Expected: {expected.card_pool}, Actual: {card_pool}"
+    )
 
     # Verify the missing cards
     missing = [x["name"] for x in input_scanner.retrieve_current_missing_cards()]
-    assert (
-        expected.missing == missing
-    ), f"Test Failed: Missing, Set: {event_label}, {entry_label}, Expected: {expected.missing}, Actual: {missing}"
+    assert expected.missing == missing, (
+        f"Test Failed: Missing, Set: {event_label}, {entry_label}, Expected: {expected.missing}, Actual: {missing}"
+    )
 
     # Verify picks
     picks = [x["name"] for x in input_scanner.retrieve_current_picked_cards()]
-    assert (
-        expected.picks == picks
-    ), f"Test Failed: Picks, Set: {event_label}, {entry_label}, Expected: {expected.picks}, Actual: {picks}"
+    assert expected.picks == picks, (
+        f"Test Failed: Picks, Set: {event_label}, {entry_label}, Expected: {expected.picks}, Actual: {picks}"
+    )
 
 
 @pytest.mark.parametrize(
@@ -378,6 +382,25 @@ def test_draft_history_recording(function_scanner):
     assert len(function_scanner.retrieve_draft_history()) == 0
 
 
+def test_process_json_sanitization(function_scanner):
+    """Verify malformed JSON strings emitted by MTGA are intercepted and sanitized."""
+    from src.utils import process_json
+
+    # In MTGA, sometimes they write a string inside a string without escaping quotes:
+    # "request":"{"EventName":"Draft"}"
+    malformed_payload = (
+        '{"id": "1", "request": "{\\"EventName\\": \\"PremierDraft\\"}"}'
+    )
+
+    result = process_json(malformed_payload)
+
+    # Verify the string was converted to a nested dictionary
+    assert isinstance(result, dict)
+    assert "request" in result
+    assert isinstance(result["request"], dict)
+    assert result["request"]["EventName"] == "PremierDraft"
+
+
 def test_draft_state_recovery(function_scanner):
     """
     Verify that draft state is successfully saved and recovered across scanner instances
@@ -419,3 +442,48 @@ def test_draft_state_recovery(function_scanner):
     assert new_scanner.current_pick == 1
     assert new_scanner.current_draft_id == "87b408d1-43e0-4fb5-8c74-a1257fde087c"
     assert len(new_scanner.pack_cards[0]) == len(function_scanner.pack_cards[0])
+
+
+def test_cards_per_pick_logic(session_scanner):
+    """Verify that Pick-Two events correctly identify they allow 2 cards per pick."""
+    from src import constants
+
+    # Regular Draft
+    session_scanner.draft_type = constants.LIMITED_TYPE_DRAFT_PREMIER_V2
+    assert session_scanner.cards_per_pick == 1
+
+    # Pick Two Draft
+    session_scanner.draft_type = constants.LIMITED_TYPE_DRAFT_PICK_TWO
+    assert session_scanner.cards_per_pick == 2
+
+
+def test_process_pack_data_duplicate_protection(session_scanner):
+    """Verify that feeding the exact same pack data twice is ignored."""
+    session_scanner.clear_draft(True)
+    session_scanner.draft_type = 2
+    session_scanner.number_of_players = 8
+
+    # First time -> should return True (New high watermark)
+    res1 = session_scanner._process_pack_data(pack=1, pick=1, pack_cards=["1", "2"])
+    assert res1 is True
+
+    # Second time with EXACT same cards -> should return False (Duplicate)
+    res2 = session_scanner._process_pack_data(pack=1, pick=1, pack_cards=["1", "2"])
+    assert res2 is False
+
+
+def test_log_suspend(session_scanner):
+    """Verify that log suspension changes the internal logger level to critical."""
+    import logging
+
+    # Enable logging first
+    session_scanner.log_enable(True)
+    assert session_scanner.draft_log.level == logging.INFO
+
+    # Suspend it
+    session_scanner.log_suspend(True)
+    assert session_scanner.draft_log.level == logging.CRITICAL
+
+    # Unsuspend it
+    session_scanner.log_suspend(False)
+    assert session_scanner.draft_log.level == logging.INFO

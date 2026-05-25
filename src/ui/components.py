@@ -282,7 +282,9 @@ class CardToolTip(tkinter.Toplevel):
             else (
                 "#eab308"
                 if rarity == "Rare"
-                else "#38bdf8" if rarity == "Uncommon" else None
+                else "#38bdf8"
+                if rarity == "Uncommon"
+                else None
             )
         )
         tb.Label(
@@ -710,8 +712,8 @@ class ModernTreeview(ttk.Treeview):
             self.heading(i, text=display_text)
             self.column(
                 i,
-                width=Theme.scaled_val(140) if i == "name" else Theme.scaled_val(50),
-                minwidth=Theme.scaled_val(70) if i == "name" else Theme.scaled_val(30),
+                width=Theme.scaled_val(160) if i == "name" else Theme.scaled_val(50),
+                minwidth=Theme.scaled_val(120) if i == "name" else Theme.scaled_val(30),
                 stretch=True,
                 anchor=tkinter.W if i == "name" else tkinter.CENTER,
             )
@@ -931,7 +933,9 @@ class ModernTreeview(ttk.Treeview):
                 tags_list = (
                     list(tags)
                     if isinstance(tags, (list, tuple))
-                    else [tags] if tags else []
+                    else [tags]
+                    if tags
+                    else []
                 )
 
                 # Check if this row is using standard zebra striping or has no tags (for tests)
@@ -1041,7 +1045,7 @@ class DynamicTreeviewManager(ttk.Frame):
 
         self.rowconfigure(0, weight=1)
         self.columnconfigure(0, weight=1)
-        self.columnconfigure(1, minsize=Theme.scaled_val(16), weight=0)
+        self.columnconfigure(1, weight=0)
 
         self._scrollbar = AutoScrollbar(
             self, orient="vertical", command=self.tree.yview
@@ -1050,6 +1054,14 @@ class DynamicTreeviewManager(ttk.Frame):
 
         self.tree.grid(row=0, column=0, sticky="nsew")
         self._scrollbar.grid(row=0, column=1, sticky="ns")
+
+        # Dynamically lock the column width to the scrollbar's exact size to prevent resizing loops
+        def _sync_column_width(e):
+            req = self._scrollbar.winfo_reqwidth()
+            if req > 1:
+                self.columnconfigure(1, minsize=req)
+
+        self._scrollbar.bind("<Configure>", _sync_column_width, add="+")
 
         if not self.static_columns:
             self.tree.bind("<Button-3>", self._show_context_menu, add="+")
@@ -1214,16 +1226,20 @@ class SignalMeter(tb.Frame):
         w = self.canvas.winfo_width()
         if w < 10:
             return
-        cl, cm = ["W", "U", "B", "R", "G"], {
-            "W": Theme.WARNING,
-            "U": Theme.ACCENT,
-            "B": "#555555",
-            "R": Theme.ERROR,
-            "G": Theme.SUCCESS,
-        }
+        cl, cm = (
+            ["W", "U", "B", "R", "G"],
+            {
+                "W": Theme.WARNING,
+                "U": Theme.ACCENT,
+                "B": "#555555",
+                "R": Theme.ERROR,
+                "G": Theme.SUCCESS,
+            },
+        )
         tw = (len(cl) * self.bar_width) + ((len(cl) - 1) * self.gap)
-        sx, sc = (w - tw) / 2, (self.canvas_height - 18) / max(
-            max(self.scores.values(), default=1), 20
+        sx, sc = (
+            (w - tw) / 2,
+            (self.canvas_height - 18) / max(max(self.scores.values(), default=1), 20),
         )
         for i, c in enumerate(cl):
             v = self.scores.get(c, 0.0)
@@ -1276,8 +1292,10 @@ class ManaCurvePlot(tb.Frame):
             return
         bw, gp = Theme.scaled_val(14), Theme.scaled_val(2)
         tw = (len(self.current) * bw) + ((len(self.current) - 1) * gp)
-        sx, sc = (w - tw) / 2, (self.canvas_height - Theme.scaled_val(25)) / max(
-            max(self.current, default=0), max(self.ideal, default=0), 5
+        sx, sc = (
+            (w - tw) / 2,
+            (self.canvas_height - Theme.scaled_val(25))
+            / max(max(self.current, default=0), max(self.ideal, default=0), 5),
         )
         for i, c in enumerate(self.current):
             x, t = sx + (i * (bw + gp)), self.ideal[i] if i < len(self.ideal) else 0
@@ -1297,7 +1315,9 @@ class ManaCurvePlot(tb.Frame):
                 else (
                     Theme.WARNING
                     if c < t and t > 0
-                    else Theme.SUCCESS if c >= t else Theme.ACCENT
+                    else Theme.SUCCESS
+                    if c >= t
+                    else Theme.ACCENT
                 )
             )
             self.canvas.create_rectangle(

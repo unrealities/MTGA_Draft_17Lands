@@ -64,7 +64,7 @@ class Seventeenlands:
                 rem_secs = int(rem_time % 60)
                 eta_str = f"{rem_mins}m {rem_secs}s" if rem_mins > 0 else f"{rem_secs}s"
 
-                msg = f"Downloading '{color}' ({i+1}/{len(target_colors)}) - {pct}% [ETA: {eta_str}]"
+                msg = f"Downloading '{color}' ({i + 1}/{len(target_colors)}) - {pct}% [ETA: {eta_str}]"
                 progress_callback(msg, pct)
 
             # Fetch raw data (from cache or network)

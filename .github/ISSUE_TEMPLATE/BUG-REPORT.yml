@@ -59,16 +59,16 @@ body:
       label: Run Type
       description: In what form are you running this program?
       options:
-        - Windows Executable
-        - Python Script
+        - Compiled Executable (Windows/Mac/Linux)
+        - Python Source (Poetry)
     validations:
       required: true
   - type: textarea
     id: python-version
     attributes:
       label: Python Version
-      description: "If you selected Python, which version of Python are you using?"
-      placeholder: "Python 3.12"
+      description: "If you selected Python Source, which version of Python are you using?"
+      placeholder: "Python 3.12.3"
   - type: textarea
     id: debug-logs
     attributes:

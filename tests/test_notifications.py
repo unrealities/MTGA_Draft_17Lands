@@ -77,3 +77,27 @@ def test_update_dataset(mock_updater_cls, notifications):
     mock_instance = mock_updater_cls.return_value
     notifications.update_dataset()
     mock_instance.sync_datasets.assert_called_once()
+
+
+@patch("src.notifications.tkinter.messagebox.askyesno", return_value=False)
+def test_prompt_missing_dataset_declined(mock_ask, notifications):
+    """Verify declining the prompt safely does nothing."""
+    notifications.prompt_missing_dataset("OTJ", "PremierDraft")
+
+    # Assert UI tab was NOT switched and the enter method was NOT called
+    notifications.root.event_generate.assert_not_called()
+    notifications.dataset_window.enter.assert_not_called()
+
+
+def test_check_application_returns_false(notifications):
+    """Verify check_application securely returns False."""
+    assert notifications.check_application() is False
+
+
+@patch("threading.Thread.start")
+def test_check_dataset_disabled_in_config(mock_start, notifications):
+    """Verify notifications don't trigger if the user disabled them."""
+    notifications.configuration.settings.update_notifications_enabled = False
+
+    notifications.check_dataset()
+    mock_start.assert_not_called()
