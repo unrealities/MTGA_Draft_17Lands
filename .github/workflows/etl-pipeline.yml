@@ -54,7 +54,7 @@ jobs:
         run: |
           # If the gh-pages branch didn't exist yet, ensure the build dir exists
           mkdir -p build
-          python -m server.main
+          poetry run python -m server.main
 
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
