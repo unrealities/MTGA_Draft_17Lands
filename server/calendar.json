@@ -238,6 +238,177 @@
             ],
             "start_date": "2026-06-12",
             "end_date": "2026-06-15"
+        },
+        {
+            "set_code": "MSH",
+            "formats": [
+                "PremierDraft",
+                "TradDraft",
+                "PickTwoDraft"
+            ],
+            "start_date": "2026-06-23",
+            "end_date": "2026-08-10"
+        },
+        {
+            "set_code": "BLB",
+            "formats": [
+                "PremierDraft"
+            ],
+            "start_date": "2026-06-23",
+            "end_date": "2026-07-01"
+        },
+        {
+            "set_code": "DFT",
+            "formats": [
+                "PremierDraft"
+            ],
+            "start_date": "2026-07-14",
+            "end_date": "2026-07-20"
+        },
+        {
+            "set_code": "DSK",
+            "formats": [
+                "PremierDraft"
+            ],
+            "start_date": "2026-07-21",
+            "end_date": "2026-07-27"
+        },
+        {
+            "set_code": "EOE",
+            "formats": [
+                "PremierDraft"
+            ],
+            "start_date": "2026-07-28",
+            "end_date": "2026-08-03"
+        },
+        {
+            "set_code": "WAR",
+            "formats": [
+                "PremierDraft"
+            ],
+            "start_date": "2026-08-04",
+            "end_date": "2026-08-10"
+        },
+        {
+            "set_code": "MSH",
+            "formats": [
+                "Sealed"
+            ],
+            "start_date": "2026-06-23",
+            "end_date": "2026-07-20"
+        },
+        {
+            "set_code": "MSH",
+            "formats": [
+                "TradSealed"
+            ],
+            "start_date": "2026-06-23",
+            "end_date": "2026-08-06"
+        },
+        {
+            "set_code": "MSH",
+            "formats": [
+                "QuickDraft"
+            ],
+            "start_date": "2026-07-02",
+            "end_date": "2026-07-11"
+        },
+        {
+            "set_code": "ECL",
+            "formats": [
+                "QuickDraft"
+            ],
+            "start_date": "2026-07-12",
+            "end_date": "2026-07-20"
+        },
+        {
+            "set_code": "OTJ",
+            "formats": [
+                "QuickDraft"
+            ],
+            "start_date": "2026-07-21",
+            "end_date": "2026-07-30"
+        },
+        {
+            "set_code": "MSH",
+            "formats": [
+                "QuickDraft"
+            ],
+            "start_date": "2026-07-31",
+            "end_date": "2026-08-10"
+        },
+        {
+            "set_code": "MSH",
+            "formats": [
+                "QualifierPlayIn"
+            ],
+            "start_date": "2026-07-04",
+            "end_date": "2026-07-05"
+        },
+        {
+            "set_code": "MSH",
+            "formats": [
+                "TradQualifierPlayIn"
+            ],
+            "start_date": "2026-07-10",
+            "end_date": "2026-07-11"
+        },
+        {
+            "set_code": "MSH",
+            "formats": [
+                "QualifierWeekend"
+            ],
+            "start_date": "2026-07-11",
+            "end_date": "2026-07-12"
+        },
+        {
+            "set_code": "MSH",
+            "formats": [
+                "ArenaDirect"
+            ],
+            "start_date": "2026-06-30",
+            "end_date": "2026-07-05"
+        },
+        {
+            "set_code": "MSH",
+            "formats": [
+                "ArenaDirect"
+            ],
+            "start_date": "2026-07-17",
+            "end_date": "2026-07-26"
+        },
+        {
+            "set_code": "TLA",
+            "formats": [
+                "ArenaDirect"
+            ],
+            "start_date": "2026-07-31",
+            "end_date": "2026-08-02"
+        },
+        {
+            "set_code": "Cube - TBA",
+            "formats": [
+                "PremierDraft",
+                "TradDraft"
+            ],
+            "start_date": "2026-07-21",
+            "end_date": "2026-08-10"
+        },
+        {
+            "set_code": "MSH",
+            "formats": [
+                "ContenderDraft"
+            ],
+            "start_date": "2026-07-07",
+            "end_date": "2026-07-13"
+        },
+        {
+            "set_code": "MSH",
+            "formats": [
+                "ContenderDraft"
+            ],
+            "start_date": "2026-08-04",
+            "end_date": "2026-08-09"
         }
     ]
 }
