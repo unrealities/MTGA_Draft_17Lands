@@ -27,6 +27,7 @@ class SplashWindow:
         root: tkinter.Tk,
         task: Callable[[Callable[[str], None]], Any],
         on_complete: Callable[[Any, "SplashWindow"], None],
+        show_ui: bool = True
     ):
         """
         :param root: The root Tk instance (will be hidden).
@@ -36,14 +37,16 @@ class SplashWindow:
         self.root = root
         self.task = task
         self.on_complete = on_complete
+        self.show_ui = show_ui
         self.queue: queue.Queue = queue.Queue()
 
         # UI State
         self.status_var = tkinter.StringVar(value="INITIALIZING...")
         self.splash: Optional[tkinter.Toplevel] = None
 
-        self._build_splash_ui()
-        self._center_window()
+        if self.show_ui:
+            self._build_splash_ui()
+            self._center_window()
 
         # Hide main window and start execution
         self.root.withdraw()
@@ -60,10 +63,14 @@ class SplashWindow:
         self.splash.attributes("-topmost", True)
 
         # Handle platform-specific transparency/decoration logic
-        try:
-            self.splash.overrideredirect(True)
-        except Exception:
-            self.splash.wm_overrideredirect(True)
+        import sys
+        if sys.platform == "linux":
+            pass
+        else:
+            try:
+                self.splash.overrideredirect(True)
+            except Exception:
+                self.splash.wm_overrideredirect(True)
 
         self.splash.configure(bg=Theme.BG_PRIMARY)
         container = ttk.Frame(self.splash, padding=30, style="Card.TFrame")
@@ -85,6 +92,16 @@ class SplashWindow:
 
         self.progress = ttk.Progressbar(container, mode="indeterminate", length=250)
         self.progress.pack(pady=(0, Theme.scaled_val(10)))
+        self.progress.start(15)
+
+        ttk.Label(
+            container,
+            textvariable=self.status_var,
+            font=Theme.scaled_font(9),
+            foreground=Theme.TEXT_MUTED,
+            justify="center",
+            wraplength=Theme.scaled_val(350)
+        ).pack(pady=(Theme.scaled_val(5), 0))
 
     def _center_window(self) -> None:
         """Centers the splash screen relative to the monitor."""
@@ -107,18 +124,16 @@ class SplashWindow:
 
     def _check_queue(self) -> None:
         """Periodic check for messages from the background thread."""
-        if (
-            not self.root.winfo_exists()
-            or not self.splash
-            or not self.splash.winfo_exists()
-        ):
+        if not self.root.winfo_exists():
+            return
+        if self.show_ui and (not self.splash or not self.splash.winfo_exists()):
             return
 
         try:
             while True:
                 msg_type, data = self.queue.get_nowait()
                 if msg_type == "progress":
-                    self.status_var.set(str(data).upper())
+                    self.status_var.set(str(data))
                 elif msg_type == "success":
                     try:
                         self.on_complete(data, self)
@@ -136,7 +151,8 @@ class SplashWindow:
         """Stops animation and alerts user of startup failure."""
         logger.error(message)
         self.status_var.set("LOAD ERROR")
-        self.progress.stop()
+        if self.show_ui and hasattr(self, "progress"):
+            self.progress.stop()
         messagebox.showerror("Startup Error", f"Failed to start:\n\n{message}")
 
     def close(self) -> None:

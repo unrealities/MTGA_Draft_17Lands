@@ -1,3 +1,9 @@
+===================== RELEASE NOTES 4.17 =====================
+* unrealities: [Feature] Added a toggle in Preferences to completely disable the Splash Screen on startup for users who prefer a silent background load (#179).
+* unrealities: [Bug] Fixed an issue where card tooltips failed to download artwork due to new Scryfall API security requirements rejecting requests without User-Agent headers (#182).
+* unrealities: [UX/UI] Added an "Image Unavailable" visual fallback to card tooltips. This also prevents a bug where the tooltip window would occasionally get stuck at the top-left corner of the monitor if an image download failed.
+* unrealities: [UX/UI] Fixed an issue on Linux where the Splash Screen spawned as an unmanaged window. Linux users can now properly move or minimize the splash screen while datasets download in the background.
+
 ===================== RELEASE NOTES 4.16 =====================
 * unrealities: [Feature] Added full support for **Contender Draft**, MTG Arena's new high-stakes Best-of-1 Limited format.
 * unrealities: [Development] Completely migrated the project's dependency management from Pip (`requirements.txt`) to **Python Poetry**. This drastically improves deterministic builds across Windows, macOS, and Linux, and unifies the local development environment.
