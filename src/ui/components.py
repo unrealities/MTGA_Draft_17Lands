@@ -252,6 +252,7 @@ class CardToolTip(tkinter.Toplevel):
 
         self.transient(parent.winfo_toplevel())
         self.wm_overrideredirect(True)
+        self.withdraw()  # Hide the window while it builds to prevent +0+0 flashing
 
         try:
             self.attributes("-topmost", True)
@@ -437,8 +438,7 @@ class CardToolTip(tkinter.Toplevel):
         self._leave_id = self.parent.bind("<Leave>", self._on_parent_leave, add="+")
         self.bind("<Button-1>", self._close)
 
-        # Force repositioning after window is mapped by OS to prevent +0+0 spawning bugs
-        self.after(50, self._reposition)
+        self.deiconify()  # Show the window instantly now that geometry is calculated
 
     def _apply_error(self):
         if hasattr(self, "winfo_exists") and self.winfo_exists():

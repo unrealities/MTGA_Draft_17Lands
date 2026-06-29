@@ -92,6 +92,16 @@ class SplashWindow:
 
         self.progress = ttk.Progressbar(container, mode="indeterminate", length=250)
         self.progress.pack(pady=(0, Theme.scaled_val(10)))
+        self.progress.start(15)
+
+        ttk.Label(
+            container,
+            textvariable=self.status_var,
+            font=Theme.scaled_font(9),
+            foreground=Theme.TEXT_MUTED,
+            justify="center",
+            wraplength=Theme.scaled_val(350)
+        ).pack(pady=(Theme.scaled_val(5), 0))
 
     def _center_window(self) -> None:
         """Centers the splash screen relative to the monitor."""
@@ -123,7 +133,7 @@ class SplashWindow:
             while True:
                 msg_type, data = self.queue.get_nowait()
                 if msg_type == "progress":
-                    self.status_var.set(str(data).upper())
+                    self.status_var.set(str(data))
                 elif msg_type == "success":
                     try:
                         self.on_complete(data, self)
