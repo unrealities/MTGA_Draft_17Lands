@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "mtga-draft-tool"
-version = "4.16"
+version = "4.17"
 description = "Magic: The Gathering Arena draft tool that utilizes 17Lands data."
 authors = ["unrealities"]
 readme = "README.md"

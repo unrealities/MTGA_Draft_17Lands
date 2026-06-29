@@ -262,7 +262,10 @@ def main():
 
         # Launch non-blocking Splash
         SplashWindow(
-            root, task=lambda cb: load_data(args, config, cb), on_complete=on_ready
+            root, 
+            task=lambda cb: load_data(args, config, cb), 
+            on_complete=on_ready,
+            show_ui=getattr(config.settings, "show_splash_screen", True)
         )
 
     try:

@@ -322,6 +322,8 @@ class CardToolTip(tkinter.Toplevel):
 
             if urls:
                 self._load_image_async(urls[0], scale)
+            else:
+                self.after(0, self._apply_error)
 
         sf = tb.Frame(b)
         sf.pack(side="left", fill="both", expand=True, anchor="n")
@@ -435,6 +437,22 @@ class CardToolTip(tkinter.Toplevel):
         self._leave_id = self.parent.bind("<Leave>", self._on_parent_leave, add="+")
         self.bind("<Button-1>", self._close)
 
+        # Force repositioning after window is mapped by OS to prevent +0+0 spawning bugs
+        self.after(50, self._reposition)
+
+    def _apply_error(self):
+        if hasattr(self, "winfo_exists") and self.winfo_exists():
+            if hasattr(self, "img_label"):
+                self.img_label.configure(
+                    text="Image\nUnavailable", 
+                    justify="center", 
+                    anchor="center",
+                    foreground=Theme.ERROR,
+                    font=(Theme.FONT_FAMILY, int(12 * Theme.current_scale), "bold")
+                )
+            self._reposition()
+            self.lift()
+
     def _on_parent_leave(self, event):
         try:
             x, y = self.winfo_pointerx(), self.winfo_pointery()
@@ -515,6 +533,11 @@ class CardToolTip(tkinter.Toplevel):
         """Moved the core logic into a clean worker method"""
         try:
             if not u:
+                if hasattr(self, "winfo_exists"):
+                    try:
+                        self.after(0, lambda: self._apply_error() if self.winfo_exists() else None)
+                    except RuntimeError:
+                        pass
                 return
             sn = cache_key + ".jpg"
             cp = os.path.join(self.IMAGE_CACHE_DIR, sn)
@@ -522,7 +545,7 @@ class CardToolTip(tkinter.Toplevel):
                 with open(cp, "rb") as fi:
                     r = fi.read()
             else:
-                req = requests.get(u, timeout=5)
+                req = requests.get(u, headers={"User-Agent": "MTGADraftTool"}, timeout=5)
                 req.raise_for_status()
                 r = req.content
                 with open(cp, "wb") as fi:
@@ -550,7 +573,14 @@ class CardToolTip(tkinter.Toplevel):
                 except RuntimeError:
                     pass
         except Exception as e:
-            pass
+            if hasattr(self, "winfo_exists"):
+                try:
+                    self.after(
+                        0,
+                        lambda: self._apply_error() if self.winfo_exists() else None,
+                    )
+                except RuntimeError:
+                    pass
 
     def _apply_image(self, im):
         if hasattr(self, "winfo_exists") and self.winfo_exists():

@@ -115,6 +115,7 @@ class SettingsWindow(tkinter.Toplevel):
             ("Check for Dataset Updates", "update_notifications_enabled"),
             ("Alert on Missing Datasets", "missing_notifications_enabled"),
             ("Enable Draft Log Creation", "draft_log_enabled"),
+            ("Show Splash Screen on Startup", "show_splash_screen"),
         ]
 
         for i, (label, key) in enumerate(features):
@@ -191,6 +192,7 @@ class SettingsWindow(tkinter.Toplevel):
             "update_notifications_enabled",
             "missing_notifications_enabled",
             "draft_log_enabled",
+            "show_splash_screen",
         ]
 
         for key in checkbox_keys:
