@@ -1,0 +1,27 @@
+nav a div div,
+nav div div div {
+  font-size: 16px !important;
+  font-weight: 400 !important;
+  line-height: 1.3 !important;
+}
+
+.title_container {
+    border: 1px solid black;
+    width: fit-content;
+}
+
+.title_container #title {
+    position: relative;
+    top: 0em;
+    margin-left: 0.5em;
+    margin-right: 0.5em;
+    display: inline;
+}
+
+.title_container #content {
+    padding: 0.2em 0.5em;
+}
+
+textarea::placeholder {
+    text-align:center;
+}

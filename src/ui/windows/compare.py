@@ -1,0 +1,181 @@
+"""
+src/ui/windows/compare.py
+Professional Card Comparison Workspace.
+"""
+
+import tkinter
+from tkinter import ttk
+from src import constants
+from src.ui.styles import Theme
+from src.ui.components import DynamicTreeviewManager, AutocompleteEntry, CardToolTip
+from src.card_logic import format_win_rate, row_color_tag
+
+
+class ComparePanel(ttk.Frame):
+    def __init__(self, parent, draft_manager, configuration):
+        super().__init__(parent)
+        self.draft = draft_manager
+        self.configuration = configuration
+        self.compare_list = []
+        self._build_ui()
+        self.refresh()
+
+    @property
+    def table(self) -> ttk.Treeview:
+        return self.table_manager.tree if hasattr(self, "table_manager") else None
+
+    def refresh(self):
+        card_map = self.draft.set_data.get_card_ratings() or {}
+        self.entry_card.set_completion_list(
+            [v.get("name", "") for v in card_map.values()]
+        )
+        self._update_content()
+
+    def _build_ui(self):
+        bar = ttk.Frame(self, style="Card.TFrame", padding=5)
+        bar.pack(fill="x", pady=(0, 5))
+
+        ttk.Label(
+            bar,
+            text="SEARCH:",
+            font=(Theme.FONT_FAMILY, 8, "bold"),
+            bootstyle="primary",
+        ).pack(side="left", padx=5)
+        self.entry_card = AutocompleteEntry(bar, completion_list=[], width=40)
+        self.entry_card.pack(side="left", fill="x", expand=True, padx=5)
+        self.entry_card.bind("<Return>", self._add_card)
+
+        ttk.Button(bar, text="Add", width=8, command=self._add_card).pack(
+            side="left", padx=2
+        )
+        ttk.Button(bar, text="Clear", command=self._clear_list).pack(
+            side="right", padx=5
+        )
+
+        self.table_manager = DynamicTreeviewManager(
+            self,
+            view_id="compare_table",
+            configuration=self.configuration,
+            on_update_callback=self._update_content,
+        )
+        self.table_manager.pack(fill="both", expand=True)
+        self.table.bind("<<TreeviewSelect>>", self._on_selection)
+
+    def _add_card(self, event=None):
+        typed = self.entry_card.get().strip().lower()
+        if not typed:
+            return
+        card_map = self.draft.set_data.get_card_ratings() or {}
+        found = next(
+            (d for d in card_map.values() if d.get("name", "").lower() == typed), None
+        )
+        if found and found not in self.compare_list:
+            self.compare_list.append(found)
+            self._update_content()
+            self.entry_card.delete(0, tkinter.END)
+
+    def add_external_card(self, card_data):
+        """Allows external tabs (like the Dashboard) to quickly push a card here for comparison."""
+        if card_data not in self.compare_list:
+            self.compare_list.append(card_data)
+            self._update_content()
+
+    def _clear_list(self):
+        self.compare_list.clear()
+        self._update_content()
+
+    def _update_content(self):
+        t = self.table
+        if t is None:
+            return
+
+        t.bind("<<TreeviewSelect>>", self._on_selection)
+
+        from src.card_logic import filter_options
+
+        raw_pool = self.draft.retrieve_taken_cards()
+        metrics = self.draft.retrieve_set_metrics()
+        tier_data = self.draft.retrieve_tier_data()
+        colors = filter_options(
+            raw_pool,
+            self.configuration.settings.deck_filter,
+            metrics,
+            self.configuration,
+        )
+        active_color = colors[0] if colors else "All Decks"
+
+        for item in t.get_children():
+            t.delete(item)
+
+        for idx, card in enumerate(self.compare_list):
+            row_values = []
+
+            # Apply row color tag if enabled, otherwise fallback to zebra index
+            tag = "bw_odd" if idx % 2 == 0 else "bw_even"
+            if self.configuration.settings.card_colors_enabled:
+                tag = row_color_tag(card.get(constants.DATA_FIELD_MANA_COST, ""))
+
+            for field in self.table_manager.active_fields:
+                if field == "name":
+                    row_values.append(card.get("name", ""))
+                elif field == "colors":
+                    row_values.append("".join(card.get("colors", [])))
+                elif field == "tags":
+                    raw_tags = card.get("tags", [])
+                    if raw_tags:
+                        icons_only = [
+                            constants.TAG_VISUALS.get(t, t).split(" ")[0]
+                            for t in raw_tags
+                        ]
+                        row_values.append(" ".join(icons_only))
+                    else:
+                        row_values.append("-")
+                elif "TIER" in field:
+                    if tier_data and field in tier_data:
+                        tier_obj = tier_data[field]
+                        raw_name = card.get("name", "")
+                        if raw_name in tier_obj.ratings:
+                            row_values.append(tier_obj.ratings[raw_name].rating)
+                        else:
+                            row_values.append("NA")
+                    else:
+                        row_values.append("NA")
+                else:
+                    val = (
+                        card.get("deck_colors", {})
+                        .get(active_color, {})
+                        .get(field, 0.0)
+                    )
+                    row_values.append(
+                        format_win_rate(
+                            val,
+                            active_color,
+                            field,
+                            metrics,
+                            self.configuration.settings.result_format,
+                        )
+                    )
+
+            t.insert(
+                "",
+                "end",
+                values=row_values,
+                tags=(tag,),
+            )
+
+        if hasattr(t, "reapply_sort"):
+            t.reapply_sort()
+
+    def _on_selection(self, event):
+        sel = self.table.selection()
+        if not sel:
+            return
+        idx = self.table.index(sel[0])
+        if idx < len(self.compare_list):
+            card = self.compare_list[idx]
+            CardToolTip(
+                self.table,
+                card,
+                self.configuration.features.images_enabled,
+                constants.UI_SIZE_DICT.get(self.configuration.settings.ui_size, 1.0),
+            )

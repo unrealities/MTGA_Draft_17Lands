@@ -1,0 +1,337 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MTGA Draft Tool - Dataset Warehouse</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+
+  <body
+    class="bg-slate-900 text-slate-300 min-h-screen flex flex-col font-sans"
+  >
+    <file path="server/templates/nav.html">
+  <!-- Top Navigation Bar -->
+  <div
+    class="w-full bg-slate-900/80 backdrop-blur-md border-b border-slate-800 sticky top-0 z-50"
+  >
+    <div
+      class="max-w-6xl mx-auto px-4 md:px-8 py-4 flex flex-col md:flex-row justify-between items-center gap-4"
+    >
+      <div class="flex items-center gap-3">
+        <span class="text-xl font-extrabold text-white tracking-tight"
+          >MTGA <span class="text-blue-500">Draft Tool</span></span
+        >
+      </div>
+      <div class="flex gap-2 flex-wrap justify-center" id="global-nav-links">
+        <a
+          href="index.html"
+          class="nav-link text-sm bg-slate-800 hover:bg-slate-700 text-slate-300 px-4 py-2 rounded-lg border border-slate-700 transition"
+          >App & Downloads</a
+        >
+        <a
+          href="releases.html"
+          class="nav-link text-sm bg-slate-800 hover:bg-slate-700 text-slate-300 px-4 py-2 rounded-lg border border-slate-700 transition"
+          >Releases</a
+        >
+        <a
+          href="warehouse.html"
+          class="nav-link text-sm bg-slate-800 hover:bg-slate-700 text-slate-300 px-4 py-2 rounded-lg border border-slate-700 transition"
+          >Data Warehouse</a
+        >
+        <a
+          href="calendar.html"
+          class="nav-link text-sm bg-slate-800 hover:bg-slate-700 text-slate-300 px-4 py-2 rounded-lg border border-slate-700 transition"
+          >Schedule</a
+        >
+        <a
+          href="docs.html"
+          class="nav-link text-sm bg-slate-800 hover:bg-slate-700 text-slate-300 px-4 py-2 rounded-lg border border-slate-700 transition"
+          >API Docs</a
+        >
+        <a
+          href="https://github.com/unrealities/MTGA_Draft_17Lands"
+          target="_blank"
+          class="text-sm bg-slate-800 hover:bg-slate-700 text-slate-300 px-4 py-2 rounded-lg border border-slate-700 transition flex items-center gap-2"
+        >
+          <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24">
+            <path
+              fill-rule="evenodd"
+              clip-rule="evenodd"
+              d="M12 2C6.477 2 2 6.477 2 12c0 4.42 2.865 8.166 6.839 9.489.5.092.682-.217.682-.482 0-.237-.008-.866-.013-1.7-2.782.603-3.369-1.34-3.369-1.34-.454-1.156-1.11-1.462-1.11-1.462-.908-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.529 2.341 1.087 2.91.831.092-.646.35-1.086.636-1.336-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.269 2.75 1.025A9.578 9.578 0 0112 6.836c.85.004 1.705.114 2.504.336 1.909-1.294 2.747-1.025 2.747-1.025.546 1.377.203 2.394.1 2.647.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.935.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.743 0 .267.18.578.688.48C19.138 20.161 22 16.418 22 12c0-5.523-4.477-10-10-10z"
+            ></path>
+          </svg>
+          GitHub
+        </a>
+      </div>
+    </div>
+  </div>
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      const path = window.location.pathname
+      const page = path.split("/").pop() || "index.html"
+      document
+        .querySelectorAll("#global-nav-links .nav-link")
+        .forEach((link) => {
+          if (link.getAttribute("href") === page) {
+            link.className =
+              "nav-link text-sm bg-blue-600/20 text-blue-400 border border-blue-500/30 px-4 py-2 rounded-lg transition font-semibold"
+          }
+        })
+    })
+  </script>
+</file>
+
+
+    <div class="max-w-6xl mx-auto px-4 md:px-8 py-8 flex-1 w-full">
+      <div class="mb-8 pb-6 border-b border-slate-800">
+        <h1 class="text-3xl font-bold text-slate-100 mb-2">
+          📦 MTGA Dataset Warehouse
+        </h1>
+        <div class="flex items-center gap-3">
+          <p class="text-slate-400 text-sm" id="last-updated">
+            Checking last update time...
+          </p>
+          <span class="text-slate-600 text-sm">•</span>
+          <p class="text-slate-400 text-sm">
+            Powered by
+            <a
+              href="https://www.17lands.com"
+              target="_blank"
+              class="text-blue-400 hover:text-blue-300 hover:underline"
+              >17Lands</a
+            >
+            &
+            <a
+              href="https://scryfall.com"
+              target="_blank"
+              class="text-blue-400 hover:text-blue-300 hover:underline"
+              >Scryfall</a
+            >
+          </p>
+        </div>
+      </div>
+
+      <!-- KPI Cards -->
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+        <div class="bg-slate-800/50 p-5 rounded-xl border border-slate-700/50">
+          <h3
+            class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1"
+          >
+            Pipeline Status
+          </h3>
+          <p class="text-2xl font-bold" id="status">Loading...</p>
+        </div>
+        <div class="bg-slate-800/50 p-5 rounded-xl border border-slate-700/50">
+          <h3
+            class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1"
+          >
+            Duration
+          </h3>
+          <p class="text-2xl font-bold text-slate-200" id="duration">--</p>
+        </div>
+        <div class="bg-slate-800/50 p-5 rounded-xl border border-slate-700/50">
+          <h3
+            class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1"
+          >
+            Total Datasets
+          </h3>
+          <p class="text-2xl font-bold text-slate-200" id="total-datasets">
+            --
+          </p>
+        </div>
+        <div class="bg-slate-800/50 p-5 rounded-xl border border-slate-700/50">
+          <h3
+            class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1"
+          >
+            API Requests
+          </h3>
+          <p class="text-2xl font-bold text-slate-200" id="api-reqs">--</p>
+        </div>
+      </div>
+
+      <!-- Data Tables -->
+      <div class="grid grid-cols-1 xl:grid-cols-3 gap-8">
+        <!-- Left Col: Today's Activity -->
+        <div class="xl:col-span-2">
+          <h2 class="text-xl font-bold text-slate-200 mb-4">
+            Today's Pipeline Activity
+          </h2>
+          <div
+            class="overflow-x-auto bg-slate-800/30 rounded-xl border border-slate-700/50"
+          >
+            <table class="w-full text-left text-sm" id="activity-table-wrapper">
+              <thead class="bg-slate-800/50 text-slate-400">
+                <tr>
+                  <th class="p-4 font-semibold sortable asc" data-sort="set">
+                    Set
+                  </th>
+                  <th class="p-4 font-semibold sortable" data-sort="format">
+                    Format
+                  </th>
+                  <th class="p-4 font-semibold sortable" data-sort="user_group">
+                    User Type
+                  </th>
+                  <th class="p-4 font-semibold sortable" data-sort="start_date">
+                    Data Range
+                  </th>
+                  <th
+                    class="p-4 font-semibold text-right sortable"
+                    data-sort="game_count"
+                  >
+                    Games
+                  </th>
+                  <th
+                    class="p-4 font-semibold text-right sortable"
+                    data-sort="size_kb"
+                  >
+                    Size (KB)
+                  </th>
+                  <th class="p-4 font-semibold text-center">Download</th>
+                </tr>
+              </thead>
+              <tbody id="activity-table" class="divide-y divide-slate-700/50">
+                <tr>
+                  <td colspan="7" class="p-4 text-center text-slate-500">
+                    Loading data...
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Right Col: Full Warehouse Manifest -->
+        <div class="flex flex-col h-full">
+          <h2 class="text-xl font-bold text-slate-200 mb-4">
+            Available Downloads
+          </h2>
+          <div
+            class="bg-slate-800/30 rounded-xl border border-slate-700/50 overflow-hidden flex flex-col flex-1"
+          >
+            <div class="bg-slate-800/50 p-3 border-b border-slate-700/50">
+              <input
+                type="text"
+                id="manifest-search"
+                placeholder="Search sets or formats..."
+                class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-sm text-slate-300 focus:outline-none focus:border-blue-500"
+              />
+            </div>
+
+            <div class="flex-1 overflow-y-auto p-3" id="manifest-list">
+              <p class="p-4 text-center text-slate-500 text-sm">
+                Loading manifest...
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer -->
+<footer
+  class="w-full border-t border-slate-800 mt-auto bg-slate-900 text-slate-400 py-12"
+>
+  <div
+    class="max-w-6xl mx-auto px-4 md:px-8 grid grid-cols-1 md:grid-cols-3 gap-12"
+  >
+    <!-- About Section -->
+    <div>
+      <strong class="text-slate-200 text-lg mb-4 block">MTGA Draft Tool</strong>
+      <p class="text-sm leading-relaxed mb-4">
+        An open-source desktop overlay. Not affiliated with Wizards of the
+        Coast. This project minimizes API load by aggregating data into single
+        daily files via an automated ETL pipeline.
+      </p>
+      <p class="text-sm leading-relaxed">
+        Draft telemetry provided by
+        <a
+          href="https://www.17lands.com"
+          target="_blank"
+          class="text-blue-400 hover:text-blue-300 underline font-semibold"
+          >17Lands</a
+        >.<br />
+        Card metadata sourced from
+        <a
+          href="https://scryfall.com"
+          target="_blank"
+          class="text-blue-400 hover:text-blue-300 underline font-semibold"
+          >Scryfall</a
+        >.
+      </p>
+    </div>
+
+    <!-- Project Links -->
+    <div>
+      <strong class="text-slate-200 text-lg mb-4 block">Project Links</strong>
+      <ul class="space-y-3 text-sm">
+        <li>
+          <a
+            href="https://github.com/unrealities/MTGA_Draft_17Lands"
+            target="_blank"
+            class="hover:text-blue-400 transition flex items-center gap-2"
+            >🔗 Source Code (GitHub)</a
+          >
+        </li>
+        <li>
+          <a
+            href="https://github.com/unrealities/MTGA_Draft_17Lands/releases"
+            target="_blank"
+            class="hover:text-blue-400 transition flex items-center gap-2"
+            >📦 Download Releases</a
+          >
+        </li>
+        <li>
+          <a
+            href="https://github.com/unrealities/MTGA_Draft_17Lands/issues"
+            target="_blank"
+            class="hover:text-blue-400 transition flex items-center gap-2"
+            >🐛 Report an Issue / Bug</a
+          >
+        </li>
+        <li>
+          <a
+            href="https://github.com/unrealities/MTGA_Draft_17Lands/discussions"
+            target="_blank"
+            class="hover:text-blue-400 transition flex items-center gap-2"
+            >💬 Join the Discussion</a
+          >
+        </li>
+      </ul>
+    </div>
+
+    <!-- Support Section -->
+    <div>
+      <strong class="text-slate-200 text-lg mb-4 block"
+        >Support the Creators</strong
+      >
+      <p class="text-sm leading-relaxed mb-6">
+        This tool is completely free, but it relies on platforms that pay for
+        expensive servers. If you find this useful, please consider supporting
+        them!
+      </p>
+      <div class="flex flex-col gap-3">
+        <a
+          href="https://www.patreon.com/17lands"
+          target="_blank"
+          class="bg-[#FF424D]/10 hover:bg-[#FF424D]/20 text-[#FF424D] border border-[#FF424D]/30 px-4 py-2.5 rounded-lg text-sm font-bold transition flex items-center justify-center"
+        >
+          ❤️ Support 17Lands on Patreon
+        </a>
+        <a
+          href="https://www.patreon.com/scryfall"
+          target="_blank"
+          class="bg-violet-600/10 hover:bg-violet-600/20 text-violet-400 border border-violet-500/30 px-4 py-2.5 rounded-lg text-sm font-bold transition flex items-center justify-center"
+        >
+          💜 Support Scryfall on Patreon
+        </a>
+      </div>
+    </div>
+  </div>
+</footer>
+
+
+    <script src="app.js"></script>
+  </body>
+</html>

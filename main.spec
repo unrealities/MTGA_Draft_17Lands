@@ -1,0 +1,51 @@
+# -*- mode: python ; coding: utf-8 -*-
+
+
+a = Analysis(
+    ['main.py'],
+    pathex=[],
+    binaries=[],
+    datas=[('themes/*.tcl', 'themes')],
+    hiddenimports=['jaraco.text','platformdirs','importlib_metadata','zipp'],
+    hookspath=[],
+    hooksconfig={},
+    runtime_hooks=[],
+    excludes=[],
+    noarchive=False,
+    optimize=0,
+)
+pyz = PYZ(a.pure)
+
+exe = EXE(
+    pyz,
+    a.scripts,
+    a.binaries,
+    a.zipfiles,
+    a.datas,
+    [],
+    name='MTGA_Draft_Tool',
+    debug=False,
+    bootloader_ignore_signals=False,
+    strip=False,
+    upx=False,
+    console=False,
+    disable_windowed_traceback=False,
+    argv_emulation=False,
+    target_arch=None,
+    codesign_identity=None,
+    entitlements_file=None,
+)
+
+# Only build the Mac .app bundle if running on macOS
+import sys
+if sys.platform == 'darwin':
+    app = BUNDLE(
+        exe,
+        name='MTGA_Draft_Tool.app',
+        icon=None, # Add a path to an .icns file here if you have one
+        bundle_identifier='com.unrealities.mtgadrafttool',
+        info_plist={
+            'NSHighResolutionCapable': 'True',
+            'LSBackgroundOnly': 'False',
+        }
+    )
