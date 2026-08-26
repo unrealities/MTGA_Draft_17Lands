@@ -21,34 +21,10 @@ def _safe_setlocale(category, loc=None):
 locale.setlocale = _safe_setlocale
 
 import ttkbootstrap as ttk
-from ttkbootstrap import localization
-from ttkbootstrap.localization import msgs
 
-# Intercept TclErrors thrown by ttkbootstrap's localization engine on systems with outdated/missing msgcat Tcl packages.
-# This prevents a fatal crash on startup (e.g., invalid command name "::msgcat::mcmset") and allows the app to launch normally.
-_orig_initialize_localities = msgs.initialize_localities
-
-
-def _safe_initialize_localities(*args, **kwargs):
-    try:
-        _orig_initialize_localities(*args, **kwargs)
-    except Exception:
-        pass
-
-
-# Kept so tests can assert the guard is actually wrapping the real function.
-_safe_initialize_localities.__wrapped_original__ = _orig_initialize_localities
-
-
-msgs.initialize_localities = _safe_initialize_localities
-
-# ttkbootstrap/localization/__init__.py does `from .msgs import initialize_localities`,
-# which binds its own reference at import time, and Style.__init__ calls
-# `localization.initialize_localities()`. Patching only `msgs` therefore leaves the
-# call site pointing at the original function, so the guard above never fires and the
-# app still dies with `invalid command name "::msgcat::mcmset"` on distributions that
-# ship Tcl 9 (Fedora 42+, Nobara, Bazzite). Patch the package-level name too.
-localization.initialize_localities = _safe_initialize_localities
+# The ttkbootstrap msgcat guard (Tcl 9 startup crash) lives in src.ui.styles so
+# that every entry point constructing a Style is protected, not just this one.
+# It is installed as a side effect of the src.ui imports below.
 
 import argparse
 import os
@@ -89,13 +65,20 @@ def load_data(args, config, progress_callback):
         log_path = search_arena_log_locations(
             args.file,  # Manual override
             config.settings.arena_log_location,  # Stored fallback
+            config_pinned=config.settings.arena_log_pinned,
         )
 
         if log_path:
             logger.info(f"Using log file: {log_path}")
-            config.settings.arena_log_location = log_path
-            # Persist the valid path immediately
-            write_configuration(config)
+            # Persist the discovered path, but never overwrite a user-pinned
+            # location (it may be temporarily unavailable, e.g. an unmounted
+            # drive, and must survive until the user changes it in Settings).
+            if (
+                not config.settings.arena_log_pinned
+                and config.settings.arena_log_location != log_path
+            ):
+                config.settings.arena_log_location = log_path
+                write_configuration(config)
 
         # 2. GAME FILE INDEXING
         progress_callback("Checking Game Files...")

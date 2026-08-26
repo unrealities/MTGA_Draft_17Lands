@@ -122,16 +122,27 @@ def test_prefers_most_recently_written_log(fake_home):
     assert file_extractor.search_arena_log_locations() == new
 
 
-def test_symlinked_flatpak_path_is_not_returned_twice(fake_home):
-    """Flatpak links `data` -> `.local/share`; the same file must appear once."""
-    flatpak_root = os.path.join(
-        ".var", "app", "com.valvesoftware.Steam", ".local", "share", "Steam"
+def _symlink_or_skip(target, link):
+    """Symlink creation needs privileges on Windows; skip rather than error."""
+    try:
+        os.symlink(target, link, target_is_directory=True)
+    except (OSError, NotImplementedError):
+        pytest.skip("symlink creation not supported in this environment")
+
+
+def test_symlinked_steam_roots_are_not_returned_twice(fake_home):
+    """`~/.steam/steam` is typically a symlink to `~/.local/share/Steam`; the
+    same Player.log must appear once even though two roots reach it."""
+    real = _make_steam_log(fake_home, os.path.join(".local", "share", "Steam"))
+
+    os.makedirs(os.path.join(fake_home, ".steam"), exist_ok=True)
+    _symlink_or_skip(
+        os.path.join(fake_home, ".local", "share", "Steam"),
+        os.path.join(fake_home, ".steam", "steam"),
     )
-    real = _make_steam_log(fake_home, flatpak_root)
 
-    link_parent = os.path.join(fake_home, ".var", "app", "com.valvesoftware.Steam")
-    os.symlink(".local/share", os.path.join(link_parent, "data"))
-
+    # Both roots now yield an existing candidate for the same file; without
+    # realpath canonicalisation this returns two entries.
     found = file_extractor.linux_arena_log_locations()
     assert found == [os.path.realpath(real)]
 
@@ -146,3 +157,63 @@ def test_command_line_argument_still_wins(fake_home, tmp_path):
     open(manual, "w", encoding="utf-8").close()
 
     assert file_extractor.search_arena_log_locations(arg_location=manual) == manual
+
+
+def test_pinned_config_location_beats_discovery(fake_home, tmp_path):
+    """A path the user pinned in Settings outranks auto-discovery."""
+    _make_steam_log(fake_home, os.path.join(".local", "share", "Steam"))
+    pinned = str(tmp_path / "pinned.log")
+    open(pinned, "w", encoding="utf-8").close()
+
+    assert (
+        file_extractor.search_arena_log_locations(
+            config_location=pinned, config_pinned=True
+        )
+        == pinned
+    )
+
+
+def test_missing_pinned_location_falls_back_to_discovery(fake_home, tmp_path):
+    """A pinned path that no longer exists must not block discovery."""
+    expected = _make_steam_log(fake_home, os.path.join(".local", "share", "Steam"))
+    gone = str(tmp_path / "gone.log")
+
+    assert (
+        file_extractor.search_arena_log_locations(
+            config_location=gone, config_pinned=True
+        )
+        == expected
+    )
+
+
+def test_unpinned_config_location_is_outranked_by_discovery(fake_home, tmp_path):
+    """Without the pin, system discovery still wins over the stored path."""
+    expected = _make_steam_log(fake_home, os.path.join(".local", "share", "Steam"))
+    stored = str(tmp_path / "stored.log")
+    open(stored, "w", encoding="utf-8").close()
+
+    assert (
+        file_extractor.search_arena_log_locations(config_location=stored)
+        == expected
+    )
+
+
+def test_bottles_prefix_with_custom_bottle_name(fake_home):
+    """Bottles names the prefix directory after the user-chosen bottle name."""
+    prefix = os.path.join(
+        ".var", "app", "com.usebottles.bottles", "data", "bottles", "bottles", "Gaming"
+    )
+    expected = _make_prefix_log(fake_home, prefix)
+    assert file_extractor.search_arena_log_locations() == expected
+
+
+def test_home_with_glob_metacharacters(tmp_path, monkeypatch):
+    """A home path containing glob metacharacters must not break discovery."""
+    home = str(tmp_path / "home[1]")
+    os.makedirs(home, exist_ok=True)
+    monkeypatch.setenv("HOME", home)
+    monkeypatch.setattr(os.path, "expanduser", lambda p: p.replace("~", home, 1))
+    monkeypatch.setattr(sys, "platform", constants.PLATFORM_ID_LINUX)
+
+    expected = _make_prefix_log(home, ".wine")
+    assert file_extractor.search_arena_log_locations() == expected
