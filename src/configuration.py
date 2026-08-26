@@ -99,6 +99,9 @@ class Settings(BaseModel):
 
     # System Paths (Restored)
     arena_log_location: str = ""
+    # True when the user set arena_log_location manually in Settings; a pinned
+    # location outranks auto-discovery and is never overwritten by it.
+    arena_log_pinned: bool = False
     database_location: str = ""
 
     # Tracks the app version of the last successful launch so we can run one-time

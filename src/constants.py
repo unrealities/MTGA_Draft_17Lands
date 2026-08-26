@@ -1,3 +1,4 @@
+import glob
 import os
 import sys
 import getpass
@@ -31,9 +32,9 @@ def get_resource_dir():
 BASE_DIR = get_base_dir()
 RESOURCE_DIR = get_resource_dir()
 
-APPLICATION_VERSION = "4.19"
-OLD_APPLICATION_VERSION = "4.17"
-PREVIOUS_APPLICATION_VERSION = "0418"
+APPLICATION_VERSION = "4.20"
+OLD_APPLICATION_VERSION = "4.19"
+PREVIOUS_APPLICATION_VERSION = "0419"
 
 FONT_SANS_SERIF = "Arial"
 FONT_MONO_SPACE = "Courier"
@@ -268,59 +269,61 @@ LOCAL_DATA_FOLDER_PATH_OSX_STEAM = os.path.join(
     "MTGA",
     "MTGA_Data",
 )
+# --- Linux install discovery -------------------------------------------------
+# Flatpak Steam is the default on Fedora/Nobara/Bazzite, and Lutris, Bottles,
+# snap and secondary Steam libraries are all common. These lists are the single
+# source of truth for what counts as an Arena install location on Linux; both
+# the Player.log search (file_extractor.search_arena_log_locations) and the
+# card-database search (LOCAL_DATA_FOLDER_PATH_LINUX below) are built from them.
+
+MTGA_STEAM_APPID = "2141910"
+
+# Steam roots, relative to the home directory.
+STEAM_ROOTS_LINUX = [
+    os.path.join(".local", "share", "Steam"),
+    os.path.join(".steam", "steam"),
+    os.path.join(".steam", "root"),
+    os.path.join(".steam", "debian-installation"),
+    os.path.join(".var", "app", "com.valvesoftware.Steam", ".local", "share", "Steam"),
+    os.path.join("snap", "steam", "common", ".local", "share", "Steam"),
+]
+
+# Non-Steam Wine prefixes, relative to the home directory. Entries are glob
+# patterns: Lutris names the prefix after the install-source slug and Bottles
+# after the user-chosen bottle name, so those components are wildcards. The
+# user directory inside these prefixes is the real login name rather than
+# "steamuser", so callers also glob over drive_c/users/*.
+WINE_PREFIXES_LINUX = [
+    ".wine",
+    os.path.join("Games", "*"),  # Lutris
+    os.path.join(
+        ".var", "app", "com.usebottles.bottles", "data", "bottles", "bottles", "*"
+    ),  # Bottles
+]
+
+_STEAM_MTGA_DATA_TAIL = os.path.join("steamapps", "common", "MTGA", "MTGA_Data")
+_WINE_MTGA_DATA_TAIL = os.path.join(
+    "drive_c", "Program Files", "Wizards of the Coast", "MTGA", "MTGA_Data"
+)
+
 LOCAL_DATA_FOLDER_PATH_LINUX = next(
-    filter(
-        os.path.exists,
-        [
-            # Steam
-            os.path.join(
-                os.path.expanduser("~"),
-                ".local",
-                "share",
-                "Steam",
-                "steamapps",
-                "common",
-                "MTGA",
-                "MTGA_Data",
-            ),
-            # Steam (debian)
-            os.path.join(
-                os.path.expanduser("~"),
-                ".steam",
-                "debian-installation",
-                "steamapps",
-                "common",
-                "MTGA",
-                "MTGA_Data",
-            ),
-            # Lutris
-            os.path.join(
-                os.path.expanduser("~"),
-                "Games",
-                "magic-the-gathering-arena",
-                "drive_c",
-                "Program Files",
-                "Wizards of the Coast",
-                "MTGA",
-                "MTGA_Data",
-            ),
-            # Bottles
-            os.path.join(
-                os.path.expanduser("~"),
-                ".var",
-                "app",
-                "com.usebottles.bottles",
-                "data",
-                "bottles",
-                "bottles",
-                "MTG-Arena",
-                "drive_c",
-                "Program Files",
-                "Wizards of the Coast",
-                "MTGA",
-                "MTGA_Data",
-            ),
-        ],
+    (
+        path
+        for pattern in (
+            [
+                os.path.join(
+                    glob.escape(os.path.expanduser("~")), root, _STEAM_MTGA_DATA_TAIL
+                )
+                for root in STEAM_ROOTS_LINUX
+            ]
+            + [
+                os.path.join(
+                    glob.escape(os.path.expanduser("~")), prefix, _WINE_MTGA_DATA_TAIL
+                )
+                for prefix in WINE_PREFIXES_LINUX
+            ]
+        )
+        for path in sorted(glob.glob(pattern))
     ),
     None,
 )
@@ -410,64 +413,13 @@ LOG_LOCATION_WINDOWS = os.path.join(
 LOG_LOCATION_OSX = os.path.join(
     "Library", "Logs", "Wizards of the Coast", "MTGA", LOG_NAME
 )
-LOG_LOCATION_LINUX = os.path.join(
-    ".local",
-    "share",
-    "Steam",
-    "steamapps",
-    "compatdata",
-    "2141910",
-    "pfx",
-    "drive_c",
-    "users",
-    "steamuser",
-    "AppData",
-    "LocalLow",
-    "Wizards Of The Coast",
-    "MTGA",
-    LOG_NAME,
-)
 
-# --- Linux log discovery -----------------------------------------------------
-# LOG_LOCATION_LINUX above only covers a native Steam install in the default
-# library. Flatpak Steam is the default on Fedora/Nobara/Bazzite, and Lutris,
-# Bottles, snap and secondary Steam libraries are all common. The pieces below
-# let search_arena_log_locations() assemble every plausible location.
-
-MTGA_STEAM_APPID = "2141910"
-
-# Tail of the path once inside a Wine/Proton prefix user directory.
+# Tail of the path once inside a Wine/Proton prefix user directory. Combined
+# with STEAM_ROOTS_LINUX / WINE_PREFIXES_LINUX (defined above with the card-DB
+# constants) by file_extractor.linux_arena_log_locations().
 LOG_LOCATION_APPDATA_SUFFIX = os.path.join(
     "AppData", "LocalLow", "Wizards Of The Coast", "MTGA", LOG_NAME
 )
-
-# Steam roots, relative to the home directory.
-STEAM_ROOTS_LINUX = [
-    os.path.join(".local", "share", "Steam"),
-    os.path.join(".steam", "steam"),
-    os.path.join(".steam", "root"),
-    os.path.join(".steam", "debian-installation"),
-    os.path.join(".var", "app", "com.valvesoftware.Steam", ".local", "share", "Steam"),
-    os.path.join("snap", "steam", "common", ".local", "share", "Steam"),
-]
-
-# Non-Steam Wine prefixes, relative to the home directory. The user directory
-# inside these is the real login name rather than "steamuser", so callers glob
-# over drive_c/users/*.
-WINE_PREFIXES_LINUX = [
-    ".wine",
-    os.path.join("Games", "magic-the-gathering-arena"),
-    os.path.join("Games", "mtga"),
-    os.path.join(
-        ".var",
-        "app",
-        "com.usebottles.bottles",
-        "data",
-        "bottles",
-        "bottles",
-        "MTG-Arena",
-    ),
-]
 
 DEFAULT_GIHWR_AVERAGE = 0.0
 

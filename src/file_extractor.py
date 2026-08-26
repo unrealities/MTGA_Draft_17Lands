@@ -91,8 +91,12 @@ def _linux_steam_libraries():
             try:
                 with open(config_path, "r", encoding="utf-8", errors="replace") as file:
                     libraries.extend(re.findall(r'"path"\s+"([^"]+)"', file.read()))
-            except OSError:
+            except FileNotFoundError:
                 continue
+            except OSError as error:
+                logger.error(
+                    f"Error reading Steam library folders from {config_path}: {error}"
+                )
 
     # libraryfolders.vdf usually re-declares the root it lives in, and several
     # roots are symlinks to each other, so de-duplicate while keeping order.
@@ -127,18 +131,17 @@ def linux_arena_log_locations():
         )
 
     for prefix in constants.WINE_PREFIXES_LINUX:
+        # The prefix entries are glob patterns; only the home directory needs
+        # escaping (it can legally contain [, ], ? or *).
         pattern = os.path.join(
-            home,
+            glob.escape(home),
             prefix,
             "drive_c",
             "users",
             "*",
             constants.LOG_LOCATION_APPDATA_SUFFIX,
         )
-        try:
-            candidates.extend(glob.glob(pattern))
-        except OSError:
-            continue
+        candidates.extend(glob.glob(pattern))
 
     found = {}
     for candidate in candidates:
@@ -146,28 +149,36 @@ def linux_arena_log_locations():
             real = os.path.realpath(candidate)
             if os.path.isfile(real):
                 found[real] = os.path.getmtime(real)
-        except OSError:
-            continue
+        except OSError as error:
+            logger.error(f"Error checking Arena log candidate {candidate}: {error}")
 
-    return sorted(found, key=found.get, reverse=True)
+    ordered = sorted(found, key=found.get, reverse=True)
+    if len(ordered) > 1:
+        logger.info(
+            f"Multiple Arena logs found, using most recently written: {ordered}"
+        )
+    return ordered
 
 
-def search_arena_log_locations(arg_location=None, config_location=None):
+def search_arena_log_locations(arg_location=None, config_location=None, config_pinned=False):
     """
     Top 1% Robustness: Prioritizes system paths over stored paths to avoid
-    test-pollution issues (e.g. stale pytest paths in config).
+    test-pollution issues (e.g. stale pytest paths in config) — unless the
+    stored path was pinned by the user in Settings, in which case it outranks
+    auto-discovery so a deliberate choice is never silently overridden.
     """
     # 1. Highest Priority: Manual command line argument
     if arg_location and os.path.exists(arg_location):
         return arg_location
 
-    # 2. Second Priority: System Default Paths (The "Real" Game logs)
+    # 2. A user-pinned location beats auto-discovery as long as it still exists.
+    if config_pinned and config_location and os.path.exists(config_location):
+        return config_location
+
+    # 3. System Default Paths (The "Real" Game logs)
     system_paths = []
     if sys.platform == constants.PLATFORM_ID_LINUX:
         system_paths.extend(linux_arena_log_locations())
-        system_paths.append(
-            os.path.join(os.path.expanduser("~"), constants.LOG_LOCATION_LINUX)
-        )
     elif sys.platform == constants.PLATFORM_ID_OSX:
         system_paths.append(
             os.path.join(os.path.expanduser("~"), constants.LOG_LOCATION_OSX)
@@ -181,7 +192,7 @@ def search_arena_log_locations(arg_location=None, config_location=None):
         if path and os.path.exists(path):
             return path
 
-    # 3. Lowest Priority: The path stored in config (might be stale/temp)
+    # 4. Lowest Priority: The unpinned path stored in config (might be stale/temp)
     if config_location and os.path.exists(config_location):
         # Additional check: Does the path look like a temp folder?
         if "/private/var/" not in config_location and "/tmp/" not in config_location:
@@ -382,33 +393,8 @@ class FileExtractor(UIProgress):
         self.combined_data["color_ratings"] = color_ratings
 
     def _get_linux_steam_library_paths(self):
-        """Parses Steam config to find library folders on Linux"""
-        library_paths = []
-        config_paths = [
-            os.path.expanduser("~/.local/share/Steam/config/libraryfolders.vdf"),
-            os.path.expanduser("~/.steam/steam/config/libraryfolders.vdf"),
-            os.path.expanduser(
-                "~/.steam/debian-installation/config/libraryfolders.vdf"
-            ),
-        ]
-
-        for config_path in config_paths:
-            if os.path.exists(config_path):
-                try:
-                    with open(
-                        config_path, "r", encoding="utf-8", errors="replace"
-                    ) as f:
-                        content = f.read()
-                        # Extract paths using regex to avoid external dependency
-                        # Format is usually: "path" "/path/to/library"
-                        matches = re.findall(r'"path"\s+"([^"]+)"', content)
-                        library_paths.extend(matches)
-                except Exception as error:
-                    logger.error(
-                        f"Error reading Steam library folders from {config_path}: {error}"
-                    )
-
-        return library_paths
+        """Steam library roots on Linux (shared with the Player.log discovery)."""
+        return _linux_steam_libraries()
 
     def download_card_data(self, database_size):
         """

@@ -36,6 +36,33 @@ def _safe_element_create(self, elementname, etype, *args, **kw):
 
 tk_ttk.Style.element_create = _safe_element_create
 
+# --- MSGCAT GUARD: PREVENT TTKBOOTSTRAP LOCALIZATION CRASH ON TCL 9 ---
+# Distributions shipping Tcl 9 (Fedora 42+, Nobara, Bazzite) lack the msgcat
+# commands the bundled ttkbootstrap expects, so Style.__init__ dies at startup
+# with `invalid command name "::msgcat::mcmset"`. The guard lives here — next to
+# the Style() call sites — so every entry point that builds a Style is covered,
+# not just main.py. Both the package-level name (bound at import by
+# `from .msgs import initialize_localities` and used by Style.__init__ via
+# `localization.initialize_localities()`) and the msgs-module name are patched.
+from ttkbootstrap import localization
+from ttkbootstrap.localization import msgs
+
+_orig_initialize_localities = msgs.initialize_localities
+
+
+def _safe_initialize_localities(*args, **kwargs):
+    try:
+        _orig_initialize_localities(*args, **kwargs)
+    except Exception as error:
+        logger.warning(f"ttkbootstrap localization unavailable, continuing: {error}")
+
+
+# Kept so tests can assert the guard is actually wrapping the real function.
+_safe_initialize_localities.__wrapped_original__ = _orig_initialize_localities
+
+msgs.initialize_localities = _safe_initialize_localities
+localization.initialize_localities = _safe_initialize_localities
+
 
 class Theme:
     FONT_FAMILY = (

@@ -1,24 +1,25 @@
 """
 tests/test_localization_guard.py
-Regression tests for the ttkbootstrap msgcat guard installed by main.py.
+Regression tests for the ttkbootstrap msgcat guard installed by src.ui.styles.
 
 Background: on distributions shipping Tcl 9 (Fedora 42+, Nobara, Bazzite) the
 frozen Linux build dies at startup with:
 
     _tkinter.TclError: invalid command name "::msgcat::mcmset"
 
-main.py already wraps `initialize_localities` to swallow that error, but the
-guard used to patch only `ttkbootstrap.localization.msgs.initialize_localities`.
-`ttkbootstrap/localization/__init__.py` does `from .msgs import
+The guard wraps `initialize_localities` to swallow that error. It must patch
+both names: `ttkbootstrap/localization/__init__.py` does `from .msgs import
 initialize_localities`, binding its own reference at import time, and
-`Style.__init__` calls `localization.initialize_localities()` -- so the guard
-never covered the actual call site.
+`Style.__init__` calls `localization.initialize_localities()` -- patching only
+the msgs module would leave the actual call site uncovered. The guard lives in
+src.ui.styles (next to the Style() call sites) so that every entry point that
+constructs a Style is protected, not just main.py.
 """
 
 import tkinter
 import pytest
 
-import main  # noqa: F401  (importing installs the guards)
+from src.ui import styles  # noqa: F401  (importing installs the guards)
 from ttkbootstrap import localization
 from ttkbootstrap.localization import msgs
 

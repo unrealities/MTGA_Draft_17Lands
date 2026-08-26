@@ -229,6 +229,11 @@ class SettingsWindow(tkinter.Toplevel):
         else:
             setattr(self.configuration.settings, key, val)
 
+        # A manually entered log path is pinned: auto-discovery will neither
+        # outrank nor overwrite it. Clearing the field unpins it.
+        if key == "arena_log_location":
+            self.configuration.settings.arena_log_pinned = bool(str(val).strip())
+
         write_configuration(self.configuration)
 
         # Keep the settings window on top of the main window if toggled
