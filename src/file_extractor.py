@@ -6,6 +6,7 @@ import time
 import json
 import datetime
 import itertools
+import glob
 import re
 import sqlite3
 from typing import Dict
@@ -73,6 +74,84 @@ def decode_mana_cost(encoded_cost):
     return decoded_cost, cmc
 
 
+def _linux_steam_libraries():
+    """
+    Every Steam library root on Linux: the well-known install locations plus any
+    extra library declared in libraryfolders.vdf (games on a second drive).
+    """
+    home = os.path.expanduser("~")
+    roots = [os.path.join(home, root) for root in constants.STEAM_ROOTS_LINUX]
+    libraries = list(roots)
+
+    for root in roots:
+        for config_path in (
+            os.path.join(root, "config", "libraryfolders.vdf"),
+            os.path.join(root, "steamapps", "libraryfolders.vdf"),
+        ):
+            try:
+                with open(config_path, "r", encoding="utf-8", errors="replace") as file:
+                    libraries.extend(re.findall(r'"path"\s+"([^"]+)"', file.read()))
+            except OSError:
+                continue
+
+    # libraryfolders.vdf usually re-declares the root it lives in, and several
+    # roots are symlinks to each other, so de-duplicate while keeping order.
+    return list(dict.fromkeys(libraries))
+
+
+def linux_arena_log_locations():
+    """
+    Return every existing Player.log on this machine, most recently written
+    first. Covers native Steam, Flatpak Steam, snap, secondary Steam libraries,
+    Lutris, Bottles and plain Wine prefixes.
+
+    Paths are canonicalised because Flatpak symlinks `data` to `.local/share`,
+    which would otherwise yield the same file under two different names.
+    """
+    home = os.path.expanduser("~")
+    candidates = []
+
+    for library in _linux_steam_libraries():
+        candidates.append(
+            os.path.join(
+                library,
+                "steamapps",
+                "compatdata",
+                constants.MTGA_STEAM_APPID,
+                "pfx",
+                "drive_c",
+                "users",
+                "steamuser",
+                constants.LOG_LOCATION_APPDATA_SUFFIX,
+            )
+        )
+
+    for prefix in constants.WINE_PREFIXES_LINUX:
+        pattern = os.path.join(
+            home,
+            prefix,
+            "drive_c",
+            "users",
+            "*",
+            constants.LOG_LOCATION_APPDATA_SUFFIX,
+        )
+        try:
+            candidates.extend(glob.glob(pattern))
+        except OSError:
+            continue
+
+    found = {}
+    for candidate in candidates:
+        try:
+            real = os.path.realpath(candidate)
+            if os.path.isfile(real):
+                found[real] = os.path.getmtime(real)
+        except OSError:
+            continue
+
+    return sorted(found, key=found.get, reverse=True)
+
+
 def search_arena_log_locations(arg_location=None, config_location=None):
     """
     Top 1% Robustness: Prioritizes system paths over stored paths to avoid
@@ -85,6 +164,7 @@ def search_arena_log_locations(arg_location=None, config_location=None):
     # 2. Second Priority: System Default Paths (The "Real" Game logs)
     system_paths = []
     if sys.platform == constants.PLATFORM_ID_LINUX:
+        system_paths.extend(linux_arena_log_locations())
         system_paths.append(
             os.path.join(os.path.expanduser("~"), constants.LOG_LOCATION_LINUX)
         )

@@ -428,6 +428,47 @@ LOG_LOCATION_LINUX = os.path.join(
     LOG_NAME,
 )
 
+# --- Linux log discovery -----------------------------------------------------
+# LOG_LOCATION_LINUX above only covers a native Steam install in the default
+# library. Flatpak Steam is the default on Fedora/Nobara/Bazzite, and Lutris,
+# Bottles, snap and secondary Steam libraries are all common. The pieces below
+# let search_arena_log_locations() assemble every plausible location.
+
+MTGA_STEAM_APPID = "2141910"
+
+# Tail of the path once inside a Wine/Proton prefix user directory.
+LOG_LOCATION_APPDATA_SUFFIX = os.path.join(
+    "AppData", "LocalLow", "Wizards Of The Coast", "MTGA", LOG_NAME
+)
+
+# Steam roots, relative to the home directory.
+STEAM_ROOTS_LINUX = [
+    os.path.join(".local", "share", "Steam"),
+    os.path.join(".steam", "steam"),
+    os.path.join(".steam", "root"),
+    os.path.join(".steam", "debian-installation"),
+    os.path.join(".var", "app", "com.valvesoftware.Steam", ".local", "share", "Steam"),
+    os.path.join("snap", "steam", "common", ".local", "share", "Steam"),
+]
+
+# Non-Steam Wine prefixes, relative to the home directory. The user directory
+# inside these is the real login name rather than "steamuser", so callers glob
+# over drive_c/users/*.
+WINE_PREFIXES_LINUX = [
+    ".wine",
+    os.path.join("Games", "magic-the-gathering-arena"),
+    os.path.join("Games", "mtga"),
+    os.path.join(
+        ".var",
+        "app",
+        "com.usebottles.bottles",
+        "data",
+        "bottles",
+        "bottles",
+        "MTG-Arena",
+    ),
+]
+
 DEFAULT_GIHWR_AVERAGE = 0.0
 
 WINDOWS_DRIVES = ["C:/", "D:/", "E:/", "F:/"]
