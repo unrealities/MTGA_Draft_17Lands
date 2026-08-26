@@ -1,4 +1,4 @@
-===================== RELEASE NOTES 4.21 =====================
+===================== RELEASE NOTES 4.20 =====================
 * dorianlauwers-source: [Bug] Fixed the Linux build crashing on startup on distributions shipping Tcl 9 (Fedora 42+, Nobara, Bazzite) with `invalid command name "::msgcat::mcmset"` (#196). The existing guard patched the wrong reference; it now covers the call site ttkbootstrap actually uses.
 * dorianlauwers-source: [Feature] Player.log is now found automatically on Linux for Flatpak Steam, snap Steam, secondary Steam libraries (libraryfolders.vdf), Lutris, Bottles and plain Wine prefixes (#197). Previously only a native Steam install in the default library was detected; when several logs exist, the most recently written one is used.
 * unrealities: [Feature] A Player.log path entered manually in Settings is now pinned: it outranks auto-discovery and is never silently overwritten, so multi-install setups can lock the tool to the right log. Clearing the field re-enables auto-discovery.
