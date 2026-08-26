@@ -21,6 +21,7 @@ def _safe_setlocale(category, loc=None):
 locale.setlocale = _safe_setlocale
 
 import ttkbootstrap as ttk
+from ttkbootstrap import localization
 from ttkbootstrap.localization import msgs
 
 # Intercept TclErrors thrown by ttkbootstrap's localization engine on systems with outdated/missing msgcat Tcl packages.
@@ -35,7 +36,19 @@ def _safe_initialize_localities(*args, **kwargs):
         pass
 
 
+# Kept so tests can assert the guard is actually wrapping the real function.
+_safe_initialize_localities.__wrapped_original__ = _orig_initialize_localities
+
+
 msgs.initialize_localities = _safe_initialize_localities
+
+# ttkbootstrap/localization/__init__.py does `from .msgs import initialize_localities`,
+# which binds its own reference at import time, and Style.__init__ calls
+# `localization.initialize_localities()`. Patching only `msgs` therefore leaves the
+# call site pointing at the original function, so the guard above never fires and the
+# app still dies with `invalid command name "::msgcat::mcmset"` on distributions that
+# ship Tcl 9 (Fedora 42+, Nobara, Bazzite). Patch the package-level name too.
+localization.initialize_localities = _safe_initialize_localities
 
 import argparse
 import os
