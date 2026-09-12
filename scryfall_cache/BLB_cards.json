@@ -1,0 +1,7107 @@
+{
+  "Agate Assault": {
+    "arena_id": 91658,
+    "name": "Agate Assault",
+    "cmc": 3,
+    "mana_cost": "{2}{R}",
+    "types": [
+      "Sorcery"
+    ],
+    "subtypes": [],
+    "colors": [
+      "R"
+    ],
+    "color_identity": [
+      "R"
+    ],
+    "rarity": "Common",
+    "image": [
+      "https://cards.scryfall.io/large/front/7/d/7dd9946b-515e-4e0d-9da2-711e126e9fa6.jpg?1721426563"
+    ],
+    "keywords": [],
+    "oracle_text": "Choose one \u2014\n\u2022 Agate Assault deals 4 damage to target creature. If that creature would die this turn, exile it instead.\n\u2022 Exile target artifact."
+  },
+  "Agate-Blade Assassin": {
+    "arena_id": 91618,
+    "name": "Agate-Blade Assassin",
+    "cmc": 2,
+    "mana_cost": "{1}{B}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Lizard",
+      "Assassin"
+    ],
+    "colors": [
+      "B"
+    ],
+    "color_identity": [
+      "B"
+    ],
+    "rarity": "Common",
+    "image": [
+      "https://cards.scryfall.io/large/front/3/9/39ebb84a-1c52-4b07-9bd0-b360523b3a5b.jpg?1721426332"
+    ],
+    "keywords": [],
+    "oracle_text": "Whenever this creature attacks, defending player loses 1 life and you gain 1 life."
+  },
+  "A-Heartfire Hero": {
+    "arena_id": "",
+    "name": "A-Heartfire Hero",
+    "cmc": 1,
+    "mana_cost": "{R}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Mouse",
+      "Soldier"
+    ],
+    "colors": [
+      "R"
+    ],
+    "color_identity": [
+      "R"
+    ],
+    "rarity": "Uncommon",
+    "image": [
+      "https://cards.scryfall.io/large/front/b/2/b24c3e9c-2aff-45fd-9c87-3ebd33bbe807.jpg?1757377765"
+    ],
+    "keywords": [
+      "Valiant"
+    ],
+    "oracle_text": "Valiant \u2014 Whenever Heartfire Hero becomes the target of a spell or ability you control for the first time each turn, put a +1/+1 counter on it.\nWhen Heartfire Hero dies, it deals damage equal to its power to each opponent."
+  },
+  "Alania, Divergent Storm": {
+    "arena_id": 91740,
+    "name": "Alania, Divergent Storm",
+    "cmc": 5,
+    "mana_cost": "{3}{U}{R}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Otter",
+      "Wizard"
+    ],
+    "colors": [
+      "R",
+      "U"
+    ],
+    "color_identity": [
+      "R",
+      "U"
+    ],
+    "rarity": "Rare",
+    "image": [
+      "https://cards.scryfall.io/large/front/4/3/436d6a84-4cea-4ca7-94aa-9d08280652af.jpg?1721426997"
+    ],
+    "keywords": [],
+    "oracle_text": "Whenever you cast a spell, if it's the first instant spell, the first sorcery spell, or the first Otter spell other than Alania you've cast this turn, you may have target opponent draw a card. If you do, copy that spell. You may choose new targets for the copy."
+  },
+  "Alania's Pathmaker": {
+    "arena_id": 91659,
+    "name": "Alania's Pathmaker",
+    "cmc": 4,
+    "mana_cost": "{3}{R}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Otter",
+      "Wizard"
+    ],
+    "colors": [
+      "R"
+    ],
+    "color_identity": [
+      "R"
+    ],
+    "rarity": "Common",
+    "image": [
+      "https://cards.scryfall.io/large/front/d/3/d3871fe6-e26e-4ab4-bd81-7e3c7b8135c1.jpg?1721426565"
+    ],
+    "keywords": [],
+    "oracle_text": "When this creature enters, exile the top card of your library. Until the end of your next turn, you may play that card."
+  },
+  "Artist's Talent": {
+    "arena_id": 91660,
+    "name": "Artist's Talent",
+    "cmc": 2,
+    "mana_cost": "{1}{R}",
+    "types": [
+      "Enchantment"
+    ],
+    "subtypes": [
+      "Class"
+    ],
+    "colors": [
+      "R"
+    ],
+    "color_identity": [
+      "R"
+    ],
+    "rarity": "Rare",
+    "image": [
+      "https://cards.scryfall.io/large/front/8/b/8b9e51d9-189b-4dd6-87cb-628ea6373e81.jpg?1721426571"
+    ],
+    "keywords": [],
+    "oracle_text": "(Gain the next level as a sorcery to add its ability.)\nWhenever you cast a noncreature spell, you may discard a card. If you do, draw a card.\n{2}{R}: Level 2\nNoncreature spells you cast cost {1} less to cast.\n{2}{R}: Level 3\nIf a source you control would deal noncombat damage to an opponent or a permanent an opponent controls, it deals that much damage plus 2 instead."
+  },
+  "Azure Beastbinder": {
+    "arena_id": 91577,
+    "name": "Azure Beastbinder",
+    "cmc": 2,
+    "mana_cost": "{1}{U}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Rat",
+      "Rogue"
+    ],
+    "colors": [
+      "U"
+    ],
+    "color_identity": [
+      "U"
+    ],
+    "rarity": "Rare",
+    "image": [
+      "https://cards.scryfall.io/large/front/2/1/211af1bf-910b-41a5-b928-f378188d1871.jpg?1721426023"
+    ],
+    "keywords": [
+      "Vigilance"
+    ],
+    "oracle_text": "Vigilance\nThis creature can't be blocked by creatures with power 2 or greater.\nWhenever this creature attacks, up to one target artifact, creature, or planeswalker an opponent controls loses all abilities until your next turn. If it's a creature, it also has base power and toughness 2/2 until your next turn."
+  },
+  "Bakersbane Duo": {
+    "arena_id": 91698,
+    "name": "Bakersbane Duo",
+    "cmc": 2,
+    "mana_cost": "{1}{G}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Squirrel",
+      "Raccoon"
+    ],
+    "colors": [
+      "G"
+    ],
+    "color_identity": [
+      "G"
+    ],
+    "rarity": "Common",
+    "image": [
+      "https://cards.scryfall.io/large/front/5/3/5309354f-1ff4-4fa9-9141-01ea2f7588ab.jpg?1721426764"
+    ],
+    "keywords": [
+      "Food"
+    ],
+    "oracle_text": "When this creature enters, create a Food token.\nWhenever you expend 4, this creature gets +1/+1 until end of turn. (You expend 4 as you spend your fourth total mana to cast spells during a turn.)"
+  },
+  "Bandit's Talent": {
+    "arena_id": 91619,
+    "name": "Bandit's Talent",
+    "cmc": 2,
+    "mana_cost": "{1}{B}",
+    "types": [
+      "Enchantment"
+    ],
+    "subtypes": [
+      "Class"
+    ],
+    "colors": [
+      "B"
+    ],
+    "color_identity": [
+      "B"
+    ],
+    "rarity": "Uncommon",
+    "image": [
+      "https://cards.scryfall.io/large/front/4/8/485dc8d8-9e44-4a0f-9ff6-fa448e232290.jpg?1739659353"
+    ],
+    "keywords": [],
+    "oracle_text": "(Gain the next level as a sorcery to add its ability.)\nWhen this Class enters, each opponent discards two cards unless they discard a nonland card.\n{B}: Level 2\nAt the beginning of each opponent's upkeep, if that player has one or fewer cards in hand, they lose 2 life.\n{3}{B}: Level 3\nAt the beginning of your draw step, draw an additional card for each opponent who has one or fewer cards in hand."
+  },
+  "Banishing Light": {
+    "arena_id": 91537,
+    "name": "Banishing Light",
+    "cmc": 3,
+    "mana_cost": "{2}{W}",
+    "types": [
+      "Enchantment"
+    ],
+    "subtypes": [],
+    "colors": [
+      "W"
+    ],
+    "color_identity": [
+      "W"
+    ],
+    "rarity": "Common",
+    "image": [
+      "https://cards.scryfall.io/large/front/2/5/25a06f82-ebdb-4dd6-bfe8-958018ce557c.jpg?1721425761"
+    ],
+    "keywords": [],
+    "oracle_text": "When this enchantment enters, exile target nonland permanent an opponent controls until this enchantment leaves the battlefield."
+  },
+  "Barkform Harvester": {
+    "arena_id": 91779,
+    "name": "Barkform Harvester",
+    "cmc": 3,
+    "mana_cost": "{3}",
+    "types": [
+      "Creature",
+      "Artifact"
+    ],
+    "subtypes": [
+      "Shapeshifter"
+    ],
+    "colors": [],
+    "color_identity": [],
+    "rarity": "Common",
+    "image": [
+      "https://cards.scryfall.io/large/front/f/7/f77049a6-0f22-415b-bc89-20bcb32accf6.jpg?1721427262"
+    ],
+    "keywords": [
+      "Reach",
+      "Changeling"
+    ],
+    "oracle_text": "Changeling (This card is every creature type.)\nReach\n{2}: Put target card from your graveyard on the bottom of your library."
+  },
+  "Bark-Knuckle Boxer": {
+    "arena_id": 91700,
+    "name": "Bark-Knuckle Boxer",
+    "cmc": 2,
+    "mana_cost": "{1}{G}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Raccoon",
+      "Berserker"
+    ],
+    "colors": [
+      "G"
+    ],
+    "color_identity": [
+      "G"
+    ],
+    "rarity": "Uncommon",
+    "image": [
+      "https://cards.scryfall.io/large/front/5/8/582637a9-6aa0-4824-bed7-d5fc91bda35e.jpg?1721426764"
+    ],
+    "keywords": [],
+    "oracle_text": "Whenever you expend 4, this creature gains indestructible until end of turn. (You expend 4 as you spend your fourth total mana to cast spells during a turn.)"
+  },
+  "Baylen, the Haymaker": {
+    "arena_id": 91741,
+    "name": "Baylen, the Haymaker",
+    "cmc": 3,
+    "mana_cost": "{R}{G}{W}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Rabbit",
+      "Warrior"
+    ],
+    "colors": [
+      "G",
+      "R",
+      "W"
+    ],
+    "color_identity": [
+      "G",
+      "R",
+      "W"
+    ],
+    "rarity": "Rare",
+    "image": [
+      "https://cards.scryfall.io/large/front/0/0/00e93be2-e06b-4774-8ba5-ccf82a6da1d8.jpg?1721427006"
+    ],
+    "keywords": [],
+    "oracle_text": "Tap two untapped tokens you control: Add one mana of any color.\nTap three untapped tokens you control: Draw a card.\nTap four untapped tokens you control: Put three +1/+1 counters on Baylen. It gains trample until end of turn."
+  },
+  "Bellowing Crier": {
+    "arena_id": 91578,
+    "name": "Bellowing Crier",
+    "cmc": 2,
+    "mana_cost": "{1}{U}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Frog",
+      "Advisor"
+    ],
+    "colors": [
+      "U"
+    ],
+    "color_identity": [
+      "U"
+    ],
+    "rarity": "Common",
+    "image": [
+      "https://cards.scryfall.io/large/front/c/a/ca2215dd-6300-49cf-b9b2-3a840b786c31.jpg?1721426026"
+    ],
+    "keywords": [],
+    "oracle_text": "When this creature enters, draw a card, then discard a card."
+  },
+  "Beza, the Bounding Spring": {
+    "arena_id": 91538,
+    "name": "Beza, the Bounding Spring",
+    "cmc": 4,
+    "mana_cost": "{2}{W}{W}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Elemental",
+      "Elk"
+    ],
+    "colors": [
+      "W"
+    ],
+    "color_identity": [
+      "W"
+    ],
+    "rarity": "Mythic",
+    "image": [
+      "https://cards.scryfall.io/large/front/f/c/fc310a26-b6a0-4e42-98ab-bdfd7b06cb63.jpg?1721425768"
+    ],
+    "keywords": [
+      "Treasure"
+    ],
+    "oracle_text": "When Beza enters, create a Treasure token if an opponent controls more lands than you. You gain 4 life if an opponent has more life than you. Create two 1/1 blue Fish creature tokens if an opponent controls more creatures than you. Draw a card if an opponent has more cards in hand than you."
+  },
+  "Blacksmith's Talent": {
+    "arena_id": 91661,
+    "name": "Blacksmith's Talent",
+    "cmc": 1,
+    "mana_cost": "{R}",
+    "types": [
+      "Enchantment"
+    ],
+    "subtypes": [
+      "Class"
+    ],
+    "colors": [
+      "R"
+    ],
+    "color_identity": [
+      "R"
+    ],
+    "rarity": "Uncommon",
+    "image": [
+      "https://cards.scryfall.io/large/front/4/b/4bb318fa-481d-40a7-978e-f01b49101ae0.jpg?1739659737"
+    ],
+    "keywords": [],
+    "oracle_text": "(Gain the next level as a sorcery to add its ability.)\nWhen this Class enters, create a colorless Equipment artifact token named Sword with \"Equipped creature gets +1/+1\" and equip {2}.\n{2}{R}: Level 2\nAt the beginning of combat on your turn, attach target Equipment you control to up to one target creature you control.\n{3}{R}: Level 3\nDuring your turn, equipped creatures you control have double strike and haste."
+  },
+  "Blooming Blast": {
+    "arena_id": 91662,
+    "name": "Blooming Blast",
+    "cmc": 2,
+    "mana_cost": "{1}{R}",
+    "types": [
+      "Instant"
+    ],
+    "subtypes": [],
+    "colors": [
+      "R"
+    ],
+    "color_identity": [
+      "R"
+    ],
+    "rarity": "Uncommon",
+    "image": [
+      "https://cards.scryfall.io/large/front/0/c/0cd92a83-cec3-4085-a929-3f204e3e0140.jpg?1721426579"
+    ],
+    "keywords": [
+      "Gift",
+      "Treasure"
+    ],
+    "oracle_text": "Gift a Treasure (You may promise an opponent a gift as you cast this spell. If you do, they create a Treasure token before its other effects. It's an artifact with \"{T}, Sacrifice this token: Add one mana of any color.\")\nBlooming Blast deals 2 damage to target creature. If the gift was promised, Blooming Blast also deals 3 damage to that creature's controller."
+  },
+  "Blossoming Sands": {
+    "arena_id": 91809,
+    "name": "Blossoming Sands",
+    "cmc": 0,
+    "mana_cost": "",
+    "types": [
+      "Land"
+    ],
+    "subtypes": [],
+    "colors": [],
+    "color_identity": [
+      "G",
+      "W"
+    ],
+    "rarity": "Common",
+    "image": [
+      "https://cards.scryfall.io/large/front/e/c/ecfa2cc9-e427-4104-bad7-b0294e392b1f.jpg?1721428122"
+    ],
+    "keywords": [],
+    "oracle_text": "This land enters tapped.\nWhen this land enters, you gain 1 life.\n{T}: Add {G} or {W}."
+  },
+  "Bonebind Orator": {
+    "arena_id": 91620,
+    "name": "Bonebind Orator",
+    "cmc": 2,
+    "mana_cost": "{1}{B}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Squirrel",
+      "Warlock",
+      "Bard"
+    ],
+    "colors": [
+      "B"
+    ],
+    "color_identity": [
+      "B"
+    ],
+    "rarity": "Common",
+    "image": [
+      "https://cards.scryfall.io/large/front/f/a/faf226fa-ca09-4468-8804-87b2a7de2c66.jpg?1721426343"
+    ],
+    "keywords": [],
+    "oracle_text": "{3}{B}, Exile this card from your graveyard: Return another target creature card from your graveyard to your hand."
+  },
+  "Bonecache Overseer": {
+    "arena_id": 91621,
+    "name": "Bonecache Overseer",
+    "cmc": 1,
+    "mana_cost": "{B}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Squirrel",
+      "Warlock"
+    ],
+    "colors": [
+      "B"
+    ],
+    "color_identity": [
+      "B"
+    ],
+    "rarity": "Uncommon",
+    "image": [
+      "https://cards.scryfall.io/large/front/8/2/82defb87-237f-4b77-9673-5bf00607148f.jpg?1721426349"
+    ],
+    "keywords": [],
+    "oracle_text": "{T}, Pay 1 life: Draw a card. Activate only if three or more cards left your graveyard this turn or if you've sacrificed a Food this turn."
+  },
+  "Brambleguard Captain": {
+    "arena_id": 91663,
+    "name": "Brambleguard Captain",
+    "cmc": 4,
+    "mana_cost": "{3}{R}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Mouse",
+      "Soldier"
+    ],
+    "colors": [
+      "R"
+    ],
+    "color_identity": [
+      "R"
+    ],
+    "rarity": "Uncommon",
+    "image": [
+      "https://cards.scryfall.io/large/front/e/2/e200b8bf-f2f3-4157-8e04-02baf07a963e.jpg?1721426582"
+    ],
+    "keywords": [],
+    "oracle_text": "At the beginning of combat on your turn, target creature you control gets +X/+0 until end of turn, where X is this creature's power."
+  },
+  "Brambleguard Veteran": {
+    "arena_id": 91701,
+    "name": "Brambleguard Veteran",
+    "cmc": 3,
+    "mana_cost": "{1}{G}{G}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Raccoon",
+      "Warrior"
+    ],
+    "colors": [
+      "G"
+    ],
+    "color_identity": [
+      "G"
+    ],
+    "rarity": "Uncommon",
+    "image": [
+      "https://cards.scryfall.io/large/front/b/a/bac9f6f8-6797-4580-9fc4-9a825872e017.jpg?1721426774"
+    ],
+    "keywords": [],
+    "oracle_text": "Whenever you expend 4, Raccoons you control get +1/+1 and gain vigilance until end of turn. (You expend 4 as you spend your fourth total mana to cast spells during a turn.)"
+  },
+  "Brave-Kin Duo": {
+    "arena_id": 91539,
+    "name": "Brave-Kin Duo",
+    "cmc": 1,
+    "mana_cost": "{W}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Rabbit",
+      "Mouse"
+    ],
+    "colors": [
+      "W"
+    ],
+    "color_identity": [
+      "W"
+    ],
+    "rarity": "Common",
+    "image": [
+      "https://cards.scryfall.io/large/front/b/8/b8dd4693-424d-4d6e-86cf-24401a23d6b1.jpg?1721425770"
+    ],
+    "keywords": [],
+    "oracle_text": "{1}, {T}: Target creature gets +1/+1 until end of turn. Activate only as a sorcery."
+  },
+  "Brazen Collector": {
+    "arena_id": 91664,
+    "name": "Brazen Collector",
+    "cmc": 2,
+    "mana_cost": "{1}{R}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Raccoon",
+      "Rogue"
+    ],
+    "colors": [
+      "R"
+    ],
+    "color_identity": [
+      "R"
+    ],
+    "rarity": "Uncommon",
+    "image": [
+      "https://cards.scryfall.io/large/front/7/8/78b55a58-c669-4dc6-aa63-5d9dff52e613.jpg?1721426587"
+    ],
+    "keywords": [
+      "First strike"
+    ],
+    "oracle_text": "First strike\nWhenever this creature attacks, add {R}. Until end of turn, you don't lose this mana as steps and phases end."
+  },
+  "Bria, Riptide Rogue": {
+    "arena_id": 91798,
+    "name": "Bria, Riptide Rogue",
+    "cmc": 4,
+    "mana_cost": "{2}{U}{R}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Otter",
+      "Rogue"
+    ],
+    "colors": [
+      "R",
+      "U"
+    ],
+    "color_identity": [
+      "R",
+      "U"
+    ],
+    "rarity": "Mythic",
+    "image": [
+      "https://cards.scryfall.io/large/front/3/9/390c96b3-68da-4a42-89ab-d9ccc79ce0dd.jpg?1724104634"
+    ],
+    "keywords": [
+      "Prowess"
+    ],
+    "oracle_text": "Prowess (Whenever you cast a noncreature spell, this creature gets +1/+1 until end of turn.)\nOther creatures you control have prowess. (If a creature has multiple instances of prowess, each triggers separately.)\nWhenever you cast a noncreature spell, target creature you control can't be blocked this turn."
+  },
+  "Brightblade Stoat": {
+    "arena_id": 91540,
+    "name": "Brightblade Stoat",
+    "cmc": 2,
+    "mana_cost": "{1}{W}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Weasel",
+      "Soldier"
+    ],
+    "colors": [
+      "W"
+    ],
+    "color_identity": [
+      "W"
+    ],
+    "rarity": "Uncommon",
+    "image": [
+      "https://cards.scryfall.io/large/front/d/f/df7fea2e-7414-4bc8-adb0-9342e174c009.jpg?1721425778"
+    ],
+    "keywords": [
+      "Lifelink",
+      "First strike"
+    ],
+    "oracle_text": "First strike, lifelink"
+  },
+  "Builder's Talent": {
+    "arena_id": 91541,
+    "name": "Builder's Talent",
+    "cmc": 2,
+    "mana_cost": "{1}{W}",
+    "types": [
+      "Enchantment"
+    ],
+    "subtypes": [
+      "Class"
+    ],
+    "colors": [
+      "W"
+    ],
+    "color_identity": [
+      "W"
+    ],
+    "rarity": "Uncommon",
+    "image": [
+      "https://cards.scryfall.io/large/front/1/5/15fa581a-724e-4196-a9a3-ff84c54bdb7d.jpg?1739650809"
+    ],
+    "keywords": [],
+    "oracle_text": "(Gain the next level as a sorcery to add its ability.)\nWhen this Class enters, create a 0/4 white Wall creature token with defender.\n{W}: Level 2\nWhenever one or more noncreature, nonland permanents you control enter, put a +1/+1 counter on target creature you control.\n{4}{W}: Level 3\nWhen this Class becomes level 3, return target noncreature, nonland permanent card from your graveyard to the battlefield."
+  },
+  "Bumbleflower's Sharepot": {
+    "arena_id": 91780,
+    "name": "Bumbleflower's Sharepot",
+    "cmc": 2,
+    "mana_cost": "{2}",
+    "types": [
+      "Artifact"
+    ],
+    "subtypes": [],
+    "colors": [],
+    "color_identity": [],
+    "rarity": "Common",
+    "image": [
+      "https://cards.scryfall.io/large/front/5/f/5f0affd5-5dcd-4dd1-a694-37a9aedf4084.jpg?1721427267"
+    ],
+    "keywords": [
+      "Food"
+    ],
+    "oracle_text": "When this artifact enters, create a Food token. (It's an artifact with \"{2}, {T}, Sacrifice this token: You gain 3 life.\")\n{5}, {T}, Sacrifice this artifact: Destroy target nonland permanent. Activate only as a sorcery."
+  },
+  "Burrowguard Mentor": {
+    "arena_id": 91742,
+    "name": "Burrowguard Mentor",
+    "cmc": 2,
+    "mana_cost": "{G}{W}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Rabbit",
+      "Soldier"
+    ],
+    "colors": [
+      "G",
+      "W"
+    ],
+    "color_identity": [
+      "G",
+      "W"
+    ],
+    "rarity": "Uncommon",
+    "image": [
+      "https://cards.scryfall.io/large/front/8/7/87138ace-3594-499e-bad5-ec76148613ea.jpg?1721427007"
+    ],
+    "keywords": [
+      "Trample"
+    ],
+    "oracle_text": "Trample\nBurrowguard Mentor's power and toughness are each equal to the number of creatures you control."
+  },
+  "Bushy Bodyguard": {
+    "arena_id": 91702,
+    "name": "Bushy Bodyguard",
+    "cmc": 2,
+    "mana_cost": "{1}{G}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Squirrel",
+      "Warrior"
+    ],
+    "colors": [
+      "G"
+    ],
+    "color_identity": [
+      "G"
+    ],
+    "rarity": "Uncommon",
+    "image": [
+      "https://cards.scryfall.io/large/front/0/d/0de60cf7-fa82-4b6f-9f88-6590fba5c863.jpg?1721426775"
+    ],
+    "keywords": [
+      "Forage",
+      "Offspring"
+    ],
+    "oracle_text": "Offspring {2} (You may pay an additional {2} as you cast this spell. If you do, when this creature enters, create a 1/1 token copy of it.)\nWhen this creature enters, you may forage. If you do, put two +1/+1 counters on it. (To forage, exile three cards from your graveyard or sacrifice a Food.)"
+  },
+  "Byrke, Long Ear of the Law": {
+    "arena_id": 91799,
+    "name": "Byrke, Long Ear of the Law",
+    "cmc": 6,
+    "mana_cost": "{4}{G}{W}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Rabbit",
+      "Soldier"
+    ],
+    "colors": [
+      "G",
+      "W"
+    ],
+    "color_identity": [
+      "G",
+      "W"
+    ],
+    "rarity": "Mythic",
+    "image": [
+      "https://cards.scryfall.io/large/front/6/4/6441abd3-320b-424a-9753-61e3581fe1a9.jpg?1726396879"
+    ],
+    "keywords": [
+      "Vigilance"
+    ],
+    "oracle_text": "Vigilance\nWhen Byrke enters, put a +1/+1 counter on each of up to two target creatures.\nWhenever a creature you control with a +1/+1 counter on it attacks, double the number of +1/+1 counters on it."
+  },
+  "Byway Barterer": {
+    "arena_id": 91665,
+    "name": "Byway Barterer",
+    "cmc": 3,
+    "mana_cost": "{2}{R}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Raccoon",
+      "Rogue"
+    ],
+    "colors": [
+      "R"
+    ],
+    "color_identity": [
+      "R"
+    ],
+    "rarity": "Rare",
+    "image": [
+      "https://cards.scryfall.io/large/front/f/4/f41fc718-641b-4f32-a8c1-3e5591a05bf8.jpg?1721426591"
+    ],
+    "keywords": [
+      "Menace"
+    ],
+    "oracle_text": "Menace\nWhenever you expend 4, you may discard your hand. If you do, draw two cards. (You expend 4 as you spend your fourth total mana to cast spells during a turn.)"
+  },
+  "Cache Grab": {
+    "arena_id": 91703,
+    "name": "Cache Grab",
+    "cmc": 2,
+    "mana_cost": "{1}{G}",
+    "types": [
+      "Instant"
+    ],
+    "subtypes": [],
+    "colors": [
+      "G"
+    ],
+    "color_identity": [
+      "G"
+    ],
+    "rarity": "Common",
+    "image": [
+      "https://cards.scryfall.io/large/front/d/f/dfd977dc-a7c3-4d0a-aca7-b25bd154e963.jpg?1721426785"
+    ],
+    "keywords": [
+      "Food",
+      "Mill"
+    ],
+    "oracle_text": "Mill four cards. You may put a permanent card from among the cards milled this way into your hand. If you control a Squirrel or returned a Squirrel card to your hand this way, create a Food token. (To mill four cards, put the top four cards of your library into your graveyard. A Food token is an artifact with \"{2}, {T}, Sacrifice this token: You gain 3 life.\")"
+  },
+  "Calamitous Tide": {
+    "arena_id": 91579,
+    "name": "Calamitous Tide",
+    "cmc": 6,
+    "mana_cost": "{4}{U}{U}",
+    "types": [
+      "Sorcery"
+    ],
+    "subtypes": [],
+    "colors": [
+      "U"
+    ],
+    "color_identity": [
+      "U"
+    ],
+    "rarity": "Uncommon",
+    "image": [
+      "https://cards.scryfall.io/large/front/1/7/178bc8b2-ffa0-4549-aead-aacb3db3cf19.jpg?1721431233"
+    ],
+    "keywords": [],
+    "oracle_text": "Return up to two target creatures to their owners' hands. Draw two cards, then discard a card."
+  },
+  "Camellia, the Seedmiser": {
+    "arena_id": 91743,
+    "name": "Camellia, the Seedmiser",
+    "cmc": 3,
+    "mana_cost": "{1}{B}{G}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Squirrel",
+      "Warlock"
+    ],
+    "colors": [
+      "B",
+      "G"
+    ],
+    "color_identity": [
+      "B",
+      "G"
+    ],
+    "rarity": "Rare",
+    "image": [
+      "https://cards.scryfall.io/large/front/2/c/2c16eaec-924c-42f6-9fea-07edd7ed93b9.jpg?1721933903"
+    ],
+    "keywords": [
+      "Forage",
+      "Menace"
+    ],
+    "oracle_text": "Menace\nOther Squirrels you control have menace.\nWhenever you sacrifice one or more Foods, create a 1/1 green Squirrel creature token.\n{2}, Forage: Put a +1/+1 counter on each other Squirrel you control. (To forage, exile three cards from your graveyard or sacrifice a Food.)"
+  },
+  "Caretaker's Talent": {
+    "arena_id": 91542,
+    "name": "Caretaker's Talent",
+    "cmc": 3,
+    "mana_cost": "{2}{W}",
+    "types": [
+      "Enchantment"
+    ],
+    "subtypes": [
+      "Class"
+    ],
+    "colors": [
+      "W"
+    ],
+    "color_identity": [
+      "W"
+    ],
+    "rarity": "Rare",
+    "image": [
+      "https://cards.scryfall.io/large/front/a/d/ad5ea98a-e36e-4ab9-b4da-cc572f3777db.jpg?1721425789"
+    ],
+    "keywords": [],
+    "oracle_text": "(Gain the next level as a sorcery to add its ability.)\nWhenever one or more tokens you control enter, draw a card. This ability triggers only once each turn.\n{W}: Level 2\nWhen this Class becomes level 2, create a token that's a copy of target token you control.\n{3}{W}: Level 3\nCreature tokens you control get +2/+2."
+  },
+  "Carrot Cake": {
+    "arena_id": 91543,
+    "name": "Carrot Cake",
+    "cmc": 2,
+    "mana_cost": "{1}{W}",
+    "types": [
+      "Artifact"
+    ],
+    "subtypes": [
+      "Food"
+    ],
+    "colors": [
+      "W"
+    ],
+    "color_identity": [
+      "W"
+    ],
+    "rarity": "Common",
+    "image": [
+      "https://cards.scryfall.io/large/front/e/b/eb03bb4f-8b4b-417e-bfc6-294cd2186b2e.jpg?1721425791"
+    ],
+    "keywords": [
+      "Scry"
+    ],
+    "oracle_text": "When this artifact enters and when you sacrifice it, create a 1/1 white Rabbit creature token and scry 1. (Look at the top card of your library. You may put that card on the bottom.)\n{2}, {T}, Sacrifice this artifact: You gain 3 life."
+  },
+  "Charmed Sleep": {
+    "arena_id": 91801,
+    "name": "Charmed Sleep",
+    "cmc": 3,
+    "mana_cost": "{1}{U}{U}",
+    "types": [
+      "Enchantment"
+    ],
+    "subtypes": [
+      "Aura"
+    ],
+    "colors": [
+      "U"
+    ],
+    "color_identity": [
+      "U"
+    ],
+    "rarity": "Common",
+    "image": [
+      "https://cards.scryfall.io/large/front/7/d/7d171802-2604-45a5-a0f2-ab5afa1db5d5.jpg?1721428082"
+    ],
+    "keywords": [
+      "Enchant"
+    ],
+    "oracle_text": "Enchant creature\nWhen this Aura enters, tap enchanted creature.\nEnchanted creature doesn't untap during its controller's untap step."
+  },
+  "Cindering Cutthroat": {
+    "arena_id": 91744,
+    "name": "Cindering Cutthroat",
+    "cmc": 3,
+    "mana_cost": "{2}{B/R}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Lizard",
+      "Assassin"
+    ],
+    "colors": [
+      "B",
+      "R"
+    ],
+    "color_identity": [
+      "B",
+      "R"
+    ],
+    "rarity": "Common",
+    "image": [
+      "https://cards.scryfall.io/large/front/b/2/b2ea10dd-21ea-4622-be27-79d03a802b85.jpg?1721427019"
+    ],
+    "keywords": [],
+    "oracle_text": "This creature enters with a +1/+1 counter on it if an opponent lost life this turn.\n{1}{B/R}: This creature gains menace until end of turn. (It can't be blocked except by two or more creatures.)"
+  },
+  "Clement, the Worrywort": {
+    "arena_id": 91745,
+    "name": "Clement, the Worrywort",
+    "cmc": 3,
+    "mana_cost": "{1}{G}{U}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Frog",
+      "Druid"
+    ],
+    "colors": [
+      "G",
+      "U"
+    ],
+    "color_identity": [
+      "G",
+      "U"
+    ],
+    "rarity": "Rare",
+    "image": [
+      "https://cards.scryfall.io/large/front/7/0/7028130c-c91d-4bf7-b0b0-450f71107d7a.jpg?1721427029"
+    ],
+    "keywords": [
+      "Vigilance"
+    ],
+    "oracle_text": "Vigilance\nWhenever Clement or another creature you control enters, return up to one target creature you control with lesser mana value to its owner's hand.\nFrogs you control have \"{T}: Add {G} or {U}. Spend this mana only to cast a creature spell.\""
+  },
+  "Clifftop Lookout": {
+    "arena_id": 91704,
+    "name": "Clifftop Lookout",
+    "cmc": 3,
+    "mana_cost": "{2}{G}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Frog",
+      "Scout"
+    ],
+    "colors": [
+      "G"
+    ],
+    "color_identity": [
+      "G"
+    ],
+    "rarity": "Uncommon",
+    "image": [
+      "https://cards.scryfall.io/large/front/6/6/662d3bcc-65f3-4c69-8ea1-446870a1193d.jpg?1721426786"
+    ],
+    "keywords": [
+      "Reach"
+    ],
+    "oracle_text": "Reach\nWhen this creature enters, reveal cards from the top of your library until you reveal a land card. Put that card onto the battlefield tapped and the rest on the bottom of your library in a random order."
+  },
+  "Coiling Rebirth": {
+    "arena_id": 91622,
+    "name": "Coiling Rebirth",
+    "cmc": 5,
+    "mana_cost": "{3}{B}{B}",
+    "types": [
+      "Sorcery"
+    ],
+    "subtypes": [],
+    "colors": [
+      "B"
+    ],
+    "color_identity": [
+      "B"
+    ],
+    "rarity": "Rare",
+    "image": [
+      "https://cards.scryfall.io/large/front/9/6/96d5de3e-0440-4dd1-899c-ab40c0752343.jpg?1721426359"
+    ],
+    "keywords": [
+      "Gift"
+    ],
+    "oracle_text": "Gift a card (You may promise an opponent a gift as you cast this spell. If you do, they draw a card before its other effects.)\nReturn target creature card from your graveyard to the battlefield. Then if the gift was promised and that creature isn't legendary, create a token that's a copy of that creature, except it's 1/1."
+  },
+  "Colossification": {
+    "arena_id": 91805,
+    "name": "Colossification",
+    "cmc": 7,
+    "mana_cost": "{5}{G}{G}",
+    "types": [
+      "Enchantment"
+    ],
+    "subtypes": [
+      "Aura"
+    ],
+    "colors": [
+      "G"
+    ],
+    "color_identity": [
+      "G"
+    ],
+    "rarity": "Rare",
+    "image": [
+      "https://cards.scryfall.io/large/front/c/2/c2cad902-ffd2-4bab-b114-b4b6df2ac6b3.jpg?1721428099"
+    ],
+    "keywords": [
+      "Enchant"
+    ],
+    "oracle_text": "Enchant creature\nWhen this Aura enters, tap enchanted creature.\nEnchanted creature gets +20/+20."
+  },
+  "Conduct Electricity": {
+    "arena_id": 91667,
+    "name": "Conduct Electricity",
+    "cmc": 5,
+    "mana_cost": "{4}{R}",
+    "types": [
+      "Instant"
+    ],
+    "subtypes": [],
+    "colors": [
+      "R"
+    ],
+    "color_identity": [
+      "R"
+    ],
+    "rarity": "Common",
+    "image": [
+      "https://cards.scryfall.io/large/front/2/f/2f373dd6-2412-453c-85ba-10230dfe473a.jpg?1721426597"
+    ],
+    "keywords": [],
+    "oracle_text": "Conduct Electricity deals 6 damage to target creature and 2 damage to up to one target creature token."
+  },
+  "Consumed by Greed": {
+    "arena_id": 91623,
+    "name": "Consumed by Greed",
+    "cmc": 3,
+    "mana_cost": "{1}{B}{B}",
+    "types": [
+      "Instant"
+    ],
+    "subtypes": [],
+    "colors": [
+      "B"
+    ],
+    "color_identity": [
+      "B"
+    ],
+    "rarity": "Uncommon",
+    "image": [
+      "https://cards.scryfall.io/large/front/e/5/e50acc41-3517-42db-b1d3-1bdfd7294d84.jpg?1721426362"
+    ],
+    "keywords": [
+      "Gift"
+    ],
+    "oracle_text": "Gift a card (You may promise an opponent a gift as you cast this spell. If you do, they draw a card before its other effects.)\nTarget opponent sacrifices a creature with the greatest power among creatures they control. If the gift was promised, return target creature card from your graveyard to your hand."
+  },
+  "Corpseberry Cultivator": {
+    "arena_id": 91746,
+    "name": "Corpseberry Cultivator",
+    "cmc": 3,
+    "mana_cost": "{1}{B/G}{B/G}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Squirrel",
+      "Warlock"
+    ],
+    "colors": [
+      "B",
+      "G"
+    ],
+    "color_identity": [
+      "B",
+      "G"
+    ],
+    "rarity": "Common",
+    "image": [
+      "https://cards.scryfall.io/large/front/c/9/c911a759-ed7b-452b-88a3-663478357610.jpg?1721427036"
+    ],
+    "keywords": [
+      "Forage"
+    ],
+    "oracle_text": "At the beginning of combat on your turn, you may forage. (Exile three cards from your graveyard or sacrifice a Food.)\nWhenever you forage, put a +1/+1 counter on this creature."
+  },
+  "Coruscation Mage": {
+    "arena_id": 91666,
+    "name": "Coruscation Mage",
+    "cmc": 2,
+    "mana_cost": "{1}{R}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Otter",
+      "Wizard"
+    ],
+    "colors": [
+      "R"
+    ],
+    "color_identity": [
+      "R"
+    ],
+    "rarity": "Uncommon",
+    "image": [
+      "https://cards.scryfall.io/large/front/d/c/dc2c1de0-6233-469a-be72-a050b97d2c8f.jpg?1721426600"
+    ],
+    "keywords": [
+      "Offspring"
+    ],
+    "oracle_text": "Offspring {2} (You may pay an additional {2} as you cast this spell. If you do, when this creature enters, create a 1/1 token copy of it.)\nWhenever you cast a noncreature spell, this creature deals 1 damage to each opponent."
+  },
+  "Cruelclaw's Heist": {
+    "arena_id": 91624,
+    "name": "Cruelclaw's Heist",
+    "cmc": 2,
+    "mana_cost": "{B}{B}",
+    "types": [
+      "Sorcery"
+    ],
+    "subtypes": [],
+    "colors": [
+      "B"
+    ],
+    "color_identity": [
+      "B"
+    ],
+    "rarity": "Rare",
+    "image": [
+      "https://cards.scryfall.io/large/front/c/a/cab4539a-0157-4cbe-b50f-6e2575df74e9.jpg?1721426377"
+    ],
+    "keywords": [
+      "Gift"
+    ],
+    "oracle_text": "Gift a card (You may promise an opponent a gift as you cast this spell. If you do, they draw a card before its other effects.)\nTarget opponent reveals their hand. You choose a nonland card from it. Exile that card. If the gift was promised, you may cast that card for as long as it remains exiled, and mana of any type can be spent to cast it."
+  },
+  "Crumb and Get It": {
+    "arena_id": 91544,
+    "name": "Crumb and Get It",
+    "cmc": 1,
+    "mana_cost": "{W}",
+    "types": [
+      "Instant"
+    ],
+    "subtypes": [],
+    "colors": [
+      "W"
+    ],
+    "color_identity": [
+      "W"
+    ],
+    "rarity": "Common",
+    "image": [
+      "https://cards.scryfall.io/large/front/3/c/3c7b3b25-d4b3-4451-9f5c-6eb369541175.jpg?1721429540"
+    ],
+    "keywords": [
+      "Gift",
+      "Food"
+    ],
+    "oracle_text": "Gift a Food (You may promise an opponent a gift as you cast this spell. If you do, they create a Food token before its other effects. It's an artifact with \"{2}, {T}, Sacrifice this token: You gain 3 life.\")\nTarget creature you control gets +2/+2 until end of turn. If the gift was promised, that creature also gains indestructible until end of turn."
+  },
+  "Curious Forager": {
+    "arena_id": 91705,
+    "name": "Curious Forager",
+    "cmc": 3,
+    "mana_cost": "{2}{G}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Squirrel",
+      "Druid"
+    ],
+    "colors": [
+      "G"
+    ],
+    "color_identity": [
+      "G"
+    ],
+    "rarity": "Uncommon",
+    "image": [
+      "https://cards.scryfall.io/large/front/6/4/64653b4a-e139-45f9-a915-ab49afb6b795.jpg?1721426795"
+    ],
+    "keywords": [
+      "Forage"
+    ],
+    "oracle_text": "When this creature enters, you may forage. When you do, return target permanent card from your graveyard to your hand. (To forage, exile three cards from your graveyard or sacrifice a Food.)"
+  },
+  "Daggerfang Duo": {
+    "arena_id": 91625,
+    "name": "Daggerfang Duo",
+    "cmc": 3,
+    "mana_cost": "{2}{B}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Rat",
+      "Squirrel"
+    ],
+    "colors": [
+      "B"
+    ],
+    "color_identity": [
+      "B"
+    ],
+    "rarity": "Common",
+    "image": [
+      "https://cards.scryfall.io/large/front/c/e/cea2bb34-e328-44fb-918a-72208c9457e4.jpg?1721426379"
+    ],
+    "keywords": [
+      "Mill",
+      "Deathtouch"
+    ],
+    "oracle_text": "Deathtouch\nWhen this creature enters, you may mill two cards. (You may put the top two cards of your library into your graveyard.)"
+  },
+  "Daring Waverider": {
+    "arena_id": 91580,
+    "name": "Daring Waverider",
+    "cmc": 6,
+    "mana_cost": "{4}{U}{U}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Otter",
+      "Wizard"
+    ],
+    "colors": [
+      "U"
+    ],
+    "color_identity": [
+      "U"
+    ],
+    "rarity": "Uncommon",
+    "image": [
+      "https://cards.scryfall.io/large/front/1/9/19422406-0c1a-497e-bed1-708bc556491a.jpg?1721426039"
+    ],
+    "keywords": [],
+    "oracle_text": "When this creature enters, you may cast target instant or sorcery card with mana value 4 or less from your graveyard without paying its mana cost. If that spell would be put into your graveyard, exile it instead."
+  },
+  "Darkstar Augur": {
+    "arena_id": 91626,
+    "name": "Darkstar Augur",
+    "cmc": 3,
+    "mana_cost": "{2}{B}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Bat",
+      "Warlock"
+    ],
+    "colors": [
+      "B"
+    ],
+    "color_identity": [
+      "B"
+    ],
+    "rarity": "Rare",
+    "image": [
+      "https://cards.scryfall.io/large/front/1/c/1c603751-1e2b-4c8e-a8d2-5c0876e7254f.jpg?1721426387"
+    ],
+    "keywords": [
+      "Flying",
+      "Offspring"
+    ],
+    "oracle_text": "Offspring {B} (You may pay an additional {B} as you cast this spell. If you do, when this creature enters, create a 1/1 token copy of it.)\nFlying\nAt the beginning of your upkeep, reveal the top card of your library and put that card into your hand. You lose life equal to its mana value."
+  },
+  "Dawn's Truce": {
+    "arena_id": 91545,
+    "name": "Dawn's Truce",
+    "cmc": 2,
+    "mana_cost": "{1}{W}",
+    "types": [
+      "Instant"
+    ],
+    "subtypes": [],
+    "colors": [
+      "W"
+    ],
+    "color_identity": [
+      "W"
+    ],
+    "rarity": "Rare",
+    "image": [
+      "https://cards.scryfall.io/large/front/8/f/8f72bfa0-efef-48ce-aff8-d5818ed71ba6.jpg?1721425804"
+    ],
+    "keywords": [
+      "Gift"
+    ],
+    "oracle_text": "Gift a card (You may promise an opponent a gift as you cast this spell. If you do, they draw a card before its other effects.)\nYou and permanents you control gain hexproof until end of turn. If the gift was promised, permanents you control also gain indestructible until end of turn."
+  },
+  "Dazzling Denial": {
+    "arena_id": 91581,
+    "name": "Dazzling Denial",
+    "cmc": 2,
+    "mana_cost": "{1}{U}",
+    "types": [
+      "Instant"
+    ],
+    "subtypes": [],
+    "colors": [
+      "U"
+    ],
+    "color_identity": [
+      "U"
+    ],
+    "rarity": "Common",
+    "image": [
+      "https://cards.scryfall.io/large/front/8/7/8739f1ac-2e57-4b52-a7ff-cc8df5936aad.jpg?1721426047"
+    ],
+    "keywords": [],
+    "oracle_text": "Counter target spell unless its controller pays {2}. If you control a Bird, counter that spell unless its controller pays {4} instead."
+  },
+  "Dewdrop Cure": {
+    "arena_id": 91546,
+    "name": "Dewdrop Cure",
+    "cmc": 3,
+    "mana_cost": "{2}{W}",
+    "types": [
+      "Sorcery"
+    ],
+    "subtypes": [],
+    "colors": [
+      "W"
+    ],
+    "color_identity": [
+      "W"
+    ],
+    "rarity": "Uncommon",
+    "image": [
+      "https://cards.scryfall.io/large/front/6/6/666aefc2-44e0-4c27-88d5-7906f245a71f.jpg?1721425815"
+    ],
+    "keywords": [
+      "Gift"
+    ],
+    "oracle_text": "Gift a card (You may promise an opponent a gift as you cast this spell. If you do, they draw a card before its other effects.)\nReturn up to two target creature cards each with mana value 2 or less from your graveyard to the battlefield. If the gift was promised, instead return up to three target creature cards each with mana value 2 or less from your graveyard to the battlefield."
+  },
+  "Dire Downdraft": {
+    "arena_id": 91582,
+    "name": "Dire Downdraft",
+    "cmc": 4,
+    "mana_cost": "{3}{U}",
+    "types": [
+      "Instant"
+    ],
+    "subtypes": [],
+    "colors": [
+      "U"
+    ],
+    "color_identity": [
+      "U"
+    ],
+    "rarity": "Common",
+    "image": [
+      "https://cards.scryfall.io/large/front/f/1/f1931f22-974c-43ad-911e-684bf3f9995d.jpg?1721426060"
+    ],
+    "keywords": [],
+    "oracle_text": "This spell costs {1} less to cast if it targets an attacking or tapped creature.\nTarget creature's owner puts it on their choice of the top or bottom of their library."
+  },
+  "Diresight": {
+    "arena_id": 91627,
+    "name": "Diresight",
+    "cmc": 3,
+    "mana_cost": "{2}{B}",
+    "types": [
+      "Sorcery"
+    ],
+    "subtypes": [],
+    "colors": [
+      "B"
+    ],
+    "color_identity": [
+      "B"
+    ],
+    "rarity": "Common",
+    "image": [
+      "https://cards.scryfall.io/large/front/f/a/fada29c0-5293-40a4-b36d-d073ee99e650.jpg?1721426397"
+    ],
+    "keywords": [
+      "Surveil"
+    ],
+    "oracle_text": "Surveil 2, then draw two cards. You lose 2 life. (To surveil 2, look at the top two cards of your library, then put any number of them into your graveyard and the rest on top of your library in any order.)"
+  },
+  "Dour Port-Mage": {
+    "arena_id": 91583,
+    "name": "Dour Port-Mage",
+    "cmc": 2,
+    "mana_cost": "{1}{U}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Frog",
+      "Wizard"
+    ],
+    "colors": [
+      "U"
+    ],
+    "color_identity": [
+      "U"
+    ],
+    "rarity": "Rare",
+    "image": [
+      "https://cards.scryfall.io/large/front/6/4/6402133e-eed1-4a46-9667-8b7a310362c1.jpg?1721426066"
+    ],
+    "keywords": [],
+    "oracle_text": "Whenever one or more other creatures you control leave the battlefield without dying, draw a card.\n{1}{U}, {T}: Return another target creature you control to its owner's hand."
+  },
+  "Downwind Ambusher": {
+    "arena_id": 91628,
+    "name": "Downwind Ambusher",
+    "cmc": 4,
+    "mana_cost": "{3}{B}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Skunk",
+      "Assassin"
+    ],
+    "colors": [
+      "B"
+    ],
+    "color_identity": [
+      "B"
+    ],
+    "rarity": "Uncommon",
+    "image": [
+      "https://cards.scryfall.io/large/front/5/5/55cfd628-933a-4d3d-b2e5-70bc86960d1c.jpg?1721426398"
+    ],
+    "keywords": [
+      "Flash"
+    ],
+    "oracle_text": "Flash\nWhen this creature enters, choose one \u2014\n\u2022 Target creature an opponent controls gets -1/-1 until end of turn.\n\u2022 Destroy target creature an opponent controls that was dealt damage this turn."
+  },
+  "Dragonhawk, Fate's Tempest": {
+    "arena_id": 91671,
+    "name": "Dragonhawk, Fate's Tempest",
+    "cmc": 5,
+    "mana_cost": "{3}{R}{R}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Bird",
+      "Dragon"
+    ],
+    "colors": [
+      "R"
+    ],
+    "color_identity": [
+      "R"
+    ],
+    "rarity": "Mythic",
+    "image": [
+      "https://cards.scryfall.io/large/front/8/6/8659789c-6a2c-439f-a348-b9b1b06c55b8.jpg?1721426605"
+    ],
+    "keywords": [
+      "Flying"
+    ],
+    "oracle_text": "Flying\nWhenever Dragonhawk enters or attacks, exile the top X cards of your library, where X is the number of creatures you control with power 4 or greater. You may play those cards until your next end step. At the beginning of your next end step, Dragonhawk deals 2 damage to each opponent for each of those cards that are still exiled."
+  },
+  "Dreamdew Entrancer": {
+    "arena_id": 91747,
+    "name": "Dreamdew Entrancer",
+    "cmc": 4,
+    "mana_cost": "{2}{G}{U}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Frog",
+      "Wizard"
+    ],
+    "colors": [
+      "G",
+      "U"
+    ],
+    "color_identity": [
+      "G",
+      "U"
+    ],
+    "rarity": "Rare",
+    "image": [
+      "https://cards.scryfall.io/large/front/2/6/26bd6b0d-8606-4a37-8be3-a852f1a8e99c.jpg?1721427040"
+    ],
+    "keywords": [
+      "Reach"
+    ],
+    "oracle_text": "Reach\nWhen this creature enters, tap up to one target creature and put three stun counters on it. If you control that creature, draw two cards."
+  },
+  "Driftgloom Coyote": {
+    "arena_id": 91547,
+    "name": "Driftgloom Coyote",
+    "cmc": 5,
+    "mana_cost": "{3}{W}{W}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Elemental",
+      "Coyote"
+    ],
+    "colors": [
+      "W"
+    ],
+    "color_identity": [
+      "W"
+    ],
+    "rarity": "Uncommon",
+    "image": [
+      "https://cards.scryfall.io/large/front/d/7/d7ab2de3-3aea-461a-a74f-fb742cf8a198.jpg?1721425819"
+    ],
+    "keywords": [],
+    "oracle_text": "When this creature enters, exile target creature an opponent controls until this creature leaves the battlefield. If that creature had power 2 or less, put a +1/+1 counter on this creature."
+  },
+  "Druid of the Spade": {
+    "arena_id": 91706,
+    "name": "Druid of the Spade",
+    "cmc": 3,
+    "mana_cost": "{2}{G}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Rabbit",
+      "Druid"
+    ],
+    "colors": [
+      "G"
+    ],
+    "color_identity": [
+      "G"
+    ],
+    "rarity": "Common",
+    "image": [
+      "https://cards.scryfall.io/large/front/6/b/6b485cf7-bad0-4824-9ba7-cb112ce4769f.jpg?1721426796"
+    ],
+    "keywords": [],
+    "oracle_text": "As long as you control a token, this creature gets +2/+0 and has trample."
+  },
+  "Early Winter": {
+    "arena_id": 91629,
+    "name": "Early Winter",
+    "cmc": 5,
+    "mana_cost": "{4}{B}",
+    "types": [
+      "Instant"
+    ],
+    "subtypes": [],
+    "colors": [
+      "B"
+    ],
+    "color_identity": [
+      "B"
+    ],
+    "rarity": "Common",
+    "image": [
+      "https://cards.scryfall.io/large/front/5/0/5030e6ac-211d-4145-8c87-998a8351a467.jpg?1721426407"
+    ],
+    "keywords": [],
+    "oracle_text": "Choose one \u2014\n\u2022 Exile target creature.\n\u2022 Target opponent exiles an enchantment they control."
+  },
+  "Eddymurk Crab": {
+    "arena_id": 91584,
+    "name": "Eddymurk Crab",
+    "cmc": 7,
+    "mana_cost": "{5}{U}{U}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Elemental",
+      "Crab"
+    ],
+    "colors": [
+      "U"
+    ],
+    "color_identity": [
+      "U"
+    ],
+    "rarity": "Uncommon",
+    "image": [
+      "https://cards.scryfall.io/large/front/e/6/e6d45abe-4962-47d9-a54e-7e623ea8647c.jpg?1721426076"
+    ],
+    "keywords": [
+      "Flash"
+    ],
+    "oracle_text": "Flash\nThis spell costs {1} less to cast for each instant and sorcery card in your graveyard.\nThis creature enters tapped if it's not your turn.\nWhen this creature enters, tap up to two target creatures."
+  },
+  "Eluge, the Shoreless Sea": {
+    "arena_id": 91585,
+    "name": "Eluge, the Shoreless Sea",
+    "cmc": 4,
+    "mana_cost": "{1}{U}{U}{U}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Elemental",
+      "Fish"
+    ],
+    "colors": [
+      "U"
+    ],
+    "color_identity": [
+      "U"
+    ],
+    "rarity": "Mythic",
+    "image": [
+      "https://cards.scryfall.io/large/front/1/f/1f2bf6ba-cd1a-4382-9572-6dfbcf6ed0c6.jpg?1721426077"
+    ],
+    "keywords": [],
+    "oracle_text": "Eluge's power and toughness are each equal to the number of Islands you control.\nWhenever Eluge enters or attacks, put a flood counter on target land. It's an Island in addition to its other types for as long as it has a flood counter on it.\nThe first instant or sorcery spell you cast each turn costs {U} (or {1}) less to cast for each land you control with a flood counter on it."
+  },
+  "Emberheart Challenger": {
+    "arena_id": 91668,
+    "name": "Emberheart Challenger",
+    "cmc": 2,
+    "mana_cost": "{1}{R}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Mouse",
+      "Warrior"
+    ],
+    "colors": [
+      "R"
+    ],
+    "color_identity": [
+      "R"
+    ],
+    "rarity": "Rare",
+    "image": [
+      "https://cards.scryfall.io/large/front/0/0/0035082e-bb86-4f95-be48-ffc87fe5286d.jpg?1721426609"
+    ],
+    "keywords": [
+      "Prowess",
+      "Valiant",
+      "Haste"
+    ],
+    "oracle_text": "Haste\nProwess (Whenever you cast a noncreature spell, this creature gets +1/+1 until end of turn.)\nValiant \u2014 Whenever this creature becomes the target of a spell or ability you control for the first time each turn, exile the top card of your library. Until end of turn, you may play that card."
+  },
+  "Essence Channeler": {
+    "arena_id": 91548,
+    "name": "Essence Channeler",
+    "cmc": 2,
+    "mana_cost": "{1}{W}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Bat",
+      "Cleric"
+    ],
+    "colors": [
+      "W"
+    ],
+    "color_identity": [
+      "W"
+    ],
+    "rarity": "Rare",
+    "image": [
+      "https://cards.scryfall.io/large/front/5/a/5aaf7e4c-4d5d-4acc-a834-e6c4a7629408.jpg?1724003311"
+    ],
+    "keywords": [],
+    "oracle_text": "As long as you've lost life this turn, this creature has flying and vigilance.\nWhenever you gain life, put a +1/+1 counter on this creature.\nWhen this creature dies, put its counters on target creature you control."
+  },
+  "Fabled Passage": {
+    "arena_id": 91788,
+    "name": "Fabled Passage",
+    "cmc": 0,
+    "mana_cost": "",
+    "types": [
+      "Land"
+    ],
+    "subtypes": [],
+    "colors": [],
+    "color_identity": [],
+    "rarity": "Rare",
+    "image": [
+      "https://cards.scryfall.io/large/front/8/8/8809830f-d8e1-4603-9652-0ad8b00234e9.jpg?1721427315"
+    ],
+    "keywords": [],
+    "oracle_text": "{T}, Sacrifice this land: Search your library for a basic land card, put it onto the battlefield tapped, then shuffle. Then if you control four or more lands, untap that land."
+  },
+  "Feather of Flight": {
+    "arena_id": 91549,
+    "name": "Feather of Flight",
+    "cmc": 2,
+    "mana_cost": "{1}{W}",
+    "types": [
+      "Enchantment"
+    ],
+    "subtypes": [
+      "Aura"
+    ],
+    "colors": [
+      "W"
+    ],
+    "color_identity": [
+      "W"
+    ],
+    "rarity": "Uncommon",
+    "image": [
+      "https://cards.scryfall.io/large/front/9/f/9fb41503-8632-4bf1-9bfe-6d9b9993c337.jpg?1721425833"
+    ],
+    "keywords": [
+      "Enchant",
+      "Flash"
+    ],
+    "oracle_text": "Flash\nEnchant creature\nWhen this Aura enters, draw a card.\nEnchanted creature gets +1/+0 and has flying."
+  },
+  "Fecund Greenshell": {
+    "arena_id": 91707,
+    "name": "Fecund Greenshell",
+    "cmc": 5,
+    "mana_cost": "{3}{G}{G}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Elemental",
+      "Turtle"
+    ],
+    "colors": [
+      "G"
+    ],
+    "color_identity": [
+      "G"
+    ],
+    "rarity": "Rare",
+    "image": [
+      "https://cards.scryfall.io/large/front/8/0/80b3e815-0e2e-4325-b1d5-5531b7b92da6.jpg?1721426804"
+    ],
+    "keywords": [
+      "Reach"
+    ],
+    "oracle_text": "Reach\nAs long as you control ten or more lands, creatures you control get +2/+2.\nWhenever this creature or another creature you control with toughness greater than its power enters, look at the top card of your library. If it's a land card, you may put it onto the battlefield tapped. Otherwise, put it into your hand."
+  },
+  "Feed the Cycle": {
+    "arena_id": 91630,
+    "name": "Feed the Cycle",
+    "cmc": 2,
+    "mana_cost": "{1}{B}",
+    "types": [
+      "Instant"
+    ],
+    "subtypes": [],
+    "colors": [
+      "B"
+    ],
+    "color_identity": [
+      "B"
+    ],
+    "rarity": "Uncommon",
+    "image": [
+      "https://cards.scryfall.io/large/front/7/e/7e017ff8-2936-4a1b-bece-00004cfbad06.jpg?1721426413"
+    ],
+    "keywords": [
+      "Forage"
+    ],
+    "oracle_text": "As an additional cost to cast this spell, forage or pay {B}. (To forage, exile three cards from your graveyard or sacrifice a Food.)\nDestroy target creature or planeswalker."
+  },
+  "Fell": {
+    "arena_id": 91631,
+    "name": "Fell",
+    "cmc": 2,
+    "mana_cost": "{1}{B}",
+    "types": [
+      "Sorcery"
+    ],
+    "subtypes": [],
+    "colors": [
+      "B"
+    ],
+    "color_identity": [
+      "B"
+    ],
+    "rarity": "Uncommon",
+    "image": [
+      "https://cards.scryfall.io/large/front/c/9/c96ac326-de44-470b-a592-a4c2a052c091.jpg?1721426418"
+    ],
+    "keywords": [],
+    "oracle_text": "Destroy target creature."
+  },
+  "Festival of Embers": {
+    "arena_id": 91669,
+    "name": "Festival of Embers",
+    "cmc": 5,
+    "mana_cost": "{4}{R}",
+    "types": [
+      "Enchantment"
+    ],
+    "subtypes": [],
+    "colors": [
+      "R"
+    ],
+    "color_identity": [
+      "R"
+    ],
+    "rarity": "Rare",
+    "image": [
+      "https://cards.scryfall.io/large/front/4/4/4433ee12-2013-4fdc-979f-ae065f63a527.jpg?1721426613"
+    ],
+    "keywords": [],
+    "oracle_text": "During your turn, you may cast instant and sorcery spells from your graveyard by paying 1 life in addition to their other costs.\nIf a card or token would be put into your graveyard from anywhere, exile it instead.\n{1}{R}: Sacrifice this enchantment."
+  },
+  "Finch Formation": {
+    "arena_id": 91586,
+    "name": "Finch Formation",
+    "cmc": 3,
+    "mana_cost": "{2}{U}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Bird",
+      "Scout"
+    ],
+    "colors": [
+      "U"
+    ],
+    "color_identity": [
+      "U"
+    ],
+    "rarity": "Common",
+    "image": [
+      "https://cards.scryfall.io/large/front/1/c/1c671eab-d1ef-4d79-94eb-8b85f0d18699.jpg?1721426087"
+    ],
+    "keywords": [
+      "Flying",
+      "Offspring"
+    ],
+    "oracle_text": "Offspring {3} (You may pay an additional {3} as you cast this spell. If you do, when this creature enters, create a 1/1 token copy of it.)\nFlying\nWhen this creature enters, target creature you control gains flying until end of turn."
+  },
+  "Finneas, Ace Archer": {
+    "arena_id": 91748,
+    "name": "Finneas, Ace Archer",
+    "cmc": 2,
+    "mana_cost": "{G}{W}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Rabbit",
+      "Archer"
+    ],
+    "colors": [
+      "G",
+      "W"
+    ],
+    "color_identity": [
+      "G",
+      "W"
+    ],
+    "rarity": "Rare",
+    "image": [
+      "https://cards.scryfall.io/large/front/0/d/0dee197d-c313-4364-b52c-f83d5f579bc3.jpg?1721427047"
+    ],
+    "keywords": [
+      "Reach",
+      "Vigilance"
+    ],
+    "oracle_text": "Vigilance, reach\nWhenever Finneas attacks, put a +1/+1 counter on each other creature you control that's a token or a Rabbit. Then if creatures you control have total power 10 or greater, draw a card."
+  },
+  "Fireglass Mentor": {
+    "arena_id": 91749,
+    "name": "Fireglass Mentor",
+    "cmc": 2,
+    "mana_cost": "{B}{R}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Lizard",
+      "Warlock"
+    ],
+    "colors": [
+      "B",
+      "R"
+    ],
+    "color_identity": [
+      "B",
+      "R"
+    ],
+    "rarity": "Uncommon",
+    "image": [
+      "https://cards.scryfall.io/large/front/b/7/b78fbaa3-c580-4290-9c28-b74169aab2fc.jpg?1721427057"
+    ],
+    "keywords": [],
+    "oracle_text": "At the beginning of your second main phase, if an opponent lost life this turn, exile the top two cards of your library. Choose one of them. Until end of turn, you may play that card."
+  },
+  "Flamecache Gecko": {
+    "arena_id": 91670,
+    "name": "Flamecache Gecko",
+    "cmc": 2,
+    "mana_cost": "{1}{R}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Lizard",
+      "Warlock"
+    ],
+    "colors": [
+      "R"
+    ],
+    "color_identity": [
+      "B",
+      "R"
+    ],
+    "rarity": "Uncommon",
+    "image": [
+      "https://cards.scryfall.io/large/front/f/b/fb8e7c97-8393-41b8-bb0b-3983dcc5e7f4.jpg?1721426619"
+    ],
+    "keywords": [],
+    "oracle_text": "When this creature enters, if an opponent lost life this turn, add {B}{R}.\n{1}{R}, Discard a card: Draw a card."
+  },
+  "Flame Lash": {
+    "arena_id": 91804,
+    "name": "Flame Lash",
+    "cmc": 4,
+    "mana_cost": "{3}{R}",
+    "types": [
+      "Instant"
+    ],
+    "subtypes": [],
+    "colors": [
+      "R"
+    ],
+    "color_identity": [
+      "R"
+    ],
+    "rarity": "Common",
+    "image": [
+      "https://cards.scryfall.io/large/front/c/6/c6440439-7178-4a97-9e18-7fdef4b02678.jpg?1721428094"
+    ],
+    "keywords": [],
+    "oracle_text": "Flame Lash deals 4 damage to any target."
+  },
+  "Flowerfoot Swordmaster": {
+    "arena_id": 91550,
+    "name": "Flowerfoot Swordmaster",
+    "cmc": 1,
+    "mana_cost": "{W}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Mouse",
+      "Soldier"
+    ],
+    "colors": [
+      "W"
+    ],
+    "color_identity": [
+      "W"
+    ],
+    "rarity": "Uncommon",
+    "image": [
+      "https://cards.scryfall.io/large/front/9/7/97ff118f-9c3c-43a2-8085-980c7fe7d227.jpg?1721425843"
+    ],
+    "keywords": [
+      "Offspring",
+      "Valiant"
+    ],
+    "oracle_text": "Offspring {2} (You may pay an additional {2} as you cast this spell. If you do, when this creature enters, create a 1/1 token copy of it.)\nValiant \u2014 Whenever this creature becomes the target of a spell or ability you control for the first time each turn, Mice you control get +1/+0 until end of turn."
+  },
+  "Forest": {
+    "arena_id": 91839,
+    "name": "Forest",
+    "cmc": 0,
+    "mana_cost": "",
+    "types": [
+      "Land"
+    ],
+    "subtypes": [
+      "Forest"
+    ],
+    "colors": [],
+    "color_identity": [
+      "G"
+    ],
+    "rarity": "Common",
+    "image": [
+      "https://cards.scryfall.io/large/front/4/3/43b3be4a-973d-4aeb-a94e-37e2710ac178.jpg?1721428022"
+    ],
+    "keywords": [],
+    "oracle_text": "({T}: Add {G}.)"
+  },
+  "For the Common Good": {
+    "arena_id": 91708,
+    "name": "For the Common Good",
+    "cmc": 1,
+    "mana_cost": "{X}{X}{G}",
+    "types": [
+      "Sorcery"
+    ],
+    "subtypes": [],
+    "colors": [
+      "G"
+    ],
+    "color_identity": [
+      "G"
+    ],
+    "rarity": "Rare",
+    "image": [
+      "https://cards.scryfall.io/large/front/3/e/3ec72a27-b622-47d7-bdf3-970ccaef0d2a.jpg?1721426807"
+    ],
+    "keywords": [],
+    "oracle_text": "Create X tokens that are copies of target token you control. Then tokens you control gain indestructible until your next turn. You gain 1 life for each token you control."
+  },
+  "Fountainport": {
+    "arena_id": 91789,
+    "name": "Fountainport",
+    "cmc": 0,
+    "mana_cost": "",
+    "types": [
+      "Land"
+    ],
+    "subtypes": [],
+    "colors": [],
+    "color_identity": [],
+    "rarity": "Rare",
+    "image": [
+      "https://cards.scryfall.io/large/front/6/5/658cfcb7-81b7-48c6-9dd2-1663d06108cf.jpg?1721427323"
+    ],
+    "keywords": [
+      "Treasure"
+    ],
+    "oracle_text": "{T}: Add {C}.\n{2}, {T}, Sacrifice a token: Draw a card.\n{3}, {T}, Pay 1 life: Create a 1/1 blue Fish creature token.\n{4}, {T}: Create a Treasure token."
+  },
+  "Fountainport Bell": {
+    "arena_id": 91781,
+    "name": "Fountainport Bell",
+    "cmc": 1,
+    "mana_cost": "{1}",
+    "types": [
+      "Artifact"
+    ],
+    "subtypes": [],
+    "colors": [],
+    "color_identity": [],
+    "rarity": "Common",
+    "image": [
+      "https://cards.scryfall.io/large/front/a/5/a5c94bc0-a49d-451b-8e8d-64d46b8b8603.jpg?1721427270"
+    ],
+    "keywords": [],
+    "oracle_text": "When this artifact enters, you may search your library for a basic land card, reveal it, then shuffle and put that card on top.\n{1}, Sacrifice this artifact: Draw a card."
+  },
+  "Frilled Sparkshooter": {
+    "arena_id": 91672,
+    "name": "Frilled Sparkshooter",
+    "cmc": 4,
+    "mana_cost": "{3}{R}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Lizard",
+      "Archer"
+    ],
+    "colors": [
+      "R"
+    ],
+    "color_identity": [
+      "R"
+    ],
+    "rarity": "Common",
+    "image": [
+      "https://cards.scryfall.io/large/front/6/7/674bbd6d-e329-42cf-963d-88d1ce8fe51e.jpg?1721426623"
+    ],
+    "keywords": [
+      "Reach",
+      "Menace"
+    ],
+    "oracle_text": "Menace, reach\nThis creature enters with a +1/+1 counter on it if an opponent lost life this turn."
+  },
+  "Galewind Moose": {
+    "arena_id": 91709,
+    "name": "Galewind Moose",
+    "cmc": 6,
+    "mana_cost": "{4}{G}{G}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Elemental",
+      "Elk"
+    ],
+    "colors": [
+      "G"
+    ],
+    "color_identity": [
+      "G"
+    ],
+    "rarity": "Uncommon",
+    "image": [
+      "https://cards.scryfall.io/large/front/5/8/58706bd8-558a-43b9-9f1e-c1ff0044203b.jpg?1721426814"
+    ],
+    "keywords": [
+      "Reach",
+      "Vigilance",
+      "Trample",
+      "Flash"
+    ],
+    "oracle_text": "Flash\nVigilance, reach, trample"
+  },
+  "Gev, Scaled Scorch": {
+    "arena_id": 91750,
+    "name": "Gev, Scaled Scorch",
+    "cmc": 2,
+    "mana_cost": "{B}{R}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Lizard",
+      "Mercenary"
+    ],
+    "colors": [
+      "B",
+      "R"
+    ],
+    "color_identity": [
+      "B",
+      "R"
+    ],
+    "rarity": "Rare",
+    "image": [
+      "https://cards.scryfall.io/large/front/1/3/131ea976-289e-4f32-896d-27bbfd423ba9.jpg?1721427059"
+    ],
+    "keywords": [
+      "Ward"
+    ],
+    "oracle_text": "Ward\u2014Pay 2 life.\nOther creatures you control enter with an additional +1/+1 counter on them for each opponent who lost life this turn.\nWhenever you cast a Lizard spell, Gev deals 1 damage to target opponent."
+  },
+  "Giant Growth": {
+    "arena_id": 91806,
+    "name": "Giant Growth",
+    "cmc": 1,
+    "mana_cost": "{G}",
+    "types": [
+      "Instant"
+    ],
+    "subtypes": [],
+    "colors": [
+      "G"
+    ],
+    "color_identity": [
+      "G"
+    ],
+    "rarity": "Common",
+    "image": [
+      "https://cards.scryfall.io/large/front/e/7/e70722d6-b4d5-45c2-9488-9a5eb0bdb9bd.jpg?1721428103"
+    ],
+    "keywords": [],
+    "oracle_text": "Target creature gets +3/+3 until end of turn."
+  },
+  "Glarb, Calamity's Augur": {
+    "arena_id": 91751,
+    "name": "Glarb, Calamity's Augur",
+    "cmc": 3,
+    "mana_cost": "{B}{G}{U}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Frog",
+      "Wizard",
+      "Noble"
+    ],
+    "colors": [
+      "B",
+      "G",
+      "U"
+    ],
+    "color_identity": [
+      "B",
+      "G",
+      "U"
+    ],
+    "rarity": "Mythic",
+    "image": [
+      "https://cards.scryfall.io/large/front/f/f/ffc70b2d-5a3a-49ea-97db-175a62248302.jpg?1721427068"
+    ],
+    "keywords": [
+      "Surveil",
+      "Deathtouch"
+    ],
+    "oracle_text": "Deathtouch\nYou may look at the top card of your library any time.\nYou may play lands and cast spells with mana value 4 or greater from the top of your library.\n{T}: Surveil 2."
+  },
+  "Glidedive Duo": {
+    "arena_id": 91632,
+    "name": "Glidedive Duo",
+    "cmc": 5,
+    "mana_cost": "{4}{B}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Bat",
+      "Lizard"
+    ],
+    "colors": [
+      "B"
+    ],
+    "color_identity": [
+      "B"
+    ],
+    "rarity": "Common",
+    "image": [
+      "https://cards.scryfall.io/large/front/4/8/4831e7ae-54e3-4bd9-b5af-52dc29f81715.jpg?1721426425"
+    ],
+    "keywords": [
+      "Flying"
+    ],
+    "oracle_text": "Flying\nWhen this creature enters, each opponent loses 2 life and you gain 2 life."
+  },
+  "Gossip's Talent": {
+    "arena_id": 91587,
+    "name": "Gossip's Talent",
+    "cmc": 2,
+    "mana_cost": "{1}{U}",
+    "types": [
+      "Enchantment"
+    ],
+    "subtypes": [
+      "Class"
+    ],
+    "colors": [
+      "U"
+    ],
+    "color_identity": [
+      "U"
+    ],
+    "rarity": "Uncommon",
+    "image": [
+      "https://cards.scryfall.io/large/front/b/2/b299889a-03d6-4659-b0e1-f0830842e40f.jpg?1721426095"
+    ],
+    "keywords": [
+      "Surveil"
+    ],
+    "oracle_text": "(Gain the next level as a sorcery to add its ability.)\nWhenever a creature you control enters, surveil 1.\n{1}{U}: Level 2\nWhenever you attack, target attacking creature with power 3 or less can't be blocked this turn.\n{3}{U}: Level 3\nWhenever a creature you control deals combat damage to a player, you may exile it, then return it to the battlefield under its owner's control."
+  },
+  "Harnesser of Storms": {
+    "arena_id": 91673,
+    "name": "Harnesser of Storms",
+    "cmc": 3,
+    "mana_cost": "{2}{R}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Otter",
+      "Wizard"
+    ],
+    "colors": [
+      "R"
+    ],
+    "color_identity": [
+      "R"
+    ],
+    "rarity": "Uncommon",
+    "image": [
+      "https://cards.scryfall.io/large/front/b/5/b56beeb6-88ca-475e-8654-1d4e8b4aa3c0.jpg?1721426630"
+    ],
+    "keywords": [],
+    "oracle_text": "Whenever you cast a noncreature or Otter spell, you may exile the top card of your library. Until end of turn, you may play that card. This ability triggers only once each turn."
+  },
+  "Harvestrite Host": {
+    "arena_id": 91551,
+    "name": "Harvestrite Host",
+    "cmc": 3,
+    "mana_cost": "{2}{W}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Rabbit",
+      "Citizen"
+    ],
+    "colors": [
+      "W"
+    ],
+    "color_identity": [
+      "W"
+    ],
+    "rarity": "Uncommon",
+    "image": [
+      "https://cards.scryfall.io/large/front/4/1/41762689-0c13-4d45-9d81-ba2afad980f8.jpg?1721425845"
+    ],
+    "keywords": [],
+    "oracle_text": "Whenever this creature or another Rabbit you control enters, target creature you control gets +1/+0 until end of turn. Then draw a card if this is the second time this ability has resolved this turn."
+  },
+  "Hazardroot Herbalist": {
+    "arena_id": 91710,
+    "name": "Hazardroot Herbalist",
+    "cmc": 3,
+    "mana_cost": "{2}{G}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Rabbit",
+      "Druid"
+    ],
+    "colors": [
+      "G"
+    ],
+    "color_identity": [
+      "G"
+    ],
+    "rarity": "Uncommon",
+    "image": [
+      "https://cards.scryfall.io/large/front/e/2/e2882982-b3a3-4762-a550-6b82db1038e8.jpg?1721426818"
+    ],
+    "keywords": [],
+    "oracle_text": "Whenever you attack, target creature you control gets +1/+0 until end of turn. If that creature is a token, it also gains deathtouch until end of turn."
+  },
+  "Hazel's Nocturne": {
+    "arena_id": 91633,
+    "name": "Hazel's Nocturne",
+    "cmc": 4,
+    "mana_cost": "{3}{B}",
+    "types": [
+      "Instant"
+    ],
+    "subtypes": [],
+    "colors": [
+      "B"
+    ],
+    "color_identity": [
+      "B"
+    ],
+    "rarity": "Uncommon",
+    "image": [
+      "https://cards.scryfall.io/large/front/2/3/239363df-4de8-4b64-80fc-a1f4b5c36027.jpg?1721426431"
+    ],
+    "keywords": [],
+    "oracle_text": "Return up to two target creature cards from your graveyard to your hand. Each opponent loses 2 life and you gain 2 life."
+  },
+  "Head of the Homestead": {
+    "arena_id": 91752,
+    "name": "Head of the Homestead",
+    "cmc": 5,
+    "mana_cost": "{3}{G/W}{G/W}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Rabbit",
+      "Citizen"
+    ],
+    "colors": [
+      "G",
+      "W"
+    ],
+    "color_identity": [
+      "G",
+      "W"
+    ],
+    "rarity": "Common",
+    "image": [
+      "https://cards.scryfall.io/large/front/2/f/2fc20157-edd3-484d-8864-925c071c0551.jpg?1721427071"
+    ],
+    "keywords": [],
+    "oracle_text": "When this creature enters, create two 1/1 white Rabbit creature tokens."
+  },
+  "Heaped Harvest": {
+    "arena_id": 91711,
+    "name": "Heaped Harvest",
+    "cmc": 3,
+    "mana_cost": "{2}{G}",
+    "types": [
+      "Artifact"
+    ],
+    "subtypes": [
+      "Food"
+    ],
+    "colors": [
+      "G"
+    ],
+    "color_identity": [
+      "G"
+    ],
+    "rarity": "Common",
+    "image": [
+      "https://cards.scryfall.io/large/front/3/b/3b5349db-0e0a-4b15-886e-0db403ef49cb.jpg?1721426825"
+    ],
+    "keywords": [],
+    "oracle_text": "When this artifact enters and when you sacrifice it, you may search your library for a basic land card, put it onto the battlefield tapped, then shuffle.\n{2}, {T}, Sacrifice this artifact: You gain 3 life."
+  },
+  "Heartfire Hero": {
+    "arena_id": 91674,
+    "name": "Heartfire Hero",
+    "cmc": 1,
+    "mana_cost": "{R}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Mouse",
+      "Soldier"
+    ],
+    "colors": [
+      "R"
+    ],
+    "color_identity": [
+      "R"
+    ],
+    "rarity": "Uncommon",
+    "image": [
+      "https://cards.scryfall.io/large/front/4/8/48ace959-66b2-40c8-9bff-fd7ed9c99a82.jpg?1762883283"
+    ],
+    "keywords": [
+      "Valiant"
+    ],
+    "oracle_text": "Valiant \u2014 Whenever this creature becomes the target of a spell or ability you control for the first time each turn, put a +1/+1 counter on it.\nWhen this creature dies, it deals damage equal to its power to each opponent."
+  },
+  "Hearthborn Battler": {
+    "arena_id": 91675,
+    "name": "Hearthborn Battler",
+    "cmc": 3,
+    "mana_cost": "{2}{R}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Lizard",
+      "Warlock"
+    ],
+    "colors": [
+      "R"
+    ],
+    "color_identity": [
+      "R"
+    ],
+    "rarity": "Rare",
+    "image": [
+      "https://cards.scryfall.io/large/front/b/e/bef1cf5c-9738-4062-8cb1-87a372d36687.jpg?1721426641"
+    ],
+    "keywords": [
+      "Haste"
+    ],
+    "oracle_text": "Haste\nWhenever a player casts their second spell each turn, this creature deals 2 damage to target opponent."
+  },
+  "Heirloom Epic": {
+    "arena_id": 91782,
+    "name": "Heirloom Epic",
+    "cmc": 1,
+    "mana_cost": "{1}",
+    "types": [
+      "Artifact"
+    ],
+    "subtypes": [],
+    "colors": [],
+    "color_identity": [],
+    "rarity": "Uncommon",
+    "image": [
+      "https://cards.scryfall.io/large/front/7/8/7839ce48-0175-494a-ab89-9bdfb7a50cb1.jpg?1721427279"
+    ],
+    "keywords": [],
+    "oracle_text": "{4}, {T}: Draw a card. For each mana in this ability's activation cost, you may tap an untapped creature you control rather than pay that mana. Activate only as a sorcery."
+  },
+  "Helga, Skittish Seer": {
+    "arena_id": 91753,
+    "name": "Helga, Skittish Seer",
+    "cmc": 3,
+    "mana_cost": "{G}{W}{U}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Frog",
+      "Druid"
+    ],
+    "colors": [
+      "G",
+      "U",
+      "W"
+    ],
+    "color_identity": [
+      "G",
+      "U",
+      "W"
+    ],
+    "rarity": "Mythic",
+    "image": [
+      "https://cards.scryfall.io/large/front/4/0/40339715-22d0-4f99-822b-a00d9824f27a.jpg?1721427078"
+    ],
+    "keywords": [],
+    "oracle_text": "Whenever you cast a creature spell with mana value 4 or greater, you draw a card, gain 1 life, and put a +1/+1 counter on Helga.\n{T}: Add X mana of any one color, where X is Helga's power. Spend this mana only to cast creature spells with mana value 4 or greater or creature spells with {X} in their mana costs."
+  },
+  "Hidden Grotto": {
+    "arena_id": 91790,
+    "name": "Hidden Grotto",
+    "cmc": 0,
+    "mana_cost": "",
+    "types": [
+      "Land"
+    ],
+    "subtypes": [],
+    "colors": [],
+    "color_identity": [],
+    "rarity": "Common",
+    "image": [
+      "https://cards.scryfall.io/large/front/4/b/4ba8f2e7-8357-4862-97dc-1942d066023a.jpg?1721427326"
+    ],
+    "keywords": [
+      "Surveil"
+    ],
+    "oracle_text": "When this land enters, surveil 1. (Look at the top card of your library. You may put it into your graveyard.)\n{T}: Add {C}.\n{1}, {T}: Add one mana of any color."
+  },
+  "High Stride": {
+    "arena_id": 91712,
+    "name": "High Stride",
+    "cmc": 1,
+    "mana_cost": "{G}",
+    "types": [
+      "Instant"
+    ],
+    "subtypes": [],
+    "colors": [
+      "G"
+    ],
+    "color_identity": [
+      "G"
+    ],
+    "rarity": "Common",
+    "image": [
+      "https://cards.scryfall.io/large/front/0/9/09c8cf4b-8e65-4a1c-b458-28b5ab56b390.jpg?1721426829"
+    ],
+    "keywords": [],
+    "oracle_text": "Target creature gets +1/+3 and gains reach until end of turn. Untap it."
+  },
+  "Hired Claw": {
+    "arena_id": 91676,
+    "name": "Hired Claw",
+    "cmc": 1,
+    "mana_cost": "{R}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Lizard",
+      "Mercenary"
+    ],
+    "colors": [
+      "R"
+    ],
+    "color_identity": [
+      "R"
+    ],
+    "rarity": "Rare",
+    "image": [
+      "https://cards.scryfall.io/large/front/1/a/1ae41080-0d67-4719-adb2-49bf2a268b6c.jpg?1721426641"
+    ],
+    "keywords": [],
+    "oracle_text": "Whenever you attack with one or more Lizards, this creature deals 1 damage to target opponent.\n{1}{R}: Put a +1/+1 counter on this creature. Activate only if an opponent lost life this turn and only once each turn."
+  },
+  "Hivespine Wolverine": {
+    "arena_id": 91713,
+    "name": "Hivespine Wolverine",
+    "cmc": 5,
+    "mana_cost": "{3}{G}{G}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Elemental",
+      "Wolverine"
+    ],
+    "colors": [
+      "G"
+    ],
+    "color_identity": [
+      "G"
+    ],
+    "rarity": "Uncommon",
+    "image": [
+      "https://cards.scryfall.io/large/front/8/2/821970a3-a291-4fe9-bb13-dfc54f9c3caf.jpg?1721426835"
+    ],
+    "keywords": [
+      "Fight"
+    ],
+    "oracle_text": "When this creature enters, choose one \u2014\n\u2022 Put a +1/+1 counter on target creature you control.\n\u2022 This creature fights target creature token.\n\u2022 Destroy target artifact or enchantment."
+  },
+  "Hoarder's Overflow": {
+    "arena_id": 91677,
+    "name": "Hoarder's Overflow",
+    "cmc": 2,
+    "mana_cost": "{1}{R}",
+    "types": [
+      "Enchantment"
+    ],
+    "subtypes": [],
+    "colors": [
+      "R"
+    ],
+    "color_identity": [
+      "R"
+    ],
+    "rarity": "Uncommon",
+    "image": [
+      "https://cards.scryfall.io/large/front/c/2/c2ed5079-07b4-4575-a2c8-5f0cbff888c3.jpg?1721426652"
+    ],
+    "keywords": [],
+    "oracle_text": "When this enchantment enters and whenever you expend 4, put a stash counter on it. (You expend 4 as you spend your fourth total mana to cast spells during a turn.)\n{1}{R}, Sacrifice this enchantment: Discard your hand, then draw cards equal to the number of stash counters on this enchantment."
+  },
+  "Honored Dreyleader": {
+    "arena_id": 91714,
+    "name": "Honored Dreyleader",
+    "cmc": 3,
+    "mana_cost": "{2}{G}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Squirrel",
+      "Warrior"
+    ],
+    "colors": [
+      "G"
+    ],
+    "color_identity": [
+      "G"
+    ],
+    "rarity": "Uncommon",
+    "image": [
+      "https://cards.scryfall.io/large/front/b/c/bc5ee537-52e1-474a-9326-dfacc2a758ab.jpg?1721426839"
+    ],
+    "keywords": [
+      "Trample"
+    ],
+    "oracle_text": "Trample\nWhen this creature enters, put a +1/+1 counter on it for each other Squirrel and/or Food you control.\nWhenever another Squirrel or Food you control enters, put a +1/+1 counter on this creature."
+  },
+  "Hop to It": {
+    "arena_id": 91552,
+    "name": "Hop to It",
+    "cmc": 3,
+    "mana_cost": "{2}{W}",
+    "types": [
+      "Sorcery"
+    ],
+    "subtypes": [],
+    "colors": [
+      "W"
+    ],
+    "color_identity": [
+      "W"
+    ],
+    "rarity": "Uncommon",
+    "image": [
+      "https://cards.scryfall.io/large/front/e/e/ee7207f8-5daa-42af-aeea-7a489047110b.jpg?1721425854"
+    ],
+    "keywords": [],
+    "oracle_text": "Create three 1/1 white Rabbit creature tokens."
+  },
+  "Hugs, Grisly Guardian": {
+    "arena_id": 91754,
+    "name": "Hugs, Grisly Guardian",
+    "cmc": 4,
+    "mana_cost": "{X}{R}{R}{G}{G}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Badger",
+      "Warrior"
+    ],
+    "colors": [
+      "G",
+      "R"
+    ],
+    "color_identity": [
+      "G",
+      "R"
+    ],
+    "rarity": "Mythic",
+    "image": [
+      "https://cards.scryfall.io/large/front/f/0/f09d7f4a-c947-4389-befa-1d547d0d1237.jpg?1721427081"
+    ],
+    "keywords": [
+      "Trample"
+    ],
+    "oracle_text": "Trample\nWhen Hugs enters, exile the top X cards of your library. Until the end of your next turn, you may play those cards.\nYou may play an additional land on each of your turns."
+  },
+  "Hunter's Talent": {
+    "arena_id": 91715,
+    "name": "Hunter's Talent",
+    "cmc": 2,
+    "mana_cost": "{1}{G}",
+    "types": [
+      "Enchantment"
+    ],
+    "subtypes": [
+      "Class"
+    ],
+    "colors": [
+      "G"
+    ],
+    "color_identity": [
+      "G"
+    ],
+    "rarity": "Uncommon",
+    "image": [
+      "https://cards.scryfall.io/large/front/e/9/e9a31863-9649-4a4f-99e4-c93729938bd7.jpg?1739659559"
+    ],
+    "keywords": [],
+    "oracle_text": "(Gain the next level as a sorcery to add its ability.)\nWhen this Class enters, target creature you control deals damage equal to its power to target creature you don't control.\n{1}{G}: Level 2\nWhenever you attack, target attacking creature gets +1/+0 and gains trample until end of turn.\n{3}{G}: Level 3\nAt the beginning of your end step, if you control a creature with power 4 or greater, draw a card."
+  },
+  "Huskburster Swarm": {
+    "arena_id": 91634,
+    "name": "Huskburster Swarm",
+    "cmc": 8,
+    "mana_cost": "{7}{B}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Elemental",
+      "Insect"
+    ],
+    "colors": [
+      "B"
+    ],
+    "color_identity": [
+      "B"
+    ],
+    "rarity": "Uncommon",
+    "image": [
+      "https://cards.scryfall.io/large/front/e/d/ed2f61d7-4eb0-41c5-8a34-a0793c2abc51.jpg?1721426437"
+    ],
+    "keywords": [
+      "Menace",
+      "Deathtouch"
+    ],
+    "oracle_text": "This spell costs {1} less to cast for each creature card you own in exile and in your graveyard.\nMenace, deathtouch"
+  },
+  "Innkeeper's Talent": {
+    "arena_id": 91716,
+    "name": "Innkeeper's Talent",
+    "cmc": 2,
+    "mana_cost": "{1}{G}",
+    "types": [
+      "Enchantment"
+    ],
+    "subtypes": [
+      "Class"
+    ],
+    "colors": [
+      "G"
+    ],
+    "color_identity": [
+      "G"
+    ],
+    "rarity": "Rare",
+    "image": [
+      "https://cards.scryfall.io/large/front/9/4/941b0afc-0e8f-45f2-ae7f-07595e164611.jpg?1721814343"
+    ],
+    "keywords": [],
+    "oracle_text": "(Gain the next level as a sorcery to add its ability.)\nAt the beginning of combat on your turn, put a +1/+1 counter on target creature you control.\n{G}: Level 2\nPermanents you control with counters on them have ward {1}.\n{3}{G}: Level 3\nIf you would put one or more counters on a permanent or player, put twice that many of each of those kinds of counters on that permanent or player instead."
+  },
+  "Into the Flood Maw": {
+    "arena_id": 91588,
+    "name": "Into the Flood Maw",
+    "cmc": 1,
+    "mana_cost": "{U}",
+    "types": [
+      "Instant"
+    ],
+    "subtypes": [],
+    "colors": [
+      "U"
+    ],
+    "color_identity": [
+      "U"
+    ],
+    "rarity": "Uncommon",
+    "image": [
+      "https://cards.scryfall.io/large/front/5/0/50b9575a-53d9-4df7-b86c-cda021107d3f.jpg?1721426097"
+    ],
+    "keywords": [
+      "Gift"
+    ],
+    "oracle_text": "Gift a tapped Fish (You may promise an opponent a gift as you cast this spell. If you do, they create a tapped 1/1 blue Fish creature token before its other effects.)\nReturn target creature an opponent controls to its owner's hand. If the gift was promised, instead return target nonland permanent an opponent controls to its owner's hand."
+  },
+  "Intrepid Rabbit": {
+    "arena_id": 91553,
+    "name": "Intrepid Rabbit",
+    "cmc": 3,
+    "mana_cost": "{2}{W}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Rabbit",
+      "Soldier"
+    ],
+    "colors": [
+      "W"
+    ],
+    "color_identity": [
+      "W"
+    ],
+    "rarity": "Common",
+    "image": [
+      "https://cards.scryfall.io/large/front/4/d/4d70b99d-c8bf-4a56-8957-cf587fe60b81.jpg?1721425856"
+    ],
+    "keywords": [
+      "Offspring"
+    ],
+    "oracle_text": "Offspring {1} (You may pay an additional {1} as you cast this spell. If you do, when this creature enters, create a 1/1 token copy of it.)\nWhen this creature enters, target creature you control gets +1/+1 until end of turn."
+  },
+  "Iridescent Vinelasher": {
+    "arena_id": 91635,
+    "name": "Iridescent Vinelasher",
+    "cmc": 1,
+    "mana_cost": "{B}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Lizard",
+      "Assassin"
+    ],
+    "colors": [
+      "B"
+    ],
+    "color_identity": [
+      "B"
+    ],
+    "rarity": "Rare",
+    "image": [
+      "https://cards.scryfall.io/large/front/b/2/b2bc854c-4e72-48e0-a098-e3451d6e511d.jpg?1721426442"
+    ],
+    "keywords": [
+      "Offspring",
+      "Landfall"
+    ],
+    "oracle_text": "Offspring {2} (You may pay an additional {2} as you cast this spell. If you do, when this creature enters, create a 1/1 token copy of it.)\nLandfall \u2014 Whenever a land you control enters, this creature deals 1 damage to target opponent."
+  },
+  "Island": {
+    "arena_id": 91833,
+    "name": "Island",
+    "cmc": 0,
+    "mana_cost": "",
+    "types": [
+      "Land"
+    ],
+    "subtypes": [
+      "Island"
+    ],
+    "colors": [],
+    "color_identity": [
+      "U"
+    ],
+    "rarity": "Common",
+    "image": [
+      "https://cards.scryfall.io/large/front/4/6/46848fc2-ba58-4738-b4ce-0399d9053f48.jpg?1721427993"
+    ],
+    "keywords": [],
+    "oracle_text": "({T}: Add {U}.)"
+  },
+  "Jackdaw Savior": {
+    "arena_id": 91554,
+    "name": "Jackdaw Savior",
+    "cmc": 3,
+    "mana_cost": "{2}{W}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Bird",
+      "Cleric"
+    ],
+    "colors": [
+      "W"
+    ],
+    "color_identity": [
+      "W"
+    ],
+    "rarity": "Rare",
+    "image": [
+      "https://cards.scryfall.io/large/front/1/2/121af600-6143-450a-9f87-12ce4833f1ec.jpg?1721425865"
+    ],
+    "keywords": [
+      "Flying"
+    ],
+    "oracle_text": "Flying\nWhenever this creature or another creature you control with flying dies, return another target creature card with lesser mana value from your graveyard to the battlefield."
+  },
+  "Jolly Gerbils": {
+    "arena_id": 91555,
+    "name": "Jolly Gerbils",
+    "cmc": 2,
+    "mana_cost": "{1}{W}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Hamster",
+      "Citizen"
+    ],
+    "colors": [
+      "W"
+    ],
+    "color_identity": [
+      "W"
+    ],
+    "rarity": "Uncommon",
+    "image": [
+      "https://cards.scryfall.io/large/front/0/e/0eab51d6-ba17-4a8c-8834-25db363f2b6b.jpg?1721425868"
+    ],
+    "keywords": [],
+    "oracle_text": "Whenever you give a gift, draw a card."
+  },
+  "Junkblade Bruiser": {
+    "arena_id": 91756,
+    "name": "Junkblade Bruiser",
+    "cmc": 5,
+    "mana_cost": "{3}{R/G}{R/G}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Raccoon",
+      "Berserker"
+    ],
+    "colors": [
+      "G",
+      "R"
+    ],
+    "color_identity": [
+      "G",
+      "R"
+    ],
+    "rarity": "Common",
+    "image": [
+      "https://cards.scryfall.io/large/front/9/1/918fd89b-5ab7-4ae2-920c-faca5e9da7b9.jpg?1721427100"
+    ],
+    "keywords": [
+      "Trample"
+    ],
+    "oracle_text": "Trample\nWhenever you expend 4, this creature gets +2/+1 until end of turn. (You expend 4 as you spend your fourth total mana to cast spells during a turn.)"
+  },
+  "Kastral, the Windcrested": {
+    "arena_id": 91757,
+    "name": "Kastral, the Windcrested",
+    "cmc": 5,
+    "mana_cost": "{3}{W}{U}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Bird",
+      "Scout"
+    ],
+    "colors": [
+      "U",
+      "W"
+    ],
+    "color_identity": [
+      "U",
+      "W"
+    ],
+    "rarity": "Rare",
+    "image": [
+      "https://cards.scryfall.io/large/front/e/b/ebf68793-22a2-4a59-9d37-6791584edca1.jpg?1721427101"
+    ],
+    "keywords": [
+      "Flying"
+    ],
+    "oracle_text": "Flying\nWhenever one or more Birds you control deal combat damage to a player, choose one \u2014\n\u2022 You may put a Bird creature card from your hand or graveyard onto the battlefield with a finality counter on it.\n\u2022 Put a +1/+1 counter on each Bird you control.\n\u2022 Draw a card."
+  },
+  "Keen-Eyed Curator": {
+    "arena_id": 91717,
+    "name": "Keen-Eyed Curator",
+    "cmc": 2,
+    "mana_cost": "{G}{G}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Raccoon",
+      "Scout"
+    ],
+    "colors": [
+      "G"
+    ],
+    "color_identity": [
+      "G"
+    ],
+    "rarity": "Rare",
+    "image": [
+      "https://cards.scryfall.io/large/front/8/c/8cf33d80-0704-4dc4-8e8d-1dcbcbc35add.jpg?1721426856"
+    ],
+    "keywords": [],
+    "oracle_text": "As long as there are four or more card types among cards exiled with this creature, it gets +4/+4 and has trample.\n{1}: Exile target card from a graveyard."
+  },
+  "Kindlespark Duo": {
+    "arena_id": 91678,
+    "name": "Kindlespark Duo",
+    "cmc": 3,
+    "mana_cost": "{2}{R}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Lizard",
+      "Otter"
+    ],
+    "colors": [
+      "R"
+    ],
+    "color_identity": [
+      "R"
+    ],
+    "rarity": "Common",
+    "image": [
+      "https://cards.scryfall.io/large/front/a/8/a839fba3-1b66-4dd1-bf43-9b015b44fc81.jpg?1721426652"
+    ],
+    "keywords": [],
+    "oracle_text": "{T}: This creature deals 1 damage to target opponent.\nWhenever you cast a noncreature spell, untap this creature."
+  },
+  "Kitnap": {
+    "arena_id": 91589,
+    "name": "Kitnap",
+    "cmc": 4,
+    "mana_cost": "{2}{U}{U}",
+    "types": [
+      "Enchantment"
+    ],
+    "subtypes": [
+      "Aura"
+    ],
+    "colors": [
+      "U"
+    ],
+    "color_identity": [
+      "U"
+    ],
+    "rarity": "Rare",
+    "image": [
+      "https://cards.scryfall.io/large/front/0/8/085be5d1-fd85-46d1-ad39-a8aa75a06a96.jpg?1721426110"
+    ],
+    "keywords": [
+      "Gift",
+      "Enchant"
+    ],
+    "oracle_text": "Gift a card (You may promise an opponent a gift as you cast this spell. If you do, when it enters, they draw a card.)\nEnchant creature\nWhen this Aura enters, tap enchanted creature. If the gift wasn't promised, put three stun counters on it.\nYou control enchanted creature."
+  },
+  "Kitsa, Otterball Elite": {
+    "arena_id": 91590,
+    "name": "Kitsa, Otterball Elite",
+    "cmc": 2,
+    "mana_cost": "{1}{U}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Otter",
+      "Wizard"
+    ],
+    "colors": [
+      "U"
+    ],
+    "color_identity": [
+      "U"
+    ],
+    "rarity": "Mythic",
+    "image": [
+      "https://cards.scryfall.io/large/front/c/8/c8ff751a-ec64-41d5-b22c-2a483ad9a9b2.jpg?1721426117"
+    ],
+    "keywords": [
+      "Prowess",
+      "Vigilance"
+    ],
+    "oracle_text": "Vigilance\nProwess (Whenever you cast a noncreature spell, this creature gets +1/+1 until end of turn.)\n{T}: Draw a card, then discard a card.\n{2}, {T}: Copy target instant or sorcery spell you control. You may choose new targets for the copy. Activate only if Kitsa's power is 3 or greater."
+  },
+  "Knightfisher": {
+    "arena_id": 91591,
+    "name": "Knightfisher",
+    "cmc": 5,
+    "mana_cost": "{3}{U}{U}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Bird",
+      "Knight"
+    ],
+    "colors": [
+      "U"
+    ],
+    "color_identity": [
+      "U"
+    ],
+    "rarity": "Uncommon",
+    "image": [
+      "https://cards.scryfall.io/large/front/c/7/c7fb7f4f-2153-4527-8f11-adbf508d3533.jpg?1721426127"
+    ],
+    "keywords": [
+      "Flying"
+    ],
+    "oracle_text": "Flying\nWhenever another nontoken Bird you control enters, create a 1/1 blue Fish creature token."
+  },
+  "Lifecreed Duo": {
+    "arena_id": 91556,
+    "name": "Lifecreed Duo",
+    "cmc": 2,
+    "mana_cost": "{1}{W}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Bat",
+      "Bird"
+    ],
+    "colors": [
+      "W"
+    ],
+    "color_identity": [
+      "W"
+    ],
+    "rarity": "Common",
+    "image": [
+      "https://cards.scryfall.io/large/front/c/a/ca543405-5e12-48a0-9a77-082ac9bcb2f2.jpg?1721425877"
+    ],
+    "keywords": [
+      "Flying"
+    ],
+    "oracle_text": "Flying\nWhenever another creature you control enters, you gain 1 life."
+  },
+  "Lightshell Duo": {
+    "arena_id": 91592,
+    "name": "Lightshell Duo",
+    "cmc": 4,
+    "mana_cost": "{3}{U}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Rat",
+      "Otter"
+    ],
+    "colors": [
+      "U"
+    ],
+    "color_identity": [
+      "U"
+    ],
+    "rarity": "Common",
+    "image": [
+      "https://cards.scryfall.io/large/front/2/f/2f00c834-b4a9-45b8-bb3f-22c2a42314a0.jpg?1721426129"
+    ],
+    "keywords": [
+      "Surveil",
+      "Prowess"
+    ],
+    "oracle_text": "Prowess (Whenever you cast a noncreature spell, this creature gets +1/+1 until end of turn.)\nWhen this creature enters, surveil 2. (Look at the top two cards of your library, then put any number of them into your graveyard and the rest on top of your library in any order.)"
+  },
+  "Lilypad Village": {
+    "arena_id": 91791,
+    "name": "Lilypad Village",
+    "cmc": 0,
+    "mana_cost": "",
+    "types": [
+      "Land"
+    ],
+    "subtypes": [],
+    "colors": [],
+    "color_identity": [
+      "U"
+    ],
+    "rarity": "Uncommon",
+    "image": [
+      "https://cards.scryfall.io/large/front/7/e/7e95a7cc-ed77-4ca4-80db-61c0fc68bf50.jpg?1721639529"
+    ],
+    "keywords": [
+      "Surveil"
+    ],
+    "oracle_text": "{T}: Add {C}.\n{T}: Add {U}. Spend this mana only to cast a creature spell.\n{U}, {T}: Surveil 2. Activate only if a Bird, Frog, Otter, or Rat entered the battlefield under your control this turn."
+  },
+  "Lilysplash Mentor": {
+    "arena_id": 91758,
+    "name": "Lilysplash Mentor",
+    "cmc": 4,
+    "mana_cost": "{2}{G}{U}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Frog",
+      "Druid"
+    ],
+    "colors": [
+      "G",
+      "U"
+    ],
+    "color_identity": [
+      "G",
+      "U"
+    ],
+    "rarity": "Uncommon",
+    "image": [
+      "https://cards.scryfall.io/large/front/6/4/64de7b1f-a03e-4407-91f1-e108a2f26735.jpg?1721427132"
+    ],
+    "keywords": [
+      "Reach"
+    ],
+    "oracle_text": "Reach\n{1}{G}{U}: Exile another target creature you control, then return it to the battlefield under its owner's control with a +1/+1 counter on it. Activate only as a sorcery."
+  },
+  "Long River Lurker": {
+    "arena_id": 91593,
+    "name": "Long River Lurker",
+    "cmc": 3,
+    "mana_cost": "{2}{U}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Frog",
+      "Scout"
+    ],
+    "colors": [
+      "U"
+    ],
+    "color_identity": [
+      "U"
+    ],
+    "rarity": "Uncommon",
+    "image": [
+      "https://cards.scryfall.io/large/front/7/c/7c267719-cd03-4003-b281-e732d5e42a1e.jpg?1721426137"
+    ],
+    "keywords": [
+      "Ward"
+    ],
+    "oracle_text": "Ward {1}\nOther Frogs you control have ward {1}.\nWhen this creature enters, target creature you control can't be blocked this turn. Whenever that creature deals combat damage this turn, you may exile it. If you do, return it to the battlefield under its owner's control."
+  },
+  "Long River's Pull": {
+    "arena_id": 91594,
+    "name": "Long River's Pull",
+    "cmc": 2,
+    "mana_cost": "{U}{U}",
+    "types": [
+      "Instant"
+    ],
+    "subtypes": [],
+    "colors": [
+      "U"
+    ],
+    "color_identity": [
+      "U"
+    ],
+    "rarity": "Uncommon",
+    "image": [
+      "https://cards.scryfall.io/large/front/1/c/1c81d0fa-81a1-4f9b-a5fd-5a648fd01dea.jpg?1721426147"
+    ],
+    "keywords": [
+      "Gift"
+    ],
+    "oracle_text": "Gift a card (You may promise an opponent a gift as you cast this spell. If you do, they draw a card before its other effects.)\nCounter target creature spell. If the gift was promised, instead counter target spell."
+  },
+  "Longstalk Brawl": {
+    "arena_id": 91718,
+    "name": "Longstalk Brawl",
+    "cmc": 1,
+    "mana_cost": "{G}",
+    "types": [
+      "Sorcery"
+    ],
+    "subtypes": [],
+    "colors": [
+      "G"
+    ],
+    "color_identity": [
+      "G"
+    ],
+    "rarity": "Common",
+    "image": [
+      "https://cards.scryfall.io/large/front/c/7/c7ef748c-b5e5-4e7d-bf2e-d3e6c08edb42.jpg?1721426861"
+    ],
+    "keywords": [
+      "Gift",
+      "Fight"
+    ],
+    "oracle_text": "Gift a tapped Fish (You may promise an opponent a gift as you cast this spell. If you do, they create a tapped 1/1 blue Fish creature token before its other effects.)\nChoose target creature you control and target creature you don't control. Put a +1/+1 counter on the creature you control if the gift was promised. Then those creatures fight each other."
+  },
+  "Lumra, Bellow of the Woods": {
+    "arena_id": 91719,
+    "name": "Lumra, Bellow of the Woods",
+    "cmc": 6,
+    "mana_cost": "{4}{G}{G}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Elemental",
+      "Bear"
+    ],
+    "colors": [
+      "G"
+    ],
+    "color_identity": [
+      "G"
+    ],
+    "rarity": "Mythic",
+    "image": [
+      "https://cards.scryfall.io/large/front/a/e/ae4f3aaf-3960-48cd-b34b-32e4ae5ae088.jpg?1721426865"
+    ],
+    "keywords": [
+      "Reach",
+      "Vigilance",
+      "Mill"
+    ],
+    "oracle_text": "Vigilance, reach\nLumra's power and toughness are each equal to the number of lands you control.\nWhen Lumra enters, mill four cards. Then return all land cards from your graveyard to the battlefield tapped."
+  },
+  "Lunar Convocation": {
+    "arena_id": 91759,
+    "name": "Lunar Convocation",
+    "cmc": 2,
+    "mana_cost": "{W}{B}",
+    "types": [
+      "Enchantment"
+    ],
+    "subtypes": [],
+    "colors": [
+      "B",
+      "W"
+    ],
+    "color_identity": [
+      "B",
+      "W"
+    ],
+    "rarity": "Rare",
+    "image": [
+      "https://cards.scryfall.io/large/front/a/9/a9ee50d4-c878-457b-964d-29c039ce9852.jpg?1721427132"
+    ],
+    "keywords": [],
+    "oracle_text": "At the beginning of your end step, if you gained life this turn, each opponent loses 1 life.\nAt the beginning of your end step, if you gained and lost life this turn, create a 1/1 black Bat creature token with flying.\n{1}{B}, Pay 2 life: Draw a card."
+  },
+  "Lupinflower Village": {
+    "arena_id": 91792,
+    "name": "Lupinflower Village",
+    "cmc": 0,
+    "mana_cost": "",
+    "types": [
+      "Land"
+    ],
+    "subtypes": [],
+    "colors": [],
+    "color_identity": [
+      "W"
+    ],
+    "rarity": "Uncommon",
+    "image": [
+      "https://cards.scryfall.io/large/front/8/a/8ab9d56f-9178-4ec9-a5f6-b934f50d8d9d.jpg?1721639625"
+    ],
+    "keywords": [],
+    "oracle_text": "{T}: Add {C}.\n{T}: Add {W}. Spend this mana only to cast a creature spell.\n{1}{W}, {T}, Sacrifice this land: Look at the top six cards of your library. You may reveal a Bat, Bird, Mouse, or Rabbit card from among them and put it into your hand. Put the rest on the bottom of your library in a random order."
+  },
+  "Mabel, Heir to Cragflame": {
+    "arena_id": 91760,
+    "name": "Mabel, Heir to Cragflame",
+    "cmc": 3,
+    "mana_cost": "{1}{R}{W}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Mouse",
+      "Soldier"
+    ],
+    "colors": [
+      "R",
+      "W"
+    ],
+    "color_identity": [
+      "R",
+      "W"
+    ],
+    "rarity": "Rare",
+    "image": [
+      "https://cards.scryfall.io/large/front/b/e/be6627fd-729d-44f2-b6bf-5299f49d1e3d.jpg?1721427144"
+    ],
+    "keywords": [],
+    "oracle_text": "Other Mice you control get +1/+1.\nWhen Mabel enters, create Cragflame, a legendary colorless Equipment artifact token with \"Equipped creature gets +1/+1 and has vigilance, trample, and haste\" and equip {2}."
+  },
+  "Mabel's Mettle": {
+    "arena_id": 91557,
+    "name": "Mabel's Mettle",
+    "cmc": 2,
+    "mana_cost": "{1}{W}",
+    "types": [
+      "Instant"
+    ],
+    "subtypes": [],
+    "colors": [
+      "W"
+    ],
+    "color_identity": [
+      "W"
+    ],
+    "rarity": "Uncommon",
+    "image": [
+      "https://cards.scryfall.io/large/front/5/c/5cfcf83f-089c-4e35-855e-b61b98bb1cd8.jpg?1721425880"
+    ],
+    "keywords": [],
+    "oracle_text": "Target creature gets +2/+2 until end of turn. Up to one other target creature gets +1/+1 until end of turn."
+  },
+  "Maha, Its Feathers Night": {
+    "arena_id": 91636,
+    "name": "Maha, Its Feathers Night",
+    "cmc": 5,
+    "mana_cost": "{3}{B}{B}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Elemental",
+      "Bird"
+    ],
+    "colors": [
+      "B"
+    ],
+    "color_identity": [
+      "B"
+    ],
+    "rarity": "Mythic",
+    "image": [
+      "https://cards.scryfall.io/large/front/c/f/cf3320ec-c4e8-405a-982d-e009c58c9e21.jpg?1721426449"
+    ],
+    "keywords": [
+      "Flying",
+      "Trample",
+      "Ward"
+    ],
+    "oracle_text": "Flying, trample\nWard\u2014Discard a card.\nCreatures your opponents control have base toughness 1."
+  },
+  "Manifold Mouse": {
+    "arena_id": 91679,
+    "name": "Manifold Mouse",
+    "cmc": 2,
+    "mana_cost": "{1}{R}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Mouse",
+      "Soldier"
+    ],
+    "colors": [
+      "R"
+    ],
+    "color_identity": [
+      "R"
+    ],
+    "rarity": "Rare",
+    "image": [
+      "https://cards.scryfall.io/large/front/d/b/db3832b5-e83f-4569-bd49-fb7b86fa2d47.jpg?1721426663"
+    ],
+    "keywords": [
+      "Offspring"
+    ],
+    "oracle_text": "Offspring {2} (You may pay an additional {2} as you cast this spell. If you do, when this creature enters, create a 1/1 token copy of it.)\nAt the beginning of combat on your turn, target Mouse you control gains your choice of double strike or trample until end of turn."
+  },
+  "Might of the Meek": {
+    "arena_id": 91680,
+    "name": "Might of the Meek",
+    "cmc": 1,
+    "mana_cost": "{R}",
+    "types": [
+      "Instant"
+    ],
+    "subtypes": [],
+    "colors": [
+      "R"
+    ],
+    "color_identity": [
+      "R"
+    ],
+    "rarity": "Common",
+    "image": [
+      "https://cards.scryfall.io/large/front/5/0/509bf254-8a2b-4dfa-9ae5-386321b35e8b.jpg?1721426663"
+    ],
+    "keywords": [],
+    "oracle_text": "Target creature gains trample until end of turn. It also gets +1/+0 until end of turn if you control a Mouse.\nDraw a card."
+  },
+  "Mind Drill Assailant": {
+    "arena_id": 91761,
+    "name": "Mind Drill Assailant",
+    "cmc": 4,
+    "mana_cost": "{2}{U/B}{U/B}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Rat",
+      "Warlock"
+    ],
+    "colors": [
+      "B",
+      "U"
+    ],
+    "color_identity": [
+      "B",
+      "U"
+    ],
+    "rarity": "Common",
+    "image": [
+      "https://cards.scryfall.io/large/front/5/0/507ba708-ca9b-453e-b4c2-23b6650eb5a8.jpg?1721427150"
+    ],
+    "keywords": [
+      "Surveil",
+      "Threshold"
+    ],
+    "oracle_text": "Threshold \u2014 As long as there are seven or more cards in your graveyard, this creature gets +3/+0.\n{2}{U/B}: Surveil 1. (Look at the top card of your library. You may put it into your graveyard.)"
+  },
+  "Mind Spiral": {
+    "arena_id": 91595,
+    "name": "Mind Spiral",
+    "cmc": 5,
+    "mana_cost": "{4}{U}",
+    "types": [
+      "Sorcery"
+    ],
+    "subtypes": [],
+    "colors": [
+      "U"
+    ],
+    "color_identity": [
+      "U"
+    ],
+    "rarity": "Common",
+    "image": [
+      "https://cards.scryfall.io/large/front/7/e/7e24fe6a-607b-49b8-9fca-cecb1e40de7f.jpg?1721426147"
+    ],
+    "keywords": [
+      "Gift"
+    ],
+    "oracle_text": "Gift a tapped Fish (You may promise an opponent a gift as you cast this spell. If you do, they create a tapped 1/1 blue Fish creature token before its other effects.)\nTarget player draws three cards. If the gift was promised, tap target creature an opponent controls and put a stun counter on it. (If a permanent with a stun counter would become untapped, remove one from it instead.)"
+  },
+  "Mind Spring": {
+    "arena_id": 91802,
+    "name": "Mind Spring",
+    "cmc": 2,
+    "mana_cost": "{X}{U}{U}",
+    "types": [
+      "Sorcery"
+    ],
+    "subtypes": [],
+    "colors": [
+      "U"
+    ],
+    "color_identity": [
+      "U"
+    ],
+    "rarity": "Rare",
+    "image": [
+      "https://cards.scryfall.io/large/front/e/7/e7e7d174-eb7c-41ad-a241-cfbfdc71e3a7.jpg?1721428086"
+    ],
+    "keywords": [],
+    "oracle_text": "Draw X cards."
+  },
+  "Mindwhisker": {
+    "arena_id": 91596,
+    "name": "Mindwhisker",
+    "cmc": 3,
+    "mana_cost": "{2}{U}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Rat",
+      "Wizard"
+    ],
+    "colors": [
+      "U"
+    ],
+    "color_identity": [
+      "U"
+    ],
+    "rarity": "Uncommon",
+    "image": [
+      "https://cards.scryfall.io/large/front/a/a/aaa10f34-5bfd-4d87-8f07-58de3b0f5663.jpg?1721426158"
+    ],
+    "keywords": [
+      "Surveil",
+      "Threshold"
+    ],
+    "oracle_text": "At the beginning of your upkeep, surveil 1. (Look at the top card of your library. You may put it into your graveyard.)\nThreshold \u2014 As long as there are seven or more cards in your graveyard, creatures your opponents control get -1/-0."
+  },
+  "Mistbreath Elder": {
+    "arena_id": 91720,
+    "name": "Mistbreath Elder",
+    "cmc": 1,
+    "mana_cost": "{G}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Frog",
+      "Warrior"
+    ],
+    "colors": [
+      "G"
+    ],
+    "color_identity": [
+      "G"
+    ],
+    "rarity": "Rare",
+    "image": [
+      "https://cards.scryfall.io/large/front/e/5/e5246540-5a84-41d8-9e30-8e7a6c0e84e1.jpg?1721426876"
+    ],
+    "keywords": [],
+    "oracle_text": "At the beginning of your upkeep, return another creature you control to its owner's hand. If you do, put a +1/+1 counter on this creature. Otherwise, you may return this creature to its owner's hand."
+  },
+  "Mockingbird": {
+    "arena_id": 91597,
+    "name": "Mockingbird",
+    "cmc": 1,
+    "mana_cost": "{X}{U}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Bird",
+      "Bard"
+    ],
+    "colors": [
+      "U"
+    ],
+    "color_identity": [
+      "U"
+    ],
+    "rarity": "Rare",
+    "image": [
+      "https://cards.scryfall.io/large/front/a/d/ade32396-8841-4ba4-8852-d11146607f21.jpg?1722388218"
+    ],
+    "keywords": [
+      "Flying"
+    ],
+    "oracle_text": "Flying\nYou may have this creature enter as a copy of any creature on the battlefield with mana value less than or equal to the amount of mana spent to cast this creature, except it's a Bird in addition to its other types and it has flying."
+  },
+  "Moonrise Cleric": {
+    "arena_id": 91762,
+    "name": "Moonrise Cleric",
+    "cmc": 3,
+    "mana_cost": "{1}{W/B}{W/B}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Bat",
+      "Cleric"
+    ],
+    "colors": [
+      "B",
+      "W"
+    ],
+    "color_identity": [
+      "B",
+      "W"
+    ],
+    "rarity": "Common",
+    "image": [
+      "https://cards.scryfall.io/large/front/3/5/35f2a71f-31e8-4b51-9dd4-51a5336b3b86.jpg?1721427155"
+    ],
+    "keywords": [
+      "Flying"
+    ],
+    "oracle_text": "Flying\nWhenever this creature attacks, you gain 1 life."
+  },
+  "Moonstone Harbinger": {
+    "arena_id": 91637,
+    "name": "Moonstone Harbinger",
+    "cmc": 3,
+    "mana_cost": "{2}{B}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Bat",
+      "Warrior"
+    ],
+    "colors": [
+      "B"
+    ],
+    "color_identity": [
+      "B"
+    ],
+    "rarity": "Uncommon",
+    "image": [
+      "https://cards.scryfall.io/large/front/5/9/59e4aa8d-1d06-48db-b205-aa2f1392bbcb.jpg?1721426452"
+    ],
+    "keywords": [
+      "Deathtouch",
+      "Flying"
+    ],
+    "oracle_text": "Flying, deathtouch\nWhenever you gain or lose life during your turn, Bats you control get +1/+0 and gain deathtouch until end of turn. This ability triggers only once each turn."
+  },
+  "Mountain": {
+    "arena_id": 91837,
+    "name": "Mountain",
+    "cmc": 0,
+    "mana_cost": "",
+    "types": [
+      "Land"
+    ],
+    "subtypes": [
+      "Mountain"
+    ],
+    "colors": [],
+    "color_identity": [
+      "R"
+    ],
+    "rarity": "Common",
+    "image": [
+      "https://cards.scryfall.io/large/front/4/b/4b827c54-8bfe-4ef5-830e-e17b8690bbe7.jpg?1721428012"
+    ],
+    "keywords": [],
+    "oracle_text": "({T}: Add {R}.)"
+  },
+  "Mouse Trapper": {
+    "arena_id": 91558,
+    "name": "Mouse Trapper",
+    "cmc": 3,
+    "mana_cost": "{2}{W}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Mouse",
+      "Soldier"
+    ],
+    "colors": [
+      "W"
+    ],
+    "color_identity": [
+      "W"
+    ],
+    "rarity": "Uncommon",
+    "image": [
+      "https://cards.scryfall.io/large/front/8/b/8ba1bc5a-03e7-44ec-893e-44042cbc02ef.jpg?1721425888"
+    ],
+    "keywords": [
+      "Valiant",
+      "Flash"
+    ],
+    "oracle_text": "Flash\nValiant \u2014 Whenever this creature becomes the target of a spell or ability you control for the first time each turn, tap target creature an opponent controls."
+  },
+  "Mudflat Village": {
+    "arena_id": 91793,
+    "name": "Mudflat Village",
+    "cmc": 0,
+    "mana_cost": "",
+    "types": [
+      "Land"
+    ],
+    "subtypes": [],
+    "colors": [],
+    "color_identity": [
+      "B"
+    ],
+    "rarity": "Uncommon",
+    "image": [
+      "https://cards.scryfall.io/large/front/5/3/53ec4ad3-9cf0-4f1b-a9db-d63feee594ab.jpg?1721639657"
+    ],
+    "keywords": [],
+    "oracle_text": "{T}: Add {C}.\n{T}: Add {B}. Spend this mana only to cast a creature spell.\n{1}{B}, {T}, Sacrifice this land: Return target Bat, Lizard, Rat, or Squirrel card from your graveyard to your hand."
+  },
+  "Muerra, Trash Tactician": {
+    "arena_id": 91763,
+    "name": "Muerra, Trash Tactician",
+    "cmc": 3,
+    "mana_cost": "{1}{R}{G}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Raccoon",
+      "Warrior"
+    ],
+    "colors": [
+      "G",
+      "R"
+    ],
+    "color_identity": [
+      "G",
+      "R"
+    ],
+    "rarity": "Rare",
+    "image": [
+      "https://cards.scryfall.io/large/front/b/4/b40e4658-fd68-46d0-9a89-25570a023d19.jpg?1721427159"
+    ],
+    "keywords": [],
+    "oracle_text": "At the beginning of your first main phase, add {R} or {G} for each Raccoon you control.\nWhenever you expend 4, you gain 3 life. (You expend 4 as you spend your fourth total mana to cast spells during a turn.)\nWhenever you expend 8, exile the top two cards of your library. Until the end of your next turn, you may play those cards."
+  },
+  "Nettle Guard": {
+    "arena_id": 91559,
+    "name": "Nettle Guard",
+    "cmc": 2,
+    "mana_cost": "{1}{W}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Mouse",
+      "Soldier"
+    ],
+    "colors": [
+      "W"
+    ],
+    "color_identity": [
+      "W"
+    ],
+    "rarity": "Common",
+    "image": [
+      "https://cards.scryfall.io/large/front/8/c/8c9c3cc3-2aa2-453e-a17c-2baeeaabe0a9.jpg?1721425890"
+    ],
+    "keywords": [
+      "Valiant"
+    ],
+    "oracle_text": "Valiant \u2014 Whenever this creature becomes the target of a spell or ability you control for the first time each turn, it gets +0/+2 until end of turn.\n{1}, Sacrifice this creature: Destroy target artifact or enchantment."
+  },
+  "Nightwhorl Hermit": {
+    "arena_id": 91598,
+    "name": "Nightwhorl Hermit",
+    "cmc": 3,
+    "mana_cost": "{2}{U}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Rat",
+      "Rogue"
+    ],
+    "colors": [
+      "U"
+    ],
+    "color_identity": [
+      "U"
+    ],
+    "rarity": "Common",
+    "image": [
+      "https://cards.scryfall.io/large/front/0/9/0928e04f-2568-41e8-b603-7a25cf5f94d0.jpg?1721426168"
+    ],
+    "keywords": [
+      "Vigilance",
+      "Threshold"
+    ],
+    "oracle_text": "Vigilance\nThreshold \u2014 As long as there are seven or more cards in your graveyard, this creature gets +1/+0 and can't be blocked."
+  },
+  "Nocturnal Hunger": {
+    "arena_id": 91638,
+    "name": "Nocturnal Hunger",
+    "cmc": 3,
+    "mana_cost": "{2}{B}",
+    "types": [
+      "Instant"
+    ],
+    "subtypes": [],
+    "colors": [
+      "B"
+    ],
+    "color_identity": [
+      "B"
+    ],
+    "rarity": "Common",
+    "image": [
+      "https://cards.scryfall.io/large/front/7/4/742c0409-9abd-4559-b52e-932cc90c531a.jpg?1721426459"
+    ],
+    "keywords": [
+      "Gift",
+      "Food"
+    ],
+    "oracle_text": "Gift a Food (You may promise an opponent a gift as you cast this spell. If you do, they create a Food token before its other effects. It's an artifact with \"{2}, {T}, Sacrifice this token: You gain 3 life.\")\nDestroy target creature. If the gift wasn't promised, you lose 2 life."
+  },
+  "Oakhollow Village": {
+    "arena_id": 91794,
+    "name": "Oakhollow Village",
+    "cmc": 0,
+    "mana_cost": "",
+    "types": [
+      "Land"
+    ],
+    "subtypes": [],
+    "colors": [],
+    "color_identity": [
+      "G"
+    ],
+    "rarity": "Uncommon",
+    "image": [
+      "https://cards.scryfall.io/large/front/0/d/0d49b016-b02b-459f-85e9-c04f6bdcb94e.jpg?1721639587"
+    ],
+    "keywords": [],
+    "oracle_text": "{T}: Add {C}.\n{T}: Add {G}. Spend this mana only to cast a creature spell.\n{G}, {T}: Put a +1/+1 counter on each Frog, Rabbit, Raccoon, or Squirrel you control that entered the battlefield this turn."
+  },
+  "Osteomancer Adept": {
+    "arena_id": 91639,
+    "name": "Osteomancer Adept",
+    "cmc": 2,
+    "mana_cost": "{1}{B}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Squirrel",
+      "Warlock"
+    ],
+    "colors": [
+      "B"
+    ],
+    "color_identity": [
+      "B"
+    ],
+    "rarity": "Rare",
+    "image": [
+      "https://cards.scryfall.io/large/front/7/d/7d8238dd-858f-466c-96de-986bd66861d7.jpg?1721426463"
+    ],
+    "keywords": [
+      "Deathtouch"
+    ],
+    "oracle_text": "Deathtouch\n{T}: Until end of turn, you may cast creature spells from your graveyard by foraging in addition to paying their other costs. If you cast a spell this way, that creature enters with a finality counter on it. (To forage, exile three cards from your graveyard or sacrifice a Food. If a creature with a finality counter on it would die, exile it instead.)"
+  },
+  "Otterball Antics": {
+    "arena_id": 91599,
+    "name": "Otterball Antics",
+    "cmc": 2,
+    "mana_cost": "{1}{U}",
+    "types": [
+      "Sorcery"
+    ],
+    "subtypes": [],
+    "colors": [
+      "U"
+    ],
+    "color_identity": [
+      "U"
+    ],
+    "rarity": "Uncommon",
+    "image": [
+      "https://cards.scryfall.io/large/front/3/f/3ff83ff7-e428-4ccc-8341-f223dab76bd1.jpg?1721426185"
+    ],
+    "keywords": [
+      "Flashback"
+    ],
+    "oracle_text": "Create a 1/1 blue and red Otter creature token with prowess. If this spell was cast from anywhere other than your hand, put a +1/+1 counter on that creature. (Whenever you cast a noncreature spell, a creature with prowess gets +1/+1 until end of turn.)\nFlashback {3}{U} (You may cast this card from your graveyard for its flashback cost. Then exile it.)"
+  },
+  "Overprotect": {
+    "arena_id": 91721,
+    "name": "Overprotect",
+    "cmc": 2,
+    "mana_cost": "{1}{G}",
+    "types": [
+      "Instant"
+    ],
+    "subtypes": [],
+    "colors": [
+      "G"
+    ],
+    "color_identity": [
+      "G"
+    ],
+    "rarity": "Uncommon",
+    "image": [
+      "https://cards.scryfall.io/large/front/0/7/079e979f-b618-4625-989c-e0ea5b61ed8a.jpg?1721426880"
+    ],
+    "keywords": [],
+    "oracle_text": "Target creature you control gets +3/+3 and gains trample, hexproof, and indestructible until end of turn."
+  },
+  "Parting Gust": {
+    "arena_id": 91560,
+    "name": "Parting Gust",
+    "cmc": 2,
+    "mana_cost": "{W}{W}",
+    "types": [
+      "Instant"
+    ],
+    "subtypes": [],
+    "colors": [
+      "W"
+    ],
+    "color_identity": [
+      "W"
+    ],
+    "rarity": "Uncommon",
+    "image": [
+      "https://cards.scryfall.io/large/front/1/0/1086e826-94b8-4398-8a38-d8eacca56a43.jpg?1721425901"
+    ],
+    "keywords": [
+      "Gift"
+    ],
+    "oracle_text": "Gift a tapped Fish (You may promise an opponent a gift as you cast this spell. If you do, they create a tapped 1/1 blue Fish creature token before its other effects.)\nExile target nontoken creature. If the gift wasn't promised, return that card to the battlefield under its owner's control with a +1/+1 counter on it at the beginning of the next end step."
+  },
+  "Patchwork Banner": {
+    "arena_id": 91783,
+    "name": "Patchwork Banner",
+    "cmc": 3,
+    "mana_cost": "{3}",
+    "types": [
+      "Artifact"
+    ],
+    "subtypes": [],
+    "colors": [],
+    "color_identity": [],
+    "rarity": "Uncommon",
+    "image": [
+      "https://cards.scryfall.io/large/front/a/8/a8a982c8-bc08-44ba-b3ed-9e4b124615d6.jpg?1721427285"
+    ],
+    "keywords": [],
+    "oracle_text": "As this artifact enters, choose a creature type.\nCreatures you control of the chosen type get +1/+1.\n{T}: Add one mana of any color."
+  },
+  "Pawpatch Formation": {
+    "arena_id": 91722,
+    "name": "Pawpatch Formation",
+    "cmc": 2,
+    "mana_cost": "{1}{G}",
+    "types": [
+      "Instant"
+    ],
+    "subtypes": [],
+    "colors": [
+      "G"
+    ],
+    "color_identity": [
+      "G"
+    ],
+    "rarity": "Uncommon",
+    "image": [
+      "https://cards.scryfall.io/large/front/b/8/b82c20ad-0f69-4822-ae76-770832cccdf7.jpg?1721426886"
+    ],
+    "keywords": [
+      "Food"
+    ],
+    "oracle_text": "Choose one \u2014\n\u2022 Destroy target creature with flying.\n\u2022 Destroy target enchantment.\n\u2022 Draw a card. Create a Food token. (It's an artifact with \"{2}, {T}, Sacrifice this token: You gain 3 life.\")"
+  },
+  "Pawpatch Recruit": {
+    "arena_id": 91723,
+    "name": "Pawpatch Recruit",
+    "cmc": 1,
+    "mana_cost": "{G}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Rabbit",
+      "Warrior"
+    ],
+    "colors": [
+      "G"
+    ],
+    "color_identity": [
+      "G"
+    ],
+    "rarity": "Rare",
+    "image": [
+      "https://cards.scryfall.io/large/front/7/d/7d4d88ba-0ee4-4f66-995b-2e50614f50ee.jpg?1721426891"
+    ],
+    "keywords": [
+      "Offspring",
+      "Trample"
+    ],
+    "oracle_text": "Offspring {2} (You may pay an additional {2} as you cast this spell. If you do, when this creature enters, create a 1/1 token copy of it.)\nTrample\nWhenever a creature you control becomes the target of a spell or ability an opponent controls, put a +1/+1 counter on target creature you control other than that creature."
+  },
+  "Pearl of Wisdom": {
+    "arena_id": 91600,
+    "name": "Pearl of Wisdom",
+    "cmc": 3,
+    "mana_cost": "{2}{U}",
+    "types": [
+      "Sorcery"
+    ],
+    "subtypes": [],
+    "colors": [
+      "U"
+    ],
+    "color_identity": [
+      "U"
+    ],
+    "rarity": "Common",
+    "image": [
+      "https://cards.scryfall.io/large/front/1/3/13cb9575-1138-4f99-8e90-0eaf00bdf4a1.jpg?1721426185"
+    ],
+    "keywords": [],
+    "oracle_text": "This spell costs {1} less to cast if you control an Otter.\nDraw two cards."
+  },
+  "Peerless Recycling": {
+    "arena_id": 91724,
+    "name": "Peerless Recycling",
+    "cmc": 2,
+    "mana_cost": "{1}{G}",
+    "types": [
+      "Instant"
+    ],
+    "subtypes": [],
+    "colors": [
+      "G"
+    ],
+    "color_identity": [
+      "G"
+    ],
+    "rarity": "Uncommon",
+    "image": [
+      "https://cards.scryfall.io/large/front/5/f/5f72466c-505b-4371-9366-0fde525a37e6.jpg?1721426897"
+    ],
+    "keywords": [
+      "Gift"
+    ],
+    "oracle_text": "Gift a card (You may promise an opponent a gift as you cast this spell. If you do, they draw a card before its other effects.)\nReturn target permanent card from your graveyard to your hand. If the gift was promised, instead return two target permanent cards from your graveyard to your hand."
+  },
+  "Persistent Marshstalker": {
+    "arena_id": 91640,
+    "name": "Persistent Marshstalker",
+    "cmc": 2,
+    "mana_cost": "{1}{B}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Rat",
+      "Berserker"
+    ],
+    "colors": [
+      "B"
+    ],
+    "color_identity": [
+      "B"
+    ],
+    "rarity": "Uncommon",
+    "image": [
+      "https://cards.scryfall.io/large/front/8/b/8b900c71-713b-4b7e-b4be-ad9f4aa0c139.jpg?1721426469"
+    ],
+    "keywords": [
+      "Threshold"
+    ],
+    "oracle_text": "This creature gets +1/+0 for each other Rat you control.\nThreshold \u2014 Whenever you attack with one or more Rats, if there are seven or more cards in your graveyard, you may pay {2}{B}. If you do, return this card from your graveyard to the battlefield tapped and attacking."
+  },
+  "Pileated Provisioner": {
+    "arena_id": 91561,
+    "name": "Pileated Provisioner",
+    "cmc": 5,
+    "mana_cost": "{4}{W}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Bird",
+      "Scout"
+    ],
+    "colors": [
+      "W"
+    ],
+    "color_identity": [
+      "W"
+    ],
+    "rarity": "Common",
+    "image": [
+      "https://cards.scryfall.io/large/front/a/e/ae442cd6-c4df-4aad-9b1d-ccd936c5ec96.jpg?1721425901"
+    ],
+    "keywords": [
+      "Flying"
+    ],
+    "oracle_text": "Flying\nWhen this creature enters, put a +1/+1 counter on target creature you control without flying."
+  },
+  "Plains": {
+    "arena_id": 91831,
+    "name": "Plains",
+    "cmc": 0,
+    "mana_cost": "",
+    "types": [
+      "Land"
+    ],
+    "subtypes": [
+      "Plains"
+    ],
+    "colors": [],
+    "color_identity": [
+      "W"
+    ],
+    "rarity": "Common",
+    "image": [
+      "https://cards.scryfall.io/large/front/4/4/449d4122-ee9d-477c-976a-809ba8cb1443.jpg?1721427984"
+    ],
+    "keywords": [],
+    "oracle_text": "({T}: Add {W}.)"
+  },
+  "Playful Shove": {
+    "arena_id": 91681,
+    "name": "Playful Shove",
+    "cmc": 2,
+    "mana_cost": "{1}{R}",
+    "types": [
+      "Sorcery"
+    ],
+    "subtypes": [],
+    "colors": [
+      "R"
+    ],
+    "color_identity": [
+      "R"
+    ],
+    "rarity": "Uncommon",
+    "image": [
+      "https://cards.scryfall.io/large/front/0/7/07956edf-34c1-4218-9784-ddbca13e380c.jpg?1721426672"
+    ],
+    "keywords": [],
+    "oracle_text": "Playful Shove deals 1 damage to any target.\nDraw a card."
+  },
+  "Plumecreed Escort": {
+    "arena_id": 91601,
+    "name": "Plumecreed Escort",
+    "cmc": 2,
+    "mana_cost": "{1}{U}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Bird",
+      "Scout"
+    ],
+    "colors": [
+      "U"
+    ],
+    "color_identity": [
+      "U"
+    ],
+    "rarity": "Uncommon",
+    "image": [
+      "https://cards.scryfall.io/large/front/f/7/f71320ed-2f30-49ce-bcb0-19aebba3f0e8.jpg?1721426204"
+    ],
+    "keywords": [
+      "Flying",
+      "Flash"
+    ],
+    "oracle_text": "Flash\nFlying\nWhen this creature enters, target creature you control gains hexproof until end of turn."
+  },
+  "Plumecreed Mentor": {
+    "arena_id": 91764,
+    "name": "Plumecreed Mentor",
+    "cmc": 3,
+    "mana_cost": "{1}{W}{U}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Bird",
+      "Scout"
+    ],
+    "colors": [
+      "U",
+      "W"
+    ],
+    "color_identity": [
+      "U",
+      "W"
+    ],
+    "rarity": "Uncommon",
+    "image": [
+      "https://cards.scryfall.io/large/front/b/1/b1aa988f-547e-449a-9f1a-296c01d68d96.jpg?1721427166"
+    ],
+    "keywords": [
+      "Flying"
+    ],
+    "oracle_text": "Flying\nWhenever this creature or another creature you control with flying enters, put a +1/+1 counter on target creature you control without flying."
+  },
+  "Polliwallop": {
+    "arena_id": 91725,
+    "name": "Polliwallop",
+    "cmc": 4,
+    "mana_cost": "{3}{G}",
+    "types": [
+      "Instant"
+    ],
+    "subtypes": [],
+    "colors": [
+      "G"
+    ],
+    "color_identity": [
+      "G"
+    ],
+    "rarity": "Common",
+    "image": [
+      "https://cards.scryfall.io/large/front/6/b/6bc4963c-d90b-4588-bdb7-85956e42a623.jpg?1721426903"
+    ],
+    "keywords": [
+      "Affinity"
+    ],
+    "oracle_text": "Affinity for Frogs (This spell costs {1} less to cast for each Frog you control.)\nTarget creature you control deals damage equal to twice its power to target creature you don't control."
+  },
+  "Pond Prophet": {
+    "arena_id": 91765,
+    "name": "Pond Prophet",
+    "cmc": 2,
+    "mana_cost": "{G/U}{G/U}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Frog",
+      "Advisor"
+    ],
+    "colors": [
+      "G",
+      "U"
+    ],
+    "color_identity": [
+      "G",
+      "U"
+    ],
+    "rarity": "Common",
+    "image": [
+      "https://cards.scryfall.io/large/front/f/b/fb959e74-61ea-453d-bb9f-ad0183c0e1b1.jpg?1721427169"
+    ],
+    "keywords": [],
+    "oracle_text": "When this creature enters, draw a card."
+  },
+  "Portent of Calamity": {
+    "arena_id": 91602,
+    "name": "Portent of Calamity",
+    "cmc": 1,
+    "mana_cost": "{X}{U}",
+    "types": [
+      "Sorcery"
+    ],
+    "subtypes": [],
+    "colors": [
+      "U"
+    ],
+    "color_identity": [
+      "U"
+    ],
+    "rarity": "Rare",
+    "image": [
+      "https://cards.scryfall.io/large/front/8/5/8599e2dd-9164-4da3-814f-adccef3b9497.jpg?1721426215"
+    ],
+    "keywords": [],
+    "oracle_text": "Reveal the top X cards of your library. For each card type, you may exile a card of that type from among them. Put the rest into your graveyard. You may cast a spell from among the exiled cards without paying its mana cost if you exiled four or more cards this way. Then put the rest of the exiled cards into your hand."
+  },
+  "Psychic Whorl": {
+    "arena_id": 91641,
+    "name": "Psychic Whorl",
+    "cmc": 3,
+    "mana_cost": "{2}{B}",
+    "types": [
+      "Sorcery"
+    ],
+    "subtypes": [],
+    "colors": [
+      "B"
+    ],
+    "color_identity": [
+      "B"
+    ],
+    "rarity": "Common",
+    "image": [
+      "https://cards.scryfall.io/large/front/d/f/df900308-8432-4a0a-be21-17482026012b.jpg?1721426473"
+    ],
+    "keywords": [
+      "Surveil"
+    ],
+    "oracle_text": "Target opponent discards two cards. Then if you control a Rat, surveil 2. (Look at the top two cards of your library, then put any number of them into your graveyard and the rest on top of your library in any order.)"
+  },
+  "Quaketusk Boar": {
+    "arena_id": 91682,
+    "name": "Quaketusk Boar",
+    "cmc": 5,
+    "mana_cost": "{3}{R}{R}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Elemental",
+      "Boar"
+    ],
+    "colors": [
+      "R"
+    ],
+    "color_identity": [
+      "R"
+    ],
+    "rarity": "Uncommon",
+    "image": [
+      "https://cards.scryfall.io/large/front/2/f/2f2b7fd3-a139-49ea-8a89-b64261e868ef.jpg?1721426673"
+    ],
+    "keywords": [
+      "Reach",
+      "Haste",
+      "Trample"
+    ],
+    "oracle_text": "Reach, trample, haste"
+  },
+  "Rabbit Response": {
+    "arena_id": 91562,
+    "name": "Rabbit Response",
+    "cmc": 4,
+    "mana_cost": "{2}{W}{W}",
+    "types": [
+      "Instant"
+    ],
+    "subtypes": [],
+    "colors": [
+      "W"
+    ],
+    "color_identity": [
+      "W"
+    ],
+    "rarity": "Common",
+    "image": [
+      "https://cards.scryfall.io/large/front/c/4/c4ded450-346d-4917-917a-b62bc0267509.jpg?1721425917"
+    ],
+    "keywords": [
+      "Scry"
+    ],
+    "oracle_text": "Creatures you control get +2/+1 until end of turn. If you control a Rabbit, scry 2. (Look at the top two cards of your library, then put any number of them on the bottom and the rest on top in any order.)"
+  },
+  "Rabid Bite": {
+    "arena_id": 91807,
+    "name": "Rabid Bite",
+    "cmc": 2,
+    "mana_cost": "{1}{G}",
+    "types": [
+      "Sorcery"
+    ],
+    "subtypes": [],
+    "colors": [
+      "G"
+    ],
+    "color_identity": [
+      "G"
+    ],
+    "rarity": "Common",
+    "image": [
+      "https://cards.scryfall.io/large/front/5/3/53a73200-b798-4bfd-a431-8b94e17b70be.jpg?1721428112"
+    ],
+    "keywords": [],
+    "oracle_text": "Target creature you control deals damage equal to its power to target creature you don't control."
+  },
+  "Rabid Gnaw": {
+    "arena_id": 91683,
+    "name": "Rabid Gnaw",
+    "cmc": 2,
+    "mana_cost": "{1}{R}",
+    "types": [
+      "Instant"
+    ],
+    "subtypes": [],
+    "colors": [
+      "R"
+    ],
+    "color_identity": [
+      "R"
+    ],
+    "rarity": "Uncommon",
+    "image": [
+      "https://cards.scryfall.io/large/front/2/f/2f815bae-820a-49f6-8eed-46f658e7b6ff.jpg?1721426681"
+    ],
+    "keywords": [],
+    "oracle_text": "Target creature you control gets +1/+0 until end of turn. Then it deals damage equal to its power to target creature you don't control."
+  },
+  "Raccoon Rallier": {
+    "arena_id": 91684,
+    "name": "Raccoon Rallier",
+    "cmc": 2,
+    "mana_cost": "{1}{R}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Raccoon",
+      "Bard"
+    ],
+    "colors": [
+      "R"
+    ],
+    "color_identity": [
+      "R"
+    ],
+    "rarity": "Common",
+    "image": [
+      "https://cards.scryfall.io/large/front/b/5/b5b5180f-5a1c-4df8-9019-195e65a50ce3.jpg?1721426682"
+    ],
+    "keywords": [],
+    "oracle_text": "{T}: Target creature you control gains haste until end of turn. Activate only as a sorcery."
+  },
+  "Ral, Crackling Wit": {
+    "arena_id": 91766,
+    "name": "Ral, Crackling Wit",
+    "cmc": 4,
+    "mana_cost": "{2}{U}{R}",
+    "types": [
+      "Planeswalker"
+    ],
+    "subtypes": [
+      "Ral"
+    ],
+    "colors": [
+      "R",
+      "U"
+    ],
+    "color_identity": [
+      "R",
+      "U"
+    ],
+    "rarity": "Mythic",
+    "image": [
+      "https://cards.scryfall.io/large/front/a/c/acfde780-899a-4c5b-a39b-f4a3ff129103.jpg?1721427178"
+    ],
+    "keywords": [],
+    "oracle_text": "Whenever you cast a noncreature spell, put a loyalty counter on Ral.\n+1: Create a 1/1 blue and red Otter creature token with prowess.\n\u22123: Draw three cards, then discard two cards.\n\u221210: Draw three cards. You get an emblem with \"Instant and sorcery spells you cast have storm.\" (Whenever you cast an instant or sorcery spell, copy it for each spell cast before it this turn.)"
+  },
+  "Ravine Raider": {
+    "arena_id": 91642,
+    "name": "Ravine Raider",
+    "cmc": 1,
+    "mana_cost": "{B}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Lizard",
+      "Rogue"
+    ],
+    "colors": [
+      "B"
+    ],
+    "color_identity": [
+      "B"
+    ],
+    "rarity": "Common",
+    "image": [
+      "https://cards.scryfall.io/large/front/8/7/874510be-7ecd-4eff-abad-b9594eb4821a.jpg?1721426478"
+    ],
+    "keywords": [
+      "Menace"
+    ],
+    "oracle_text": "Menace (This creature can't be blocked except by two or more creatures.)\n{1}{B}: This creature gets +1/+1 until end of turn."
+  },
+  "Repel Calamity": {
+    "arena_id": 91563,
+    "name": "Repel Calamity",
+    "cmc": 2,
+    "mana_cost": "{1}{W}",
+    "types": [
+      "Instant"
+    ],
+    "subtypes": [],
+    "colors": [
+      "W"
+    ],
+    "color_identity": [
+      "W"
+    ],
+    "rarity": "Uncommon",
+    "image": [
+      "https://cards.scryfall.io/large/front/d/0/d068192a-6270-4981-819d-4945fa4a2b83.jpg?1721425920"
+    ],
+    "keywords": [],
+    "oracle_text": "Destroy target creature with power or toughness 4 or greater."
+  },
+  "Reptilian Recruiter": {
+    "arena_id": 91685,
+    "name": "Reptilian Recruiter",
+    "cmc": 5,
+    "mana_cost": "{3}{R}{R}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Lizard",
+      "Warrior"
+    ],
+    "colors": [
+      "R"
+    ],
+    "color_identity": [
+      "R"
+    ],
+    "rarity": "Uncommon",
+    "image": [
+      "https://cards.scryfall.io/large/front/8/1/81dec453-c9d7-42cb-980a-c82f82bede76.jpg?1721426690"
+    ],
+    "keywords": [
+      "Trample"
+    ],
+    "oracle_text": "Trample\nWhen this creature enters, choose target creature. If that creature's power is 2 or less or if you control another Lizard, gain control of that creature until end of turn, untap it, and it gains haste until end of turn."
+  },
+  "Rockface Village": {
+    "arena_id": 91795,
+    "name": "Rockface Village",
+    "cmc": 0,
+    "mana_cost": "",
+    "types": [
+      "Land"
+    ],
+    "subtypes": [],
+    "colors": [],
+    "color_identity": [
+      "R"
+    ],
+    "rarity": "Uncommon",
+    "image": [
+      "https://cards.scryfall.io/large/front/6/2/62799d24-39a6-4e66-8ac3-7cafa99e6e6d.jpg?1721639562"
+    ],
+    "keywords": [],
+    "oracle_text": "{T}: Add {C}.\n{T}: Add {R}. Spend this mana only to cast a creature spell.\n{R}, {T}: Target Lizard, Mouse, Otter, or Raccoon you control gets +1/+0 and gains haste until end of turn. Activate only as a sorcery."
+  },
+  "Rottenmouth Viper": {
+    "arena_id": 91643,
+    "name": "Rottenmouth Viper",
+    "cmc": 6,
+    "mana_cost": "{5}{B}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Elemental",
+      "Snake"
+    ],
+    "colors": [
+      "B"
+    ],
+    "color_identity": [
+      "B"
+    ],
+    "rarity": "Mythic",
+    "image": [
+      "https://cards.scryfall.io/large/front/7/3/735e79b1-a3a9-4ddf-8bbc-f756c8a0452b.jpg?1721426484"
+    ],
+    "keywords": [],
+    "oracle_text": "As an additional cost to cast this spell, you may sacrifice any number of nonland permanents. This spell costs {1} less to cast for each permanent sacrificed this way.\nWhenever this creature enters or attacks, put a blight counter on it. Then for each blight counter on it, each opponent loses 4 life unless that player sacrifices a nonland permanent of their choice or discards a card."
+  },
+  "Roughshod Duo": {
+    "arena_id": 91686,
+    "name": "Roughshod Duo",
+    "cmc": 3,
+    "mana_cost": "{2}{R}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Mouse",
+      "Raccoon"
+    ],
+    "colors": [
+      "R"
+    ],
+    "color_identity": [
+      "R"
+    ],
+    "rarity": "Common",
+    "image": [
+      "https://cards.scryfall.io/large/front/7/8/78cdcfb9-a247-4c2d-a098-5b57570f8cd5.jpg?1771346343"
+    ],
+    "keywords": [
+      "Trample"
+    ],
+    "oracle_text": "Trample\nWhenever you expend 4, target creature you control gets +1/+1 and gains trample until end of turn. (You expend 4 as you spend your fourth total mana to cast spells during a turn.)"
+  },
+  "Run Away Together": {
+    "arena_id": 91603,
+    "name": "Run Away Together",
+    "cmc": 2,
+    "mana_cost": "{1}{U}",
+    "types": [
+      "Instant"
+    ],
+    "subtypes": [],
+    "colors": [
+      "U"
+    ],
+    "color_identity": [
+      "U"
+    ],
+    "rarity": "Common",
+    "image": [
+      "https://cards.scryfall.io/large/front/7/c/7cb7ec70-a5a4-4188-ba1a-e88b81bdbad0.jpg?1721426215"
+    ],
+    "keywords": [],
+    "oracle_text": "Choose two target creatures controlled by different players. Return those creatures to their owners' hands."
+  },
+  "Rust-Shield Rampager": {
+    "arena_id": 91726,
+    "name": "Rust-Shield Rampager",
+    "cmc": 4,
+    "mana_cost": "{3}{G}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Raccoon",
+      "Warrior"
+    ],
+    "colors": [
+      "G"
+    ],
+    "color_identity": [
+      "G"
+    ],
+    "rarity": "Common",
+    "image": [
+      "https://cards.scryfall.io/large/front/c/9/c96b01f5-83de-4237-a68d-f946c53e31a6.jpg?1721426907"
+    ],
+    "keywords": [
+      "Offspring"
+    ],
+    "oracle_text": "Offspring {2} (You may pay an additional {2} as you cast this spell. If you do, when this creature enters, create a 1/1 token copy of it.)\nThis creature can't be blocked by creatures with power 2 or less."
+  },
+  "Ruthless Negotiation": {
+    "arena_id": 91644,
+    "name": "Ruthless Negotiation",
+    "cmc": 1,
+    "mana_cost": "{B}",
+    "types": [
+      "Sorcery"
+    ],
+    "subtypes": [],
+    "colors": [
+      "B"
+    ],
+    "color_identity": [
+      "B"
+    ],
+    "rarity": "Uncommon",
+    "image": [
+      "https://cards.scryfall.io/large/front/c/7/c7f4360c-8d68-4058-b9ec-da9948cb060d.jpg?1721426488"
+    ],
+    "keywords": [
+      "Flashback"
+    ],
+    "oracle_text": "Target opponent exiles a card from their hand. If this spell was cast from a graveyard, draw a card.\nFlashback {4}{B} (You may cast this card from your graveyard for its flashback cost. Then exile it.)"
+  },
+  "Salvation Swan": {
+    "arena_id": 91564,
+    "name": "Salvation Swan",
+    "cmc": 4,
+    "mana_cost": "{3}{W}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Bird",
+      "Cleric"
+    ],
+    "colors": [
+      "W"
+    ],
+    "color_identity": [
+      "W"
+    ],
+    "rarity": "Rare",
+    "image": [
+      "https://cards.scryfall.io/large/front/b/2/b2656160-d319-4530-a6e5-c418596c3f12.jpg?1721425931"
+    ],
+    "keywords": [
+      "Flying",
+      "Flash"
+    ],
+    "oracle_text": "Flash\nFlying\nWhenever this creature or another Bird you control enters, exile up to one target creature you control without flying. Return it to the battlefield under its owner's control with a flying counter on it at the beginning of the next end step."
+  },
+  "Savor": {
+    "arena_id": 91645,
+    "name": "Savor",
+    "cmc": 2,
+    "mana_cost": "{1}{B}",
+    "types": [
+      "Instant"
+    ],
+    "subtypes": [],
+    "colors": [
+      "B"
+    ],
+    "color_identity": [
+      "B"
+    ],
+    "rarity": "Common",
+    "image": [
+      "https://cards.scryfall.io/large/front/1/3/1397f689-dca1-4d35-864b-92c5606afb9a.jpg?1721426493"
+    ],
+    "keywords": [
+      "Food"
+    ],
+    "oracle_text": "Target creature gets -2/-2 until end of turn. Create a Food token. (It's an artifact with \"{2}, {T}, Sacrifice this token: You gain 3 life.\")"
+  },
+  "Sazacap's Brew": {
+    "arena_id": 91687,
+    "name": "Sazacap's Brew",
+    "cmc": 2,
+    "mana_cost": "{1}{R}",
+    "types": [
+      "Instant"
+    ],
+    "subtypes": [],
+    "colors": [
+      "R"
+    ],
+    "color_identity": [
+      "R"
+    ],
+    "rarity": "Common",
+    "image": [
+      "https://cards.scryfall.io/large/front/6/d/6d963080-b3ec-467d-82f7-39db6ecd6bbc.jpg?1721426699"
+    ],
+    "keywords": [
+      "Gift"
+    ],
+    "oracle_text": "Gift a tapped Fish (You may promise an opponent a gift as you cast this spell. If you do, they create a tapped 1/1 blue Fish creature token before its other effects.)\nAs an additional cost to cast this spell, discard a card.\nTarget player draws two cards. If the gift was promised, target creature you control gets +2/+0 until end of turn."
+  },
+  "Scales of Shale": {
+    "arena_id": 91646,
+    "name": "Scales of Shale",
+    "cmc": 3,
+    "mana_cost": "{2}{B}",
+    "types": [
+      "Instant"
+    ],
+    "subtypes": [],
+    "colors": [
+      "B"
+    ],
+    "color_identity": [
+      "B"
+    ],
+    "rarity": "Common",
+    "image": [
+      "https://cards.scryfall.io/large/front/9/a/9ae14276-dbbd-4257-80e9-accd6c19f5b2.jpg?1721426499"
+    ],
+    "keywords": [
+      "Affinity"
+    ],
+    "oracle_text": "Affinity for Lizards (This spell costs {1} less to cast for each Lizard you control.)\nTarget creature gets +2/+0 and gains lifelink and indestructible until end of turn."
+  },
+  "Scavenger's Talent": {
+    "arena_id": 91647,
+    "name": "Scavenger's Talent",
+    "cmc": 1,
+    "mana_cost": "{B}",
+    "types": [
+      "Enchantment"
+    ],
+    "subtypes": [
+      "Class"
+    ],
+    "colors": [
+      "B"
+    ],
+    "color_identity": [
+      "B"
+    ],
+    "rarity": "Rare",
+    "image": [
+      "https://cards.scryfall.io/large/front/9/a/9a52b7fe-87ae-425b-85fd-b24e6e0395f1.jpg?1721814345"
+    ],
+    "keywords": [
+      "Food",
+      "Mill"
+    ],
+    "oracle_text": "(Gain the next level as a sorcery to add its ability.)\nWhenever one or more creatures you control die, create a Food token. This ability triggers only once each turn.\n{1}{B}: Level 2\nWhenever you sacrifice a permanent, target player mills two cards.\n{2}{B}: Level 3\nAt the beginning of your end step, you may sacrifice three other nonland permanents. If you do, return a creature card from your graveyard to the battlefield with a finality counter on it."
+  },
+  "Scrapshooter": {
+    "arena_id": 91727,
+    "name": "Scrapshooter",
+    "cmc": 3,
+    "mana_cost": "{1}{G}{G}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Raccoon",
+      "Archer"
+    ],
+    "colors": [
+      "G"
+    ],
+    "color_identity": [
+      "G"
+    ],
+    "rarity": "Rare",
+    "image": [
+      "https://cards.scryfall.io/large/front/c/4/c42ab407-e72d-4c48-9a9e-2055b5e71c69.jpg?1721426916"
+    ],
+    "keywords": [
+      "Reach",
+      "Gift"
+    ],
+    "oracle_text": "Gift a card (You may promise an opponent a gift as you cast this spell. If you do, when it enters, they draw a card.)\nReach\nWhen this creature enters, if the gift was promised, destroy target artifact or enchantment an opponent controls."
+  },
+  "Seasoned Warrenguard": {
+    "arena_id": 91566,
+    "name": "Seasoned Warrenguard",
+    "cmc": 1,
+    "mana_cost": "{W}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Rabbit",
+      "Warrior"
+    ],
+    "colors": [
+      "W"
+    ],
+    "color_identity": [
+      "W"
+    ],
+    "rarity": "Uncommon",
+    "image": [
+      "https://cards.scryfall.io/large/front/9/0/90873995-876f-4e89-8bc7-41a74f4d931f.jpg?1721425942"
+    ],
+    "keywords": [],
+    "oracle_text": "Whenever this creature attacks while you control a token, this creature gets +2/+0 until end of turn."
+  },
+  "Season of Gathering": {
+    "arena_id": 91728,
+    "name": "Season of Gathering",
+    "cmc": 6,
+    "mana_cost": "{4}{G}{G}",
+    "types": [
+      "Sorcery"
+    ],
+    "subtypes": [],
+    "colors": [
+      "G"
+    ],
+    "color_identity": [
+      "G"
+    ],
+    "rarity": "Mythic",
+    "image": [
+      "https://cards.scryfall.io/large/front/7/1/71dd3c27-e0d5-434e-a0f3-4a95245e21c2.jpg?1721426924"
+    ],
+    "keywords": [],
+    "oracle_text": "Choose up to five {P} worth of modes. You may choose the same mode more than once.\n{P} \u2014 Put a +1/+1 counter on a creature you control. It gains vigilance and trample until end of turn.\n{P}{P} \u2014 Choose artifact or enchantment. Destroy all permanents of the chosen type.\n{P}{P}{P} \u2014 Draw cards equal to the greatest power among creatures you control."
+  },
+  "Season of Loss": {
+    "arena_id": 91648,
+    "name": "Season of Loss",
+    "cmc": 5,
+    "mana_cost": "{3}{B}{B}",
+    "types": [
+      "Sorcery"
+    ],
+    "subtypes": [],
+    "colors": [
+      "B"
+    ],
+    "color_identity": [
+      "B"
+    ],
+    "rarity": "Mythic",
+    "image": [
+      "https://cards.scryfall.io/large/front/c/c/cc540652-916b-45c5-ae5a-0a0bc557cee1.jpg?1721426509"
+    ],
+    "keywords": [],
+    "oracle_text": "Choose up to five {P} worth of modes. You may choose the same mode more than once.\n{P} \u2014 Each player sacrifices a creature of their choice.\n{P}{P} \u2014 Draw a card for each creature that died under your control this turn.\n{P}{P}{P} \u2014 Each opponent loses X life, where X is the number of creature cards in your graveyard."
+  },
+  "Season of the Bold": {
+    "arena_id": 91688,
+    "name": "Season of the Bold",
+    "cmc": 5,
+    "mana_cost": "{3}{R}{R}",
+    "types": [
+      "Sorcery"
+    ],
+    "subtypes": [],
+    "colors": [
+      "R"
+    ],
+    "color_identity": [
+      "R"
+    ],
+    "rarity": "Mythic",
+    "image": [
+      "https://cards.scryfall.io/large/front/8/4/84352565-558b-4f9b-a411-532147806a78.jpg?1721426701"
+    ],
+    "keywords": [
+      "Treasure"
+    ],
+    "oracle_text": "Choose up to five {P} worth of modes. You may choose the same mode more than once.\n{P} \u2014 Create a tapped Treasure token.\n{P}{P} \u2014 Exile the top two cards of your library. Until the end of your next turn, you may play them.\n{P}{P}{P} \u2014 Until the end of your next turn, whenever you cast a spell, Season of the Bold deals 2 damage to up to one target creature."
+  },
+  "Season of the Burrow": {
+    "arena_id": 91565,
+    "name": "Season of the Burrow",
+    "cmc": 5,
+    "mana_cost": "{3}{W}{W}",
+    "types": [
+      "Sorcery"
+    ],
+    "subtypes": [],
+    "colors": [
+      "W"
+    ],
+    "color_identity": [
+      "W"
+    ],
+    "rarity": "Mythic",
+    "image": [
+      "https://cards.scryfall.io/large/front/3/3/33bf9c60-4e58-48a4-8e53-abef7ab3b671.jpg?1721425932"
+    ],
+    "keywords": [],
+    "oracle_text": "Choose up to five {P} worth of modes. You may choose the same mode more than once.\n{P} \u2014 Create a 1/1 white Rabbit creature token.\n{P}{P} \u2014 Exile target nonland permanent. Its controller draws a card.\n{P}{P}{P} \u2014 Return target permanent card with mana value 3 or less from your graveyard to the battlefield with an indestructible counter on it."
+  },
+  "Season of Weaving": {
+    "arena_id": 91604,
+    "name": "Season of Weaving",
+    "cmc": 6,
+    "mana_cost": "{4}{U}{U}",
+    "types": [
+      "Sorcery"
+    ],
+    "subtypes": [],
+    "colors": [
+      "U"
+    ],
+    "color_identity": [
+      "U"
+    ],
+    "rarity": "Mythic",
+    "image": [
+      "https://cards.scryfall.io/large/front/f/5/f5713bb4-bdd9-4253-b6b9-e590532ed773.jpg?1721426229"
+    ],
+    "keywords": [],
+    "oracle_text": "Choose up to five {P} worth of modes. You may choose the same mode more than once.\n{P} \u2014 Draw a card.\n{P}{P} \u2014 Choose an artifact or creature you control. Create a token that's a copy of it.\n{P}{P}{P} \u2014 Return each nonland, nontoken permanent to its owner's hand."
+  },
+  "Seedglaive Mentor": {
+    "arena_id": 91767,
+    "name": "Seedglaive Mentor",
+    "cmc": 3,
+    "mana_cost": "{1}{R}{W}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Mouse",
+      "Soldier"
+    ],
+    "colors": [
+      "R",
+      "W"
+    ],
+    "color_identity": [
+      "R",
+      "W"
+    ],
+    "rarity": "Uncommon",
+    "image": [
+      "https://cards.scryfall.io/large/front/d/2/d21c3e41-0636-49a3-8c9c-384c5e5c9c3e.jpg?1721427185"
+    ],
+    "keywords": [
+      "Vigilance",
+      "Valiant",
+      "Haste"
+    ],
+    "oracle_text": "Vigilance, haste\nValiant \u2014 Whenever this creature becomes the target of a spell or ability you control for the first time each turn, put a +1/+1 counter on it."
+  },
+  "Seedpod Squire": {
+    "arena_id": 91768,
+    "name": "Seedpod Squire",
+    "cmc": 4,
+    "mana_cost": "{3}{W/U}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Bird",
+      "Scout"
+    ],
+    "colors": [
+      "U",
+      "W"
+    ],
+    "color_identity": [
+      "U",
+      "W"
+    ],
+    "rarity": "Common",
+    "image": [
+      "https://cards.scryfall.io/large/front/f/3/f3684577-51ce-490e-9b59-b19c733be466.jpg?1721427187"
+    ],
+    "keywords": [
+      "Flying"
+    ],
+    "oracle_text": "Flying\nWhenever this creature attacks, target creature you control without flying gets +1/+1 until end of turn."
+  },
+  "Serra Redeemer": {
+    "arena_id": 91800,
+    "name": "Serra Redeemer",
+    "cmc": 5,
+    "mana_cost": "{3}{W}{W}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Angel",
+      "Soldier"
+    ],
+    "colors": [
+      "W"
+    ],
+    "color_identity": [
+      "W"
+    ],
+    "rarity": "Rare",
+    "image": [
+      "https://cards.scryfall.io/large/front/2/3/230b9aef-bd9c-4332-ace4-b5b065bac6d8.jpg?1721428078"
+    ],
+    "keywords": [
+      "Flying"
+    ],
+    "oracle_text": "Flying\nWhenever another creature you control with power 2 or less enters, put two +1/+1 counters on that creature."
+  },
+  "Shoreline Looter": {
+    "arena_id": 91606,
+    "name": "Shoreline Looter",
+    "cmc": 2,
+    "mana_cost": "{1}{U}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Rat",
+      "Rogue"
+    ],
+    "colors": [
+      "U"
+    ],
+    "color_identity": [
+      "U"
+    ],
+    "rarity": "Uncommon",
+    "image": [
+      "https://cards.scryfall.io/large/front/d/5/d5bf8cf0-419a-4dc9-9342-aad55c1af05a.jpg?1721426251"
+    ],
+    "keywords": [
+      "Threshold"
+    ],
+    "oracle_text": "This creature can't be blocked.\nThreshold \u2014 Whenever this creature deals combat damage to a player, draw a card. Then discard a card unless there are seven or more cards in your graveyard."
+  },
+  "Shore Up": {
+    "arena_id": 91605,
+    "name": "Shore Up",
+    "cmc": 1,
+    "mana_cost": "{U}",
+    "types": [
+      "Instant"
+    ],
+    "subtypes": [],
+    "colors": [
+      "U"
+    ],
+    "color_identity": [
+      "U"
+    ],
+    "rarity": "Common",
+    "image": [
+      "https://cards.scryfall.io/large/front/4/d/4dc3b49e-3674-494c-bdea-4374cefd10f4.jpg?1721426233"
+    ],
+    "keywords": [],
+    "oracle_text": "Target creature you control gets +1/+1 and gains hexproof until end of turn. Untap it. (It can't be the target of spells or abilities your opponents control.)"
+  },
+  "Short Bow": {
+    "arena_id": 91784,
+    "name": "Short Bow",
+    "cmc": 2,
+    "mana_cost": "{2}",
+    "types": [
+      "Artifact"
+    ],
+    "subtypes": [
+      "Equipment"
+    ],
+    "colors": [],
+    "color_identity": [],
+    "rarity": "Uncommon",
+    "image": [
+      "https://cards.scryfall.io/large/front/5/1/51d8b72b-fa8f-48d3-bddc-d3ce9b8ba2ea.jpg?1721427294"
+    ],
+    "keywords": [
+      "Equip"
+    ],
+    "oracle_text": "Equipped creature gets +1/+1 and has vigilance and reach.\nEquip {1} ({1}: Attach to target creature you control. Equip only as a sorcery.)"
+  },
+  "Shrike Force": {
+    "arena_id": 91567,
+    "name": "Shrike Force",
+    "cmc": 3,
+    "mana_cost": "{2}{W}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Bird",
+      "Knight"
+    ],
+    "colors": [
+      "W"
+    ],
+    "color_identity": [
+      "W"
+    ],
+    "rarity": "Uncommon",
+    "image": [
+      "https://cards.scryfall.io/large/front/3/0/306fec2c-d8b7-4f4b-8f58-10e3b9f3158f.jpg?1721425946"
+    ],
+    "keywords": [
+      "Flying",
+      "Vigilance",
+      "Double strike"
+    ],
+    "oracle_text": "Flying, double strike, vigilance"
+  },
+  "Sinister Monolith": {
+    "arena_id": 91649,
+    "name": "Sinister Monolith",
+    "cmc": 4,
+    "mana_cost": "{3}{B}",
+    "types": [
+      "Artifact"
+    ],
+    "subtypes": [],
+    "colors": [
+      "B"
+    ],
+    "color_identity": [
+      "B"
+    ],
+    "rarity": "Uncommon",
+    "image": [
+      "https://cards.scryfall.io/large/front/2/a/2a15e06c-2608-4e7a-a16c-d35417669d86.jpg?1721426512"
+    ],
+    "keywords": [],
+    "oracle_text": "At the beginning of combat on your turn, each opponent loses 1 life and you gain 1 life.\n{T}, Pay 2 life, Sacrifice this artifact: Draw two cards. Activate only as a sorcery."
+  },
+  "Skyskipper Duo": {
+    "arena_id": 91607,
+    "name": "Skyskipper Duo",
+    "cmc": 5,
+    "mana_cost": "{4}{U}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Bird",
+      "Frog"
+    ],
+    "colors": [
+      "U"
+    ],
+    "color_identity": [
+      "U"
+    ],
+    "rarity": "Common",
+    "image": [
+      "https://cards.scryfall.io/large/front/d/6/d6844bad-ffbe-4c6e-b438-08562eccea52.jpg?1721426259"
+    ],
+    "keywords": [
+      "Flying"
+    ],
+    "oracle_text": "Flying\nWhen this creature enters, exile up to one other target creature you control. Return it to the battlefield under its owner's control at the beginning of the next end step."
+  },
+  "Sonar Strike": {
+    "arena_id": 91568,
+    "name": "Sonar Strike",
+    "cmc": 2,
+    "mana_cost": "{1}{W}",
+    "types": [
+      "Instant"
+    ],
+    "subtypes": [],
+    "colors": [
+      "W"
+    ],
+    "color_identity": [
+      "W"
+    ],
+    "rarity": "Common",
+    "image": [
+      "https://cards.scryfall.io/large/front/a/5/a50da179-751f-47a8-a547-8c4a291ed381.jpg?1721425953"
+    ],
+    "keywords": [],
+    "oracle_text": "Sonar Strike deals 4 damage to target attacking, blocking, or tapped creature. You gain 3 life if you control a Bat."
+  },
+  "Spellgyre": {
+    "arena_id": 91608,
+    "name": "Spellgyre",
+    "cmc": 4,
+    "mana_cost": "{2}{U}{U}",
+    "types": [
+      "Instant"
+    ],
+    "subtypes": [],
+    "colors": [
+      "U"
+    ],
+    "color_identity": [
+      "U"
+    ],
+    "rarity": "Uncommon",
+    "image": [
+      "https://cards.scryfall.io/large/front/f/6/f6f6620a-1d40-429d-9a0c-aaeb62adaa71.jpg?1721426266"
+    ],
+    "keywords": [
+      "Surveil"
+    ],
+    "oracle_text": "Choose one \u2014\n\u2022 Counter target spell.\n\u2022 Surveil 2, then draw two cards. (To surveil 2, look at the top two cards of your library, then put any number of them into your graveyard and the rest on top of your library in any order.)"
+  },
+  "Splash Lasher": {
+    "arena_id": 91609,
+    "name": "Splash Lasher",
+    "cmc": 4,
+    "mana_cost": "{3}{U}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Frog",
+      "Wizard"
+    ],
+    "colors": [
+      "U"
+    ],
+    "color_identity": [
+      "U"
+    ],
+    "rarity": "Uncommon",
+    "image": [
+      "https://cards.scryfall.io/large/front/3/6/362ee125-35a0-46cd-a201-e6797d12d33a.jpg?1721426269"
+    ],
+    "keywords": [
+      "Offspring"
+    ],
+    "oracle_text": "Offspring {1}{U} (You may pay an additional {1}{U} as you cast this spell. If you do, when this creature enters, create a 1/1 token copy of it.)\nWhen this creature enters, tap up to one target creature and put a stun counter on it. (If a permanent with a stun counter would become untapped, remove one from it instead.)"
+  },
+  "Splash Portal": {
+    "arena_id": 91610,
+    "name": "Splash Portal",
+    "cmc": 1,
+    "mana_cost": "{U}",
+    "types": [
+      "Sorcery"
+    ],
+    "subtypes": [],
+    "colors": [
+      "U"
+    ],
+    "color_identity": [
+      "U"
+    ],
+    "rarity": "Uncommon",
+    "image": [
+      "https://cards.scryfall.io/large/front/a/d/adbaa356-28ba-487f-930a-a957d9960ab0.jpg?1721426280"
+    ],
+    "keywords": [],
+    "oracle_text": "Exile target creature you control, then return it to the battlefield under its owner's control. If that creature is a Bird, Frog, Otter, or Rat, draw a card."
+  },
+  "Star Charter": {
+    "arena_id": 91569,
+    "name": "Star Charter",
+    "cmc": 4,
+    "mana_cost": "{3}{W}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Bat",
+      "Cleric"
+    ],
+    "colors": [
+      "W"
+    ],
+    "color_identity": [
+      "W"
+    ],
+    "rarity": "Uncommon",
+    "image": [
+      "https://cards.scryfall.io/large/front/0/e/0e209237-00f7-4bf0-8287-ccde02ce8e8d.jpg?1721425964"
+    ],
+    "keywords": [
+      "Flying"
+    ],
+    "oracle_text": "Flying\nAt the beginning of your end step, if you gained or lost life this turn, look at the top four cards of your library. You may reveal a creature card with power 3 or less from among them and put it into your hand. Put the rest on the bottom of your library in a random order."
+  },
+  "Starfall Invocation": {
+    "arena_id": 91570,
+    "name": "Starfall Invocation",
+    "cmc": 5,
+    "mana_cost": "{3}{W}{W}",
+    "types": [
+      "Sorcery"
+    ],
+    "subtypes": [],
+    "colors": [
+      "W"
+    ],
+    "color_identity": [
+      "W"
+    ],
+    "rarity": "Rare",
+    "image": [
+      "https://cards.scryfall.io/large/front/2/a/2aea38e6-ec58-4091-b27c-2761bdd12b13.jpg?1721425972"
+    ],
+    "keywords": [
+      "Gift"
+    ],
+    "oracle_text": "Gift a card (You may promise an opponent a gift as you cast this spell. If you do, they draw a card before its other effects.)\nDestroy all creatures. If the gift was promised, return a creature card put into your graveyard this way to the battlefield under your control."
+  },
+  "Starforged Sword": {
+    "arena_id": 91785,
+    "name": "Starforged Sword",
+    "cmc": 4,
+    "mana_cost": "{4}",
+    "types": [
+      "Artifact"
+    ],
+    "subtypes": [
+      "Equipment"
+    ],
+    "colors": [],
+    "color_identity": [],
+    "rarity": "Uncommon",
+    "image": [
+      "https://cards.scryfall.io/large/front/c/2/c23d8e96-b972-4c6c-b0c4-b6627621f048.jpg?1721427296"
+    ],
+    "keywords": [
+      "Gift",
+      "Equip"
+    ],
+    "oracle_text": "Gift a tapped Fish (You may promise an opponent a gift as you cast this spell. If you do, when it enters, they create a tapped 1/1 blue Fish creature token.)\nWhen this Equipment enters, if the gift was promised, attach this Equipment to target creature you control.\nEquipped creature gets +3/+3 and loses flying.\nEquip {3}"
+  },
+  "Stargaze": {
+    "arena_id": 91650,
+    "name": "Stargaze",
+    "cmc": 2,
+    "mana_cost": "{X}{B}{B}",
+    "types": [
+      "Sorcery"
+    ],
+    "subtypes": [],
+    "colors": [
+      "B"
+    ],
+    "color_identity": [
+      "B"
+    ],
+    "rarity": "Uncommon",
+    "image": [
+      "https://cards.scryfall.io/large/front/7/7/777fc599-8de7-44d2-8fdd-9bddf5948a0c.jpg?1721426524"
+    ],
+    "keywords": [],
+    "oracle_text": "Look at twice X cards from the top of your library. Put X cards from among them into your hand and the rest into your graveyard. You lose X life."
+  },
+  "Starlit Soothsayer": {
+    "arena_id": 91651,
+    "name": "Starlit Soothsayer",
+    "cmc": 3,
+    "mana_cost": "{2}{B}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Bat",
+      "Cleric"
+    ],
+    "colors": [
+      "B"
+    ],
+    "color_identity": [
+      "B"
+    ],
+    "rarity": "Common",
+    "image": [
+      "https://cards.scryfall.io/large/front/1/8/184c1eca-2991-438f-b5d2-cd2529b9c9b4.jpg?1721426524"
+    ],
+    "keywords": [
+      "Flying",
+      "Surveil"
+    ],
+    "oracle_text": "Flying\nAt the beginning of your end step, if you gained or lost life this turn, surveil 1. (Look at the top card of your library. You may put it into your graveyard.)"
+  },
+  "Starscape Cleric": {
+    "arena_id": 91652,
+    "name": "Starscape Cleric",
+    "cmc": 2,
+    "mana_cost": "{1}{B}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Bat",
+      "Cleric"
+    ],
+    "colors": [
+      "B"
+    ],
+    "color_identity": [
+      "B"
+    ],
+    "rarity": "Uncommon",
+    "image": [
+      "https://cards.scryfall.io/large/front/5/3/53a938a7-0154-4350-87cb-00da24ec3824.jpg?1721426535"
+    ],
+    "keywords": [
+      "Flying",
+      "Offspring"
+    ],
+    "oracle_text": "Offspring {2}{B} (You may pay an additional {2}{B} as you cast this spell. If you do, when this creature enters, create a 1/1 token copy of it.)\nFlying\nThis creature can't block.\nWhenever you gain life, each opponent loses 1 life."
+  },
+  "Starseer Mentor": {
+    "arena_id": 91769,
+    "name": "Starseer Mentor",
+    "cmc": 5,
+    "mana_cost": "{3}{W}{B}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Bat",
+      "Warlock"
+    ],
+    "colors": [
+      "B",
+      "W"
+    ],
+    "color_identity": [
+      "B",
+      "W"
+    ],
+    "rarity": "Uncommon",
+    "image": [
+      "https://cards.scryfall.io/large/front/6/b/6b2f6dc5-9fe8-49c1-b24c-1d99ce1da619.jpg?1721427196"
+    ],
+    "keywords": [
+      "Flying",
+      "Vigilance"
+    ],
+    "oracle_text": "Flying, vigilance\nAt the beginning of your end step, if you gained or lost life this turn, target opponent loses 3 life unless they sacrifice a nonland permanent of their choice or discard a card."
+  },
+  "Steampath Charger": {
+    "arena_id": 91689,
+    "name": "Steampath Charger",
+    "cmc": 2,
+    "mana_cost": "{1}{R}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Lizard",
+      "Warlock"
+    ],
+    "colors": [
+      "R"
+    ],
+    "color_identity": [
+      "R"
+    ],
+    "rarity": "Common",
+    "image": [
+      "https://cards.scryfall.io/large/front/0/3/03bf1296-e347-4070-8c6f-5c362c2f9364.jpg?1721426709"
+    ],
+    "keywords": [
+      "Offspring"
+    ],
+    "oracle_text": "Offspring {2} (You may pay an additional {2} as you cast this spell. If you do, when this creature enters, create a 1/1 token copy of it.)\nWhen this creature dies, it deals 1 damage to target player."
+  },
+  "Stickytongue Sentinel": {
+    "arena_id": 91729,
+    "name": "Stickytongue Sentinel",
+    "cmc": 3,
+    "mana_cost": "{2}{G}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Frog",
+      "Warrior"
+    ],
+    "colors": [
+      "G"
+    ],
+    "color_identity": [
+      "G"
+    ],
+    "rarity": "Common",
+    "image": [
+      "https://cards.scryfall.io/large/front/b/5/b5fa9651-b217-4f93-9c46-9bdb11feedcb.jpg?1721426926"
+    ],
+    "keywords": [
+      "Reach"
+    ],
+    "oracle_text": "Reach\nWhen this creature enters, return up to one other target permanent you control to its owner's hand."
+  },
+  "Stocking the Pantry": {
+    "arena_id": 91730,
+    "name": "Stocking the Pantry",
+    "cmc": 1,
+    "mana_cost": "{G}",
+    "types": [
+      "Enchantment"
+    ],
+    "subtypes": [],
+    "colors": [
+      "G"
+    ],
+    "color_identity": [
+      "G"
+    ],
+    "rarity": "Uncommon",
+    "image": [
+      "https://cards.scryfall.io/large/front/5/0/50e95c7b-f0b2-4276-8c5e-4191b7ba35d1.jpg?1727185660"
+    ],
+    "keywords": [],
+    "oracle_text": "Whenever you put one or more +1/+1 counters on a creature you control, put a supply counter on this enchantment.\n{2}, Remove a supply counter from this enchantment: Draw a card."
+  },
+  "Stormcatch Mentor": {
+    "arena_id": 91770,
+    "name": "Stormcatch Mentor",
+    "cmc": 2,
+    "mana_cost": "{U}{R}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Otter",
+      "Wizard"
+    ],
+    "colors": [
+      "R",
+      "U"
+    ],
+    "color_identity": [
+      "R",
+      "U"
+    ],
+    "rarity": "Uncommon",
+    "image": [
+      "https://cards.scryfall.io/large/front/9/9/99754055-6d67-4fde-aff3-41f6af6ea764.jpg?1721427197"
+    ],
+    "keywords": [
+      "Prowess",
+      "Haste"
+    ],
+    "oracle_text": "Haste\nProwess (Whenever you cast a noncreature spell, this creature gets +1/+1 until end of turn.)\nInstant and sorcery spells you cast cost {1} less to cast."
+  },
+  "Stormchaser's Talent": {
+    "arena_id": 91611,
+    "name": "Stormchaser's Talent",
+    "cmc": 1,
+    "mana_cost": "{U}",
+    "types": [
+      "Enchantment"
+    ],
+    "subtypes": [
+      "Class"
+    ],
+    "colors": [
+      "U"
+    ],
+    "color_identity": [
+      "U"
+    ],
+    "rarity": "Rare",
+    "image": [
+      "https://cards.scryfall.io/large/front/a/3/a36e682d-b43d-4e08-bf5b-70d7e924dbe5.jpg?1739650074"
+    ],
+    "keywords": [],
+    "oracle_text": "(Gain the next level as a sorcery to add its ability.)\nWhen this Class enters, create a 1/1 blue and red Otter creature token with prowess.\n{3}{U}: Level 2\nWhen this Class becomes level 2, return target instant or sorcery card from your graveyard to your hand.\n{5}{U}: Level 3\nWhenever you cast an instant or sorcery spell, create a 1/1 blue and red Otter creature token with prowess."
+  },
+  "Stormsplitter": {
+    "arena_id": 91690,
+    "name": "Stormsplitter",
+    "cmc": 4,
+    "mana_cost": "{3}{R}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Otter",
+      "Wizard"
+    ],
+    "colors": [
+      "R"
+    ],
+    "color_identity": [
+      "R"
+    ],
+    "rarity": "Mythic",
+    "image": [
+      "https://cards.scryfall.io/large/front/5/6/56f214d3-6b93-40db-a693-55e491c8a283.jpg?1721426711"
+    ],
+    "keywords": [
+      "Haste"
+    ],
+    "oracle_text": "Haste\nWhenever you cast an instant or sorcery spell, create a token that's a copy of this creature. Exile that token at the beginning of the next end step."
+  },
+  "Sugar Coat": {
+    "arena_id": 91612,
+    "name": "Sugar Coat",
+    "cmc": 3,
+    "mana_cost": "{2}{U}",
+    "types": [
+      "Enchantment"
+    ],
+    "subtypes": [
+      "Aura"
+    ],
+    "colors": [
+      "U"
+    ],
+    "color_identity": [
+      "U"
+    ],
+    "rarity": "Uncommon",
+    "image": [
+      "https://cards.scryfall.io/large/front/f/c/fcacbe71-efb0-49e1-b2d0-3ee65ec6cf8b.jpg?1721426291"
+    ],
+    "keywords": [
+      "Enchant",
+      "Flash"
+    ],
+    "oracle_text": "Flash\nEnchant creature or Food\nEnchanted permanent is a colorless Food artifact with \"{2}, {T}, Sacrifice this artifact: You gain 3 life\" and loses all other card types and abilities."
+  },
+  "Sunshower Druid": {
+    "arena_id": 91731,
+    "name": "Sunshower Druid",
+    "cmc": 1,
+    "mana_cost": "{G}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Frog",
+      "Druid"
+    ],
+    "colors": [
+      "G"
+    ],
+    "color_identity": [
+      "G"
+    ],
+    "rarity": "Common",
+    "image": [
+      "https://cards.scryfall.io/large/front/7/7/7740abc5-54e1-478d-966e-0fa64e727995.jpg?1721426936"
+    ],
+    "keywords": [],
+    "oracle_text": "When this creature enters, put a +1/+1 counter on target creature and you gain 1 life."
+  },
+  "Sunspine Lynx": {
+    "arena_id": 91691,
+    "name": "Sunspine Lynx",
+    "cmc": 4,
+    "mana_cost": "{2}{R}{R}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Elemental",
+      "Cat"
+    ],
+    "colors": [
+      "R"
+    ],
+    "color_identity": [
+      "R"
+    ],
+    "rarity": "Rare",
+    "image": [
+      "https://cards.scryfall.io/large/front/8/9/8995ceaf-b7e0-423c-8f3e-25212d522502.jpg?1721426719"
+    ],
+    "keywords": [],
+    "oracle_text": "Players can't gain life.\nDamage can't be prevented.\nWhen this creature enters, it deals damage to each player equal to the number of nonbasic lands that player controls."
+  },
+  "Swamp": {
+    "arena_id": 91835,
+    "name": "Swamp",
+    "cmc": 0,
+    "mana_cost": "",
+    "types": [
+      "Land"
+    ],
+    "subtypes": [
+      "Swamp"
+    ],
+    "colors": [],
+    "color_identity": [
+      "B"
+    ],
+    "rarity": "Common",
+    "image": [
+      "https://cards.scryfall.io/large/front/6/1/6125ffe3-4e48-4e0f-8390-7462446fc8bf.jpg?1721428002"
+    ],
+    "keywords": [],
+    "oracle_text": "({T}: Add {B}.)"
+  },
+  "Swiftwater Cliffs": {
+    "arena_id": 91810,
+    "name": "Swiftwater Cliffs",
+    "cmc": 0,
+    "mana_cost": "",
+    "types": [
+      "Land"
+    ],
+    "subtypes": [],
+    "colors": [],
+    "color_identity": [
+      "R",
+      "U"
+    ],
+    "rarity": "Common",
+    "image": [
+      "https://cards.scryfall.io/large/front/8/9/89e43510-c444-4b2e-b2a0-528dcc09c899.jpg?1721428123"
+    ],
+    "keywords": [],
+    "oracle_text": "This land enters tapped.\nWhen this land enters, you gain 1 life.\n{T}: Add {U} or {R}."
+  },
+  "Sword of Vengeance": {
+    "arena_id": 91808,
+    "name": "Sword of Vengeance",
+    "cmc": 3,
+    "mana_cost": "{3}",
+    "types": [
+      "Artifact"
+    ],
+    "subtypes": [
+      "Equipment"
+    ],
+    "colors": [],
+    "color_identity": [],
+    "rarity": "Rare",
+    "image": [
+      "https://cards.scryfall.io/large/front/f/2/f21b5fc1-7611-44ac-ad8d-1f0c6d4fc9a3.jpg?1721428115"
+    ],
+    "keywords": [
+      "Equip"
+    ],
+    "oracle_text": "Equipped creature gets +2/+0 and has first strike, vigilance, trample, and haste.\nEquip {3}"
+  },
+  "Take Out the Trash": {
+    "arena_id": 91692,
+    "name": "Take Out the Trash",
+    "cmc": 2,
+    "mana_cost": "{1}{R}",
+    "types": [
+      "Instant"
+    ],
+    "subtypes": [],
+    "colors": [
+      "R"
+    ],
+    "color_identity": [
+      "R"
+    ],
+    "rarity": "Common",
+    "image": [
+      "https://cards.scryfall.io/large/front/7/a/7a1c6f00-af4c-4d35-b682-6c0e759df9a5.jpg?1721426722"
+    ],
+    "keywords": [],
+    "oracle_text": "Take Out the Trash deals 3 damage to target creature or planeswalker. If you control a Raccoon, you may discard a card. If you do, draw a card."
+  },
+  "Tangle Tumbler": {
+    "arena_id": 91786,
+    "name": "Tangle Tumbler",
+    "cmc": 3,
+    "mana_cost": "{3}",
+    "types": [
+      "Artifact"
+    ],
+    "subtypes": [
+      "Vehicle"
+    ],
+    "colors": [],
+    "color_identity": [],
+    "rarity": "Uncommon",
+    "image": [
+      "https://cards.scryfall.io/large/front/2/5/258ef349-5042-4992-bae9-9f8f54b55db0.jpg?1721427304"
+    ],
+    "keywords": [
+      "Vigilance"
+    ],
+    "oracle_text": "Vigilance\n{3}, {T}: Put a +1/+1 counter on target creature.\nTap two untapped tokens you control: This Vehicle becomes an artifact creature until end of turn."
+  },
+  "Teapot Slinger": {
+    "arena_id": 91693,
+    "name": "Teapot Slinger",
+    "cmc": 4,
+    "mana_cost": "{3}{R}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Raccoon",
+      "Warrior"
+    ],
+    "colors": [
+      "R"
+    ],
+    "color_identity": [
+      "R"
+    ],
+    "rarity": "Uncommon",
+    "image": [
+      "https://cards.scryfall.io/large/front/3/0/30506844-349f-4b68-8cc1-d028c1611cc7.jpg?1721431263"
+    ],
+    "keywords": [
+      "Menace"
+    ],
+    "oracle_text": "Menace\nWhenever you expend 4, this creature deals 2 damage to each opponent. (You expend 4 as you spend your fourth total mana to cast spells during a turn.)"
+  },
+  "Tempest Angler": {
+    "arena_id": 91771,
+    "name": "Tempest Angler",
+    "cmc": 3,
+    "mana_cost": "{1}{U/R}{U/R}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Otter",
+      "Wizard"
+    ],
+    "colors": [
+      "R",
+      "U"
+    ],
+    "color_identity": [
+      "R",
+      "U"
+    ],
+    "rarity": "Common",
+    "image": [
+      "https://cards.scryfall.io/large/front/8/5/850daae4-f0b7-4604-95e7-ad044ec165c3.jpg?1721427207"
+    ],
+    "keywords": [],
+    "oracle_text": "Whenever you cast a noncreature spell, put a +1/+1 counter on this creature."
+  },
+  "Tender Wildguide": {
+    "arena_id": 91732,
+    "name": "Tender Wildguide",
+    "cmc": 2,
+    "mana_cost": "{1}{G}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Possum",
+      "Druid"
+    ],
+    "colors": [
+      "G"
+    ],
+    "color_identity": [
+      "G"
+    ],
+    "rarity": "Rare",
+    "image": [
+      "https://cards.scryfall.io/large/front/6/b/6b8bfa91-adb0-4596-8c16-d8bb64fdb26d.jpg?1721426949"
+    ],
+    "keywords": [
+      "Offspring"
+    ],
+    "oracle_text": "Offspring {2} (You may pay an additional {2} as you cast this spell. If you do, when this creature enters, create a 1/1 token copy of it.)\n{T}: Add one mana of any color.\n{T}: Put a +1/+1 counter on this creature."
+  },
+  "The Infamous Cruelclaw": {
+    "arena_id": 91755,
+    "name": "The Infamous Cruelclaw",
+    "cmc": 3,
+    "mana_cost": "{1}{B}{R}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Weasel",
+      "Mercenary"
+    ],
+    "colors": [
+      "B",
+      "R"
+    ],
+    "color_identity": [
+      "B",
+      "R"
+    ],
+    "rarity": "Mythic",
+    "image": [
+      "https://cards.scryfall.io/large/front/d/c/dc6c9196-6d28-4cc2-9748-60e9632a502b.jpg?1721427092"
+    ],
+    "keywords": [
+      "Menace"
+    ],
+    "oracle_text": "Menace\nWhenever The Infamous Cruelclaw deals combat damage to a player, exile cards from the top of your library until you exile a nonland card. You may cast that card by discarding a card rather than paying its mana cost."
+  },
+  "Thieving Otter": {
+    "arena_id": 91803,
+    "name": "Thieving Otter",
+    "cmc": 3,
+    "mana_cost": "{2}{U}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Otter"
+    ],
+    "colors": [
+      "U"
+    ],
+    "color_identity": [
+      "U"
+    ],
+    "rarity": "Common",
+    "image": [
+      "https://cards.scryfall.io/large/front/5/2/52a258be-39e3-4689-b2d0-7c353ce7d574.jpg?1721428090"
+    ],
+    "keywords": [],
+    "oracle_text": "Whenever this creature deals damage to an opponent, draw a card."
+  },
+  "Thistledown Players": {
+    "arena_id": 91571,
+    "name": "Thistledown Players",
+    "cmc": 3,
+    "mana_cost": "{2}{W}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Mouse",
+      "Bard"
+    ],
+    "colors": [
+      "W"
+    ],
+    "color_identity": [
+      "W"
+    ],
+    "rarity": "Common",
+    "image": [
+      "https://cards.scryfall.io/large/front/a/f/afa8d83f-8586-4127-8b55-9715e9547488.jpg?1721425974"
+    ],
+    "keywords": [],
+    "oracle_text": "Whenever this creature attacks, untap target nonland permanent."
+  },
+  "Thornplate Intimidator": {
+    "arena_id": 91653,
+    "name": "Thornplate Intimidator",
+    "cmc": 4,
+    "mana_cost": "{3}{B}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Rat",
+      "Rogue"
+    ],
+    "colors": [
+      "B"
+    ],
+    "color_identity": [
+      "B"
+    ],
+    "rarity": "Common",
+    "image": [
+      "https://cards.scryfall.io/large/front/4/2/42f66c4a-feaa-4ba6-aa56-955b43329a9e.jpg?1721426537"
+    ],
+    "keywords": [
+      "Offspring"
+    ],
+    "oracle_text": "Offspring {3} (You may pay an additional {3} as you cast this spell. If you do, when this creature enters, create a 1/1 token copy of it.)\nWhen this creature enters, target opponent loses 3 life unless they sacrifice a nonland permanent of their choice or discard a card."
+  },
+  "Thornvault Forager": {
+    "arena_id": 91733,
+    "name": "Thornvault Forager",
+    "cmc": 2,
+    "mana_cost": "{1}{G}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Squirrel",
+      "Ranger"
+    ],
+    "colors": [
+      "G"
+    ],
+    "color_identity": [
+      "G"
+    ],
+    "rarity": "Rare",
+    "image": [
+      "https://cards.scryfall.io/large/front/8/c/8c2d6b02-a453-40f9-992a-5c5542987cfb.jpg?1721933896"
+    ],
+    "keywords": [
+      "Forage"
+    ],
+    "oracle_text": "{T}: Add {G}.\n{T}, Forage: Add two mana in any combination of colors. (To forage, exile three cards from your graveyard or sacrifice a Food.)\n{3}{G}, {T}: Search your library for a Squirrel card, reveal it, put it into your hand, then shuffle."
+  },
+  "Thought Shucker": {
+    "arena_id": 91613,
+    "name": "Thought Shucker",
+    "cmc": 2,
+    "mana_cost": "{1}{U}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Rat",
+      "Rogue"
+    ],
+    "colors": [
+      "U"
+    ],
+    "color_identity": [
+      "U"
+    ],
+    "rarity": "Common",
+    "image": [
+      "https://cards.scryfall.io/large/front/4/4/44b0d83b-cc41-4f82-892c-ef6d3293228a.jpg?1721426302"
+    ],
+    "keywords": [
+      "Threshold"
+    ],
+    "oracle_text": "Threshold \u2014 {1}{U}: Put a +1/+1 counter on this creature and draw a card. Activate only if there are seven or more cards in your graveyard and only once."
+  },
+  "Thought-Stalker Warlock": {
+    "arena_id": 91654,
+    "name": "Thought-Stalker Warlock",
+    "cmc": 3,
+    "mana_cost": "{2}{B}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Lizard",
+      "Warlock"
+    ],
+    "colors": [
+      "B"
+    ],
+    "color_identity": [
+      "B"
+    ],
+    "rarity": "Uncommon",
+    "image": [
+      "https://cards.scryfall.io/large/front/4/2/42e80284-d489-493b-ae92-95b742d07cb3.jpg?1721426544"
+    ],
+    "keywords": [
+      "Menace"
+    ],
+    "oracle_text": "Menace (This creature can't be blocked except by two or more creatures.)\nWhen this creature enters, choose target opponent. If they lost life this turn, they reveal their hand, you choose a nonland card from it, and they discard that card. Otherwise, they discard a card."
+  },
+  "Three Tree City": {
+    "arena_id": 91796,
+    "name": "Three Tree City",
+    "cmc": 0,
+    "mana_cost": "",
+    "types": [
+      "Land"
+    ],
+    "subtypes": [],
+    "colors": [],
+    "color_identity": [],
+    "rarity": "Rare",
+    "image": [
+      "https://cards.scryfall.io/large/front/5/6/56f88a48-cced-4a9d-8c19-e4f105f0d8a2.jpg?1721427358"
+    ],
+    "keywords": [],
+    "oracle_text": "As Three Tree City enters, choose a creature type.\n{T}: Add {C}.\n{2}, {T}: Choose a color. Add an amount of mana of that color equal to the number of creatures you control of the chosen type."
+  },
+  "Three Tree Mascot": {
+    "arena_id": 91787,
+    "name": "Three Tree Mascot",
+    "cmc": 2,
+    "mana_cost": "{2}",
+    "types": [
+      "Creature",
+      "Artifact"
+    ],
+    "subtypes": [
+      "Shapeshifter"
+    ],
+    "colors": [],
+    "color_identity": [],
+    "rarity": "Common",
+    "image": [
+      "https://cards.scryfall.io/large/front/a/a/aaced75b-6e07-457c-8ea2-f74d99710d15.jpg?1721427313"
+    ],
+    "keywords": [
+      "Changeling"
+    ],
+    "oracle_text": "Changeling (This card is every creature type.)\n{1}: Add one mana of any color. Activate only once each turn."
+  },
+  "Three Tree Rootweaver": {
+    "arena_id": 91734,
+    "name": "Three Tree Rootweaver",
+    "cmc": 2,
+    "mana_cost": "{1}{G}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Mole",
+      "Druid"
+    ],
+    "colors": [
+      "G"
+    ],
+    "color_identity": [
+      "G"
+    ],
+    "rarity": "Common",
+    "image": [
+      "https://cards.scryfall.io/large/front/d/1/d1ab6e14-26e0-4174-b5c6-bc0f5c26b177.jpg?1721426963"
+    ],
+    "keywords": [],
+    "oracle_text": "{T}: Add one mana of any color."
+  },
+  "Three Tree Scribe": {
+    "arena_id": 91735,
+    "name": "Three Tree Scribe",
+    "cmc": 2,
+    "mana_cost": "{1}{G}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Frog",
+      "Druid"
+    ],
+    "colors": [
+      "G"
+    ],
+    "color_identity": [
+      "G"
+    ],
+    "rarity": "Uncommon",
+    "image": [
+      "https://cards.scryfall.io/large/front/e/a/ea2ca1b3-4c1a-4be5-b321-f57db5ff0528.jpg?1721426968"
+    ],
+    "keywords": [],
+    "oracle_text": "Whenever this creature or another creature you control leaves the battlefield without dying, put a +1/+1 counter on target creature you control."
+  },
+  "Thundertrap Trainer": {
+    "arena_id": 91614,
+    "name": "Thundertrap Trainer",
+    "cmc": 2,
+    "mana_cost": "{1}{U}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Otter",
+      "Wizard"
+    ],
+    "colors": [
+      "U"
+    ],
+    "color_identity": [
+      "U"
+    ],
+    "rarity": "Rare",
+    "image": [
+      "https://cards.scryfall.io/large/front/9/c/9cf3af94-b7c8-415c-a5a1-d89967fd0bba.jpg?1721426312"
+    ],
+    "keywords": [
+      "Offspring"
+    ],
+    "oracle_text": "Offspring {4} (You may pay an additional {4} as you cast this spell. If you do, when this creature enters, create a 1/1 token copy of it.)\nWhen this creature enters, look at the top four cards of your library. You may reveal a noncreature, nonland card from among them and put it into your hand. Put the rest on the bottom of your library in a random order."
+  },
+  "Tidecaller Mentor": {
+    "arena_id": 91772,
+    "name": "Tidecaller Mentor",
+    "cmc": 3,
+    "mana_cost": "{1}{U}{B}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Rat",
+      "Wizard"
+    ],
+    "colors": [
+      "B",
+      "U"
+    ],
+    "color_identity": [
+      "B",
+      "U"
+    ],
+    "rarity": "Uncommon",
+    "image": [
+      "https://cards.scryfall.io/large/front/f/a/fa10ffac-7cc2-41ef-b8a0-9431923c0542.jpg?1721427215"
+    ],
+    "keywords": [
+      "Threshold",
+      "Menace"
+    ],
+    "oracle_text": "Menace\nThreshold \u2014 When this creature enters, if there are seven or more cards in your graveyard, return up to one target nonland permanent to its owner's hand."
+  },
+  "Treeguard Duo": {
+    "arena_id": 91736,
+    "name": "Treeguard Duo",
+    "cmc": 4,
+    "mana_cost": "{3}{G}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Frog",
+      "Rabbit"
+    ],
+    "colors": [
+      "G"
+    ],
+    "color_identity": [
+      "G"
+    ],
+    "rarity": "Common",
+    "image": [
+      "https://cards.scryfall.io/large/front/8/9/89c8456e-c971-42b7-abf3-ff5ae1320abe.jpg?1721426977"
+    ],
+    "keywords": [],
+    "oracle_text": "When this creature enters, until end of turn, target creature you control gains vigilance and gets +X/+X, where X is the number of creatures you control."
+  },
+  "Treetop Sentries": {
+    "arena_id": 91737,
+    "name": "Treetop Sentries",
+    "cmc": 4,
+    "mana_cost": "{3}{G}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Squirrel",
+      "Archer"
+    ],
+    "colors": [
+      "G"
+    ],
+    "color_identity": [
+      "G"
+    ],
+    "rarity": "Common",
+    "image": [
+      "https://cards.scryfall.io/large/front/e/1/e16d4d6e-1fe5-4ff6-9877-8c849a24f5e0.jpg?1721426978"
+    ],
+    "keywords": [
+      "Forage",
+      "Reach"
+    ],
+    "oracle_text": "Reach\nWhen this creature enters, you may forage. If you do, draw a card. (To forage, exile three cards from your graveyard or sacrifice a Food.)"
+  },
+  "Uncharted Haven": {
+    "arena_id": 91797,
+    "name": "Uncharted Haven",
+    "cmc": 0,
+    "mana_cost": "",
+    "types": [
+      "Land"
+    ],
+    "subtypes": [],
+    "colors": [],
+    "color_identity": [],
+    "rarity": "Common",
+    "image": [
+      "https://cards.scryfall.io/large/front/6/8/68b90f54-d629-4126-82cc-13b51d6c1c3e.jpg?1722073883"
+    ],
+    "keywords": [],
+    "oracle_text": "This land enters tapped. As it enters, choose a color.\n{T}: Add one mana of the chosen color."
+  },
+  "Valley Flamecaller": {
+    "arena_id": 91694,
+    "name": "Valley Flamecaller",
+    "cmc": 3,
+    "mana_cost": "{2}{R}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Lizard",
+      "Warlock"
+    ],
+    "colors": [
+      "R"
+    ],
+    "color_identity": [
+      "R"
+    ],
+    "rarity": "Rare",
+    "image": [
+      "https://cards.scryfall.io/large/front/a/0/a0812db4-b7d1-4cf7-aaa5-9c0e784079a1.jpg?1721639385"
+    ],
+    "keywords": [],
+    "oracle_text": "If a Lizard, Mouse, Otter, or Raccoon you control would deal damage to a permanent or player, it deals that much damage plus 1 instead."
+  },
+  "Valley Floodcaller": {
+    "arena_id": 91615,
+    "name": "Valley Floodcaller",
+    "cmc": 3,
+    "mana_cost": "{2}{U}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Otter",
+      "Wizard"
+    ],
+    "colors": [
+      "U"
+    ],
+    "color_identity": [
+      "U"
+    ],
+    "rarity": "Rare",
+    "image": [
+      "https://cards.scryfall.io/large/front/9/0/90b12da0-f666-471d-95f5-15d8c9b31c92.jpg?1721639406"
+    ],
+    "keywords": [
+      "Flash"
+    ],
+    "oracle_text": "Flash\nYou may cast noncreature spells as though they had flash.\nWhenever you cast a noncreature spell, Birds, Frogs, Otters, and Rats you control get +1/+1 until end of turn. Untap them."
+  },
+  "Valley Mightcaller": {
+    "arena_id": 91738,
+    "name": "Valley Mightcaller",
+    "cmc": 1,
+    "mana_cost": "{G}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Frog",
+      "Warrior"
+    ],
+    "colors": [
+      "G"
+    ],
+    "color_identity": [
+      "G"
+    ],
+    "rarity": "Rare",
+    "image": [
+      "https://cards.scryfall.io/large/front/7/2/7256451f-0122-452a-88e8-0fb0f6bea3f3.jpg?1721639437"
+    ],
+    "keywords": [
+      "Trample"
+    ],
+    "oracle_text": "Trample\nWhenever another Frog, Rabbit, Raccoon, or Squirrel you control enters, put a +1/+1 counter on this creature."
+  },
+  "Valley Questcaller": {
+    "arena_id": 91572,
+    "name": "Valley Questcaller",
+    "cmc": 2,
+    "mana_cost": "{1}{W}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Rabbit",
+      "Warrior"
+    ],
+    "colors": [
+      "W"
+    ],
+    "color_identity": [
+      "W"
+    ],
+    "rarity": "Rare",
+    "image": [
+      "https://cards.scryfall.io/large/front/b/a/ba629ca8-a368-4282-8a61-9bf6a5c217f0.jpg?1721639461"
+    ],
+    "keywords": [
+      "Scry"
+    ],
+    "oracle_text": "Whenever one or more other Rabbits, Bats, Birds, and/or Mice you control enter, scry 1.\nOther Rabbits, Bats, Birds, and Mice you control get +1/+1."
+  },
+  "Valley Rally": {
+    "arena_id": 91699,
+    "name": "Valley Rally",
+    "cmc": 3,
+    "mana_cost": "{2}{R}",
+    "types": [
+      "Instant"
+    ],
+    "subtypes": [],
+    "colors": [
+      "R"
+    ],
+    "color_identity": [
+      "R"
+    ],
+    "rarity": "Uncommon",
+    "image": [
+      "https://cards.scryfall.io/large/front/b/6/b6178258-1ad6-4122-a56f-6eb7d0611e84.jpg?1721426740"
+    ],
+    "keywords": [
+      "Gift",
+      "Food"
+    ],
+    "oracle_text": "Gift a Food (You may promise an opponent a gift as you cast this spell. If you do, they create a Food token before its other effects. It's an artifact with \"{2}, {T}, Sacrifice this token: You gain 3 life.\")\nCreatures you control get +2/+0 until end of turn. If the gift was promised, target creature you control gains first strike until end of turn."
+  },
+  "Valley Rotcaller": {
+    "arena_id": 91655,
+    "name": "Valley Rotcaller",
+    "cmc": 2,
+    "mana_cost": "{1}{B}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Squirrel",
+      "Warlock"
+    ],
+    "colors": [
+      "B"
+    ],
+    "color_identity": [
+      "B"
+    ],
+    "rarity": "Rare",
+    "image": [
+      "https://cards.scryfall.io/large/front/4/d/4da80a9a-b1d5-4fc5-92f7-36946195d0c7.jpg?1721639479"
+    ],
+    "keywords": [
+      "Menace"
+    ],
+    "oracle_text": "Menace\nWhenever this creature attacks, each opponent loses X life and you gain X life, where X is the number of other Squirrels, Bats, Lizards, and Rats you control."
+  },
+  "Veteran Guardmouse": {
+    "arena_id": 91773,
+    "name": "Veteran Guardmouse",
+    "cmc": 4,
+    "mana_cost": "{3}{R/W}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Mouse",
+      "Soldier"
+    ],
+    "colors": [
+      "R",
+      "W"
+    ],
+    "color_identity": [
+      "R",
+      "W"
+    ],
+    "rarity": "Common",
+    "image": [
+      "https://cards.scryfall.io/large/front/3/d/3db43c46-b616-4ef8-80ed-0fab345ab3d0.jpg?1721427216"
+    ],
+    "keywords": [
+      "Valiant",
+      "Scry"
+    ],
+    "oracle_text": "Valiant \u2014 Whenever this creature becomes the target of a spell or ability you control for the first time each turn, it gets +1/+0 and gains first strike until end of turn. Scry 1. (Look at the top card of your library. You may put that card on the bottom.)"
+  },
+  "Vinereap Mentor": {
+    "arena_id": 91774,
+    "name": "Vinereap Mentor",
+    "cmc": 2,
+    "mana_cost": "{B}{G}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Squirrel",
+      "Druid"
+    ],
+    "colors": [
+      "B",
+      "G"
+    ],
+    "color_identity": [
+      "B",
+      "G"
+    ],
+    "rarity": "Uncommon",
+    "image": [
+      "https://cards.scryfall.io/large/front/2/9/29b615ba-45c4-42a1-8525-1535f0b55300.jpg?1721427225"
+    ],
+    "keywords": [
+      "Food"
+    ],
+    "oracle_text": "When this creature enters or dies, create a Food token. (It's an artifact with \"{2}, {T}, Sacrifice this token: You gain 3 life.\")"
+  },
+  "Vren, the Relentless": {
+    "arena_id": 91775,
+    "name": "Vren, the Relentless",
+    "cmc": 4,
+    "mana_cost": "{2}{U}{B}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Rat",
+      "Rogue"
+    ],
+    "colors": [
+      "B",
+      "U"
+    ],
+    "color_identity": [
+      "B",
+      "U"
+    ],
+    "rarity": "Rare",
+    "image": [
+      "https://cards.scryfall.io/large/front/6/5/6506277d-f031-4db5-9d16-bf2389094785.jpg?1721427225"
+    ],
+    "keywords": [
+      "Ward"
+    ],
+    "oracle_text": "Ward {2}\nIf a creature an opponent controls would die, exile it instead.\nAt the beginning of each end step, create X 1/1 black Rat creature tokens with \"This token gets +1/+1 for each other Rat you control,\" where X is the number of creatures that were exiled under your opponents' control this turn."
+  },
+  "Wandertale Mentor": {
+    "arena_id": 91776,
+    "name": "Wandertale Mentor",
+    "cmc": 2,
+    "mana_cost": "{R}{G}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Raccoon",
+      "Bard"
+    ],
+    "colors": [
+      "G",
+      "R"
+    ],
+    "color_identity": [
+      "G",
+      "R"
+    ],
+    "rarity": "Uncommon",
+    "image": [
+      "https://cards.scryfall.io/large/front/8/c/8c399a55-d02e-41ed-b827-8784b738c118.jpg?1721427242"
+    ],
+    "keywords": [],
+    "oracle_text": "Whenever you expend 4, put a +1/+1 counter on this creature. (You expend 4 as you spend your fourth total mana to cast spells during a turn.)\n{T}: Add {R} or {G}."
+  },
+  "Warren Elder": {
+    "arena_id": 91573,
+    "name": "Warren Elder",
+    "cmc": 2,
+    "mana_cost": "{1}{W}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Rabbit",
+      "Cleric"
+    ],
+    "colors": [
+      "W"
+    ],
+    "color_identity": [
+      "W"
+    ],
+    "rarity": "Common",
+    "image": [
+      "https://cards.scryfall.io/large/front/4/b/4bf20069-5a20-4f95-976b-6af2b69f3ad0.jpg?1721425988"
+    ],
+    "keywords": [],
+    "oracle_text": "{3}{W}: Creatures you control get +1/+1 until end of turn."
+  },
+  "Warren Warleader": {
+    "arena_id": 91574,
+    "name": "Warren Warleader",
+    "cmc": 4,
+    "mana_cost": "{2}{W}{W}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Rabbit",
+      "Knight"
+    ],
+    "colors": [
+      "W"
+    ],
+    "color_identity": [
+      "W"
+    ],
+    "rarity": "Mythic",
+    "image": [
+      "https://cards.scryfall.io/large/front/e/b/eb5237a0-5ac3-4ded-9f92-5f782a7bbbd7.jpg?1721425996"
+    ],
+    "keywords": [
+      "Offspring"
+    ],
+    "oracle_text": "Offspring {2} (You may pay an additional {2} as you cast this spell. If you do, when this creature enters, create a 1/1 token copy of it.)\nWhenever you attack, choose one \u2014\n\u2022 Create a 1/1 white Rabbit creature token that's tapped and attacking.\n\u2022 Attacking creatures you control get +1/+1 until end of turn."
+  },
+  "War Squeak": {
+    "arena_id": 91695,
+    "name": "War Squeak",
+    "cmc": 1,
+    "mana_cost": "{R}",
+    "types": [
+      "Enchantment"
+    ],
+    "subtypes": [
+      "Aura"
+    ],
+    "colors": [
+      "R"
+    ],
+    "color_identity": [
+      "R"
+    ],
+    "rarity": "Common",
+    "image": [
+      "https://cards.scryfall.io/large/front/1/0/105964a7-88b7-4340-aa66-e908189a3638.jpg?1721426742"
+    ],
+    "keywords": [
+      "Enchant"
+    ],
+    "oracle_text": "Enchant creature\nWhen this Aura enters, target creature an opponent controls can't block this turn.\nEnchanted creature gets +1/+1 and has haste."
+  },
+  "Waterspout Warden": {
+    "arena_id": 91616,
+    "name": "Waterspout Warden",
+    "cmc": 3,
+    "mana_cost": "{2}{U}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Frog",
+      "Soldier"
+    ],
+    "colors": [
+      "U"
+    ],
+    "color_identity": [
+      "U"
+    ],
+    "rarity": "Common",
+    "image": [
+      "https://cards.scryfall.io/large/front/3/5/35898b39-98e2-405b-8f18-0e054bd2c29e.jpg?1722207696"
+    ],
+    "keywords": [],
+    "oracle_text": "Whenever this creature attacks, if another creature entered the battlefield under your control this turn, this creature gains flying until end of turn."
+  },
+  "Wax-Wane Witness": {
+    "arena_id": 91575,
+    "name": "Wax-Wane Witness",
+    "cmc": 4,
+    "mana_cost": "{3}{W}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Bat",
+      "Cleric"
+    ],
+    "colors": [
+      "W"
+    ],
+    "color_identity": [
+      "W"
+    ],
+    "rarity": "Common",
+    "image": [
+      "https://cards.scryfall.io/large/front/d/9/d90ea719-5320-46c6-a347-161853a14776.jpg?1721426005"
+    ],
+    "keywords": [
+      "Flying",
+      "Vigilance"
+    ],
+    "oracle_text": "Flying, vigilance\nWhenever you gain or lose life during your turn, this creature gets +1/+0 until end of turn."
+  },
+  "Wear Down": {
+    "arena_id": 91739,
+    "name": "Wear Down",
+    "cmc": 2,
+    "mana_cost": "{1}{G}",
+    "types": [
+      "Sorcery"
+    ],
+    "subtypes": [],
+    "colors": [
+      "G"
+    ],
+    "color_identity": [
+      "G"
+    ],
+    "rarity": "Uncommon",
+    "image": [
+      "https://cards.scryfall.io/large/front/f/d/fded2b83-3b7d-4c8c-83c4-0624a1069628.jpg?1721426996"
+    ],
+    "keywords": [
+      "Gift"
+    ],
+    "oracle_text": "Gift a card (You may promise an opponent a gift as you cast this spell. If you do, they draw a card before its other effects.)\nDestroy target artifact or enchantment. If the gift was promised, instead destroy two target artifacts and/or enchantments."
+  },
+  "Whiskerquill Scribe": {
+    "arena_id": 91696,
+    "name": "Whiskerquill Scribe",
+    "cmc": 2,
+    "mana_cost": "{1}{R}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Mouse",
+      "Citizen"
+    ],
+    "colors": [
+      "R"
+    ],
+    "color_identity": [
+      "R"
+    ],
+    "rarity": "Common",
+    "image": [
+      "https://cards.scryfall.io/large/front/d/a/da653996-9bd4-40bd-afb4-48c7e070a269.jpg?1721431429"
+    ],
+    "keywords": [
+      "Valiant"
+    ],
+    "oracle_text": "Valiant \u2014 Whenever this creature becomes the target of a spell or ability you control for the first time each turn, you may discard a card. If you do, draw a card."
+  },
+  "Whiskervale Forerunner": {
+    "arena_id": 91576,
+    "name": "Whiskervale Forerunner",
+    "cmc": 4,
+    "mana_cost": "{3}{W}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Mouse",
+      "Bard"
+    ],
+    "colors": [
+      "W"
+    ],
+    "color_identity": [
+      "W"
+    ],
+    "rarity": "Rare",
+    "image": [
+      "https://cards.scryfall.io/large/front/6/0/60a78d59-af31-4af9-95aa-2573fe553925.jpg?1721426007"
+    ],
+    "keywords": [
+      "Valiant"
+    ],
+    "oracle_text": "Valiant \u2014 Whenever this creature becomes the target of a spell or ability you control for the first time each turn, look at the top five cards of your library. You may reveal a creature card with mana value 3 or less from among them. You may put it onto the battlefield if it's your turn. If you don't put it onto the battlefield, put it into your hand. Put the rest on the bottom of your library in a random order."
+  },
+  "Wick's Patrol": {
+    "arena_id": 91657,
+    "name": "Wick's Patrol",
+    "cmc": 6,
+    "mana_cost": "{4}{B}{B}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Rat",
+      "Warlock"
+    ],
+    "colors": [
+      "B"
+    ],
+    "color_identity": [
+      "B"
+    ],
+    "rarity": "Uncommon",
+    "image": [
+      "https://cards.scryfall.io/large/front/5/f/5fa0c53d-fe7b-4b8b-ad81-7967ca318ff7.jpg?1721426557"
+    ],
+    "keywords": [
+      "Mill"
+    ],
+    "oracle_text": "When this creature enters, mill three cards. When you do, target creature an opponent controls gets -X/-X until end of turn, where X is the greatest mana value among cards in your graveyard."
+  },
+  "Wick, the Whorled Mind": {
+    "arena_id": 91656,
+    "name": "Wick, the Whorled Mind",
+    "cmc": 4,
+    "mana_cost": "{3}{B}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Rat",
+      "Warlock"
+    ],
+    "colors": [
+      "B"
+    ],
+    "color_identity": [
+      "B",
+      "R",
+      "U"
+    ],
+    "rarity": "Rare",
+    "image": [
+      "https://cards.scryfall.io/large/front/2/9/29089810-d7fb-4abe-b729-bfabed6aed2b.jpg?1721426554"
+    ],
+    "keywords": [],
+    "oracle_text": "Whenever Wick or another Rat you control enters, create a 1/1 black Snail creature token if you don't control a Snail. Otherwise, put a +1/+1 counter on a Snail you control.\n{U}{B}{R}, Sacrifice a Snail: Wick deals damage equal to the sacrificed creature's power to each opponent. Then draw cards equal to the sacrificed creature's power."
+  },
+  "Wildfire Howl": {
+    "arena_id": 91697,
+    "name": "Wildfire Howl",
+    "cmc": 3,
+    "mana_cost": "{1}{R}{R}",
+    "types": [
+      "Sorcery"
+    ],
+    "subtypes": [],
+    "colors": [
+      "R"
+    ],
+    "color_identity": [
+      "R"
+    ],
+    "rarity": "Uncommon",
+    "image": [
+      "https://cards.scryfall.io/large/front/7/3/7392d397-9836-4df2-944d-c930c9566811.jpg?1721426754"
+    ],
+    "keywords": [
+      "Gift"
+    ],
+    "oracle_text": "Gift a card (You may promise an opponent a gift as you cast this spell. If you do, they draw a card before its other effects.)\nWildfire Howl deals 2 damage to each creature. If the gift was promised, instead Wildfire Howl deals 1 damage to any target and 2 damage to each creature."
+  },
+  "Wishing Well": {
+    "arena_id": 91617,
+    "name": "Wishing Well",
+    "cmc": 4,
+    "mana_cost": "{3}{U}",
+    "types": [
+      "Artifact"
+    ],
+    "subtypes": [],
+    "colors": [
+      "U"
+    ],
+    "color_identity": [
+      "U"
+    ],
+    "rarity": "Rare",
+    "image": [
+      "https://cards.scryfall.io/large/front/e/d/edeb20aa-b253-49b8-9947-c397a3a4002a.jpg?1721426330"
+    ],
+    "keywords": [],
+    "oracle_text": "{T}: Put a coin counter on this artifact. When you do, you may cast target instant or sorcery card with mana value equal to the number of coin counters on this artifact from your graveyard without paying its mana cost. If that spell would be put into your graveyard, exile it instead. Activate only as a sorcery."
+  },
+  "Ygra, Eater of All": {
+    "arena_id": 91777,
+    "name": "Ygra, Eater of All",
+    "cmc": 5,
+    "mana_cost": "{3}{B}{G}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Elemental",
+      "Cat"
+    ],
+    "colors": [
+      "B",
+      "G"
+    ],
+    "color_identity": [
+      "B",
+      "G"
+    ],
+    "rarity": "Mythic",
+    "image": [
+      "https://cards.scryfall.io/large/front/b/9/b9ac7673-eae8-4c4b-889e-5025213a6151.jpg?1721427242"
+    ],
+    "keywords": [
+      "Ward"
+    ],
+    "oracle_text": "Ward\u2014Sacrifice a Food.\nOther creatures are Food artifacts in addition to their other types and have \"{2}, {T}, Sacrifice this permanent: You gain 3 life.\"\nWhenever a Food is put into a graveyard from the battlefield, put two +1/+1 counters on Ygra."
+  },
+  "Zoraline, Cosmos Caller": {
+    "arena_id": 91778,
+    "name": "Zoraline, Cosmos Caller",
+    "cmc": 3,
+    "mana_cost": "{1}{W}{B}",
+    "types": [
+      "Creature"
+    ],
+    "subtypes": [
+      "Bat",
+      "Cleric"
+    ],
+    "colors": [
+      "B",
+      "W"
+    ],
+    "color_identity": [
+      "B",
+      "W"
+    ],
+    "rarity": "Rare",
+    "image": [
+      "https://cards.scryfall.io/large/front/b/7/b7f99fd5-5298-4b27-923d-9d31203c931a.jpg?1721427252"
+    ],
+    "keywords": [
+      "Flying",
+      "Vigilance"
+    ],
+    "oracle_text": "Flying, vigilance\nWhenever a Bat you control attacks, you gain 1 life.\nWhenever Zoraline enters or attacks, you may pay {W}{B} and 2 life. When you do, return target nonland permanent card with mana value 3 or less from your graveyard to the battlefield with a finality counter on it."
+  }
+}
