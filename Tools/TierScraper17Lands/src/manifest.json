@@ -1,0 +1,14 @@
+{
+  "manifest_version": 3,
+
+  "name": "17Lands Tier Scraper",
+  "description": "Retrieve tier lists from 17Lands",
+  "version": "5.0.0",
+  "content_scripts": [
+   {
+     "matches": ["https://www.17lands.com/tier_list/*"],
+     "css": ["17LandsTier.css"],
+     "js": ["17LandsTier.js"]
+   } 
+   ]
+}
