@@ -360,6 +360,28 @@ def test_fetch_archetype_tolerates_bare_list_payload(
     assert data[0]["name"] == "Bare Card"
 
 
+@patch("src.seventeenlands.is_cache_stale")
+def test_fetch_archetype_preserves_expansion_case(
+    mock_stale, mock_session, seventeenlands, tmp_path
+):
+    """17Lands matches the `expansion` query param case-sensitively. Cube
+    expansions are named 'Cube - Powered', 'Cube', 'Cube - Planar' (plus
+    'Chaos', 'Ravnica', 'Remix - Artifacts'); sending 'CUBE - POWERED' answers
+    200 with an empty list, which surfaces as '0 cards matched'."""
+    mock_stale.return_value = True
+    session, response = mock_session
+    response.json.return_value = {"data": []}
+    seventeenlands.CACHE_DIR = str(tmp_path)
+
+    seventeenlands._fetch_archetype_with_cache(
+        "Cube - Powered", "PremierDraft", "LATEST_EVENT", "All Decks", "All"
+    )
+
+    called_url = session.get.call_args[0][0]
+    assert "expansion=Cube - Powered&" in called_url
+    assert "CUBE" not in called_url
+
+
 def test_download_color_ratings_http_errors(mock_session, seventeenlands):
     """Verify that download_color_ratings explicitly traps rate limit and forbidden errors."""
     session, response = mock_session

@@ -1,3 +1,7 @@
+===================== RELEASE NOTES 4.21 =====================
+* unrealities: [Bug] Fixed Cube dataset downloads reporting the correct game count (e.g. 99,513 games for the Latest Event) but then warning that 0 cards matched. The card-data request uppercased the 17Lands expansion name ("CUBE - POWERED"), which 17Lands matches case-sensitively and answers with an empty list; the name is now sent exactly as 17Lands lists it. Also affects Cube, Cube - Planar, Chaos, Ravnica and Remix - Artifacts.
+* unrealities: [Bug] Because every fresh Cube download had been coming back empty, "All Time" Cube datasets in the tool were stale files from earlier versions and were missing cards added to the cube since. Re-download the Cube dataset after updating to pick up the current card pool; "All Time" now includes every card from the latest event.
+
 ===================== RELEASE NOTES 4.20 =====================
 * dorianlauwers-source: [Bug] Fixed the Linux build crashing on startup on distributions shipping Tcl 9 (Fedora 42+, Nobara, Bazzite) with `invalid command name "::msgcat::mcmset"` (#196). The existing guard patched the wrong reference; it now covers the call site ttkbootstrap actually uses.
 * dorianlauwers-source: [Feature] Player.log is now found automatically on Linux for Flatpak Steam, snap Steam, secondary Steam libraries (libraryfolders.vdf), Lutris, Bottles and plain Wine prefixes (#197). Previously only a native Steam install in the default library was detected; when several logs exist, the most recently written one is used.
