@@ -1,0 +1,436 @@
+{
+  "Anchovy & Banana Pizza": [
+    "removal",
+    "lifegain"
+  ],
+  "Armaggon, Future Shark": [
+    "removal"
+  ],
+  "Bespoke B\u014d": [
+    "removal"
+  ],
+  "Bot Bashing Time": [
+    "removal"
+  ],
+  "Brilliance Unleashed": [
+    "removal",
+    "card_advantage",
+    "evasion"
+  ],
+  "Cool but Rude": [
+    "removal",
+    "card_advantage"
+  ],
+  "Death in the Family": [
+    "removal"
+  ],
+  "Dimensional Exile": [
+    "removal"
+  ],
+  "Everything Pizza": [
+    "removal",
+    "card_advantage",
+    "lifegain"
+  ],
+  "Fugitive Droid": [
+    "removal",
+    "evasion"
+  ],
+  "General Traag, Heart of Stone": [
+    "removal",
+    "evasion"
+  ],
+  "Go Ninja Go": [
+    "removal",
+    "protection"
+  ],
+  "Grounded for Life": [
+    "removal"
+  ],
+  "Henchbots": [
+    "removal"
+  ],
+  "Jennika's Technique": [
+    "removal"
+  ],
+  "Karai's Technique": [
+    "removal",
+    "combat_trick"
+  ],
+  "Koya, Death from Above": [
+    "removal",
+    "evasion",
+    "protection"
+  ],
+  "Leatherhead, Swamp Stalker": [
+    "removal",
+    "evasion"
+  ],
+  "Make Your Move": [
+    "removal"
+  ],
+  "Manhole Missile": [
+    "removal"
+  ],
+  "Metalhead": [
+    "removal",
+    "evasion"
+  ],
+  "Mouser Foundry": [
+    "removal"
+  ],
+  "Mutant Chain Reaction": [
+    "removal"
+  ],
+  "Negate": [
+    "removal"
+  ],
+  "Novel Nunchaku": [
+    "removal"
+  ],
+  "Ooze Spill": [
+    "removal"
+  ],
+  "Raphael, Tough Turtle": [
+    "removal"
+  ],
+  "Renet, Temporal Apprentice": [
+    "removal"
+  ],
+  "Retro-Mutation": [
+    "removal"
+  ],
+  "Return to the Sewers": [
+    "removal"
+  ],
+  "Rock Soldiers": [
+    "removal"
+  ],
+  "Shredder's Technique": [
+    "removal"
+  ],
+  "Slash, Reptile Rampager": [
+    "removal"
+  ],
+  "Spicy Oatmeal Pizza": [
+    "removal",
+    "lifegain"
+  ],
+  "Stomped by the Foot": [
+    "removal",
+    "combat_trick",
+    "mana_sink"
+  ],
+  "Tainted Treats": [
+    "removal",
+    "lifegain"
+  ],
+  "Tenderize": [
+    "removal"
+  ],
+  "The Last Ronin": [
+    "removal",
+    "card_advantage",
+    "lifegain"
+  ],
+  "Tokka & Rahzar, Terrible Twos": [
+    "removal",
+    "evasion"
+  ],
+  "Turncoat Kunoichi": [
+    "removal"
+  ],
+  "Turtles in Time": [
+    "removal",
+    "card_advantage"
+  ],
+  "Uneasy Alliance": [
+    "removal"
+  ],
+  "Weather Maker": [
+    "removal",
+    "fixing_ramp"
+  ],
+  "Escape Tunnel": [
+    "fixing_ramp",
+    "card_advantage"
+  ],
+  "Frog Butler": [
+    "fixing_ramp"
+  ],
+  "Groundchuck & Dirtbag": [
+    "fixing_ramp",
+    "evasion"
+  ],
+  "Lessons from Life": [
+    "fixing_ramp"
+  ],
+  "Michelangelo, Improviser": [
+    "fixing_ramp"
+  ],
+  "Mona Lisa, Science Geek": [
+    "fixing_ramp"
+  ],
+  "New Generation's Technique": [
+    "fixing_ramp",
+    "card_advantage"
+  ],
+  "Purple Dragon Punks": [
+    "fixing_ramp"
+  ],
+  "Transdimensional Bovine": [
+    "fixing_ramp",
+    "evasion"
+  ],
+  "Bebop, Warthog Warrior": [
+    "card_advantage",
+    "evasion"
+  ],
+  "Courier of Comestibles": [
+    "card_advantage",
+    "lifegain"
+  ],
+  "Does Machines": [
+    "card_advantage"
+  ],
+  "Donatello, Turtle Techie": [
+    "card_advantage"
+  ],
+  "Jennika, Bad Apple Big Sister": [
+    "card_advantage"
+  ],
+  "Karai, Future of the Foot": [
+    "card_advantage"
+  ],
+  "Leonardo, Sewer Samurai": [
+    "card_advantage"
+  ],
+  "Leonardo's Technique": [
+    "card_advantage"
+  ],
+  "Mind Transfer Protocol": [
+    "card_advantage"
+  ],
+  "Ninja Teen": [
+    "card_advantage"
+  ],
+  "Omni-Cheese Pizza": [
+    "card_advantage",
+    "lifegain"
+  ],
+  "Paramecia Coloniex": [
+    "card_advantage"
+  ],
+  "Ragamuffin Raptor": [
+    "card_advantage"
+  ],
+  "Rat King, Verminister": [
+    "card_advantage"
+  ],
+  "Rocksteady, Crash Courser": [
+    "card_advantage",
+    "evasion"
+  ],
+  "Shark Shredder, Killer Clone": [
+    "card_advantage"
+  ],
+  "Splinter's Technique": [
+    "card_advantage"
+  ],
+  "Stockman, Mad Fly-entist": [
+    "card_advantage",
+    "evasion"
+  ],
+  "The Cloning of Shredder": [
+    "card_advantage"
+  ],
+  "Tunnel Rats": [
+    "card_advantage"
+  ],
+  "Turtles Forever": [
+    "card_advantage"
+  ],
+  "Zog, Triceraton Castaway": [
+    "card_advantage",
+    "evasion"
+  ],
+  "April O'Neil, Kunoichi Trainee": [
+    "evasion"
+  ],
+  "Buzz Bots": [
+    "evasion"
+  ],
+  "Donatello, Way with Machines": [
+    "evasion"
+  ],
+  "Don & Raph, Hard Science": [
+    "evasion"
+  ],
+  "Dream Beavers": [
+    "evasion",
+    "lifegain"
+  ],
+  "East Wind Avatar": [
+    "evasion"
+  ],
+  "Featherbrained Filcher": [
+    "evasion",
+    "lifegain"
+  ],
+  "Genghis Frog": [
+    "evasion"
+  ],
+  "High-Flying Ace": [
+    "evasion",
+    "mana_sink"
+  ],
+  "Insectoid Exterminator": [
+    "evasion"
+  ],
+  "Krang, Utrom Warlord": [
+    "evasion"
+  ],
+  "Lord Dregg, Insect Invader": [
+    "evasion"
+  ],
+  "Mutagen Man, Living Ooze": [
+    "evasion"
+  ],
+  "Mutant Town Musicians": [
+    "evasion"
+  ],
+  "North Wind Avatar": [
+    "evasion"
+  ],
+  "Prehistoric Pet": [
+    "evasion",
+    "mana_sink"
+  ],
+  "Primordial Pachyderm": [
+    "evasion",
+    "lifegain"
+  ],
+  "Raphael, Most Attitude": [
+    "evasion"
+  ],
+  "Raph & Mikey, Troublemakers": [
+    "evasion"
+  ],
+  "Ray Fillet, Man Ray": [
+    "evasion"
+  ],
+  "Savanti Romero, Time's Exile": [
+    "evasion"
+  ],
+  "Splinter, Hamato Yoshi": [
+    "evasion"
+  ],
+  "Super Shredder": [
+    "evasion"
+  ],
+  "Technodrome": [
+    "evasion"
+  ],
+  "The Neutrinos": [
+    "evasion",
+    "protection"
+  ],
+  "Triceraton Commander": [
+    "evasion"
+  ],
+  "Turtle Blimp": [
+    "evasion"
+  ],
+  "West Wind Avatar": [
+    "evasion",
+    "lifegain"
+  ],
+  "Wingnut, Bat on the Belfry": [
+    "evasion"
+  ],
+  "Guac & Marshmallow Pizza": [
+    "combat_trick",
+    "lifegain"
+  ],
+  "Hamato Guardian Stance": [
+    "combat_trick"
+  ],
+  "Mouser Attack!": [
+    "combat_trick"
+  ],
+  "Pain 101": [
+    "combat_trick"
+  ],
+  "Saved by the Shell": [
+    "combat_trick"
+  ],
+  "Turtle Power!": [
+    "combat_trick"
+  ],
+  "Chrome Dome": [
+    "mana_sink"
+  ],
+  "Improvised Arsenal": [
+    "mana_sink"
+  ],
+  "Old Hob, Alleycat Blues": [
+    "mana_sink"
+  ],
+  "Splinter, Radical Rat": [
+    "mana_sink"
+  ],
+  "Turtle Lair": [
+    "mana_sink"
+  ],
+  "Dimension X": [
+    "lifegain"
+  ],
+  "Foot Headquarters": [
+    "lifegain"
+  ],
+  "Foot Mystic": [
+    "lifegain"
+  ],
+  "Foot Ninjas": [
+    "lifegain"
+  ],
+  "Ice Cream Kitty": [
+    "lifegain"
+  ],
+  "Illegitimate Business": [
+    "lifegain"
+  ],
+  "Leader's Talent": [
+    "lifegain"
+  ],
+  "Leonardo, Cutting Edge": [
+    "lifegain"
+  ],
+  "Lita, Little Orphan Amphibian": [
+    "lifegain"
+  ],
+  "Mutant Town": [
+    "lifegain"
+  ],
+  "Party Dude": [
+    "lifegain"
+  ],
+  "Pizza Face, Gastromancer": [
+    "lifegain"
+  ],
+  "Quintessential Katana": [
+    "lifegain"
+  ],
+  "South Wind Avatar": [
+    "lifegain"
+  ],
+  "TCRI Building": [
+    "lifegain"
+  ],
+  "Don & Leo, Problem Solvers": [
+    "protection"
+  ],
+  "The Ooze": [
+    "hate"
+  ]
+}

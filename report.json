@@ -1,0 +1,77 @@
+{
+  "pipeline_run": {
+    "started_at": "2026-10-03T14:35:28.040657+00:00",
+    "completed_at": "2026-10-03T14:35:28.040978+00:00",
+    "duration_sec": 0.0,
+    "status": "SUCCESS"
+  },
+  "api_stats": {
+    "total_requests": 0,
+    "failed_requests": 0,
+    "cached_requests": 0
+  },
+  "intent": {
+    "scheduled_events": {},
+    "archetypes_targeted": [
+      "All Decks",
+      "W",
+      "U",
+      "B",
+      "R",
+      "G",
+      "WU",
+      "UB",
+      "BR",
+      "RG",
+      "WG",
+      "WB",
+      "UR",
+      "BG",
+      "WR",
+      "UG",
+      "WUB",
+      "UBR",
+      "BRG",
+      "WRG",
+      "WUG",
+      "WBR",
+      "URG",
+      "WBG",
+      "WUR",
+      "UBG",
+      "WUBR",
+      "UBRG",
+      "WBRG",
+      "WURG",
+      "WUBG",
+      "WUBRG"
+    ],
+    "user_types_targeted": [
+      "All",
+      "Top"
+    ]
+  },
+  "execution_summary": {
+    "formats_updated": 0,
+    "formats_skipped": 0,
+    "total_output_kb": 0,
+    "total_cards_rated": 0,
+    "total_errors": 0,
+    "total_warnings": 1
+  },
+  "warehouse_state": {
+    "total_available_datasets": 0,
+    "available_keys": []
+  },
+  "datasets_updated": [],
+  "datasets_skipped": [],
+  "errors": [],
+  "warnings": [
+    {
+      "time": "2026-10-03T14:35:28.040939+00:00",
+      "level": "WARNING",
+      "logger": "__main__",
+      "message": "No active events found in the calendar for today. Exiting."
+    }
+  ]
+}
