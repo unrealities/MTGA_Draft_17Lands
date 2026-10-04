@@ -588,6 +588,137 @@
             ],
             "start_date": "2026-09-19",
             "end_date": "2026-09-20"
+        },
+        {
+            "set_code": "FRA",
+            "formats": [
+                "PremierDraft",
+                "TradDraft",
+                "PickTwoDraft"
+            ],
+            "start_date": "2026-09-29",
+            "end_date": "2026-11-09"
+        },
+        {
+            "set_code": "FRA",
+            "formats": [
+                "Sealed"
+            ],
+            "start_date": "2026-09-29",
+            "end_date": "2026-10-27"
+        },
+        {
+            "set_code": "FRA",
+            "formats": [
+                "TradSealed"
+            ],
+            "start_date": "2026-09-29",
+            "end_date": "2026-10-13"
+        },
+        {
+            "set_code": "WOE",
+            "formats": [
+                "QuickDraft"
+            ],
+            "start_date": "2026-09-29",
+            "end_date": "2026-10-07"
+        },
+        {
+            "set_code": "FRA",
+            "formats": [
+                "QuickDraft"
+            ],
+            "start_date": "2026-10-08",
+            "end_date": "2026-10-18"
+        },
+        {
+            "set_code": "DFT",
+            "formats": [
+                "QuickDraft"
+            ],
+            "start_date": "2026-10-19",
+            "end_date": "2026-10-26"
+        },
+        {
+            "set_code": "FRA",
+            "formats": [
+                "QuickDraft"
+            ],
+            "start_date": "2026-10-27",
+            "end_date": "2026-11-06"
+        },
+        {
+            "set_code": "Y26FRA",
+            "formats": [
+                "PremierDraft"
+            ],
+            "start_date": "2026-10-13",
+            "end_date": "2026-11-03"
+        },
+        {
+            "set_code": "VOW",
+            "formats": [
+                "PremierDraft"
+            ],
+            "start_date": "2026-10-20",
+            "end_date": "2026-10-26"
+        },
+        {
+            "set_code": "MID",
+            "formats": [
+                "PremierDraft"
+            ],
+            "start_date": "2026-10-27",
+            "end_date": "2026-11-02"
+        },
+        {
+            "set_code": "PIO",
+            "formats": [
+                "PremierDraft"
+            ],
+            "start_date": "2026-11-03",
+            "end_date": "2026-11-10"
+        },
+        {
+            "set_code": "Cube - Powered",
+            "formats": [
+                "PremierDraft",
+                "TradDraft"
+            ],
+            "start_date": "2026-10-20",
+            "end_date": "2026-11-09"
+        },
+        {
+            "set_code": "FRA",
+            "formats": [
+                "ContenderDraft"
+            ],
+            "start_date": "2026-10-13",
+            "end_date": "2026-11-09"
+        },
+        {
+            "set_code": "FRA",
+            "formats": [
+                "ArenaDirect"
+            ],
+            "start_date": "2026-10-02",
+            "end_date": "2026-10-11"
+        },
+        {
+            "set_code": "FRA",
+            "formats": [
+                "LimitedOpen"
+            ],
+            "start_date": "2026-10-16",
+            "end_date": "2026-10-18"
+        },
+        {
+            "set_code": "FRA",
+            "formats": [
+                "QualifierPlayIn"
+            ],
+            "start_date": "2026-10-25",
+            "end_date": "2026-10-25"
         }
     ]
 }
