@@ -30,7 +30,7 @@ from src.card_logic import (
 )
 from src.ui.styles import Theme
 from src.ui.components import DynamicTreeviewManager, CardToolTip, AutoScrollbar
-from src.utils import bind_scroll
+from src.utils import bind_scroll, normalize_color_string
 
 
 class CustomDeckPanel(ttk.Frame):
@@ -480,7 +480,9 @@ class CustomDeckPanel(ttk.Frame):
             spells = [c for c in base_deck if "Land" not in c.get("types", [])]
             deck_colors = get_strict_colors(spells)
             archetype_key = (
-                "".join(sorted(deck_colors[:2])) if deck_colors else "All Decks"
+                normalize_color_string("".join(deck_colors[:2]))
+                if deck_colors
+                else "All Decks"
             )
 
             final_deck, final_sb, final_stats, opt_note = optimize_deck(
@@ -512,13 +514,16 @@ class CustomDeckPanel(ttk.Frame):
             else:
                 raise Exception("Failed to optimize.")
         except Exception as e:
+            # Bind the message now: `e` is unbound once the except block exits,
+            # before Tk runs the callback.
+            err_msg = str(e)
 
             def show_err():
-                self._show_sim_error(str(e))
+                self._show_sim_error(err_msg)
                 import tkinter.messagebox
 
                 tkinter.messagebox.showwarning(
-                    "Optimization Failed", str(e), parent=self
+                    "Optimization Failed", err_msg, parent=self
                 )
 
             self.after(0, show_err)

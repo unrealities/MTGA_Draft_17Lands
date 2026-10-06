@@ -22,7 +22,7 @@ from src import constants
 from src.card_logic import copy_deck, get_strict_colors, is_castable, get_functional_cmc
 from src.ui.styles import Theme
 from src.ui.components import DynamicTreeviewManager, CardToolTip, AutoScrollbar
-from src.utils import bind_scroll
+from src.utils import bind_scroll, normalize_color_string
 
 
 class SuggestDeckPanel(ttk.Frame):
@@ -944,7 +944,9 @@ class SuggestDeckPanel(ttk.Frame):
                 )
                 self.after(0, lambda: self._finalize_build(raw_results))
             except Exception as e:
-                self.after(0, lambda: self._handle_builder_error(str(e)))
+                # Bind the message now: `e` is unbound once the except block
+                # exits, before Tk runs the callback.
+                self.after(0, lambda msg=str(e): self._handle_builder_error(msg))
 
         self.sim_executor.submit(_worker)
 
@@ -1254,7 +1256,7 @@ class SuggestDeckPanel(ttk.Frame):
 
         deck_colors = data.get("colors", [])
         self.current_archetype_key = (
-            "".join(sorted(deck_colors)) if deck_colors else "All Decks"
+            normalize_color_string("".join(deck_colors)) if deck_colors else "All Decks"
         )
         if not self.current_archetype_key:
             self.current_archetype_key = "All Decks"

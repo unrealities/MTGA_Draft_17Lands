@@ -35,6 +35,28 @@ class TestCustomDeckPanel:
         ]
         assert any("Deck must have 40 cards to analyze" in text for text in labels)
 
+    @pytest.mark.parametrize(
+        "strict_colors,expected_key",
+        [(["U", "W"], "WU"), (["G", "U"], "UG"), (["R", "W", "B"], "WR")],
+    )
+    def test_auto_optimize_passes_wubrg_archetype_key(
+        self, root, strict_colors, expected_key
+    ):
+        """The optimizer looks up deck_colors[archetype_key]; the key must be
+        WUBRG-ordered like the dataset, not alphabetical (issue #203)."""
+        panel = CustomDeckPanel(root, MagicMock(), Configuration(), MagicMock())
+        panel.deck_list = [{"name": "Spell", "count": 40, "types": ["Creature"]}]
+        panel.sb_list = []
+
+        with patch(
+            "src.card_logic.get_strict_colors", return_value=strict_colors
+        ), patch(
+            "src.card_logic.optimize_deck", return_value=(None, None, None, "")
+        ) as mock_opt:
+            panel._run_auto_optimize_task()
+
+        assert mock_opt.call_args[0][2] == expected_key
+
     def test_auto_lands_empty_spells(self, root):
         """Verify Auto-lands does not divide by zero if deck has 0 spells."""
         app_context = MagicMock()

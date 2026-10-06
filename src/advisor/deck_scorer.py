@@ -4,8 +4,9 @@ Evaluates pool strength, calculates holistic power scores, and identifies top la
 """
 
 from src import constants
-from src.card_logic import get_functional_cmc
+from src.card_utils import get_functional_cmc
 from src.advisor.mana_base import ManaSourceAnalyzer
+from src.utils import normalize_color_string
 from src.sealed_logic import HeuristicEvaluator
 
 TIER_TO_GIHWR = {
@@ -39,8 +40,9 @@ def get_card_rating(card, colors, metrics=None, tier_data=None):
     stats = card.get("deck_colors", {})
     global_wr = float(stats.get("All Decks", {}).get("gihwr") or 0.0)
 
-    arch_key = (
-        "".join(sorted(colors)) if len(colors) <= 2 else "".join(sorted(colors[:2]))
+    # Dataset deck_colors keys are WUBRG-ordered ("UB", not "BU").
+    arch_key = normalize_color_string(
+        "".join(colors) if len(colors) <= 2 else "".join(colors[:2])
     )
     arch_wr = float(stats.get(arch_key, {}).get("gihwr") or 0.0)
 
@@ -117,8 +119,9 @@ def calculate_holistic_score(deck, colors, pool_size, metrics, tier_data=None):
     if spell_count == 0:
         return 0.0, ""
 
-    arch_key = (
-        "".join(sorted(colors)) if len(colors) <= 2 else "".join(sorted(colors[:2]))
+    # Dataset deck_colors keys are WUBRG-ordered ("UB", not "BU").
+    arch_key = normalize_color_string(
+        "".join(colors) if len(colors) <= 2 else "".join(colors[:2])
     )
     valid_ratings = [
         get_card_rating(c, [arch_key], metrics)

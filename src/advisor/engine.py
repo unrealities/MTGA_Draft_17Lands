@@ -12,7 +12,9 @@ import re
 from typing import List, Dict, Any, Tuple
 from src.advisor.schema import Recommendation
 from src import constants
-from src.card_logic import count_fixing, get_functional_cmc
+from src.card_utils import get_functional_cmc
+from src.advisor.mana_base import count_fixing
+from src.utils import normalize_color_string
 
 logger = logging.getLogger(__name__)
 
@@ -46,7 +48,7 @@ class DraftAdvisor:
         # 2. Identify established lane
         self.main_colors, self.color_counts = self._identify_main_colors()
         self.main_archetype = (
-            "".join(sorted(self.main_colors[:2]))
+            normalize_color_string("".join(self.main_colors[:2]))
             if len(self.main_colors) >= 2
             else "All Decks"
         )
