@@ -8,7 +8,8 @@ import logging
 import re
 import itertools
 from src import constants
-from src.card_logic import get_functional_cmc, stack_cards
+from src.card_utils import get_functional_cmc, stack_cards
+from src.utils import normalize_color_string
 from src.advisor.mana_base import (
     is_castable,
     select_useful_lands,
@@ -568,7 +569,7 @@ def suggest_deck(
                 )
 
         for main_colors in color_options:
-            arch_key = "".join(sorted(main_colors))
+            arch_key = normalize_color_string("".join(main_colors))
             if progress_callback:
                 progress_callback({"status": f"Analyzing {arch_key} Archetypes..."})
 
@@ -607,7 +608,9 @@ def suggest_deck(
         soup_deck, soup_colors = build_variant_soup(taken_cards, metrics)
         if soup_deck:
             soup_arch_key = (
-                "".join(sorted(soup_colors[:3])) if soup_colors else "All Decks"
+                normalize_color_string("".join(soup_colors[:3]))
+                if soup_colors
+                else "All Decks"
             )
             process_variant(
                 "Good Stuff (Soup)",

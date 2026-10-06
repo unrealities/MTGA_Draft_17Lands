@@ -102,11 +102,64 @@ def test_get_card_rating_archetype_only_data_is_kept(mock_metrics):
     """A card with real archetype data but no All-Decks number must still be
     rated on its archetype data, not treated as unplayable."""
     card = make_card("Niche Payoff", colors=["U"], gihwr=0.0)
-    card["deck_colors"]["GU"] = {"gihwr": 60.0}
+    # Dataset keys are WUBRG-ordered: Simic is "UG", never "GU".
+    card["deck_colors"]["UG"] = {"gihwr": 60.0}
 
     rating = get_card_rating(card, colors=["G", "U"], metrics=mock_metrics)
 
     assert rating == pytest.approx(60.0)
+
+
+# Every two-color archetype key exactly as the dataset loader stores it
+# (normalize_color_string -> WUBRG order). Alphabetical sorting only matches
+# "BR" and "BG", which silently dropped archetype data for the other 8 pairs.
+WUBRG_PAIRS = ["WU", "WB", "WR", "WG", "UB", "UR", "UG", "BR", "BG", "RG"]
+
+
+@pytest.mark.parametrize("pair", WUBRG_PAIRS)
+@pytest.mark.parametrize("reverse", [False, True], ids=["wubrg", "reversed"])
+def test_get_card_rating_uses_wubrg_archetype_key(pair, reverse):
+    """Archetype GIH WR must be found for every color pair regardless of the
+    order the colors are passed in (issue #203)."""
+    colors = list(pair)[::-1] if reverse else list(pair)
+    card = {"deck_colors": {"All Decks": {"gihwr": 0}, pair: {"gihwr": 60.0}}}
+
+    assert get_card_rating(card, colors) == pytest.approx(60.0)
+
+
+@pytest.mark.parametrize("pair", WUBRG_PAIRS)
+def test_get_card_rating_blends_archetype_with_all_decks(pair):
+    """With both numbers present the archetype rating is blended 70/30."""
+    card = {"deck_colors": {"All Decks": {"gihwr": 50.0}, pair: {"gihwr": 60.0}}}
+
+    assert get_card_rating(card, list(pair)[::-1]) == pytest.approx(57.0)
+
+
+def test_get_card_rating_three_colors_uses_first_two_in_wubrg_order():
+    """Only the first two (primary) colors form the archetype key."""
+    card = {"deck_colors": {"All Decks": {"gihwr": 0}, "UG": {"gihwr": 61.0}}}
+
+    assert get_card_rating(card, ["G", "U", "W"]) == pytest.approx(61.0)
+
+
+def test_holistic_score_uses_wubrg_archetype_key(mock_metrics):
+    """calculate_holistic_score must read the archetype win rate for the
+    deck's pair (here Dimir: data stored under "UB", deck colors ["B", "U"])."""
+
+    def build(arch_key):
+        spell = make_card("Dimir Spell", count=23, colors=["U", "B"], gihwr=55.0)
+        spell["deck_colors"][arch_key] = {"gihwr": 65.0}
+        return [make_card("Land", count=17, types=["Land"]), spell]
+
+    with_arch, _ = calculate_holistic_score(
+        build("UB"), colors=["B", "U"], pool_size=45, metrics=mock_metrics
+    )
+    # A key that does not exist in real datasets must be ignored.
+    without_arch, _ = calculate_holistic_score(
+        build("BU"), colors=["B", "U"], pool_size=45, metrics=mock_metrics
+    )
+
+    assert with_arch > without_arch
 
 
 def test_identify_top_pairs(mock_metrics):

@@ -253,6 +253,23 @@ class TestSuggestDeckPanel:
             # We assert it was called because the user navigated to the tab
             mock_draw.assert_called_once()
 
+    @pytest.mark.parametrize(
+        "colors,expected_key",
+        [(["U", "W"], "WU"), (["B", "U"], "UB"), (["G", "R", "W"], "WRG")],
+    )
+    def test_render_deck_uses_wubrg_archetype_key(
+        self, root, mock_draft, mock_variants, colors, expected_key
+    ):
+        """current_archetype_key indexes deck_colors, whose keys are
+        WUBRG-ordered; alphabetical keys miss most pairs (issue #203)."""
+        panel = SuggestDeckPanel(root, mock_draft, Configuration())
+        variant = dict(mock_variants["BG Consistent"], colors=colors)
+        panel.suggestions = {"Test Deck": variant}
+
+        panel._render_deck("Test Deck")
+
+        assert panel.current_archetype_key == expected_key
+
     def test_render_deck_and_stats(self, root, mock_draft, mock_variants):
         from tkinter import ttk
 

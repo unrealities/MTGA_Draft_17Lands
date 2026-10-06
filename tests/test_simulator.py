@@ -5,9 +5,12 @@ Verifies bitwise mana logic, mulligan algorithms, and castability metrics.
 """
 
 import pytest
-import numpy as np
-import src.card_logic
-from src.advisor.simulator import simulate_deck, _parse_deck_to_arrays
+from src.advisor.simulator import (
+    simulate_deck,
+    _parse_deck_to_arrays,
+    parse_mana_cost,
+    MAX_PIPS,
+)
 
 # --- HELPER FACTORY ---
 
@@ -63,7 +66,7 @@ def test_parsing_bitmasks_and_flags():
             mana_cost="{1}{B}{B}",
             tags=["removal"],
         ),
-        # 6. Hybrid/Split Mana Spell (Should pick first valid -> Blue = 2)
+        # 6. Hybrid Mana Spell (each pip accepts either color -> U|R = 2|8 = 10)
         make_card(
             "Hybrid Spell", count=1, cmc=2, types=["Sorcery"], mana_cost="{U/R}{U/R}"
         ),
@@ -73,25 +76,51 @@ def test_parsing_bitmasks_and_flags():
 
     arrays = _parse_deck_to_arrays(deck)
     assert arrays is not None
-    is_land, is_ramp, is_removal, cmcs, mana_produced, primary_req = arrays
 
     # Verify Booleans
-    assert is_land[0] == True  # Mountain
-    assert is_land[3] == False  # Manalith is an artifact
-    assert is_ramp[3] == True  # Manalith is ramp
-    assert is_removal[4] == True  # Murder
+    assert arrays.is_land[0]  # Mountain
+    assert not arrays.is_land[3]  # Manalith is an artifact
+    assert arrays.is_ramp[3]  # Manalith is ramp
+    assert arrays.is_removal[4]  # Murder
 
     # Verify Mana Produced Bitmasks
-    assert mana_produced[0] == 8  # Red
-    assert mana_produced[1] == 6  # Blue (2) | Black (4)
-    assert mana_produced[2] == 31  # Any color -> 1|2|4|8|16 = 31
-    assert mana_produced[3] == 31  # Ramp any color -> 31
+    assert arrays.mana_produced[0] == 8  # Red
+    assert arrays.mana_produced[1] == 6  # Blue (2) | Black (4)
+    assert arrays.mana_produced[2] == 31  # Any color -> 1|2|4|8|16 = 31
+    assert arrays.mana_produced[3] == 31  # Ramp any color -> 31
 
-    # Verify Primary Requirement Bitmasks
-    # Murder requires Black (4)
-    assert primary_req[4] == 4
-    # Hybrid Spell picks the first valid pip from '{U/R}' which is 'U' (2)
-    assert primary_req[5] == 2
+    # Verify pip requirements: one entry per colored pip, plus generic count
+    # Murder {1}{B}{B}: two separate Black (4) pips and one generic
+    assert arrays.pip_count[4] == 2
+    assert list(arrays.pips[4, :2]) == [4, 4]
+    assert arrays.generic[4] == 1
+    assert arrays.costs[4] == 3
+    # Hybrid Spell keeps BOTH options of each '{U/R}' pip: U (2) | R (8) = 10
+    assert arrays.pip_count[5] == 2
+    assert list(arrays.pips[5, :2]) == [10, 10]
+    assert arrays.generic[5] == 0
+    # Fixed-width layout for the numba kernel
+    assert arrays.pips.shape == (40, MAX_PIPS)
+
+
+@pytest.mark.parametrize(
+    "cost,cmc,expected",
+    [
+        ("{1}{B}{B}", 3, ([4, 4], 1)),
+        ("{G/U}", 1, ([18], 0)),
+        ("{G/P}", 1, ([16], 0)),
+        ("{2/W}{2/W}", 4, ([], 4)),
+        ("{X}{R}{R}", 2, ([8, 8], 0)),
+        ("{C}{C}", 2, ([], 2)),
+        ("{10}", 10, ([], 10)),
+        ("{1}{R} // {3}{U}{U}", 7, ([8], 1)),
+        ("", 3, ([], 3)),
+        (None, 0, ([], 0)),
+    ],
+)
+def test_parse_mana_cost(cost, cmc, expected):
+    """Printed costs become a list of colored pip masks plus a generic count."""
+    assert parse_mana_cost(cost, cmc) == expected
 
 
 def test_mulligan_0_lands():
@@ -191,3 +220,143 @@ def test_removal_tracking():
 
     # If 23 of our cards are removal, the odds of seeing one by turn 4 are ~100%
     assert stats["removal_t4"] > 95.0
+
+
+# --- REGRESSION TESTS: issue #203 (castability used bitmask OR of colors) ---
+
+
+def test_single_source_cannot_pay_double_pip():
+    """One Swamp must not satisfy {B}{B}: each pip needs its own source."""
+    deck = [
+        make_card("Swamp", count=1, types=["Land"], colors=["B"]),
+        make_card("Island", count=16, types=["Land"], colors=["U"]),
+        make_card("Murder", count=23, cmc=3, types=["Instant"], mana_cost="{1}{B}{B}"),
+    ]
+
+    stats = simulate_deck(deck, iterations=1000)
+
+    assert stats["cast_t3"] == 0.0
+
+
+def test_two_sources_can_pay_double_pip():
+    """With plenty of Black sources {1}{B}{B} must be castable on turn 3."""
+    deck = [
+        make_card("Swamp", count=9, types=["Land"], colors=["B"]),
+        make_card("Island", count=8, types=["Land"], colors=["U"]),
+        make_card("Murder", count=23, cmc=3, types=["Instant"], mana_cost="{1}{B}{B}"),
+    ]
+
+    stats = simulate_deck(deck, iterations=2000)
+
+    assert stats["cast_t3"] > 30.0
+
+
+def test_dual_land_is_a_single_source():
+    """A U/B dual can pay one pip, not two: {B}{B} with only the dual making B
+    is never castable, while {U}{B} (dual for B, Island for U) is."""
+    lands = [
+        make_card("Watery Grave", count=1, types=["Land"], colors=["U", "B"]),
+        make_card("Island", count=16, types=["Land"], colors=["U"]),
+    ]
+    double_black = lands + [
+        make_card("Pip Hog", count=23, cmc=2, types=["Creature"], mana_cost="{B}{B}")
+    ]
+    gold = lands + [
+        make_card("Dimir Bear", count=23, cmc=2, types=["Creature"], mana_cost="{U}{B}")
+    ]
+
+    assert simulate_deck(double_black, iterations=1000)["cast_t2"] == 0.0
+    assert simulate_deck(gold, iterations=2000)["cast_t2"] > 0.0
+
+
+def test_hybrid_pip_accepts_either_color():
+    """{G/U} must be payable with an Island (previously only G was accepted)."""
+    deck = [
+        make_card("Island", count=17, types=["Land"], colors=["U"]),
+        make_card(
+            "Hybrid Bear", count=23, cmc=2, types=["Creature"], mana_cost="{1}{G/U}"
+        ),
+    ]
+
+    stats = simulate_deck(deck, iterations=2000)
+
+    assert stats["cast_t2"] > 50.0
+
+
+def test_uncastable_fixer_does_not_provide_mana():
+    """A mana rock only fixes if it could actually be cast. {R}{R} rocks in a
+    deck of Islands never resolve, so the red 2-drops are never castable."""
+    deck = [
+        make_card("Island", count=17, types=["Land"], colors=["U"]),
+        make_card(
+            "Red Rock",
+            count=3,
+            cmc=2,
+            types=["Artifact"],
+            mana_cost="{R}{R}",
+            text="{T}: Add one mana of any color.",
+        ),
+        make_card("Red Bear", count=20, cmc=2, types=["Creature"], mana_cost="{1}{R}"),
+    ]
+
+    stats = simulate_deck(deck, iterations=1000)
+
+    assert stats["cast_t2"] == 0.0
+
+
+def _rock_deck(rock_cost, rock_cmc, spell_cost, spell_cmc):
+    return [
+        make_card("Island", count=17, types=["Land"], colors=["U"]),
+        make_card(
+            "Mind Stone",
+            count=3,
+            cmc=rock_cmc,
+            types=["Artifact"],
+            mana_cost=rock_cost,
+            text="{T}: Add one mana of any color.",
+        ),
+        # Red spells: only castable with the rock's mana
+        make_card(
+            "Red Spell",
+            count=20,
+            cmc=spell_cmc,
+            types=["Creature"],
+            mana_cost=spell_cost,
+        ),
+    ]
+
+
+def test_expensive_ramp_does_not_fix_early_turns():
+    """A 3-mana rock can't be cast before turn 3, so it can't supply red for a
+    turn-2 play (previously ramp of any mana value counted on turn 2)."""
+    stats = simulate_deck(_rock_deck("{3}", 3, "{1}{R}", 2), iterations=1000)
+
+    assert stats["cast_t2"] == 0.0
+
+
+def test_castable_ramp_fixes_later_turns():
+    """A 2-mana rock cast on turn 2 supplies red for the turn-3 play."""
+    stats = simulate_deck(_rock_deck("{2}", 2, "{2}{R}", 3), iterations=2000)
+
+    assert stats["cast_t3"] > 20.0
+
+
+def test_castability_uses_printed_cost_not_landcycling():
+    """A {5}{U} landcycler is a 6-drop for castability, not a 2-drop."""
+    deck = [
+        make_card("Island", count=17, types=["Land"], colors=["U"]),
+        make_card(
+            "Big Cycler",
+            count=23,
+            cmc=6,
+            types=["Creature"],
+            mana_cost="{5}{U}",
+            text="Islandcycling {2}",
+        ),
+    ]
+
+    stats = simulate_deck(deck, iterations=1000)
+
+    assert stats["cast_t2"] == 0.0
+    assert stats["cast_t3"] == 0.0
+    assert stats["cast_t4"] == 0.0
