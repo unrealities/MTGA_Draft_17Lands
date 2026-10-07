@@ -5,6 +5,15 @@ on:
     # Runs at 10:00 AM UTC every day (Adjust as needed)
     - cron: "0 10 * * *"
   workflow_dispatch: # Allows manual triggering from the GitHub UI
+    inputs:
+      initialize_warehouse:
+        description: "Allow the first deployment only when gh-pages does not exist"
+        type: boolean
+        default: false
+
+concurrency:
+  group: dataset-etl
+  cancel-in-progress: false
 
 permissions:
   contents: write # Required to push to the gh-pages branch
@@ -27,11 +36,27 @@ jobs:
       - name: Install Dependencies
         run: poetry install --no-interaction --only main
 
+      - name: Check Historical Warehouse
+        id: warehouse
+        env:
+          ALLOW_INITIALIZE: ${{ github.event_name == 'workflow_dispatch' && inputs.initialize_warehouse && '1' || '0' }}
+        run: |
+          if git ls-remote --exit-code --heads origin gh-pages > "$RUNNER_TEMP/gh-pages-ref"; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            status=$?
+            if [ "$status" -ne 2 ] || [ "$ALLOW_INITIALIZE" != "1" ]; then
+              echo "Cannot restore gh-pages; refusing to replace the warehouse."
+              exit 1
+            fi
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Checkout Historical Data (gh-pages)
         # We checkout the gh-pages branch into the build directory.
         # This allows server/main.py to read the old manifest.json and preserve inactive sets!
         uses: actions/checkout@v4
-        continue-on-error: true # Will fail on the very first run if gh-pages doesn't exist yet, which is fine
+        if: steps.warehouse.outputs.exists == 'true'
         with:
           ref: gh-pages
           path: build
@@ -51,6 +76,7 @@ jobs:
       - name: Run ETL Pipeline
         env:
           ETL_OUTPUT_DIR: build # Matches your config.py
+          ETL_ALLOW_INITIALIZE: ${{ steps.warehouse.outputs.exists == 'false' && '1' || '0' }}
         run: |
           # If the gh-pages branch didn't exist yet, ensure the build dir exists
           mkdir -p build

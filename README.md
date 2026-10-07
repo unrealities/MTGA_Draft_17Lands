@@ -2,7 +2,7 @@
 
 Magic: The Gathering Arena draft tool that utilizes 17Lands data.
 
-**Version 4.23:** Sealed session isolation, clipboard import and Auto Lands fixes, more accurate mana simulation, and automatic event scheduling from MTGpile. See the [release notes](release_notes.txt) for details.
+**Version 4.23:** Sealed session isolation, clipboard import and Auto Lands fixes, more accurate mana simulation, automatic event scheduling from MTGpile, and safer dataset downloads and event selection. See the [release notes](release_notes.txt) for details.
 
 **This application will automatically support new sets as soon as the sets are released on Arena _and_ the data is available on the [17Lands card ratings](https://www.17lands.com/card_ratings) page.**
 
@@ -28,7 +28,9 @@ Magic: The Gathering Arena draft tool that utilizes 17Lands data.
 
 Because this is a free, open-source community project, the application is not signed with a paid Apple Developer Certificate ($100/year). As a result, macOS and Windows SmartScreen will flag the application as an "Unidentified Developer."
 
-To guarantee the integrity of your download, our GitHub Actions pipeline automatically generates a **SHA-256 Checksum** for every release. You can compare the hash of your downloaded file against the `.sha256` file listed on the [Releases page](https://github.com/unrealities/MTGA_Draft_17Lands/releases) to verify it has not been maliciously modified.
+Our GitHub Actions pipeline generates **SHA-256 checksums** for release assets and includes them in the release notes on the [Releases page](https://github.com/unrealities/MTGA_Draft_17Lands/releases). Compare your downloaded file's hash with its published checksum to detect a mismatch.
+
+Automatic dataset updates accept only dataset filenames confined to the Sets folder. Downloads must match the manifest's SHA-256 checksum, stay within size limits, and contain valid dataset metadata and card ratings before replacing cached data. Rejected updates keep the cached copy and show a sync message. These checks protect file integrity; the publisher is still trusted through HTTPS and GitHub Pages.
 
 **Mac Users: Bypassing the "App is Damaged" or "Malware" prompt**
 macOS actively quarantines unsigned apps downloaded from the internet. To run the app safely:
@@ -81,6 +83,7 @@ macOS actively quarantines unsigned apps downloaded from the internet. To run th
 - **Sealed Studio:** A fully interactive drag-and-drop workspace specifically tailored for Sealed deckbuilding. Features an AI Shell Generator that automatically builds the top 3 mathematically optimal deck variants for your specific pool (e.g., Best 2-Color, Greedy Splash, Aggro). Saved sessions are isolated by Arena entry, restored decks respect the current pool, and clipboard imports keep sideboard cards out of the main deck.
 - **Mana Base Tools:** Auto Lands counts every card copy when filling a 40-card deck and allocating colors. Mana simulation uses the colors a source actually produces, one land drop per turn, and a shared mana budget for deploying ramp cards.
 - **Automated Cloud Datasets:** The Cloud ETL Pipeline compiles and distributes the latest 17Lands telemetry every day, using [MTGpile's Arena schedule](https://mtgpile.com/api/v1/events/arena/all.json), compiled from Wizards of the Coast's published schedules, to select active supported sets and formats. When you open the app, it syncs the data for active Arena events in the background. View the [live dataset calendar](https://unrealities.github.io/MTGA_Draft_17Lands/calendar.html), including the source update date, or read the [ETL documentation](docs/05-server-etl-pipeline.md).
+- **Event-Matched Statistics:** Startup and live scanning select statistics for the detected set and event format. A matching dataset you previously selected is retained; otherwise All users is preferred, followed by an available group for the same event. If no dataset matches the event, prior statistics are cleared; download the missing event from Datasets or select a dataset manually.
 - **Zero-Day Card Recognition:** Alternate art cards and basic lands now instantly display their correct names on release day by dynamically querying your local MTG Arena SQLite database for unknown IDs, completely eliminating the wait for third-party API updates.
 - **Mini Mode:** Click the `Mini Mode` button to hide the main dashboard and display a compact, draggable, always-on-top window. Perfect for single-monitor setups or playing seamlessly over the Arena client.
 - **Dynamic Columns:** You can customize the columns displayed in any table (Pack, Card Pool, Compare) by **Right-Clicking the column header**. Add specific 17Lands stats or remove ones you don't need. The app remembers your layout automatically.
@@ -173,6 +176,10 @@ If the application cannot detect an active event, click `File -> Read Player.log
 
 ### Custom Installation Folders
 If MTG Arena is installed in a non-standard directory (e.g., a secondary Steam library drive), the application might fail to automatically locate the local MTGA card database, causing dataset downloads to fail. To fix this, click `File -> Locate MTGA Data Folder...` in the top menu bar and select your custom `MTGA_Data` folder.
+
+### Dataset Sync Rejections
+
+If a dataset update fails its checksum, size, or structure checks, the app keeps its cached copy. Retry the sync when the publisher has corrected the file. If the detected event has no matching dataset, use the Datasets tab to download that set and format. Debug logs contain the rejection reason.
 
 ---
 

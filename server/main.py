@@ -20,6 +20,7 @@ from server.transform import transform_payload
 from server.validate import validate_dataset, enough_history_to_enforce
 from server.load import save_dataset, save_manifest, save_report, save_calendar, deploy_web_assets
 from server.report import PipelineReport
+from src.dataset_manifest import validate_manifest
 
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
@@ -29,13 +30,15 @@ logger = logging.getLogger(__name__)
 
 def load_existing_manifest() -> dict:
     filepath = os.path.join(config.OUTPUT_DIR, "manifest.json")
-    if os.path.exists(filepath):
-        try:
-            with open(filepath, "r", encoding="utf-8") as f:
-                return json.load(f)
-        except Exception as e:
-            logger.warning(f"Could not load existing manifest, starting fresh: {e}")
-    return {"datasets": {}}
+    if not os.path.exists(filepath) and os.environ.get("ETL_ALLOW_INITIALIZE") == "1":
+        return {"datasets": {}}
+    # A lost/corrupt warehouse must stop publication, not become an empty one.
+    with open(filepath, "r", encoding="utf-8") as f:
+        manifest = validate_manifest(json.load(f))
+    for info in manifest["datasets"].values():
+        if not os.path.isfile(os.path.join(config.OUTPUT_DIR, info["filename"])):
+            raise FileNotFoundError(f"Missing historical dataset: {info['filename']}")
+    return manifest
 
 
 def run_pipeline():
@@ -46,9 +49,10 @@ def run_pipeline():
     report.attach_log_handler()
 
     try:
+        manifest = load_existing_manifest()
         calendar = fetch_event_calendar(client)
     except Exception:
-        logger.exception("Cannot determine active events from MTGpile; stopping ETL.")
+        logger.exception("Cannot restore warehouse or determine active events; stopping ETL.")
         final_report = report.finalize(client)
         save_report(final_report)
         report.log_summary(final_report)
@@ -65,7 +69,6 @@ def run_pipeline():
         report.log_summary(final_report)
         return
 
-    manifest = load_existing_manifest()
     manifest["updated_at"] = datetime.now(timezone.utc).isoformat()
     if "datasets" not in manifest:
         manifest["datasets"] = {}
@@ -259,11 +262,8 @@ def run_pipeline():
             logger.debug(traceback.format_exc())
             report.record_skipped(set_code, draft_format, f"Processing failed: {e}")
 
-    try:
-        save_manifest(manifest)
-        report.record_warehouse_state(manifest)
-    except Exception as e:
-        logger.error(f"Critical failure saving manifest: {e}")
+    save_manifest(manifest)
+    report.record_warehouse_state(manifest)
 
     logger.info("Pipeline Complete!")
     final_report = report.finalize(client)

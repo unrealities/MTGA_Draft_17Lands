@@ -66,8 +66,21 @@ Because 17Lands does not immediately have data for every color pair on Day 1 of 
 
 ## 7. Local Development
 
+### Warehouse preservation and deployment
+
+Each daily run restores the existing `gh-pages` branch before updating active datasets. A network or checkout failure stops the workflow. The ETL also rejects missing or malformed manifests, unsafe dataset filenames or checksums, and manifests referencing absent historical files. A failure saving the new manifest exits the process with an error, preventing deployment. ETL runs share a concurrency group so simultaneous runs cannot overwrite each other's warehouse snapshots.
+
+For a repository's first deployment, manually dispatch **Daily Dataset ETL Pipeline** with **initialize_warehouse** enabled. This only permits initialization after Git confirms that `gh-pages` does not exist; an existing branch must still restore successfully. Normal scheduled runs cannot initialize a replacement warehouse.
+
+### Client download checks
+
+The desktop client permits only manifest filenames of the form `{dataset_key}_Data.json.gz`, with letters, digits, spaces, underscores and hyphens in the key. Destinations must resolve inside Sets, including existing symbolic links. It streams at most 32 MiB of compressed content, verifies SHA-256 over those compressed bytes, and decompresses at most 256 MiB. JSON metadata, date ranges and every card's archetype structure are validated before the cached dataset is atomically replaced. The local manifest is also written atomically. Rejected updates leave the prior dataset and its manifest entry intact and do not block independent valid datasets.
+
+The manifest and payload are trusted through HTTPS and GitHub Pages. SHA-256 checks detect payload/manifest mismatches; they do not authenticate a compromised publisher.
+
 To run the ETL pipeline locally for testing:
 
 1. Ensure the project virtual environment has the server dependencies installed.
-2. Run the pipeline module: `.venv/Scripts/python.exe -m server.main`.
-3. The compressed datasets and manifest will be output to the local `build/` directory.
+2. Restore an existing warehouse into `build/`, or explicitly set `ETL_ALLOW_INITIALIZE=1` for a new local warehouse. On PowerShell: `$env:ETL_ALLOW_INITIALIZE = "1"`; on bash: `export ETL_ALLOW_INITIALIZE=1`. This opt-in never bypasses validation of an existing manifest.
+3. Run the pipeline module: `.venv/Scripts/python.exe -m server.main`.
+4. The compressed datasets and manifest will be output to the local `build/` directory.

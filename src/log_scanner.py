@@ -1112,12 +1112,12 @@ class ArenaScanner:
                 if file_list:
                     file_list.sort(
                         key=lambda x: (
-                            0 if x[1] in found_types else 1,
-                            datetime.strptime(x[4], "%Y-%m-%d"),
+                            x[1] in found_types,
+                            x[7],
+                            x[4],
                         ),
                         reverse=True,
                     )
-                    file_list.sort(key=lambda x: x[7], reverse=True)
             for file in file_list:
                 set_code, event_type, user_group, location = (
                     file[0],

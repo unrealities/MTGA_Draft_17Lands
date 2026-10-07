@@ -3,6 +3,12 @@ from unittest.mock import patch, MagicMock
 from server.main import run_pipeline
 
 
+@pytest.fixture(autouse=True)
+def isolated_warehouse(tmp_path, monkeypatch):
+    monkeypatch.setattr("server.config.OUTPUT_DIR", str(tmp_path))
+    monkeypatch.setenv("ETL_ALLOW_INITIALIZE", "1")
+
+
 @patch("server.main.get_scheduled_events")
 @patch("server.main.fetch_event_calendar")
 @patch("server.main.save_calendar")
