@@ -39,7 +39,7 @@ def test_get_scheduled_events(tmp_path, monkeypatch):
         def now(cls, tz=None):
             return cls(2026, 3, 15, tzinfo=timezone.utc)
 
-    monkeypatch.setattr("server.main.datetime", MockDatetime)
+    monkeypatch.setattr("server.events.datetime", MockDatetime)
 
     # 2. Create a mock calendar.json
     cal_file = tmp_path / "calendar.json"
@@ -73,7 +73,7 @@ def test_get_scheduled_events(tmp_path, monkeypatch):
         )
     )
 
-    active_sets = get_scheduled_events(str(cal_file))
+    active_sets = get_scheduled_events(json.loads(cal_file.read_text()))
 
     assert "TMNT" in active_sets
     assert "PremierDraft" in active_sets["TMNT"]["formats"]

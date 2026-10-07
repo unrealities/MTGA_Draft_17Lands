@@ -4,6 +4,8 @@ from server.main import run_pipeline
 
 
 @patch("server.main.get_scheduled_events")
+@patch("server.main.fetch_event_calendar")
+@patch("server.main.save_calendar")
 @patch("server.main.load_existing_manifest")
 @patch("server.main.extract_basic_lands")
 @patch("server.main.extract_scryfall_data")
@@ -31,6 +33,8 @@ def test_run_pipeline(
     mock_scryfall_data,
     mock_basic_lands,
     mock_load_manifest,
+    mock_save_calendar,
+    mock_fetch_calendar,
     mock_scheduled,
 ):
     mock_scheduled.return_value = {
@@ -52,11 +56,30 @@ def test_run_pipeline(
     mock_save_manifest.assert_called_once()
     mock_save_report.assert_called_once()
     mock_deploy.assert_called_once()
+    mock_save_calendar.assert_called_once_with(mock_fetch_calendar.return_value)
+    mock_scheduled.assert_called_once_with(mock_fetch_calendar.return_value)
 
 
 @patch("server.main.get_scheduled_events")
+@patch("server.main.fetch_event_calendar")
+@patch("server.main.save_calendar")
+@patch("server.main.deploy_web_assets")
 @patch("server.main.save_report")
-def test_run_pipeline_no_events(mock_save_report, mock_scheduled):
+def test_run_pipeline_no_events(mock_save_report, mock_deploy, mock_save_calendar, mock_fetch_calendar, mock_scheduled):
     mock_scheduled.return_value = {}
     run_pipeline()
     mock_save_report.assert_called_once()
+    mock_save_calendar.assert_called_once_with(mock_fetch_calendar.return_value)
+    mock_deploy.assert_called_once()
+
+
+@patch("server.main.fetch_event_calendar", side_effect=RuntimeError("Schedule unavailable"))
+@patch("server.main.save_report")
+@patch("server.main.save_calendar")
+@patch("server.main.save_dataset")
+def test_run_pipeline_stops_on_schedule_failure(mock_dataset, mock_calendar, mock_report, mock_fetch):
+    with pytest.raises(RuntimeError, match="Schedule unavailable"):
+        run_pipeline()
+    mock_dataset.assert_not_called()
+    mock_calendar.assert_not_called()
+    mock_report.assert_called_once()
