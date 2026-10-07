@@ -29,6 +29,54 @@ def test_auto_lands_counts_stacked_spell_copies():
     assert sum(c.get("count", 1) for c in main) == 40
     assert sum(c["count"] for c in main if c["name"] in constants.BASIC_LANDS) == 17
 
+def test_clipboard_round_trip_keeps_sideboard_out_of_main():
+    from types import SimpleNamespace
+    from src.card_logic import copy_deck
+    from src.sealed_logic import SealedSession
+
+    main = [{"name": "Shared", "count": 23}, {"name": "Forest", "count": 17}]
+    sideboard = [{"name": "Sideboard Only", "count": 1}]
+    session = SealedSession("clipboard")
+    session.load_pool(main + sideboard)
+    studio = SimpleNamespace(
+        session=session, clipboard_get=lambda: copy_deck(main, sideboard),
+        _refresh_data=MagicMock(), _refresh_tabs=MagicMock(),
+    )
+
+    with patch("src.ui.windows.sealed_studio.messagebox") as dialogs:
+        SealedStudioWindow._import_deck_from_clipboard(studio)
+
+    imported, remaining = session.get_active_deck_lists()
+    assert sum(c.get("count", 1) for c in imported) == 40
+    assert "Sideboard Only" not in session.variants[session.active_variant_name].main_deck_counts
+    assert remaining == sideboard
+    dialogs.showinfo.assert_called_once_with("Success", "Deck imported successfully!", parent=studio)
+    dialogs.showwarning.assert_not_called()
+    dialogs.showerror.assert_not_called()
+
+
+@pytest.mark.parametrize("heading", ["Sideboard", "Commander", "Companion"])
+def test_clipboard_import_sections_preserve_main_missing_card_reporting(heading):
+    from types import SimpleNamespace
+    from src.sealed_logic import SealedSession
+
+    session = SealedSession("clipboard_sections")
+    session.load_pool([{"name": "Shared"}, {"name": "Other"}])
+    studio = SimpleNamespace(
+        session=session,
+        clipboard_get=lambda: f"1 Shared\n1 Missing Main\n{heading}\n1 Other\n1 Missing Side\nDeck\n1 Forest",
+        _refresh_data=MagicMock(), _refresh_tabs=MagicMock(),
+    )
+    with patch("src.ui.windows.sealed_studio.messagebox") as dialogs:
+        SealedStudioWindow._import_deck_from_clipboard(studio)
+
+    assert session.variants[session.active_variant_name].main_deck_counts == {"Shared": 1, "Forest": 1}
+    assert dialogs.showwarning.call_args.args[0] == "Partial Import"
+    assert "Missing Main" in dialogs.showwarning.call_args.args[1]
+    assert "Missing Side" not in dialogs.showwarning.call_args.args[1]
+    dialogs.showerror.assert_not_called()
+
+
 class TestSealedStudio:
     @pytest.fixture
     def root(self):

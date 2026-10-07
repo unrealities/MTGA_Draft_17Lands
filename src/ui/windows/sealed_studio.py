@@ -1523,14 +1523,18 @@ class SealedStudioWindow(tb.Toplevel):
             import re
 
             deck_cards = []
+            section = "deck"
             for line in text.split("\n"):
                 line = line.strip()
-                if not line or line.lower() in (
+                if line.lower() in (
                     "deck",
                     "sideboard",
                     "commander",
                     "companion",
                 ):
+                    section = line.lower()
+                    continue
+                if not line or section != "deck":
                     continue
 
                 match = re.match(r"^(\d+)\s+([^(]+)", line)
