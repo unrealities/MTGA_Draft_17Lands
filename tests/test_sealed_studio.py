@@ -115,6 +115,31 @@ class TestSealedStudio:
             assert "Shock" not in names
             assert "Grizzly Bears" in names  # Creatures still checked
 
+    @pytest.mark.parametrize("explicit_id, draft_id, expected", [
+        (None, "", "entry_123"),
+        (None, "draft_123", "draft_123"),
+        ("practice_123", "draft_123", "practice_123"),
+        (None, "", "local_sealed"),
+    ])
+    def test_session_id_precedence(
+        self, root, mock_app_context, mock_pool, tmp_path, monkeypatch,
+        explicit_id, draft_id, expected,
+    ):
+        from src import constants
+
+        monkeypatch.setattr(constants, "TEMP_FOLDER", str(tmp_path))
+        scanner = mock_app_context.orchestrator.scanner
+        scanner.current_draft_id = draft_id
+        scanner.current_transaction_id = "" if expected == "local_sealed" else "entry_123"
+        with patch("src.ui.windows.sealed_studio.ThreadPoolExecutor"):
+            studio = SealedStudioWindow(
+                root, mock_app_context, Configuration(), mock_pool, MagicMock(),
+                draft_id=explicit_id,
+            )
+            assert studio.session.session_id == expected
+            studio.session.save_session()
+            assert (tmp_path / f"sealed_{expected}.json").exists()
+
     def test_list_mode_drag_and_drop(self, root, mock_app_context, mock_pool):
         with patch("src.ui.windows.sealed_studio.ThreadPoolExecutor"):
             studio = SealedStudioWindow(

@@ -57,6 +57,7 @@ class SealedStudioWindow(tb.Toplevel):
         draft_id = (
             draft_id
             or app_context.orchestrator.scanner.current_draft_id
+            or app_context.orchestrator.scanner.current_transaction_id
             or "local_sealed"
         )
 

@@ -8,6 +8,25 @@ from src.sealed_logic import (
 from src.constants import DATA_FIELD_NAME
 
 
+def test_load_session_clamps_restored_counts_to_pool(tmp_path, monkeypatch):
+    from src import constants
+
+    monkeypatch.setattr(constants, "TEMP_FOLDER", str(tmp_path))
+    session = SealedSession("shared_slot")
+    session.load_pool([{"name": "Shared", "count": 2}, {"name": "Gone"}])
+    session.move_to_main("Shared", 2)
+    session.move_to_main("Gone")
+    session.move_to_main("Forest", 17)
+    session.create_variant("Copy", copy_from="Build 1")
+    session.save_session()
+
+    restored = SealedSession.load_session("shared_slot", [{"name": "Shared", "count": 1}])
+
+    assert restored is not None
+    for variant in restored.variants.values():
+        assert variant.main_deck_counts == {"Shared": 1, "Forest": 17}
+
+
 def test_heuristic_evaluator():
     """Verify Day-1 card evaluation applies logic to metadata."""
 
