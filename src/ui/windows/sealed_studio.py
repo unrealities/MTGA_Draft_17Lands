@@ -1504,7 +1504,10 @@ class SealedStudioWindow(tb.Toplevel):
             return
 
         colors = get_strict_colors(spells) or ["W", "U", "B", "R", "G"]
-        needed = max(0, 40 - len(spells) - len(non_basic_lands))
+        needed = max(
+            0, 40 - sum(c.get("count", 1) for c in spells)
+            - sum(c.get("count", 1) for c in non_basic_lands)
+        )
 
         basics_to_add = calculate_dynamic_mana_base(
             spells, non_basic_lands, colors, forced_count=needed

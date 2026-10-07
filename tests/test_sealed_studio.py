@@ -7,6 +7,27 @@ from src.configuration import Configuration
 from src.ui.styles import Theme
 from src.constants import DATA_FIELD_NAME
 
+def test_auto_lands_counts_stacked_spell_copies():
+    from types import SimpleNamespace
+    from src.sealed_logic import SealedSession
+    from src import constants
+
+    pool = [
+        {"name": f"Spell {i}", "count": 2 if i < 3 else 1,
+         "types": ["Creature"], "colors": ["G"], "mana_cost": "{1}{G}", "cmc": 2}
+        for i in range(20)
+    ]
+    session = SealedSession("auto_lands")
+    session.load_pool(pool)
+    for card in pool:
+        session.move_to_main(card["name"], card["count"])
+    studio = SimpleNamespace(session=session, _refresh_data=MagicMock(), _refresh_tabs=MagicMock())
+
+    SealedStudioWindow._apply_auto_lands(studio)
+
+    main, _ = session.get_active_deck_lists()
+    assert sum(c.get("count", 1) for c in main) == 40
+    assert sum(c["count"] for c in main if c["name"] in constants.BASIC_LANDS) == 17
 
 class TestSealedStudio:
     @pytest.fixture
