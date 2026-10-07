@@ -45,6 +45,7 @@ class TestDownloadPanel:
     @pytest.fixture
     def config(self):
         config = MagicMock()
+        config.card_data.excluded_datasets = []
         config.settings.database_location = "/mock"
         config.settings.column_configs = {
             "dataset_manager": [
@@ -230,11 +231,129 @@ class TestDownloadPanel:
 
         target_file = "/fake/path/MKM_PremierDraft_All_Data.json"
 
-        with patch.object(panel, "_update_table") as mock_update:
+        with patch.object(panel, "_update_table") as mock_update, patch(
+            "src.ui.windows.download.write_configuration", return_value=True
+        ) as mock_write:
             panel._delete_dataset(target_file)
 
             mock_remove.assert_called_once_with(target_file)
             mock_update.assert_called_once()
+            assert config.card_data.excluded_datasets == ["MKM_PremierDraft_All_Data.json"]
+            mock_write.assert_called_once_with(config)
+
+    def test_delete_dataset_requires_saved_exclusion(self, root, mock_sets_data, config):
+        panel = DownloadWindow(root, mock_sets_data, config, MagicMock())
+        config.card_data.latest_dataset = "other.json"
+        with patch("tkinter.messagebox.askyesno", return_value=True), patch(
+            "src.ui.windows.download.write_configuration", return_value=False
+        ), patch("src.ui.windows.download.os.remove") as remove, patch(
+            "tkinter.messagebox.showerror"
+        ) as error:
+            panel._delete_dataset("/fake/path/HOB_PremierDraft_All_Data.json")
+        remove.assert_not_called()
+        error.assert_called_once()
+        assert config.card_data.excluded_datasets == []
+
+    def test_restore_deleted_datasets(self, root, mock_sets_data, config):
+        panel = DownloadWindow(root, mock_sets_data, config, MagicMock())
+        config.card_data.excluded_datasets = ["HOB_PremierDraft_All_Data.json"]
+        with patch("tkinter.messagebox.askyesno", return_value=True), patch(
+            "src.ui.windows.download.write_configuration", return_value=True
+        ) as write, patch("tkinter.messagebox.showinfo"):
+            panel._restore_deleted_datasets()
+        assert config.card_data.excluded_datasets == []
+        write.assert_called_once_with(config)
+
+    def test_clear_inactive_datasets_keeps_active_and_other_files(
+        self, root, mock_sets_data, config, tmp_path, monkeypatch
+    ):
+        panel = DownloadWindow(root, mock_sets_data, config, MagicMock())
+        monkeypatch.setattr("src.constants.SETS_FOLDER", str(tmp_path))
+        active = "OTJ_PremierDraft_All_Data.json"
+        unwanted = ["HOB_PremierDraft_All_Data.json", "MSH_QuickDraft_All_Data.json"]
+        config.card_data.latest_dataset = active
+        config.settings.last_run_version = "4.23"
+        config.card_data.excluded_datasets = ["older_Data.json"]
+        for name in [active, *unwanted, "local_manifest.json", "notes.txt"]:
+            (tmp_path / name).write_text("{}")
+        (tmp_path / "directory_Data.json").mkdir()
+
+        with patch("tkinter.messagebox.askyesno", return_value=True), patch(
+            "src.ui.windows.download.write_configuration", return_value=True
+        ) as write, patch("tkinter.messagebox.showinfo"), patch.object(
+            panel, "_update_table"
+        ) as update:
+            panel._clear_inactive_datasets()
+
+        assert all(not (tmp_path / name).exists() for name in unwanted)
+        assert (tmp_path / active).exists()
+        assert (tmp_path / "local_manifest.json").exists()
+        assert (tmp_path / "notes.txt").exists()
+        assert (tmp_path / "directory_Data.json").is_dir()
+        assert set(config.card_data.excluded_datasets) == {"older_Data.json", *unwanted}
+        assert config.card_data.latest_dataset == active
+        assert config.settings.last_run_version == "4.23"
+        write.assert_called_once_with(config)
+        update.assert_called_once()
+
+    @pytest.mark.parametrize("confirmed,saved", [(False, True), (True, False)])
+    def test_clear_inactive_datasets_requires_confirmation_and_saved_exclusions(
+        self, root, mock_sets_data, config, tmp_path, monkeypatch, confirmed, saved
+    ):
+        panel = DownloadWindow(root, mock_sets_data, config, MagicMock())
+        monkeypatch.setattr("src.constants.SETS_FOLDER", str(tmp_path))
+        target = tmp_path / "HOB_PremierDraft_All_Data.json"
+        target.write_text("{}")
+        with patch("tkinter.messagebox.askyesno", return_value=confirmed), patch(
+            "src.ui.windows.download.write_configuration", return_value=saved
+        ) as write, patch("tkinter.messagebox.showerror"):
+            panel._clear_inactive_datasets()
+        assert target.exists()
+        assert config.card_data.excluded_datasets == []
+        assert write.call_count == int(confirmed)
+
+    def test_clear_inactive_datasets_reports_partial_failure(
+        self, root, mock_sets_data, config, tmp_path, monkeypatch
+    ):
+        import os
+
+        panel = DownloadWindow(root, mock_sets_data, config, MagicMock())
+        monkeypatch.setattr("src.constants.SETS_FOLDER", str(tmp_path))
+        blocked = tmp_path / "HOB_PremierDraft_All_Data.json"
+        removable = tmp_path / "MSH_PremierDraft_All_Data.json"
+        blocked.write_text("{}")
+        removable.write_text("{}")
+        remove = os.remove
+
+        def remove_unlocked(path):
+            if str(path) == str(blocked):
+                raise PermissionError("File is in use")
+            remove(path)
+
+        with patch("tkinter.messagebox.askyesno", return_value=True), patch(
+            "src.ui.windows.download.write_configuration", return_value=True
+        ), patch("src.ui.windows.download.os.remove", side_effect=remove_unlocked), patch(
+            "tkinter.messagebox.showerror"
+        ) as error, patch.object(panel, "_update_table"):
+            panel._clear_inactive_datasets()
+
+        assert blocked.exists()
+        assert not removable.exists()
+        assert set(config.card_data.excluded_datasets) == {blocked.name, removable.name}
+        assert "Removed 1 dataset(s)" in error.call_args.args[1]
+
+    def test_clear_inactive_datasets_waits_for_manual_download(
+        self, root, mock_sets_data, config
+    ):
+        panel = DownloadWindow(root, mock_sets_data, config, MagicMock())
+        panel._download_thread = MagicMock()
+        panel._download_thread.is_alive.return_value = True
+        with patch("tkinter.messagebox.showwarning") as warning, patch(
+            "src.ui.windows.download.os.listdir"
+        ) as listdir:
+            panel._clear_inactive_datasets()
+        warning.assert_called_once()
+        listdir.assert_not_called()
 
     @patch("src.ui.windows.download.write_configuration")
     @patch("src.utils.clear_set_history", return_value=3)
@@ -254,12 +373,14 @@ class TestDownloadPanel:
         next launch performs a fresh refresh."""
         panel = DownloadWindow(root, mock_sets_data, config, MagicMock())
 
+        config.card_data.excluded_datasets = ["HOB_PremierDraft_All_Data.json"]
         with patch.object(panel, "_update_table"):
             panel._clear_set_history()
 
         mock_clear.assert_called_once()
         assert config.settings.last_run_version == ""
         assert config.card_data.latest_dataset == ""
+        assert config.card_data.excluded_datasets == ["HOB_PremierDraft_All_Data.json"]
         mock_write.assert_called_once()
         mock_info.assert_called_once()
 

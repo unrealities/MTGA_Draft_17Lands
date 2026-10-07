@@ -4,13 +4,14 @@ import gzip
 import os
 from unittest.mock import patch, MagicMock
 from src.dataset_updater import DatasetUpdater
+from src.configuration import Configuration, read_configuration, write_configuration
 
 
 @pytest.fixture
 def updater(tmp_path, monkeypatch):
     # Route the application's SETS_FOLDER to a temporary test directory
     monkeypatch.setattr("src.constants.SETS_FOLDER", str(tmp_path))
-    return DatasetUpdater(config=MagicMock())
+    return DatasetUpdater(config=Configuration())
 
 
 @patch("src.dataset_updater.requests.get")
@@ -98,3 +99,76 @@ def test_sync_datasets_skips_existing_hashes(mock_get, updater, tmp_path):
 
     # Assert: Network was only hit twice (Health + Manifest), meaning file download was skipped
     assert mock_get.call_count == 2
+
+
+@patch("src.dataset_updater.requests.get")
+def test_deleted_dataset_stays_excluded_after_restart(mock_get, updater, tmp_path):
+    filename = "HOB_PremierDraft_All_Data.json"
+    updater.config.card_data.excluded_datasets = [filename]
+    config_path = str(tmp_path / "config.json")
+    assert write_configuration(updater.config, config_path)
+    config, success = read_configuration(config_path)
+    assert success
+    restarted = DatasetUpdater(config)
+
+    # Exclusions survive a missing manifest (e.g. after resetting the cache),
+    # and are respected even when the server publishes a new hash.
+    mock_get.side_effect = [
+        MagicMock(status_code=200, json=lambda: {}),
+        MagicMock(
+            json=lambda: {
+                "active_sets": ["HOB", "MSH"],
+                "datasets": {
+                    "HOB_PremierDraft_All": {
+                        "hash": "new_hash",
+                        "filename": filename + ".gz",
+                    },
+                    "MSH_PremierDraft_All": {
+                        "hash": "msh_hash",
+                        "filename": "MSH_PremierDraft_All_Data.json.gz",
+                    },
+                },
+            }
+        ),
+        MagicMock(content=gzip.compress(b'{}')),
+    ]
+    restarted.sync_datasets(MagicMock())
+
+    assert not (tmp_path / filename).exists()
+    assert (tmp_path / "MSH_PremierDraft_All_Data.json").exists()
+    assert mock_get.call_count == 3
+    assert restarted.get_local_manifest()["active_sets"] == ["HOB", "MSH"]
+
+
+@patch("src.dataset_updater.requests.get")
+def test_deletion_during_download_does_not_restore_file(mock_get, updater, tmp_path):
+    filename = "HOB_PremierDraft_All_Data.json"
+
+    def download(*args, **kwargs):
+        updater.config.card_data.excluded_datasets.append(filename)
+        return MagicMock(content=gzip.compress(b'{}'))
+
+    responses = iter([
+        MagicMock(status_code=200, json=lambda: {}),
+        MagicMock(
+            json=lambda: {
+                "datasets": {
+                    "HOB_PremierDraft_All": {
+                        "hash": "new",
+                        "filename": filename + ".gz",
+                    },
+                }
+            }
+        ),
+    ])
+
+    def request(*args, **kwargs):
+        # Exclude after the initial check but before the file is saved.
+        if args[0].endswith(".gz"):
+            return download(*args, **kwargs)
+        return next(responses)
+
+    mock_get.side_effect = request
+    updater.sync_datasets(MagicMock())
+    assert not (tmp_path / filename).exists()
+    assert not (tmp_path / (filename + ".tmp")).exists()

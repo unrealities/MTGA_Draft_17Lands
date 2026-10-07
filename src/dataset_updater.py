@@ -4,7 +4,7 @@ import gzip
 import requests
 import logging
 from src import constants
-from src.configuration import write_configuration
+from src.configuration import CONFIG_LOCK
 
 logger = logging.getLogger(__name__)
 
@@ -63,6 +63,8 @@ class DatasetUpdater:
                 remote_filename = file_info.get("filename")
 
                 local_filename = remote_filename.replace(".gz", "")
+                if local_filename in self.config.card_data.excluded_datasets:
+                    continue
                 local_filepath = os.path.join(constants.SETS_FOLDER, local_filename)
 
                 local_hash = local_manifest.get("datasets", {}).get(key, {}).get("hash")
@@ -82,7 +84,12 @@ class DatasetUpdater:
                     tmp_path = local_filepath + ".tmp"
                     with open(tmp_path, "wb") as f:
                         f.write(json_data)
-                    os.replace(tmp_path, local_filepath)
+                    # A user may delete this dataset while the download is running.
+                    with CONFIG_LOCK:
+                        if local_filename in self.config.card_data.excluded_datasets:
+                            os.remove(tmp_path)
+                            continue
+                        os.replace(tmp_path, local_filepath)
 
                     if "datasets" not in local_manifest:
                         local_manifest["datasets"] = {}
