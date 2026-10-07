@@ -63,6 +63,49 @@ def test_green_dork_cannot_fix_blue_spells():
     assert simulate_deck(deck, iterations=2000)["cast_t4"] == 0.0
 
 
+def _cast_with_fixed_order(deck, seen, turn):
+    import numpy as np
+    from src.advisor.simulator import _castable_on_turn, MAX_SOURCES
+
+    arrays = _parse_deck_to_arrays(deck)
+    return _castable_on_turn(
+        np.arange(40), 0, seen, turn,
+        arrays.is_land, arrays.is_ramp, arrays.costs, arrays.mana_produced,
+        arrays.pips, arrays.pip_count, arrays.generic,
+        np.zeros(MAX_SOURCES, dtype=np.int32),
+        np.zeros(MAX_SOURCES, dtype=np.int32),
+        np.zeros(32, dtype=np.int32),
+    )
+
+
+@pytest.mark.parametrize("forests, dorks", [(2, 2), (2, 1), (3, 2), (4, 2)])
+def test_ramp_shares_previous_turn_budget_and_land_drop_cap(forests, dorks):
+    forest = make_card("Forest", types=["Land"], colors=["G"])
+    dork = make_card(
+        "Ornithopter of Paradise", types=["Artifact", "Creature"], cmc=2,
+        mana_cost="{2}", tags=["fixing_ramp"], text="{T}: Add one mana of any color.",
+    )
+    murder = make_card("Murder", cmc=3, types=["Instant"], mana_cost="{1}{B}{B}")
+    filler = make_card("Filler", cmc=6, types=["Creature"], mana_cost="{6}")
+    opening = [forest] * forests + [dork] * dorks + [murder]
+    opening += [filler] * (7 - len(opening))
+    # On the play: draw a filler on turn 2 and a Forest on turn 3.
+    deck = opening + [filler, forest] + [filler] * 31
+
+    assert _cast_with_fixed_order(deck, seen=9, turn=3) == (True, False)
+
+
+def test_land_drop_cap_keeps_all_drawn_color_choices():
+    deck = [
+        make_card("Forest", count=3, types=["Land"], colors=["G"]),
+        make_card("Island", count=2, types=["Land"], colors=["U"]),
+        make_card("Blue Spell", cmc=2, mana_cost="{U}{U}", types=["Creature"]),
+        make_card("Filler", count=34, cmc=6, mana_cost="{6}"),
+    ]
+    # Both Islands can be chosen even though Forests appear first in the hand.
+    assert _cast_with_fixed_order(deck, seen=8, turn=2) == (True, True)
+
+
 def test_simulator_invalid_deck_size():
     """Verify the simulator immediately rejects decks with fewer than 40 cards."""
     # Create a 39 card deck

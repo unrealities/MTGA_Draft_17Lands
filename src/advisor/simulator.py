@@ -197,12 +197,17 @@ def _collect_sources(
 ):
     """
     Fills src_masks with the mana sources available on `turn`, where `seen`
-    cards (from deck_indices[start]) have been drawn. Returns the count.
+    cards (from deck_indices[start]) have been drawn. Returns (mask count,
+    usable source count). All drawn land masks are retained for Hall's color
+    matching, so the player can choose the best subset to play; usable lands
+    are capped at `turn` (one land drop per turn, on the play).
 
-    Sources are every land drawn so far plus each ramp card that was already
-    in hand on the previous turn and castable then from the lands drawn by
-    that turn (ramp cost < turn). Casting the ramp is not charged against this
-    turn's mana; it was paid for on an earlier turn.
+    Ramp must be in hand on the previous turn and individually payable from
+    that turn's land colors. Ramp cards share a scalar mana budget capped at
+    `turn - 1`, spent greedily in deck order. This approximates deployment on
+    the previous turn without modeling earlier ramp chains or reserving
+    specific colors across ramp payments. Casting ramp is not charged against
+    the current turn's mana.
     """
     n = 0
     for j in range(start, start + seen):
@@ -211,8 +216,9 @@ def _collect_sources(
             src_masks[n] = mana_produced[idx]
             n += 1
 
+    usable = min(n, turn)
     if turn < 2:
-        return n
+        return n, usable
 
     prev_seen = seen - 1
     n_prev = 0
@@ -222,6 +228,7 @@ def _collect_sources(
             land_masks[n_prev] = mana_produced[idx]
             n_prev += 1
 
+    remaining = min(n_prev, turn - 1)
     has_cover = False
     for j in range(start, start + prev_seen):
         idx = deck_indices[j]
@@ -229,10 +236,12 @@ def _collect_sources(
             if not has_cover:
                 _fill_cover(land_masks, n_prev, cover)
                 has_cover = True
-            if _can_pay(idx, pips, pip_count, generic, n_prev, cover):
+            if _can_pay(idx, pips, pip_count, generic, remaining, cover):
                 src_masks[n] = mana_produced[idx]
                 n += 1
-    return n
+                usable += 1
+                remaining -= costs[idx]
+    return n, usable
 
 
 @njit(cache=True)
@@ -266,7 +275,7 @@ def _castable_on_turn(
     if not has_drop:
         return False, False
 
-    n_src = _collect_sources(
+    n_masks, n_src = _collect_sources(
         deck_indices,
         start,
         seen,
@@ -285,7 +294,7 @@ def _castable_on_turn(
     if n_src < turn:
         return True, False
 
-    _fill_cover(src_masks, n_src, cover)
+    _fill_cover(src_masks, n_masks, cover)
     for j in range(start, start + seen):
         idx = deck_indices[j]
         if not is_land[idx] and costs[idx] == turn:
