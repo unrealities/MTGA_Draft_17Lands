@@ -1,4 +1,5 @@
 import pytest
+import json
 from unittest.mock import patch, MagicMock
 from server.main import run_pipeline
 
@@ -71,9 +72,20 @@ def test_run_pipeline(
 @patch("server.main.save_calendar")
 @patch("server.main.deploy_web_assets")
 @patch("server.main.save_report")
-def test_run_pipeline_no_events(mock_save_report, mock_deploy, mock_save_calendar, mock_fetch_calendar, mock_scheduled):
+def test_run_pipeline_no_events(mock_save_report, mock_deploy, mock_save_calendar, mock_fetch_calendar, mock_scheduled, tmp_path):
     mock_scheduled.return_value = {}
+    filename = "OTJ_PremierDraft_All_Data.json.gz"
+    (tmp_path / filename).write_bytes(b"historical dataset")
+    datasets = {"OTJ_PremierDraft_All": {"filename": filename, "hash": "0" * 64}}
+    (tmp_path / "manifest.json").write_text(json.dumps({
+        "active_sets": ["OTJ"], "datasets": datasets, "updated_at": "old"
+    }))
     run_pipeline()
+    manifest = json.loads((tmp_path / "manifest.json").read_text())
+    assert manifest["active_sets"] == []
+    assert manifest["datasets"] == datasets
+    assert manifest["updated_at"] != "old"
+    assert (tmp_path / filename).read_bytes() == b"historical dataset"
     mock_save_report.assert_called_once()
     mock_save_calendar.assert_called_once_with(mock_fetch_calendar.return_value)
     mock_deploy.assert_called_once()

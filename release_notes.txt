@@ -1,4 +1,5 @@
 ===================== RELEASE NOTES 4.23 =====================
+* unrealities: [Bug] Automatic dataset sync now downloads only sets listed as live in the server manifest, rather than the entire historical warehouse. Existing historical datasets remain untouched and manual downloads remain available. Missing/invalid live-set metadata skips sync; an empty schedule now clears the published live-set list.
 * unrealities: [Reliability] Manual 17Lands downloads validate card names, image fields, and numeric statistics before caching or applying ratings. Malformed cached rows are fetched again; missing/null statistics remain supported.
 * unrealities: [Bug] Manual dataset exports now validate a temporary file before atomically replacing the saved copy. Write, serialization, validation, and replacement failures preserve the previous file. Failed saves report an error and retain the active dataset instead of reporting download success.
 * unrealities: [Security] The releases website now escapes release and asset text, removes executable HTML, and permits only HTTP(S) links in release notes.

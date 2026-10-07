@@ -156,11 +156,21 @@ class DatasetUpdater:
             resp = requests.get(constants.REMOTE_MANIFEST_URL, timeout=5)
             resp.raise_for_status()
             remote_manifest = validate_manifest(resp.json())
+            active_sets = remote_manifest.get("active_sets")
+            if not isinstance(active_sets, list) or any(
+                not isinstance(code, str) or not code.strip() for code in active_sets
+            ):
+                raise ValueError("Manifest is missing a valid active_sets list")
+            active_set_codes = set(active_sets)
             local_manifest = self.get_local_manifest()
             updates_made = False
             failures = 0
 
             for key, file_info in remote_manifest["datasets"].items():
+                # The warehouse also retains historical sets. Only the schedule's
+                # exact set identifiers are eligible for automatic downloads.
+                if key.rsplit("_", 2)[0] not in active_set_codes:
+                    continue
                 local_filename = file_info["filename"][:-3]
                 if local_filename in self.config.card_data.excluded_datasets:
                     continue

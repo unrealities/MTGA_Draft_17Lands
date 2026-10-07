@@ -62,18 +62,19 @@ def run_pipeline():
     deploy_web_assets()
     report.record_intent(active_sets, config.ARCHETYPES)
 
+    manifest["updated_at"] = datetime.now(timezone.utc).isoformat()
+    manifest["active_sets"] = list(active_sets.keys())
     if not active_sets:
+        # Clear yesterday's live sets while preserving the historical warehouse.
+        save_manifest(manifest)
         logger.warning("No active events found in the MTGpile schedule for today. Exiting.")
         final_report = report.finalize(client)
         save_report(final_report)
         report.log_summary(final_report)
         return
 
-    manifest["updated_at"] = datetime.now(timezone.utc).isoformat()
     if "datasets" not in manifest:
         manifest["datasets"] = {}
-
-    manifest["active_sets"] = list(active_sets.keys())
 
     end_date_str = datetime.now(timezone.utc).strftime("%Y-%m-%d")
     historical_dates = get_historical_start_dates(client)

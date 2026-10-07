@@ -74,6 +74,8 @@ For a repository's first deployment, manually dispatch **Daily Dataset ETL Pipel
 
 ### Client download checks
 
+The hosted `datasets` map retains historical files; it is not the automatic download list. The client requires an `active_sets` array and downloads only dataset keys whose exact set identifier (before the final format and user-group segments) appears in that array. This includes all hosted formats and user groups for each live set. Inactive local datasets and their manifest entries remain untouched. Missing or malformed active-set metadata skips sync, and an empty array downloads nothing. The publisher writes an empty `active_sets` array when no scheduled events are active while preserving the historical warehouse. Manual historical downloads remain available in Datasets.
+
 The desktop client permits only manifest filenames of the form `{dataset_key}_Data.json.gz`, with letters, digits, spaces, underscores and hyphens in the key. Destinations must resolve inside Sets, including existing symbolic links. It streams at most 32 MiB of compressed content, verifies SHA-256 over those compressed bytes, and decompresses at most 256 MiB. JSON metadata, date ranges and every card's archetype structure are validated before the cached dataset is atomically replaced. The local manifest is also written atomically. Rejected updates leave the prior dataset and its manifest entry intact and do not block independent valid datasets.
 
 The manifest and payload are trusted through HTTPS and GitHub Pages. SHA-256 checks detect payload/manifest mismatches; they do not authenticate a compromised publisher.

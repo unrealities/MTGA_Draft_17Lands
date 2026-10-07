@@ -179,6 +179,8 @@ If MTG Arena is installed in a non-standard directory (e.g., a secondary Steam l
 
 ### Dataset Sync Rejections
 
+Automatic sync downloads only sets listed as live in the server manifest's `active_sets`. Hosted historical sets remain available through manual downloads, and existing local historical datasets are retained without automatic refresh. An empty live-set list downloads nothing; missing or malformed live-set metadata skips sync instead of downloading the archive.
+
 If a dataset update fails its checksum, size, or structure checks, the app keeps its cached copy. Retry the sync when the publisher has corrected the file. If the detected event has no matching dataset, use the Datasets tab to download that set and format. Debug logs contain the rejection reason.
 
 ### Manual Dataset Download Failures

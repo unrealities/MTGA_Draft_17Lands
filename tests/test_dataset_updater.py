@@ -58,11 +58,52 @@ def test_sync_datasets_downloads_new_files(mock_get, updater, tmp_path, payload)
 
 
 @patch("src.dataset_updater.requests.get")
+def test_auto_sync_only_downloads_live_sets(mock_get, updater, tmp_path, payload):
+    compressed = gzip.compress(payload)
+    keys = ["MH_PremierDraft_All", KEY, "MH3_Sealed_Top", "OTJ_PremierDraft_All"]
+    datasets = {key: file_info(compressed, key + "_Data.json.gz") for key in keys}
+    # Even a changed historical dataset already on disk must not be refreshed.
+    historical = tmp_path / "OTJ_PremierDraft_All_Data.json"
+    historical.write_bytes(b"saved historical data")
+    old_info = {"filename": historical.name + ".gz", "hash": "0" * 64}
+    updater.save_local_manifest({"datasets": {keys[-1]: old_info}})
+    manifest = {"active_sets": ["MH3"], "datasets": datasets}
+    mock_get.side_effect = [MagicMock(status_code=200, json=lambda: {}),
+                           MagicMock(json=lambda: manifest),
+                           stream_response(compressed), stream_response(compressed)]
+    updater.sync_datasets(MagicMock())
+    assert mock_get.call_count == 4
+    assert not (tmp_path / (keys[0] + "_Data.json")).exists()
+    for key in keys[1:3]:
+        assert (tmp_path / (key + "_Data.json")).read_bytes() == payload
+    assert historical.read_bytes() == b"saved historical data"
+    assert updater.get_local_manifest()["datasets"][keys[-1]] == old_info
+
+
+@pytest.mark.parametrize("active", [None, "MH3", {}, [None], [123], [""], []])
+@patch("src.dataset_updater.requests.get")
+def test_no_live_set_metadata_never_downloads_warehouse(mock_get, active, updater, tmp_path, payload):
+    compressed = gzip.compress(payload)
+    manifest = {"datasets": {KEY: file_info(compressed)}}
+    if active is not None:
+        manifest["active_sets"] = active
+    old = {"active_sets": ["MH3"], "datasets": {}}
+    updater.save_local_manifest(old)
+    mock_sync(mock_get, manifest, compressed)
+    updater.sync_datasets(MagicMock())
+    assert mock_get.call_count == 2
+    assert not (tmp_path / FILENAME[:-3]).exists()
+    assert updater.get_local_manifest() == (
+        {"active_sets": [], "datasets": {}} if active == [] else old
+    )
+
+
+@patch("src.dataset_updater.requests.get")
 def test_sync_datasets_skips_existing_hashes(mock_get, updater, tmp_path, payload):
     info = file_info(gzip.compress(payload))
     updater.save_local_manifest({"datasets": {KEY: info}})
     (tmp_path / FILENAME[:-3]).write_bytes(payload)
-    mock_sync(mock_get, {"datasets": {KEY: info}}, b"")
+    mock_sync(mock_get, {"active_sets": ["MH3"], "datasets": {KEY: info}}, b"")
     updater.sync_datasets(MagicMock())
     assert mock_get.call_count == 2
 
@@ -98,7 +139,7 @@ def test_deletion_during_download_does_not_restore_file(mock_get, updater, tmp_p
         return iter([compressed])
     response.iter_content.side_effect = chunks
     mock_get.side_effect = [MagicMock(status_code=200, json=lambda: {}),
-                           MagicMock(json=lambda: {"datasets": {KEY: file_info(compressed)}}),
+                           MagicMock(json=lambda: {"active_sets": ["MH3"], "datasets": {KEY: file_info(compressed)}}),
                            response]
     updater.sync_datasets(MagicMock())
     assert not (tmp_path / FILENAME[:-3]).exists()
@@ -129,7 +170,7 @@ def test_invalid_checksum_metadata_rejected(mock_get, bad_hash, updater, payload
     compressed = gzip.compress(payload)
     info = file_info(compressed)
     info["hash"] = bad_hash
-    mock_sync(mock_get, {"datasets": {KEY: info}}, compressed)
+    mock_sync(mock_get, {"active_sets": ["MH3"], "datasets": {KEY: info}}, compressed)
     updater.sync_datasets(MagicMock())
     assert mock_get.call_count == 2
     assert updater.get_local_manifest() == {"datasets": {}}
@@ -196,7 +237,7 @@ def test_failed_update_preserves_cache_and_manifest(mock_get, failure, updater, 
                 raise OSError("File is locked")
             return original_replace(src, dst)
         monkeypatch.setattr("src.dataset_updater.os.replace", fail_dataset_replace)
-    mock_sync(mock_get, {"datasets": {KEY: info}}, compressed)
+    mock_sync(mock_get, {"active_sets": ["MH3"], "datasets": {KEY: info}}, compressed)
     progress = MagicMock()
     updater.sync_datasets(progress)
     assert target.read_bytes() == payload
@@ -211,7 +252,7 @@ def test_rejected_dataset_does_not_block_other_updates(mock_get, updater, tmp_pa
     other_key = "MH3_Sealed_All"
     bad_info = file_info(compressed)
     bad_info["hash"] = "1" * 64
-    manifest = {"datasets": {KEY: bad_info, other_key: file_info(compressed, other_key + "_Data.json.gz")}}
+    manifest = {"active_sets": ["MH3"], "datasets": {KEY: bad_info, other_key: file_info(compressed, other_key + "_Data.json.gz")}}
     mock_sync(mock_get, manifest, compressed)
     mock_get.side_effect = [MagicMock(status_code=200, json=lambda: {}), MagicMock(json=lambda: manifest),
                            stream_response(compressed), stream_response(compressed)]
@@ -226,7 +267,7 @@ def test_cube_filename_is_supported(mock_get, updater, tmp_path, payload):
     key = "Cube - Powered_PremierDraft_All"
     filename = key + "_Data.json.gz"
     compressed = gzip.compress(payload)
-    mock_sync(mock_get, {"datasets": {key: file_info(compressed, filename)}}, compressed)
+    mock_sync(mock_get, {"active_sets": ["Cube - Powered"], "datasets": {key: file_info(compressed, filename)}}, compressed)
     updater.sync_datasets(MagicMock())
     assert (tmp_path / filename[:-3]).read_bytes() == payload
     assert "Cube%20-%20Powered" in mock_get.call_args.args[0]
@@ -241,7 +282,7 @@ def test_existing_symlink_cannot_escape_sets(mock_get, updater, tmp_path, payloa
     except OSError:
         pytest.skip("Creating symlinks requires permission on this platform")
     compressed = gzip.compress(payload)
-    mock_sync(mock_get, {"datasets": {KEY: file_info(compressed)}}, compressed)
+    mock_sync(mock_get, {"active_sets": ["MH3"], "datasets": {KEY: file_info(compressed)}}, compressed)
     updater.sync_datasets(MagicMock())
     assert mock_get.call_count == 2
     assert outside.read_bytes() == b"untouched"
