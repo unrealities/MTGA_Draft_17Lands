@@ -401,7 +401,16 @@ def test_download_color_ratings_http_errors(mock_session, seventeenlands):
 @pytest.mark.parametrize(
     "payload",
     [None, {}, {"error": "Unavailable"}, {"data": None}, {"data": {}},
-     {"data": "invalid"}, [None], ["card"]],
+     {"data": "invalid"}, [None], ["card"],
+     [{"name": 123}], [{"name": " "}],
+     [{"name": "Card", "url": []}],
+     [{"name": "Card", "ever_drawn_win_rate": "bad"}],
+     [{"name": "Card", "ever_drawn_win_rate": float("nan")}],
+     [{"name": "Card", "avg_seen": float("inf")}],
+     [{"name": "Card", "avg_pick": True}],
+     [{"name": "Card", "ever_drawn_game_count": -1}],
+     [{"name": "Card", "drawn_game_count": 1.5}],
+     [{"name": "Good Card"}, {"name": "Bad Card", "url_back": 12}]],
 )
 def test_invalid_card_response_preserves_cache_and_ratings(
     payload, mock_session, seventeenlands, tmp_path
@@ -427,7 +436,8 @@ def test_invalid_card_response_preserves_cache_and_ratings(
 
 
 @pytest.mark.parametrize(
-    "cached", [b"{broken", b"\xff", b'{"error": "Unavailable"}', b'[null]']
+    "cached", [b"{broken", b"\xff", b'{"error": "Unavailable"}', b'[null]',
+               b'[{"name": "Card", "ever_drawn_win_rate": "bad"}]']
 )
 def test_unusable_cache_is_refetched(cached, mock_session, seventeenlands, tmp_path):
     session, response = mock_session
@@ -488,3 +498,21 @@ def test_empty_card_response_is_valid_and_not_cached(
         "OTJ", "PremierDraft", "ALL_TIME", "All"
     ) == ([], False)
     assert not list(tmp_path.iterdir())
+
+
+def test_valid_sparse_card_statistics_download(mock_session, seventeenlands):
+    _, response = mock_session
+    response.json.return_value = {"data": [{
+        "name": "Card", "url": None, "ever_drawn_win_rate": "0.6",
+        "opening_hand_win_rate": None, "ever_drawn_game_count": "100",
+        "drawn_improvement_win_rate": -0.05,
+    }]}
+    with patch("src.seventeenlands.time.sleep"):
+        cards = seventeenlands.download_set_data(
+            "OTJ", "PremierDraft", "ALL_TIME", colors=["All"]
+        )
+    stats = cards["Card"]["deck_colors"]["All Decks"]
+    assert stats["gihwr"] == 60.0
+    assert stats["ohwr"] == 0.0
+    assert stats["iwd"] == -5.0
+    assert stats["samples"] == 100

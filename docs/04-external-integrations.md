@@ -8,21 +8,56 @@ The application relies entirely on 17Lands for win-rate data.
 
 ### A. Card Ratings Endpoint
 
-- **URL:** `https://www.17lands.com/card_ratings/data`
+- **URL:** `https://www.17lands.com/api/card_data`
 - **Method:** GET
 - **Parameters:**
-  - `expansion`: Set Code (e.g., `OTJ`, `MH3`).
-  - `format`: Event Type (e.g., `PremierDraft`).
-  - `start_date`: YYYY-MM-DD
-  - `end_date`: YYYY-MM-DD
+  - `expansion`: Case-sensitive expansion identifier (e.g., `OTJ`, `Cube - Powered`).
+  - `event_type`: Event Type (e.g., `PremierDraft`).
+  - `time_period`: Preset such as `ALL_TIME` or `LATEST_EVENT`.
   - `colors`: Optional filter (e.g., `UB`).
+  - `user_group`: Optional player group; omitted for All users.
+
+`Seventeenlands._unwrap_card_payload()` accepts either a bare card list or a
+`data` list inside a response object. Before caching or applying ratings, every
+row must have a nonblank string name, string-or-null image fields (`url`,
+`url_back`), and finite values for the statistics consumed by the client.
+Booleans are rejected as statistics; game counts must be nonnegative integers
+compatible with integer conversion. Missing/null statistics remain valid and
+become zero during processing; compatible numeric strings and negative
+improvement values remain supported. A malformed row rejects the entire response
+before existing ratings or raw cache files are changed.
 
 ### B. Rate Limiting Strategy (CRITICAL)
 
 - **Cache Directory:** Store responses in `Temp/RawCache/`.
-- **Naming Convention:** `{set}_{format}_{start}_{end}_{color}_{user}.json`.
-- **Staleness Check:** Network fetches are completely bypassed if the file is < 12 Hours old.
-- **Throttling:** Sleeps **1.5 seconds** between archetype requests.
+- **Naming Convention:** `{set}_{format}_{time_period}_{color}_{user}_v2.json`, lowercased. The version marker avoids caches from the retired card-ratings route.
+- **Staleness Check:** Valid, nonempty caches younger than 12 hours bypass the network. Invalid, unreadable, empty, or stale caches trigger a fetch.
+- **Cache Writes:** Nonempty validated responses replace raw caches atomically. Cache IO failures are logged without discarding a successful download. Empty responses are valid but are not cached.
+- **Throttling:** Sleeps **1.5 seconds** after each archetype fetched from the network; cache hits do not sleep.
+
+### C. Manual Dataset Persistence
+
+`FileExtractor.export_card_data()` serializes the assembled dataset to a unique
+temporary file inside Sets, rejecting non-finite JSON numbers. It runs the
+existing `check_file_integrity()` check on that file before installing it with
+`os.replace()`. Serialization, write, validation, and replacement failures leave
+the previous destination intact and return an empty filename; temporary files
+are cleaned up, with cleanup failures logged. Successful installation invalidates
+the local dataset listing cache.
+
+The download window updates `latest_dataset`, writes configuration, and reports
+success only when export returns a filename. An empty filename produces a save
+error while retaining the active selection.
+
+The manual integrity check remains a basic structural check, including a minimum
+of ten cards; it is not the stricter cloud payload validator. It currently
+examines only the first card's structure. Raw-response validation covers all rows
+but does not replace complete validation of assembled local metadata.
+
+Regression coverage is in `tests/test_seventeenlands.py`,
+`tests/test_file_extractor_extra.py`, and `tests/test_download_panel.py`, covering
+malformed responses/caches, sparse valid statistics, failed export preservation,
+temporary-file cleanup, and activation only after a successful save.
 
 ---
 

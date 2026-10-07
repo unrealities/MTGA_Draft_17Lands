@@ -84,5 +84,6 @@ persisted as resolved cards.
 
 ## 5. Constraints & Invariants
 
-1. **Rate Limiting:** 17Lands and Scryfall API requests must be cached aggressively. Network requests use an exponential backoff to handle HTTP 429/403 responses gracefully.
+1. **Rate Limiting:** 17Lands and Scryfall API requests must be cached aggressively. The 17Lands multi-archetype downloader reuses validated raw caches for 12 hours and waits 1.5 seconds after network fetches; request failures propagate to the download UI. Retry behavior varies by integration; the manual card downloader does not implement automatic exponential backoff.
 2. **Color Normalization:** All color strings must be sorted WUBRG (`GW` -> `WG`). The keys in 17Lands JSONs vary; the app normalizes them upon dataset ingestion to ensure dictionary lookups never fail.
+3. **Manual Dataset Saves:** Validate raw card responses before caching and stage assembled datasets in Sets before atomically replacing the destination. A failed export preserves the prior file and active selection. See [External Integrations](04-external-integrations.md) for validation boundaries and regression coverage.

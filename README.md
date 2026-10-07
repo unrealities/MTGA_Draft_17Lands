@@ -181,6 +181,12 @@ If MTG Arena is installed in a non-standard directory (e.g., a secondary Steam l
 
 If a dataset update fails its checksum, size, or structure checks, the app keeps its cached copy. Retry the sync when the publisher has corrected the file. If the detected event has no matching dataset, use the Datasets tab to download that set and format. Debug logs contain the rejection reason.
 
+### Manual Dataset Download Failures
+
+Manual downloads reject malformed 17Lands card fields before caching them. Unusable raw caches are fetched again automatically; missing or null statistics remain supported. If the server response is invalid, retry later and check the debug log for the affected field.
+
+Downloaded datasets are written to a temporary file and checked before replacing an existing file. If saving fails, the app reports an error, preserves the previous dataset file, and keeps the active dataset selection. Check available disk space and write access to the Sets folder before retrying.
+
 ---
 
 ## Development & Documentation

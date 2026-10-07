@@ -625,7 +625,11 @@ class DownloadWindow(ttk.Frame):
             if suc:
                 success, msg, _ = ex.download_card_data(0)
                 if success:
-                    self.configuration.card_data.latest_dataset = ex.export_card_data()
+                    filename = ex.export_card_data()
+                    if not filename:
+                        self._safe_error("Could not save dataset. Your previous dataset was kept.")
+                        return
+                    self.configuration.card_data.latest_dataset = filename
                     write_configuration(self.configuration)
                     self._safe_finalize(msg)
                 else:

@@ -9,6 +9,7 @@ import itertools
 import glob
 import re
 import sqlite3
+import tempfile
 from typing import Dict
 from src import constants
 from src.logger import create_logger
@@ -1372,10 +1373,9 @@ class FileExtractor(UIProgress):
         return result
 
     def export_card_data(self):
-        """Build the file for the set data"""
+        """Validate a staged dataset before atomically replacing the saved copy."""
+        temp_path = None
         try:
-            import time
-
             # Stamp with the time_period preset (underscore-free so the
             # filename still splits into 5 segments) plus the fetch date, so
             # different presets downloaded the same day don't overwrite each
@@ -1397,17 +1397,17 @@ class FileExtractor(UIProgress):
             )
             location = os.path.join(constants.SETS_FOLDER, output_file)
 
-            with open(location, "w", encoding="utf-8", errors="replace") as file:
-                json.dump(self.combined_data, file)
+            fd, temp_path = tempfile.mkstemp(dir=constants.SETS_FOLDER, suffix=".tmp")
+            with os.fdopen(fd, "w", encoding="utf-8", errors="replace") as file:
+                json.dump(self.combined_data, file, allow_nan=False)
 
             # Verify that the file was written
-            write_data = check_file_integrity(location)
+            write_data = check_file_integrity(temp_path)
 
             if write_data[0] != Result.VALID:
-                if os.path.exists(location):
-                    os.remove(location)
                 output_file = ""
             else:
+                os.replace(temp_path, location)
                 from src.utils import invalidate_local_set_cache
 
                 invalidate_local_set_cache()
@@ -1415,5 +1415,11 @@ class FileExtractor(UIProgress):
         except Exception as error:
             logger.error(error)
             output_file = ""
+        finally:
+            if temp_path and os.path.exists(temp_path):
+                try:
+                    os.remove(temp_path)
+                except OSError as error:
+                    logger.warning("Could not remove staged dataset: %s", error)
 
         return output_file

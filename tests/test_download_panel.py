@@ -12,6 +12,32 @@ from src.ui.styles import Theme
 
 
 class TestDownloadPanel:
+    @pytest.mark.parametrize("filename", ["", "new-dataset.json"])
+    def test_download_only_activates_saved_dataset(self, filename):
+        panel = MagicMock()
+        panel.configuration.card_data.latest_dataset = "previous-dataset.json"
+        ctx = {"db_loc": "", "threshold": 500, "set_key": "OTJ",
+               "event": "PremierDraft", "start": "2024-01-01",
+               "end": "2024-02-01", "time_period": "ALL_TIME", "group": "All"}
+        with patch("src.ui.windows.download.FileExtractor") as factory, patch(
+            "src.ui.windows.download.write_configuration"
+        ) as save:
+            extractor = factory.return_value
+            extractor.retrieve_17lands_color_ratings.return_value = (True, "")
+            extractor.download_card_data.return_value = (True, "Downloaded", 10)
+            extractor.export_card_data.return_value = filename
+            DownloadWindow._run_download_process(panel, None, ctx)
+            if filename:
+                assert panel.configuration.card_data.latest_dataset == filename
+                save.assert_called_once_with(panel.configuration)
+                panel._safe_finalize.assert_called_once_with("Downloaded")
+                panel._safe_error.assert_not_called()
+            else:
+                assert panel.configuration.card_data.latest_dataset == "previous-dataset.json"
+                save.assert_not_called()
+                panel._safe_finalize.assert_not_called()
+                panel._safe_error.assert_called_once()
+
     @pytest.fixture
     def root(self):
         """Fixture for the root window with Theme applied."""

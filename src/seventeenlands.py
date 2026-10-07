@@ -9,6 +9,7 @@ import os
 import json
 import logging
 import tempfile
+import math
 from typing import List, Dict, Any, Optional
 from src.utils import is_cache_stale, normalize_color_string, sanitize_card_name
 from src.constants import BASE_DIR
@@ -42,6 +43,33 @@ class Seventeenlands:
             not isinstance(card, dict) for card in payload
         ):
             raise ValueError("Invalid 17Lands card data: expected a list of card objects")
+        # Validate every row before caching or mutating a caller's ratings.
+        # Missing/null statistics are legitimate for cards with few games.
+        numeric_fields = (
+            "ever_drawn_win_rate", "opening_hand_win_rate", "win_rate",
+            "never_drawn_win_rate", "drawn_win_rate", "avg_seen", "avg_pick",
+            "drawn_improvement_win_rate", "ever_drawn_game_count", "drawn_game_count",
+        )
+        for card in payload:
+            if not isinstance(card.get("name"), str) or not card["name"].strip():
+                raise ValueError("Invalid 17Lands card data: missing card name")
+            for field in ("url", "url_back"):
+                if card.get(field) is not None and not isinstance(card[field], str):
+                    raise ValueError(f"Invalid 17Lands card data: {field} must be text")
+            for field in numeric_fields:
+                value = card.get(field)
+                if value is None:
+                    continue
+                try:
+                    number = float(value)
+                    valid = not isinstance(value, bool) and math.isfinite(number)
+                    if field.endswith("game_count"):
+                        valid = valid and number >= 0 and number.is_integer()
+                        int(value)  # Must also support the consumer's integer conversion.
+                except (ValueError, TypeError, OverflowError):
+                    valid = False
+                if not valid:
+                    raise ValueError(f"Invalid 17Lands card data: invalid {field}")
         return payload
 
     def download_set_data(

@@ -1,4 +1,6 @@
 ===================== RELEASE NOTES 4.23 =====================
+* unrealities: [Reliability] Manual 17Lands downloads validate card names, image fields, and numeric statistics before caching or applying ratings. Malformed cached rows are fetched again; missing/null statistics remain supported.
+* unrealities: [Bug] Manual dataset exports now validate a temporary file before atomically replacing the saved copy. Write, serialization, validation, and replacement failures preserve the previous file. Failed saves report an error and retain the active dataset instead of reporting download success.
 * unrealities: [Security] The releases website now escapes release and asset text, removes executable HTML, and permits only HTTP(S) links in release notes.
 * unrealities: [Reliability] Missing-card metadata resolves in a separate worker so slow SQLite or Scryfall requests do not freeze the UI or log scanner. Failed lookups retry with backoff rather than becoming permanently hidden cached cards; stale results are discarded after a dataset switch.
 * unrealities: [Bug] ID-less draft resets now clear the previous pool when a new draft starts without a join event, while retaining historical replay and picks recovered before pack history.
