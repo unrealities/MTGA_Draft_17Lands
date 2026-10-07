@@ -2,6 +2,8 @@
 
 Magic: The Gathering Arena draft tool that utilizes 17Lands data.
 
+**Version 4.23:** Sealed session isolation, clipboard import and Auto Lands fixes, more accurate mana simulation, and automatic event scheduling from MTGpile. See the [release notes](release_notes.txt) for details.
+
 **This application will automatically support new sets as soon as the sets are released on Arena _and_ the data is available on the [17Lands card ratings](https://www.17lands.com/card_ratings) page.**
 
 **Supported Events:** Premier Draft, Traditional Draft, Quick Draft, Sealed, Traditional Sealed, and Cube.
@@ -76,8 +78,9 @@ macOS actively quarantines unsigned apps downloaded from the internet. To run th
 
 - **Compositional Brain (v5.5):** A custom tactical engine that calculates a 0-100 `VALUE` score for cards in your pack. It dynamically weights raw Z-Score power, color lane commitment, curve needs, and relative wheel probability to suggest optimal picks. Look for the ⭐ symbol for elite "Bomb" picks.
 - **AI Monte Carlo Auto-Optimizer:** Click the "Auto-Optimize Deck" button to unleash a background simulation engine that mathematically tests different deck permutations (16 lands vs 17 lands, swapping out clunky 5-drops for efficient 2-drops) across 10,000 simulated games to find the perfect 40-card configuration.
-- **Sealed Studio:** A fully interactive drag-and-drop workspace specifically tailored for Sealed deckbuilding. Features an AI Shell Generator that automatically builds the top 3 mathematically optimal deck variants for your specific pool (e.g., Best 2-Color, Greedy Splash, Aggro).
-- **Automated Cloud Datasets:** The application uses a custom Cloud ETL Pipeline that compiles and distributes the latest 17Lands telemetry every day. When you open the app, it instantly syncs the data for active Arena events in the background so you never have to manually scrape data again. You can view the live dataset schedule [here](https://unrealities.github.io/MTGA_Draft_17Lands/).
+- **Sealed Studio:** A fully interactive drag-and-drop workspace specifically tailored for Sealed deckbuilding. Features an AI Shell Generator that automatically builds the top 3 mathematically optimal deck variants for your specific pool (e.g., Best 2-Color, Greedy Splash, Aggro). Saved sessions are isolated by Arena entry, restored decks respect the current pool, and clipboard imports keep sideboard cards out of the main deck.
+- **Mana Base Tools:** Auto Lands counts every card copy when filling a 40-card deck and allocating colors. Mana simulation uses the colors a source actually produces, one land drop per turn, and a shared mana budget for deploying ramp cards.
+- **Automated Cloud Datasets:** The Cloud ETL Pipeline compiles and distributes the latest 17Lands telemetry every day, using [MTGpile's Arena schedule](https://mtgpile.com/api/v1/events/arena/all.json), compiled from Wizards of the Coast's published schedules, to select active supported sets and formats. When you open the app, it syncs the data for active Arena events in the background. View the [live dataset calendar](https://unrealities.github.io/MTGA_Draft_17Lands/calendar.html), including the source update date, or read the [ETL documentation](docs/05-server-etl-pipeline.md).
 - **Zero-Day Card Recognition:** Alternate art cards and basic lands now instantly display their correct names on release day by dynamically querying your local MTG Arena SQLite database for unknown IDs, completely eliminating the wait for third-party API updates.
 - **Mini Mode:** Click the `Mini Mode` button to hide the main dashboard and display a compact, draggable, always-on-top window. Perfect for single-monitor setups or playing seamlessly over the Arena client.
 - **Dynamic Columns:** You can customize the columns displayed in any table (Pack, Card Pool, Compare) by **Right-Clicking the column header**. Add specific 17Lands stats or remove ones you don't need. The app remembers your layout automatically.
