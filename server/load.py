@@ -79,14 +79,20 @@ def save_report(report_data: dict):
     logger.info(f"Run report saved → {filepath}")
 
 
-def deploy_web_assets():
-    """Copies static HTML/CSS/JS and calendar.json to the GitHub Pages build directory."""
+def save_calendar(calendar):
     ensure_output_dir()
+    filepath = os.path.join(config.OUTPUT_DIR, "calendar.json")
 
-    # Copy the calendar for frontend parsing
-    calendar_src = os.path.join(os.path.dirname(__file__), "calendar.json")
-    if os.path.exists(calendar_src):
-        shutil.copy2(calendar_src, os.path.join(config.OUTPUT_DIR, "calendar.json"))
+    def _write_json(tmp_path):
+        with open(tmp_path, "w", encoding="utf-8") as f:
+            json.dump(calendar, f, indent=2)
+
+    atomic_write(filepath, _write_json)
+
+
+def deploy_web_assets():
+    """Copies static HTML/CSS/JS beside the generated MTGpile calendar."""
+    ensure_output_dir()
 
     template_dir = os.path.join(os.path.dirname(__file__), "templates")
 

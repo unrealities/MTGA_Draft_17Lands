@@ -7,6 +7,37 @@ from src.configuration import Configuration
 from src.ui.styles import Theme
 
 
+@pytest.mark.parametrize("nonbasic_count, expected_basics", [(0, 17), (3, 14), (20, 0)])
+def test_auto_lands_counts_stacked_copies(nonbasic_count, expected_basics):
+    from types import SimpleNamespace
+
+    spells = [
+        {"name": f"Spell {i}", "count": 2 if i < 3 else 1,
+         "types": ["Creature"], "colors": ["G"], "mana_cost": "{1}{G}", "cmc": 2}
+        for i in range(20)
+    ]
+    lands = ([{"name": "Nonbasic", "types": ["Land"], "count": nonbasic_count}]
+             if nonbasic_count else [])
+    panel = SimpleNamespace(
+        deck_list=spells + lands,
+        after=lambda delay, callback: callback(),
+        _show_sim_loading=MagicMock(), _show_sim_error=MagicMock(),
+        _update_tables=MagicMock(), _render_deck_stats=MagicMock(),
+        _update_basics_toolbar=MagicMock(), _run_monte_carlo_task=MagicMock(),
+    )
+
+    def make_basics(*args, forced_count):
+        return [{"name": "Forest", "types": ["Land", "Basic"], "count": 1}
+                for _ in range(forced_count)]
+
+    with patch("src.advisor.mana_base.brute_force_mana_base", side_effect=make_basics) as optimize:
+        CustomDeckPanel._run_auto_lands_task(panel)
+
+    panel._show_sim_error.assert_not_called()
+    assert optimize.call_args.kwargs["forced_count"] == expected_basics
+    assert sum(c.get("count", 1) for c in panel.deck_list) == 40
+
+
 class TestCustomDeckPanel:
     @pytest.fixture
     def root(self):

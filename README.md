@@ -2,6 +2,8 @@
 
 Magic: The Gathering Arena draft tool that utilizes 17Lands data.
 
+**Version 4.23:** Sealed session isolation, clipboard import and Auto Lands fixes, more accurate mana simulation, automatic event scheduling from MTGpile, and safer dataset downloads and event selection. See the [release notes](release_notes.txt) for details.
+
 **This application will automatically support new sets as soon as the sets are released on Arena _and_ the data is available on the [17Lands card ratings](https://www.17lands.com/card_ratings) page.**
 
 **Supported Events:** Premier Draft, Traditional Draft, Quick Draft, Sealed, Traditional Sealed, and Cube.
@@ -26,7 +28,9 @@ Magic: The Gathering Arena draft tool that utilizes 17Lands data.
 
 Because this is a free, open-source community project, the application is not signed with a paid Apple Developer Certificate ($100/year). As a result, macOS and Windows SmartScreen will flag the application as an "Unidentified Developer."
 
-To guarantee the integrity of your download, our GitHub Actions pipeline automatically generates a **SHA-256 Checksum** for every release. You can compare the hash of your downloaded file against the `.sha256` file listed on the [Releases page](https://github.com/unrealities/MTGA_Draft_17Lands/releases) to verify it has not been maliciously modified.
+Our GitHub Actions pipeline generates **SHA-256 checksums** for release assets and includes them in the release notes on the [Releases page](https://github.com/unrealities/MTGA_Draft_17Lands/releases). Compare your downloaded file's hash with its published checksum to detect a mismatch.
+
+Automatic dataset updates accept only dataset filenames confined to the Sets folder. Downloads must match the manifest's SHA-256 checksum, stay within size limits, and contain valid dataset metadata and card ratings before replacing cached data. Rejected updates keep the cached copy and show a sync message. These checks protect file integrity; the publisher is still trusted through HTTPS and GitHub Pages.
 
 **Mac Users: Bypassing the "App is Damaged" or "Malware" prompt**
 macOS actively quarantines unsigned apps downloaded from the internet. To run the app safely:
@@ -76,9 +80,11 @@ macOS actively quarantines unsigned apps downloaded from the internet. To run th
 
 - **Compositional Brain (v5.5):** A custom tactical engine that calculates a 0-100 `VALUE` score for cards in your pack. It dynamically weights raw Z-Score power, color lane commitment, curve needs, and relative wheel probability to suggest optimal picks. Look for the ⭐ symbol for elite "Bomb" picks.
 - **AI Monte Carlo Auto-Optimizer:** Click the "Auto-Optimize Deck" button to unleash a background simulation engine that mathematically tests different deck permutations (16 lands vs 17 lands, swapping out clunky 5-drops for efficient 2-drops) across 10,000 simulated games to find the perfect 40-card configuration.
-- **Sealed Studio:** A fully interactive drag-and-drop workspace specifically tailored for Sealed deckbuilding. Features an AI Shell Generator that automatically builds the top 3 mathematically optimal deck variants for your specific pool (e.g., Best 2-Color, Greedy Splash, Aggro).
-- **Automated Cloud Datasets:** The application uses a custom Cloud ETL Pipeline that compiles and distributes the latest 17Lands telemetry every day. When you open the app, it instantly syncs the data for active Arena events in the background so you never have to manually scrape data again. You can view the live dataset schedule [here](https://unrealities.github.io/MTGA_Draft_17Lands/).
-- **Zero-Day Card Recognition:** Alternate art cards and basic lands now instantly display their correct names on release day by dynamically querying your local MTG Arena SQLite database for unknown IDs, completely eliminating the wait for third-party API updates.
+- **Sealed Studio:** A fully interactive drag-and-drop workspace specifically tailored for Sealed deckbuilding. Features an AI Shell Generator that automatically builds the top 3 mathematically optimal deck variants for your specific pool (e.g., Best 2-Color, Greedy Splash, Aggro). Saved sessions are isolated by Arena entry, restored decks respect the current pool, and clipboard imports keep sideboard cards out of the main deck.
+- **Mana Base Tools:** Auto Lands counts every card copy when filling a 40-card deck and allocating colors. Mana simulation uses the colors a source actually produces, one land drop per turn, and a shared mana budget for deploying ramp cards.
+- **Automated Cloud Datasets:** The Cloud ETL Pipeline compiles and distributes the latest 17Lands telemetry every day, using [MTGpile's Arena schedule](https://mtgpile.com/api/v1/events/arena/all.json), compiled from Wizards of the Coast's published schedules, to select active supported sets and formats. When you open the app, it syncs the data for active Arena events in the background. View the [live dataset calendar](https://unrealities.github.io/MTGA_Draft_17Lands/calendar.html), including the source update date, or read the [ETL documentation](docs/05-server-etl-pipeline.md).
+- **Event-Matched Statistics:** Startup and live scanning select statistics for the detected set and event format. A matching dataset you previously selected is retained; otherwise All users is preferred, followed by an available group for the same event. If no dataset matches the event, prior statistics are cleared; download the missing event from Datasets or select a dataset manually.
+- **Zero-Day Card Recognition:** Missing card metadata is resolved from your local MTG Arena SQLite database, with Scryfall as a fallback, in a background worker. The draft window stays responsive, and failed lookups retry automatically instead of permanently hiding cards.
 - **Mini Mode:** Click the `Mini Mode` button to hide the main dashboard and display a compact, draggable, always-on-top window. Perfect for single-monitor setups or playing seamlessly over the Arena client.
 - **Dynamic Columns:** You can customize the columns displayed in any table (Pack, Card Pool, Compare) by **Right-Clicking the column header**. Add specific 17Lands stats or remove ones you don't need. The app remembers your layout automatically.
 - **Themes & Mana Flairs:** Under the `Theme` menu, you can select custom "Mana Flairs" (Forest, Island, Swamp, Mountain, Plains, Wastes) or fall back to your Native OS System theme.
@@ -96,7 +102,7 @@ The application is structured into a collapsible Live Dashboard and several func
 - **Sidebar:** Contains visual "Open Lane" Signal detection, your current Mana Curve, and your Pool Balance (Creatures/Spells/Lands). You can click on the headers of these panels to collapse them.
 
 ### Application Tabs
-- **Datasets:** Manage, download, and update 17Lands card data locally. Provides detailed download summaries, including exactly how many MTGA cards were successfully matched with 17Lands telemetry data. Choose a **Time Period** (All Time, Latest Event, Last Week, etc.) to match 17Lands, and use **Clear Set History** to delete old downloaded datasets and re-sync a clean copy if loading slows down.
+- **Datasets:** Manage, download, and update 17Lands card data locally. Provides detailed download summaries, including exactly how many MTGA cards were successfully matched with 17Lands telemetry data. Choose a **Time Period** (All Time, Latest Event, Last Week, etc.) to match 17Lands. Right-click an unwanted dataset and choose **Delete Dataset** to remove it and prevent automatic downloads from bringing it back. **Clear Inactive Datasets** removes all downloaded datasets except the active one and prevents them from returning on restart. Switch to another active dataset first if needed. **Restore Deleted Datasets** allows those datasets to sync again; manual downloads remain available. **Reset Dataset Cache** (formerly Clear Set History) deletes cached data and downloads fresh copies on restart while preserving deletion and cleanup exclusions.
 - **Card Pool:** View the cards you have drafted. Features a **"Switch to Visual View"** button to stack your cards into mana curve columns exactly like MTG Arena does.
 - **Deck Builder:** A fully interactive deck construction environment combining Auto-Generation and manual Custom building. Features a 1-click **Auto-Lands** button, a sleek basics toolbar, and live deck size validation.
 - **Comparisons:** Search and add multiple cards to directly compare their stats side-by-side.
@@ -170,6 +176,18 @@ If the application cannot detect an active event, click `File -> Read Player.log
 
 ### Custom Installation Folders
 If MTG Arena is installed in a non-standard directory (e.g., a secondary Steam library drive), the application might fail to automatically locate the local MTGA card database, causing dataset downloads to fail. To fix this, click `File -> Locate MTGA Data Folder...` in the top menu bar and select your custom `MTGA_Data` folder.
+
+### Dataset Sync Rejections
+
+Automatic sync downloads only sets listed as live in the server manifest's `active_sets`. Hosted historical sets remain available through manual downloads, and existing local historical datasets are retained without automatic refresh. An empty live-set list downloads nothing; missing or malformed live-set metadata skips sync instead of downloading the archive.
+
+If a dataset update fails its checksum, size, or structure checks, the app keeps its cached copy. Retry the sync when the publisher has corrected the file. If the detected event has no matching dataset, use the Datasets tab to download that set and format. Debug logs contain the rejection reason.
+
+### Manual Dataset Download Failures
+
+Manual downloads reject malformed 17Lands card fields before caching them. Unusable raw caches are fetched again automatically; missing or null statistics remain supported. If the server response is invalid, retry later and check the debug log for the affected field.
+
+Downloaded datasets are written to a temporary file and checked before replacing an existing file. If saving fails, the app reports an error, preserves the previous dataset file, and keeps the active dataset selection. Check available disk space and write access to the Sets folder before retrying.
 
 ---
 

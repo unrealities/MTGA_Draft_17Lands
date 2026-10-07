@@ -89,6 +89,22 @@ class TestAppController:
         mock_app.notifications.check_dataset.assert_called_once()
         mock_thread.assert_called_once()
 
+    @patch("src.ui.app_controller.AppUpdate")
+    @patch("src.ui.app_controller.threading.Thread")
+    def test_update_callback_uses_real_menu_interface(self, thread, updater, mock_app):
+        from src.ui.menu_bar import AppMenuBar
+        menu = AppMenuBar.__new__(AppMenuBar)
+        menu.root = mock_app.root
+        mock_app.menu_bar = menu
+        updater.return_value.retrieve_file_version.return_value = ("99.99", "ignored")
+        controller = AppController(mock_app)
+        controller.check_background_updates()
+        thread.call_args.kwargs["target"]()
+        callback = mock_app.root.after.call_args.args[1]
+        with patch("src.ui.menu_bar.messagebox.askyesno", return_value=False) as prompt:
+            callback()
+        prompt.assert_called_once()
+
     def test_on_dataset_update_clears_cache(self, mock_app):
         """Verify loading a new dataset invalidates the mathematical cache."""
         controller = AppController(mock_app)

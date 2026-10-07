@@ -42,6 +42,7 @@ class APIClient:
             "api.17lands.com": 0.0,
         }
         self._domain_delays = {
+            "mtgpile.com": 1.0,
             "api.scryfall.com": config.DELAY_SCRYFALL_SEC,
             "www.17lands.com": config.DELAY_17LANDS_SEC,
             "api.17lands.com": config.DELAY_17LANDS_SEC,

@@ -57,6 +57,7 @@ class SealedStudioWindow(tb.Toplevel):
         draft_id = (
             draft_id
             or app_context.orchestrator.scanner.current_draft_id
+            or app_context.orchestrator.scanner.current_transaction_id
             or "local_sealed"
         )
 
@@ -1503,7 +1504,10 @@ class SealedStudioWindow(tb.Toplevel):
             return
 
         colors = get_strict_colors(spells) or ["W", "U", "B", "R", "G"]
-        needed = max(0, 40 - len(spells) - len(non_basic_lands))
+        needed = max(
+            0, 40 - sum(c.get("count", 1) for c in spells)
+            - sum(c.get("count", 1) for c in non_basic_lands)
+        )
 
         basics_to_add = calculate_dynamic_mana_base(
             spells, non_basic_lands, colors, forced_count=needed
@@ -1519,14 +1523,18 @@ class SealedStudioWindow(tb.Toplevel):
             import re
 
             deck_cards = []
+            section = "deck"
             for line in text.split("\n"):
                 line = line.strip()
-                if not line or line.lower() in (
+                if line.lower() in (
                     "deck",
                     "sideboard",
                     "commander",
                     "companion",
                 ):
+                    section = line.lower()
+                    continue
+                if not line or section != "deck":
                     continue
 
                 match = re.match(r"^(\d+)\s+([^(]+)", line)

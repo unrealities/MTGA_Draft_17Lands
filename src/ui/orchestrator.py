@@ -4,6 +4,8 @@ import threading
 import time
 import queue
 from src.configuration import write_configuration
+from src.dataset_selection import select_event_dataset
+from src.utils import Result
 
 logger = logging.getLogger(__name__)
 
@@ -157,6 +159,12 @@ class DraftOrchestrator(threading.Thread):
                 # Acquire lock briefly, do work, release
                 self.step_process()
 
+            # Card getters queue unknown IDs; a separate worker handles slow IO
+            # without holding the scanner lock or delaying the next log scan.
+            self.scanner.set_data.start_resolution(
+                lambda: self.update_queue.put("REFRESH")
+            )
+
             # Yield to the UI thread between polls
             time.sleep(0.5)
 
@@ -232,25 +240,28 @@ class DraftOrchestrator(threading.Thread):
         self, target_set=None, target_format=None, target_user=None
     ):
         with self.scanner.lock:
-            event_set, _ = self.scanner.retrieve_current_limited_event()
-            s_code = target_set or event_set
-            if not s_code:
-                return False
-            sources = self.scanner.retrieve_data_sources()
-            for label, path in sources.items():
-                if f"[{s_code.upper()}]" in label.upper():
-                    # CACHE HIT: Skip reading the massive 25MB JSON file!
-                    if (
-                        self.config.card_data.latest_dataset == os.path.basename(path)
-                        and self.scanner.set_data._dataset is not None
-                    ):
-                        return True
-
-                    # Notify UI of heavy operation
-                    self.update_queue.put({"status": f"Loading {s_code} Dataset..."})
-
-                    self.scanner.retrieve_set_data(path)
-                    self.config.card_data.latest_dataset = os.path.basename(path)
+            path = select_event_dataset(
+                self.scanner, target_set, target_format, target_user,
+                self.config.card_data.latest_dataset,
+            )
+            if not path:
+                event_set, _ = self.scanner.retrieve_current_limited_event()
+                if target_set or event_set:
+                    self.scanner.retrieve_set_data("")
+                    self.config.card_data.latest_dataset = ""
                     write_configuration(self.config)
-                    return True
-            return False
+                    self.update_queue.put({
+                        "status": "No matching dataset. Download this event in Datasets."
+                    })
+                return False
+            if (
+                self.config.card_data.latest_dataset == os.path.basename(path)
+                and self.scanner.set_data._dataset is not None
+            ):
+                return True
+            self.update_queue.put({"status": "Loading event dataset..."})
+            if self.scanner.retrieve_set_data(path) != Result.VALID:
+                return False
+            self.config.card_data.latest_dataset = os.path.basename(path)
+            write_configuration(self.config)
+            return True

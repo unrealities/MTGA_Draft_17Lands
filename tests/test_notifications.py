@@ -101,3 +101,13 @@ def test_check_dataset_disabled_in_config(mock_start, notifications):
 
     notifications.check_dataset()
     mock_start.assert_not_called()
+
+
+@patch("threading.Thread.start")
+@patch("src.dataset_updater.DatasetUpdater")
+def test_auto_sync_disabled_blocks_notification_downloads(updater, start, notifications):
+    notifications.configuration.settings.auto_sync_datasets = False
+    notifications.check_dataset()
+    notifications.update_dataset()
+    start.assert_not_called()
+    updater.assert_not_called()

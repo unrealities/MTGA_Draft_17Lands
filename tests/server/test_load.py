@@ -3,7 +3,7 @@ import os
 import json
 import gzip
 from unittest.mock import patch
-from server.load import save_dataset, save_manifest, atomic_write
+from server.load import save_dataset, save_manifest, save_calendar, deploy_web_assets, atomic_write
 
 
 @pytest.fixture
@@ -56,3 +56,10 @@ def test_save_manifest(output_dir):
     assert filepath.exists()
     with open(filepath, "r") as f:
         assert json.load(f)["active_sets"] == ["M10"]
+
+
+def test_generated_calendar_survives_web_asset_deployment(output_dir):
+    calendar = {"as_of": "2026-10-05", "source_url": "https://mtgpile.com/", "events": []}
+    save_calendar(calendar)
+    deploy_web_assets()
+    assert json.loads((output_dir / "calendar.json").read_text()) == calendar

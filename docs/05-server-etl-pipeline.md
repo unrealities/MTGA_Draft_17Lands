@@ -8,11 +8,13 @@ These compiled datasets are then deployed to a static file host (e.g., GitHub Pa
 
 ## 2. Architecture & Execution Flow
 
-The pipeline executes daily via GitHub Actions. It is strictly calendar-driven, meaning it only spends compute resources updating sets that are currently active on MTG Arena.
+The pipeline executes daily via GitHub Actions. MTGpile's Arena event feed determines which announced Limited sets and formats are currently active.
 
 ```mermaid
 graph TD
-    A[calendar.json] -->|Determines Active Sets| B(server/main.py)
+    A[MTGpile Arena Event Feed] --> J(server/events.py)
+    J -->|Determines Active Sets| B(server/main.py)
+    J --> K[Generated build/calendar.json]
     B -->|1. Extract Metadata| C[Scryfall API]
     B -->|2. Extract Telemetry| D[17Lands API]
     C --> E{Transform & Merge}
@@ -29,6 +31,7 @@ graph TD
 | :--- | :--- |
 | `config.py` | Centralizes all configuration: API delays, retry logic, WAF cooldowns, and definition of the 26 tracked color archetypes. |
 | `utils.py` | Houses the `APIClient`. Wraps `requests` with robust exponential backoff, automated HTTP 429/403 (Cloudflare WAF) cooldowns, random anti-bot jitter, and a local `.api_cache` system. |
+| `events.py` | Fetches MTGpile's schedule, resolves set names through Scryfall and supported 17Lands codes, and selects active event windows. |
 | `extract.py` | Handles all network requests. Responsible for downloading base card definitions, Scryfall community tags (`otags`), and 17Lands archetype-specific win rates. |
 | `transform.py` | The "Data Sanitizer." Merges Scryfall IDs with 17Lands `arena_id`s, guarantees all 26 archetypes are pre-initialized (even if data is missing), and formats the payload exactly to the desktop client's expectations. |
 | `load.py` | Writes the final `.json.gz` files using **Atomic Writes** (writing to a `.tmp` file, then utilizing OS-level replacement) to prevent dataset corruption. |
@@ -39,27 +42,18 @@ graph TD
 The pipeline is designed to be highly respectful of community APIs:
 - **Scryfall Base Cards:** Cached locally for **7 Days**. (Base set data rarely changes).
 - **Scryfall Tags:** Cached locally for **7 Days**.
-- **17Lands/Scryfall GET Requests:** Cached transparently by `APIClient` for **12 Hours** using MD5 hashing of the full URL. If the pipeline crashes, rerunning it will instantly bypass previously successful network requests.
-- **Throttling:** 17Lands is rate-limited to 1 request per ~5 seconds. Scryfall is rate-limited to 1 request per 200ms.
+- **17Lands/Scryfall/MTGpile GET Requests:** Cached transparently by `APIClient` for **12 Hours** using MD5 hashing of the full URL. If the pipeline crashes, rerunning it will instantly bypass previously successful network requests.
+- **Throttling:** 17Lands is rate-limited to 1 request per ~5 seconds. Scryfall is rate-limited to 1 request per 200ms. MTGpile requests are separated by at least 1 second.
 
-## 5. Event Management (`calendar.json`)
+## 5. Event Management (MTGpile)
 
-The pipeline does not guess what to download. It reads `server/calendar.json` to determine exactly which sets and formats to update.
+The scheduling source is [MTGpile's Arena JSON feed](https://mtgpile.com/api/v1/events/arena/all.json), compiled from Wizards of the Coast's published event schedules. There is no manually maintained calendar input.
 
-**To add a new set to the pipeline:**
-Add an object to the `events` array. The pipeline will automatically fetch data for it every day between the `start_date` and `end_date`.
+`server/events.py` translates event titles to 17Lands format identifiers and resolves set names using Scryfall's set catalog. Only codes present in 17Lands' `/data/filters` catalog are scheduled. Alchemy codes are matched against that catalog rather than inferred from a year. Unknown titles, ambiguous multi-stage events, missing source links, and incomplete or reversed date windows are logged and skipped.
 
-```json
-{
-    "set_code": "MH3",
-    "formats": [
-        "PremierDraft",
-        "TradDraft"
-    ],
-    "start_date": "2024-06-11",
-    "end_date": "2025-01-01"
-}
-```
+Events run between their announced start and end dates, inclusive, using UTC. A missing, future-dated, or more than seven days old `as_of` stamp fails the run, as do unavailable catalogs or a feed with no resolvable Limited events. Fetch failures use the shared client's retry behavior and then fail the run; there is no fallback to a manual calendar.
+
+The normalized schedule is written atomically to `build/calendar.json`, including source attribution and the feed's `as_of` stamp, for the website's existing calendar view. It is refreshed even when there are no active events. New supported sets require no calendar edit; new event titles may require a mapping in `FORMAT_TITLES` once their 17Lands format is known.
 
 ## 6. Transform Constraints (The "All Decks" Fallback)
 
@@ -72,8 +66,23 @@ Because 17Lands does not immediately have data for every color pair on Day 1 of 
 
 ## 7. Local Development
 
+### Warehouse preservation and deployment
+
+Each daily run restores the existing `gh-pages` branch before updating active datasets. A network or checkout failure stops the workflow. The ETL also rejects missing or malformed manifests, unsafe dataset filenames or checksums, and manifests referencing absent historical files. A failure saving the new manifest exits the process with an error, preventing deployment. ETL runs share a concurrency group so simultaneous runs cannot overwrite each other's warehouse snapshots.
+
+For a repository's first deployment, manually dispatch **Daily Dataset ETL Pipeline** with **initialize_warehouse** enabled. This only permits initialization after Git confirms that `gh-pages` does not exist; an existing branch must still restore successfully. Normal scheduled runs cannot initialize a replacement warehouse.
+
+### Client download checks
+
+The hosted `datasets` map retains historical files; it is not the automatic download list. The client requires an `active_sets` array and downloads only dataset keys whose exact set identifier (before the final format and user-group segments) appears in that array. This includes all hosted formats and user groups for each live set. Inactive local datasets and their manifest entries remain untouched. Missing or malformed active-set metadata skips sync, and an empty array downloads nothing. The publisher writes an empty `active_sets` array when no scheduled events are active while preserving the historical warehouse. Manual historical downloads remain available in Datasets.
+
+The desktop client permits only manifest filenames of the form `{dataset_key}_Data.json.gz`, with letters, digits, spaces, underscores and hyphens in the key. Destinations must resolve inside Sets, including existing symbolic links. It streams at most 32 MiB of compressed content, verifies SHA-256 over those compressed bytes, and decompresses at most 256 MiB. JSON metadata, date ranges and every card's archetype structure are validated before the cached dataset is atomically replaced. The local manifest is also written atomically. Rejected updates leave the prior dataset and its manifest entry intact and do not block independent valid datasets.
+
+The manifest and payload are trusted through HTTPS and GitHub Pages. SHA-256 checks detect payload/manifest mismatches; they do not authenticate a compromised publisher.
+
 To run the ETL pipeline locally for testing:
 
-1. Ensure your dependencies are installed via `poetry install`.
-2. Run the pipeline module: `poetry run python -m server.main`.
-3. The compressed datasets and manifest will be output to the local `build/` directory.
+1. Ensure the project virtual environment has the server dependencies installed.
+2. Restore an existing warehouse into `build/`, or explicitly set `ETL_ALLOW_INITIALIZE=1` for a new local warehouse. On PowerShell: `$env:ETL_ALLOW_INITIALIZE = "1"`; on bash: `export ETL_ALLOW_INITIALIZE=1`. This opt-in never bypasses validation of an existing manifest.
+3. Run the pipeline module: `.venv/Scripts/python.exe -m server.main`.
+4. The compressed datasets and manifest will be output to the local `build/` directory.

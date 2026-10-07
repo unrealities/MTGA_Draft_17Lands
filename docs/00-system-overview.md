@@ -52,7 +52,15 @@ graph TD
 
 ### Phase B: The Draft Loop (Active)
 
-The application polls for file changes via a background thread every **100ms** to ensure zero UI freezing.
+The log watchdog polls for file changes every **500ms**; the UI drains its update queue every **100ms**.
+
+Card getters read cached metadata only. Missing IDs are queued for a separate
+`card-resolver` worker, which performs SQLite and Scryfall IO without holding the
+scanner lock. It resolves against a private dataset snapshot and discards results
+if the dataset is cleared or switched before completion. Successful resolution
+queues a UI refresh even if the log has not grown. Failed lookups remain pending
+with exponential retry delays of 5 seconds up to 5 minutes; failures are never
+persisted as resolved cards.
 
 1. **State: Waiting for Event**
    - Listens for: `[UnityCrossThreadLogger]==> Event_Join` or `"CardPool":[`
@@ -76,5 +84,6 @@ The application polls for file changes via a background thread every **100ms** t
 
 ## 5. Constraints & Invariants
 
-1. **Rate Limiting:** 17Lands and Scryfall API requests must be cached aggressively. Network requests use an exponential backoff to handle HTTP 429/403 responses gracefully.
+1. **Rate Limiting:** 17Lands and Scryfall API requests must be cached aggressively. The 17Lands multi-archetype downloader reuses validated raw caches for 12 hours and waits 1.5 seconds after network fetches; request failures propagate to the download UI. Retry behavior varies by integration; the manual card downloader does not implement automatic exponential backoff.
 2. **Color Normalization:** All color strings must be sorted WUBRG (`GW` -> `WG`). The keys in 17Lands JSONs vary; the app normalizes them upon dataset ingestion to ensure dictionary lookups never fail.
+3. **Manual Dataset Saves:** Validate raw card responses before caching and stage assembled datasets in Sets before atomically replacing the destination. A failed export preserves the prior file and active selection. See [External Integrations](04-external-integrations.md) for validation boundaries and regression coverage.

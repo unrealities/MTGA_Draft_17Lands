@@ -23,6 +23,56 @@ def _spell(name, color, cmc=2, tags=None, text=""):
     }
 
 
+@pytest.mark.parametrize("demand_kind", ["printed", "color_fallback", "hybrid"])
+def test_dynamic_mana_base_stacked_matches_expanded_copies(demand_kind):
+    """The same 23 spells must receive the same basics regardless of stacking."""
+    if demand_kind == "hybrid":
+        # Four copies of a hybrid spell, plus two green and five red spells.
+        # Both representations must count all four hybrid pips as green.
+        spells = (
+            [_spell(f"Green {i}", "G", cmc=3) for i in range(2)]
+            + [_spell(f"Red {i}", "R", cmc=3) for i in range(5)]
+            + [dict(_spell("Hybrid", "G", cmc=3),
+                    mana_cost="{2}{G/U}", colors=["G", "U"], count=4)]
+        )
+        colors = ["G", "U", "R"]
+    else:
+        # Eight green spells across four names and five blue spells.
+        spells = [
+            dict(_spell(f"Green {i}", "G", cmc=3), count=2)
+            for i in range(4)
+        ]
+        if demand_kind == "color_fallback":
+            for card in spells:
+                card["mana_cost"] = ""
+        spells += [_spell(f"Blue {i}", "U", cmc=3) for i in range(5)]
+        colors = ["G", "U"]
+
+    # Complete a 40-card deck with colorless spells and the 17 requested basics.
+    filler_count = 23 - sum(c.get("count", 1) for c in spells)
+    spells += [
+        {"name": f"Colorless {i}", "types": ["Artifact"], "cmc": 3,
+         "mana_cost": "{3}", "colors": []}
+        for i in range(filler_count)
+    ]
+    expanded = [
+        dict(card, count=1)
+        for card in spells
+        for _ in range(card.get("count", 1))
+    ]
+    assert len(expanded) == 23
+
+    stacked_basics = calculate_dynamic_mana_base(spells, [], colors, forced_count=17)
+    expanded_basics = calculate_dynamic_mana_base(expanded, [], colors, forced_count=17)
+    stacked_counts = Counter(c["name"] for c in stacked_basics)
+    expanded_counts = Counter(c["name"] for c in expanded_basics)
+
+    assert sum(stacked_counts.values()) == sum(expanded_counts.values()) == 17
+    assert stacked_counts == expanded_counts, (
+        f"Same deck: stacked={dict(stacked_counts)}, expanded={dict(expanded_counts)}"
+    )
+
+
 def test_treasure_spells_do_not_replace_basic_lands():
     """Regression: one-shot Treasure makers were credited as full permanent
     any-color sources, zeroing the basics for secondary colors (a real MSH

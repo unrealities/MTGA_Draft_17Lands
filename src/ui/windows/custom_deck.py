@@ -1188,19 +1188,28 @@ class CustomDeckPanel(ttk.Frame):
             if not deck_colors:
                 deck_colors = ["W", "U", "B", "R", "G"]
 
-            total_lands_needed = 40 - len(spells)
+            total_lands_needed = max(0, 40 - sum(c.get("count", 1) for c in spells))
 
             # Trim excess non-basics if needed
-            if len(non_basic_lands) > total_lands_needed:
+            if sum(c.get("count", 1) for c in non_basic_lands) > total_lands_needed:
                 non_basic_lands.sort(
                     key=lambda x: float(
                         x.get("deck_colors", {}).get("All Decks", {}).get("gihwr", 0.0)
                     ),
                     reverse=True,
                 )
-                non_basic_lands = non_basic_lands[:total_lands_needed]
+                trimmed_lands = []
+                remaining = total_lands_needed
+                for card in non_basic_lands:
+                    count = min(card.get("count", 1), remaining)
+                    if count > 0:
+                        trimmed_lands.append(dict(card, count=count))
+                        remaining -= count
+                non_basic_lands = trimmed_lands
 
-            needed_basics = max(0, total_lands_needed - len(non_basic_lands))
+            needed_basics = max(
+                0, total_lands_needed - sum(c.get("count", 1) for c in non_basic_lands)
+            )
 
             # Trigger the AI brute force
             basics_to_add = brute_force_mana_base(
@@ -1209,9 +1218,7 @@ class CustomDeckPanel(ttk.Frame):
 
             def _finalize():
                 # Wipe old basics
-                self.deck_list = [
-                    c for c in self.deck_list if c["name"] not in constants.BASIC_LANDS
-                ]
+                self.deck_list = spells + non_basic_lands
 
                 # Append the optimal ones
                 for basic in basics_to_add:

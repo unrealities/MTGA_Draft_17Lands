@@ -8,6 +8,8 @@ import time
 import os
 import json
 import logging
+import tempfile
+import math
 from typing import List, Dict, Any, Optional
 from src.utils import is_cache_stale, normalize_color_string, sanitize_card_name
 from src.constants import BASE_DIR
@@ -26,16 +28,49 @@ class Seventeenlands:
     def __init__(self):
         self.session = requests.Session()
         self.session.headers.update(self.HEADERS)
-        if not os.path.exists(self.CACHE_DIR):
-            os.makedirs(self.CACHE_DIR)
+        try:
+            os.makedirs(self.CACHE_DIR, exist_ok=True)
+        except OSError as error:
+            logger.warning("Could not create 17Lands cache directory: %s", error)
 
     @staticmethod
     def _unwrap_card_payload(payload) -> List[Dict]:
         """/api/card_data wraps the card list in {copyright, notes, data};
         older responses/caches are a bare list. Accept both."""
         if isinstance(payload, dict):
-            return payload.get("data") or []
-        return payload or []
+            payload = payload.get("data")
+        if not isinstance(payload, list) or any(
+            not isinstance(card, dict) for card in payload
+        ):
+            raise ValueError("Invalid 17Lands card data: expected a list of card objects")
+        # Validate every row before caching or mutating a caller's ratings.
+        # Missing/null statistics are legitimate for cards with few games.
+        numeric_fields = (
+            "ever_drawn_win_rate", "opening_hand_win_rate", "win_rate",
+            "never_drawn_win_rate", "drawn_win_rate", "avg_seen", "avg_pick",
+            "drawn_improvement_win_rate", "ever_drawn_game_count", "drawn_game_count",
+        )
+        for card in payload:
+            if not isinstance(card.get("name"), str) or not card["name"].strip():
+                raise ValueError("Invalid 17Lands card data: missing card name")
+            for field in ("url", "url_back"):
+                if card.get(field) is not None and not isinstance(card[field], str):
+                    raise ValueError(f"Invalid 17Lands card data: {field} must be text")
+            for field in numeric_fields:
+                value = card.get(field)
+                if value is None:
+                    continue
+                try:
+                    number = float(value)
+                    valid = not isinstance(value, bool) and math.isfinite(number)
+                    if field.endswith("game_count"):
+                        valid = valid and number >= 0 and number.is_integer()
+                        int(value)  # Must also support the consumer's integer conversion.
+                except (ValueError, TypeError, OverflowError):
+                    valid = False
+                if not valid:
+                    raise ValueError(f"Invalid 17Lands card data: invalid {field}")
+        return payload
 
     def download_set_data(
         self,
@@ -110,16 +145,16 @@ class Seventeenlands:
 
         cache_path = os.path.join(self.CACHE_DIR, cache_name)
 
-        if not is_cache_stale(cache_path, hours=12):
-            try:
-                with open(cache_path, "r") as f:
-                    cached_data = json.load(f)
+        try:
+            if not is_cache_stale(cache_path, hours=12):
+                with open(cache_path, "r", encoding="utf-8") as f:
+                    cached_data = self._unwrap_card_payload(json.load(f))
                     # Do not use cache if it's an empty array (meaning 17Lands had no data yesterday)
                     if cached_data and len(cached_data) > 0:
                         logger.info(f"Using cached 17Lands data for {cache_name}")
                         return cached_data, True
-            except json.JSONDecodeError:
-                pass  # Cache corrupt, fetch new
+        except (OSError, ValueError) as error:
+            logger.warning("Ignoring unusable 17Lands cache %s: %s", cache_name, error)
 
         # Build URL. Card ratings live at /api/card_data with an `event_type`
         # param and a time_period preset (ALL_TIME, LATEST_EVENT, ...). The old
@@ -146,12 +181,20 @@ class Seventeenlands:
 
         # Only save to cache if we actually received data
         if data and len(data) > 0:
-            import tempfile
-
-            fd, temp_path = tempfile.mkstemp(dir=self.CACHE_DIR)
-            with os.fdopen(fd, "w") as f:
-                json.dump(data, f)
-            os.replace(temp_path, cache_path)
+            temp_path = None
+            try:
+                fd, temp_path = tempfile.mkstemp(dir=self.CACHE_DIR)
+                with os.fdopen(fd, "w", encoding="utf-8") as f:
+                    json.dump(data, f)
+                os.replace(temp_path, cache_path)
+            except OSError as error:
+                logger.warning("Could not save 17Lands cache %s: %s", cache_name, error)
+            finally:
+                if temp_path and os.path.exists(temp_path):
+                    try:
+                        os.remove(temp_path)
+                    except OSError as error:
+                        logger.warning("Could not remove temporary cache file: %s", error)
 
         return data, False
 

@@ -22,6 +22,8 @@ document.addEventListener('DOMContentLoaded', () => {
         })
         .then(data => {
             eventsData = data.events || [];
+            const asOfEl = document.getElementById('calendar-as-of');
+            if (asOfEl && data.as_of) asOfEl.textContent = `Source updated ${data.as_of}.`;
             renderCalendar();
         })
         .catch(e => {

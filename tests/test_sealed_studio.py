@@ -7,6 +7,75 @@ from src.configuration import Configuration
 from src.ui.styles import Theme
 from src.constants import DATA_FIELD_NAME
 
+def test_auto_lands_counts_stacked_spell_copies():
+    from types import SimpleNamespace
+    from src.sealed_logic import SealedSession
+    from src import constants
+
+    pool = [
+        {"name": f"Spell {i}", "count": 2 if i < 3 else 1,
+         "types": ["Creature"], "colors": ["G"], "mana_cost": "{1}{G}", "cmc": 2}
+        for i in range(20)
+    ]
+    session = SealedSession("auto_lands")
+    session.load_pool(pool)
+    for card in pool:
+        session.move_to_main(card["name"], card["count"])
+    studio = SimpleNamespace(session=session, _refresh_data=MagicMock(), _refresh_tabs=MagicMock())
+
+    SealedStudioWindow._apply_auto_lands(studio)
+
+    main, _ = session.get_active_deck_lists()
+    assert sum(c.get("count", 1) for c in main) == 40
+    assert sum(c["count"] for c in main if c["name"] in constants.BASIC_LANDS) == 17
+
+def test_clipboard_round_trip_keeps_sideboard_out_of_main():
+    from types import SimpleNamespace
+    from src.card_logic import copy_deck
+    from src.sealed_logic import SealedSession
+
+    main = [{"name": "Shared", "count": 23}, {"name": "Forest", "count": 17}]
+    sideboard = [{"name": "Sideboard Only", "count": 1}]
+    session = SealedSession("clipboard")
+    session.load_pool(main + sideboard)
+    studio = SimpleNamespace(
+        session=session, clipboard_get=lambda: copy_deck(main, sideboard),
+        _refresh_data=MagicMock(), _refresh_tabs=MagicMock(),
+    )
+
+    with patch("src.ui.windows.sealed_studio.messagebox") as dialogs:
+        SealedStudioWindow._import_deck_from_clipboard(studio)
+
+    imported, remaining = session.get_active_deck_lists()
+    assert sum(c.get("count", 1) for c in imported) == 40
+    assert "Sideboard Only" not in session.variants[session.active_variant_name].main_deck_counts
+    assert remaining == sideboard
+    dialogs.showinfo.assert_called_once_with("Success", "Deck imported successfully!", parent=studio)
+    dialogs.showwarning.assert_not_called()
+    dialogs.showerror.assert_not_called()
+
+
+@pytest.mark.parametrize("heading", ["Sideboard", "Commander", "Companion"])
+def test_clipboard_import_sections_preserve_main_missing_card_reporting(heading):
+    from types import SimpleNamespace
+    from src.sealed_logic import SealedSession
+
+    session = SealedSession("clipboard_sections")
+    session.load_pool([{"name": "Shared"}, {"name": "Other"}])
+    studio = SimpleNamespace(
+        session=session,
+        clipboard_get=lambda: f"1 Shared\n1 Missing Main\n{heading}\n1 Other\n1 Missing Side\nDeck\n1 Forest",
+        _refresh_data=MagicMock(), _refresh_tabs=MagicMock(),
+    )
+    with patch("src.ui.windows.sealed_studio.messagebox") as dialogs:
+        SealedStudioWindow._import_deck_from_clipboard(studio)
+
+    assert session.variants[session.active_variant_name].main_deck_counts == {"Shared": 1, "Forest": 1}
+    assert dialogs.showwarning.call_args.args[0] == "Partial Import"
+    assert "Missing Main" in dialogs.showwarning.call_args.args[1]
+    assert "Missing Side" not in dialogs.showwarning.call_args.args[1]
+    dialogs.showerror.assert_not_called()
+
 
 class TestSealedStudio:
     @pytest.fixture
@@ -114,6 +183,31 @@ class TestSealedStudio:
             names = [tree.item(r)["values"][0] for r in rows]
             assert "Shock" not in names
             assert "Grizzly Bears" in names  # Creatures still checked
+
+    @pytest.mark.parametrize("explicit_id, draft_id, expected", [
+        (None, "", "entry_123"),
+        (None, "draft_123", "draft_123"),
+        ("practice_123", "draft_123", "practice_123"),
+        (None, "", "local_sealed"),
+    ])
+    def test_session_id_precedence(
+        self, root, mock_app_context, mock_pool, tmp_path, monkeypatch,
+        explicit_id, draft_id, expected,
+    ):
+        from src import constants
+
+        monkeypatch.setattr(constants, "TEMP_FOLDER", str(tmp_path))
+        scanner = mock_app_context.orchestrator.scanner
+        scanner.current_draft_id = draft_id
+        scanner.current_transaction_id = "" if expected == "local_sealed" else "entry_123"
+        with patch("src.ui.windows.sealed_studio.ThreadPoolExecutor"):
+            studio = SealedStudioWindow(
+                root, mock_app_context, Configuration(), mock_pool, MagicMock(),
+                draft_id=explicit_id,
+            )
+            assert studio.session.session_id == expected
+            studio.session.save_session()
+            assert (tmp_path / f"sealed_{expected}.json").exists()
 
     def test_list_mode_drag_and_drop(self, root, mock_app_context, mock_pool):
         with patch("src.ui.windows.sealed_studio.ThreadPoolExecutor"):

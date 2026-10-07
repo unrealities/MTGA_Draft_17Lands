@@ -59,11 +59,11 @@ document.addEventListener('DOMContentLoaded', () => {
                                             <span class="bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-widest">Latest Release</span>
                                         </div>
                                         <h2 class="text-2xl font-bold text-white flex items-center gap-3">
-                                            ${rel.name} <span class="bg-blue-600/20 text-blue-400 border border-blue-500/30 px-2 py-0.5 rounded text-xs font-mono">${ver}</span>
+                                            ${escapeHTML(rel.name)} <span class="bg-blue-600/20 text-blue-400 border border-blue-500/30 px-2 py-0.5 rounded text-xs font-mono">${escapeHTML(ver)}</span>
                                         </h2>
                                         <p class="text-slate-400 text-sm mt-1">Published on ${dateStr}</p>
                                     </div>
-                                    <a href="${rel.html_url}" target="_blank" class="mt-4 md:mt-0 text-sm bg-slate-700 hover:bg-slate-600 text-white px-4 py-2 rounded-lg transition text-center border border-slate-600 shadow-sm">View on GitHub</a>
+                                    <a href="${escapeHTML(safeWebURL(rel.html_url))}" target="_blank" rel="noopener noreferrer" class="mt-4 md:mt-0 text-sm bg-slate-700 hover:bg-slate-600 text-white px-4 py-2 rounded-lg transition text-center border border-slate-600 shadow-sm">View on GitHub</a>
                                 </div>
                                 <div class="text-slate-300 text-sm leading-relaxed font-sans">${bodyHtml}</div>
                                 
@@ -80,9 +80,9 @@ document.addEventListener('DOMContentLoaded', () => {
                             <details class="group bg-slate-800/30 border border-slate-700/50 rounded-lg mb-3 transition-colors open:bg-slate-800/60 shadow-sm">
                                 <summary class="flex justify-between items-center font-bold cursor-pointer list-none p-4 select-none">
                                     <div class="flex flex-col md:flex-row md:items-center gap-2 md:gap-4">
-                                        <span class="text-lg text-slate-300 group-hover:text-white transition-colors">${rel.name}</span>
+                                        <span class="text-lg text-slate-300 group-hover:text-white transition-colors">${escapeHTML(rel.name)}</span>
                                         <div class="flex items-center gap-3">
-                                            <span class="bg-slate-700 text-slate-300 border border-slate-600 px-2 py-0.5 rounded text-xs font-mono">${ver}</span>
+                                            <span class="bg-slate-700 text-slate-300 border border-slate-600 px-2 py-0.5 rounded text-xs font-mono">${escapeHTML(ver)}</span>
                                             <span class="text-slate-500 text-sm font-normal hidden sm:block">• ${dateStr}</span>
                                         </div>
                                     </div>
@@ -116,10 +116,49 @@ function formatVersion(tag) {
     return tag;
 }
 
+function escapeHTML(value) {
+    return String(value ?? '').replace(/[&<>"']/g, ch => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    })[ch]);
+}
+
+function safeWebURL(value) {
+    try {
+        const url = new URL(value);
+        return ['https:', 'http:'].includes(url.protocol) ? url.href : '#';
+    } catch {
+        return '#';
+    }
+}
+
+// Only the formatting produced below is permitted; never trust release HTML.
+function sanitizeReleaseHTML(html) {
+    const template = document.createElement('template');
+    template.innerHTML = html;
+    const allowed = new Set(['H2', 'H3', 'STRONG', 'EM', 'CODE', 'A', 'LI', 'BR']);
+    for (const el of [...template.content.querySelectorAll('*')].reverse()) {
+        if (!allowed.has(el.tagName)) {
+            el.replaceWith(document.createTextNode(el.textContent));
+            continue;
+        }
+        for (const attr of [...el.attributes]) {
+            if (attr.name !== 'class' && !(el.tagName === 'A' && attr.name === 'href')) {
+                el.removeAttribute(attr.name);
+            }
+        }
+        if (el.tagName === 'A') {
+            el.setAttribute('href', safeWebURL(el.getAttribute('href')));
+            el.setAttribute('target', '_blank');
+            el.setAttribute('rel', 'noopener noreferrer');
+        }
+    }
+    return template.innerHTML;
+}
+
 // Helper: Lightweight Markdown Parser for Release Notes
 function formatMarkdown(text) {
     if (!text) return '';
-    let html = text;
+    let html = escapeHTML(text);
 
     // Headers
     html = html.replace(/^### (.*$)/gim, '<h3 class="text-lg font-bold text-slate-200 mt-4 mb-2">$1</h3>');
@@ -145,7 +184,7 @@ function formatMarkdown(text) {
     // Cleanup list breaks
     html = html.replace(/(<\/li>)<br>/gim, '$1');
 
-    return html;
+    return sanitizeReleaseHTML(html);
 }
 
 // Helper: Render Download Buttons for Assets
@@ -164,9 +203,9 @@ function renderAssets(assets) {
         const sizeMb = (asset.size / (1024 * 1024)).toFixed(1);
 
         html += `
-            <a href="${asset.browser_download_url}" class="flex items-center gap-2 px-3 py-1.5 rounded-lg border text-xs transition-colors ${colorClass}">
+            <a href="${escapeHTML(safeWebURL(asset.browser_download_url))}" class="flex items-center gap-2 px-3 py-1.5 rounded-lg border text-xs transition-colors ${colorClass}">
                 <span>${icon}</span>
-                <span class="font-medium truncate max-w-[150px]" title="${asset.name}">${asset.name}</span>
+                <span class="font-medium truncate max-w-[150px]" title="${escapeHTML(asset.name)}">${escapeHTML(asset.name)}</span>
                 <span class="opacity-60 text-[10px] ml-1">${sizeMb}MB</span>
             </a>
         `;

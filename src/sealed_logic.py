@@ -318,7 +318,15 @@ class SealedSession:
             session.load_pool(raw_pool)
             session.active_variant_name = data.get("active_variant_name", "")
             for k, v_data in data.get("variants", {}).items():
-                session.variants[k] = SealedVariant.from_dict(v_data)
+                variant = SealedVariant.from_dict(v_data)
+                variant.main_deck_counts = {
+                    name: count if name in constants.BASIC_LANDS else min(
+                        count, session._pool_inventory[name]
+                    )
+                    for name, count in variant.main_deck_counts.items()
+                    if name in constants.BASIC_LANDS or name in session._pool_inventory
+                }
+                session.variants[k] = variant
             return session
         except Exception:
             return None

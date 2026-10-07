@@ -34,12 +34,27 @@ from src import constants
 from src.configuration import read_configuration, write_configuration
 from src.limited_sets import LimitedSets
 from src.log_scanner import ArenaScanner
+from src.dataset_selection import select_event_dataset
+from src.utils import Result
 from src.file_extractor import search_arena_log_locations, retrieve_arena_directory
 from src.ui.app import DraftApp
 from src.ui.windows.splash import SplashWindow
 from src.ui.styles import Theme
 
 logger = logging.getLogger(__name__)
+
+
+def load_event_dataset(scanner, config):
+    path = select_event_dataset(
+        scanner, preferred_filename=config.card_data.latest_dataset,
+    )
+    if path and scanner.retrieve_set_data(path) == Result.VALID:
+        config.card_data.latest_dataset = os.path.basename(path)
+        return True
+    if scanner.retrieve_current_limited_event()[0]:
+        scanner.retrieve_set_data("")
+        config.card_data.latest_dataset = ""
+    return False
 
 
 def load_data(args, config, progress_callback):
@@ -146,12 +161,7 @@ def load_data(args, config, progress_callback):
             progress_callback(f"Found {e_set} {e_type}...")
 
             # Auto-load the correct dataset for this draft
-            sources = scanner.retrieve_data_sources()
-            for label, path in sources.items():
-                if f"[{e_set.upper()}]" in label.upper():
-                    scanner.retrieve_set_data(path)
-                    config.card_data.latest_dataset = os.path.basename(path)
-                    break
+            load_event_dataset(scanner, config)
 
             # Deep-scan for the current pack/pick state
             scanner.draft_data_search()
@@ -163,12 +173,7 @@ def load_data(args, config, progress_callback):
             e_set, e_type = scanner.retrieve_current_limited_event()
             if e_set:
                 progress_callback(f"Recovered Session: {e_set} {e_type}...")
-                sources = scanner.retrieve_data_sources()
-                for label, path in sources.items():
-                    if f"[{e_set.upper()}]" in label.upper():
-                        scanner.retrieve_set_data(path)
-                        config.card_data.latest_dataset = os.path.basename(path)
-                        break
+                load_event_dataset(scanner, config)
 
                 # Deep-scan to catch up on any missed picks while the application was closed/restarting
                 scanner.draft_data_search()
@@ -194,12 +199,7 @@ def load_data(args, config, progress_callback):
                     scanner.set_arena_file(most_recent_log)
                     if scanner.draft_start_search():
                         e_set, e_type = scanner.retrieve_current_limited_event()
-                        sources = scanner.retrieve_data_sources()
-                        for label, path in sources.items():
-                            if f"[{e_set.upper()}]" in label.upper():
-                                scanner.retrieve_set_data(path)
-                                config.card_data.latest_dataset = os.path.basename(path)
-                                break
+                        load_event_dataset(scanner, config)
                         scanner.draft_data_search()
                 else:
                     # Absolute fallback: load the most recently used dataset

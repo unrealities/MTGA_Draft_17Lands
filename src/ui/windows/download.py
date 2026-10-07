@@ -8,7 +8,7 @@ from typing import Optional
 from dataclasses import dataclass
 
 from src import constants
-from src.configuration import write_configuration
+from src.configuration import CONFIG_LOCK, write_configuration
 from src.file_extractor import FileExtractor
 from src.utils import retrieve_local_set_list, read_local_manifest
 from src.ui.components import DynamicTreeviewManager, AutoScrollbar
@@ -231,12 +231,30 @@ class DownloadWindow(ttk.Frame):
 
         self.btn_clear = ttk.Button(
             form,
-            text="Clear Set History",
-            command=self._clear_set_history,
+            text="Clear Inactive Datasets",
+            command=self._clear_inactive_datasets,
             bootstyle="secondary",
         )
         self.btn_clear.grid(
             row=4, column=0, columnspan=4, pady=Theme.scaled_val((5, 0)), sticky="ew"
+        )
+
+        ttk.Button(
+            form,
+            text="Reset Dataset Cache",
+            command=self._clear_set_history,
+            bootstyle="secondary",
+        ).grid(
+            row=5, column=0, columnspan=4, pady=Theme.scaled_val((5, 0)), sticky="ew"
+        )
+
+        ttk.Button(
+            form,
+            text="Restore Deleted Datasets",
+            command=self._restore_deleted_datasets,
+            bootstyle="secondary",
+        ).grid(
+            row=6, column=0, columnspan=4, pady=Theme.scaled_val((5, 0)), sticky="ew"
         )
 
         self.progress = ttk.Progressbar(container, mode="determinate")
@@ -291,7 +309,7 @@ class DownloadWindow(ttk.Frame):
         menu.post(event.x_root, event.y_root)
 
     def _delete_dataset(self, filepath):
-        """Safely deletes a downloaded dataset from the hard drive."""
+        """Deletes a dataset and excludes it from future automatic downloads."""
         filename = os.path.basename(filepath)
 
         if self.configuration.card_data.latest_dataset == filename:
@@ -303,16 +321,123 @@ class DownloadWindow(ttk.Frame):
 
         if messagebox.askyesno(
             "Confirm Delete",
-            f"Are you sure you want to permanently delete this dataset?\n\n{filename}",
+            f"Delete this dataset? It will stay excluded from automatic downloads "
+            f"until you choose Restore Deleted Datasets.\n\n{filename}",
         ):
             try:
-                os.remove(filepath)
+                with CONFIG_LOCK:
+                    excluded = self.configuration.card_data.excluded_datasets
+                    previous = list(excluded)
+                    if filename not in excluded:
+                        excluded.append(filename)
+                    if not write_configuration(self.configuration):
+                        self.configuration.card_data.excluded_datasets = previous
+                        raise OSError("Could not save the dataset exclusion.")
+                    try:
+                        os.remove(filepath)
+                    except OSError:
+                        self.configuration.card_data.excluded_datasets = previous
+                        write_configuration(self.configuration)
+                        raise
                 from src.utils import invalidate_local_set_cache
 
                 invalidate_local_set_cache()
                 self._update_table()
             except Exception as e:
                 messagebox.showerror("Error", f"Failed to delete file:\n{e}")
+
+    def _clear_inactive_datasets(self):
+        """Remove all local datasets except the active one and remember exclusions."""
+        if self._download_thread and self._download_thread.is_alive():
+            messagebox.showwarning(
+                "Download In Progress", "Wait for the dataset download to finish before clearing data."
+            )
+            return
+
+        active_filename = self.configuration.card_data.latest_dataset
+        try:
+            filenames = [
+                name
+                for name in os.listdir(constants.SETS_FOLDER)
+                if name.endswith(constants.SET_FILE_SUFFIX)
+                and name != active_filename
+                and os.path.isfile(os.path.join(constants.SETS_FOLDER, name))
+            ]
+        except OSError as error:
+            messagebox.showerror("Error", f"Could not read the dataset folder:\n{error}")
+            return
+
+        if not filenames:
+            messagebox.showinfo("Clear Inactive Datasets", "There are no inactive datasets to clear.")
+            return
+        if not messagebox.askyesno(
+            "Clear Inactive Datasets",
+            f"Delete all {len(filenames)} inactive dataset(s)?\n\n"
+            "Your active dataset will be kept. Cleared datasets will stay excluded "
+            "from automatic downloads, including after restarting the app.\n\n"
+            "Use Restore Deleted Datasets to allow automatic downloads again.",
+        ):
+            return
+
+        removed = 0
+        failures = []
+        with CONFIG_LOCK:
+            previous = list(self.configuration.card_data.excluded_datasets)
+            # Recheck the active selection before committing the cleanup.
+            filenames = [
+                name for name in filenames
+                if name != self.configuration.card_data.latest_dataset
+            ]
+            self.configuration.card_data.excluded_datasets = list(
+                dict.fromkeys(previous + filenames)
+            )
+            if not write_configuration(self.configuration):
+                self.configuration.card_data.excluded_datasets = previous
+                messagebox.showerror("Error", "Could not save dataset exclusions. No files were removed.")
+                return
+            for name in filenames:
+                try:
+                    os.remove(os.path.join(constants.SETS_FOLDER, name))
+                    removed += 1
+                except OSError as error:
+                    failures.append(f"{name}: {error}")
+
+        from src.utils import invalidate_local_set_cache
+
+        invalidate_local_set_cache()
+        self._update_table()
+        if failures:
+            messagebox.showerror(
+                "Dataset Cleanup Incomplete",
+                f"Removed {removed} dataset(s). These files could not be removed; "
+                "their automatic downloads are disabled:\n\n" + "\n".join(failures),
+            )
+        else:
+            messagebox.showinfo(
+                "Inactive Datasets Cleared",
+                f"Removed {removed} dataset(s). Your active dataset was kept. "
+                "Cleared datasets will not return on restart.",
+            )
+
+    def _restore_deleted_datasets(self):
+        if not messagebox.askyesno(
+            "Restore Deleted Datasets",
+            "Allow all deleted or cleared datasets to download automatically again?",
+        ):
+            return
+        with CONFIG_LOCK:
+            previous = self.configuration.card_data.excluded_datasets
+            self.configuration.card_data.excluded_datasets = []
+            if not write_configuration(self.configuration):
+                self.configuration.card_data.excluded_datasets = previous
+                messagebox.showerror("Error", "Could not save dataset preferences.")
+                return
+        messagebox.showinfo(
+            "Deleted Datasets Restored",
+            "Deleted datasets are eligible for automatic downloads again. "
+            "Restart the app with automatic dataset sync enabled to download them, "
+            "or use Download Selected Dataset.",
+        )
 
     def enter(self, args: DatasetArgs = None):
         if args:
@@ -362,9 +487,12 @@ class DownloadWindow(ttk.Frame):
         the next launch's splash screen. Useful when accumulated old sets slow
         loading or after a data-format change."""
         if not messagebox.askyesno(
-            "Clear Set History",
+            "Reset Dataset Cache",
             "Delete all downloaded datasets?\n\nThe latest 17Lands data will be "
-            "re-downloaded automatically the next time you start the app.",
+            "re-downloaded automatically the next time you start the app.\n\n"
+            "Deleted or cleared datasets will remain excluded. To remove unwanted "
+            "datasets permanently, cancel and use Clear Inactive Datasets or right-click "
+            "a dataset and choose Delete Dataset.",
         ):
             return
 
@@ -497,7 +625,11 @@ class DownloadWindow(ttk.Frame):
             if suc:
                 success, msg, _ = ex.download_card_data(0)
                 if success:
-                    self.configuration.card_data.latest_dataset = ex.export_card_data()
+                    filename = ex.export_card_data()
+                    if not filename:
+                        self._safe_error("Could not save dataset. Your previous dataset was kept.")
+                        return
+                    self.configuration.card_data.latest_dataset = filename
                     write_configuration(self.configuration)
                     self._safe_finalize(msg)
                 else:

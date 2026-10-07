@@ -7,6 +7,7 @@ from datetime import datetime, timezone
 
 from server import config
 from server.utils import APIClient
+from server.events import fetch_event_calendar, get_scheduled_events
 from server.extract import (
     extract_scryfall_data,
     extract_scryfall_tags,
@@ -17,8 +18,9 @@ from server.extract import (
 )
 from server.transform import transform_payload
 from server.validate import validate_dataset, enough_history_to_enforce
-from server.load import save_dataset, save_manifest, save_report, deploy_web_assets
+from server.load import save_dataset, save_manifest, save_report, save_calendar, deploy_web_assets
 from server.report import PipelineReport
+from src.dataset_manifest import validate_manifest
 
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
@@ -26,75 +28,53 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
-def get_scheduled_events(calendar_path="server/calendar.json") -> dict:
-    logger.info(f"Loading scheduled events from {calendar_path}...")
-    if not os.path.exists(calendar_path):
-        logger.error(f"'{calendar_path}' not found! Cannot determine active events.")
-        return {}
-
-    try:
-        with open(calendar_path, "r", encoding="utf-8") as f:
-            calendar = json.load(f)
-    except Exception as e:
-        logger.error(f"Failed to parse {calendar_path}: {e}")
-        return {}
-
-    today_str = datetime.now(timezone.utc).strftime("%Y-%m-%d")
-    active_sets = {}
-
-    for event in calendar.get("events", []):
-        start = event.get("start_date")
-        end = event.get("end_date")
-
-        if start and end and (start <= today_str <= end):
-            set_code = event["set_code"]
-            if set_code not in active_sets:
-                active_sets[set_code] = {"formats": set(), "start_date": start}
-            active_sets[set_code]["formats"].update(event["formats"])
-
-            if start < active_sets[set_code]["start_date"]:
-                active_sets[set_code]["start_date"] = start
-
-    for data in active_sets.values():
-        data["formats"] = list(data["formats"])
-
-    return active_sets
-
-
 def load_existing_manifest() -> dict:
     filepath = os.path.join(config.OUTPUT_DIR, "manifest.json")
-    if os.path.exists(filepath):
-        try:
-            with open(filepath, "r", encoding="utf-8") as f:
-                return json.load(f)
-        except Exception as e:
-            logger.warning(f"Could not load existing manifest, starting fresh: {e}")
-    return {"datasets": {}}
+    if not os.path.exists(filepath) and os.environ.get("ETL_ALLOW_INITIALIZE") == "1":
+        return {"datasets": {}}
+    # A lost/corrupt warehouse must stop publication, not become an empty one.
+    with open(filepath, "r", encoding="utf-8") as f:
+        manifest = validate_manifest(json.load(f))
+    for info in manifest["datasets"].values():
+        if not os.path.isfile(os.path.join(config.OUTPUT_DIR, info["filename"])):
+            raise FileNotFoundError(f"Missing historical dataset: {info['filename']}")
+    return manifest
 
 
 def run_pipeline():
-    logger.info("Starting Daily Calendar-Driven ETL Pipeline...")
+    logger.info("Starting Daily MTGpile-Scheduled ETL Pipeline...")
     client = APIClient()
 
     report = PipelineReport()
     report.attach_log_handler()
 
-    active_sets = get_scheduled_events("server/calendar.json")
+    try:
+        manifest = load_existing_manifest()
+        calendar = fetch_event_calendar(client)
+    except Exception:
+        logger.exception("Cannot restore warehouse or determine active events; stopping ETL.")
+        final_report = report.finalize(client)
+        save_report(final_report)
+        report.log_summary(final_report)
+        raise
+    active_sets = get_scheduled_events(calendar)
+    save_calendar(calendar)
+    deploy_web_assets()
     report.record_intent(active_sets, config.ARCHETYPES)
 
+    manifest["updated_at"] = datetime.now(timezone.utc).isoformat()
+    manifest["active_sets"] = list(active_sets.keys())
     if not active_sets:
-        logger.warning("No active events found in the calendar for today. Exiting.")
+        # Clear yesterday's live sets while preserving the historical warehouse.
+        save_manifest(manifest)
+        logger.warning("No active events found in the MTGpile schedule for today. Exiting.")
         final_report = report.finalize(client)
         save_report(final_report)
         report.log_summary(final_report)
         return
 
-    manifest = load_existing_manifest()
-    manifest["updated_at"] = datetime.now(timezone.utc).isoformat()
     if "datasets" not in manifest:
         manifest["datasets"] = {}
-
-    manifest["active_sets"] = list(active_sets.keys())
 
     end_date_str = datetime.now(timezone.utc).strftime("%Y-%m-%d")
     historical_dates = get_historical_start_dates(client)
@@ -283,17 +263,13 @@ def run_pipeline():
             logger.debug(traceback.format_exc())
             report.record_skipped(set_code, draft_format, f"Processing failed: {e}")
 
-    try:
-        save_manifest(manifest)
-        report.record_warehouse_state(manifest)
-    except Exception as e:
-        logger.error(f"Critical failure saving manifest: {e}")
+    save_manifest(manifest)
+    report.record_warehouse_state(manifest)
 
     logger.info("Pipeline Complete!")
     final_report = report.finalize(client)
     save_report(final_report)
 
-    deploy_web_assets()
     report.log_summary(final_report)
 
 

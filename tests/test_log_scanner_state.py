@@ -89,3 +89,44 @@ def test_stale_pool_no_wipe_historical_replay(scanner):
 
     # Pool should NOT be wiped
     assert len(scanner.taken_cards) == 20
+
+
+def test_idless_new_pack_resets_old_pool_even_with_shared_card(scanner):
+    scanner.current_draft_id = ""
+    scanner.current_pack = scanner.previous_scanned_pack = 3
+    scanner.current_pick = 10
+    scanner.taken_cards = ["old"] * 35
+    scanner.draft_history = [{"Pack": 1, "Pick": 1, "Cards": ["shared", "old"]}]
+    assert scanner._process_pack_data(1, 1, ["shared", "new"])
+    assert scanner.taken_cards == []
+    assert (scanner.current_pack, scanner.current_pick) == (1, 1)
+
+
+def test_idless_p1p1_replay_preserves_completed_pool(scanner):
+    scanner.current_draft_id = ""
+    scanner.current_pack = scanner.previous_scanned_pack = 3
+    scanner.current_pick = 10
+    scanner.taken_cards = ["old"] * 35
+    scanner.draft_history = [{"Pack": 1, "Pick": 1, "Cards": ["a", "b"]}]
+    assert not scanner._process_pack_data(1, 1, ["a", "b"])
+    assert len(scanner.taken_cards) == 35
+
+
+def test_idless_first_pick_not_erased_by_repeated_first_pack(scanner):
+    scanner.current_draft_id = ""
+    scanner.current_pack = scanner.previous_scanned_pack = 1
+    scanner.current_pick = 1
+    scanner.taken_cards = ["a"]
+    scanner.draft_history = [{"Pack": 1, "Pick": 1, "Cards": ["a", "b"]}]
+    scanner._process_pack_data(1, 1, ["a", "b"])
+    assert scanner.taken_cards == ["a"]
+
+
+def test_idless_full_scan_keeps_picks_processed_before_pack_history(scanner):
+    scanner.clear_draft(False)
+    assert scanner._process_pick_data(1, 1, ["a"])
+    assert scanner._process_pick_data(1, 2, ["b"])
+    scanner._process_pack_data(1, 1, ["a", "other"])
+    scanner._process_pack_data(1, 2, ["b", "new"])
+    assert scanner.taken_cards == ["a", "b"]
+    assert (scanner.current_pack, scanner.current_pick) == (1, 2)
