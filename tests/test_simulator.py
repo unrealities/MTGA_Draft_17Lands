@@ -34,6 +34,35 @@ def make_card(
 # --- TESTS ---
 
 
+@pytest.mark.parametrize("text, colors, expected", [
+    ("{T}: Add {G}.", ["G"], 16),
+    ("Add one mana of any color", [], 31),
+    ("Add one mana of any one color", [], 31),
+    ("Add {R} or {G}", [], 24),
+    ("{U}, {T}: Add {W}{W}.", [], 1),
+    ("Add {C}.", ["U"], 0),
+    ("", ["G"], 16),
+])
+def test_ramp_produced_colors_follow_rules_text(text, colors, expected):
+    deck = [
+        make_card("Ramp", tags=["fixing_ramp"], text=text, colors=colors),
+        make_card("Filler", count=39),
+    ]
+    arrays = _parse_deck_to_arrays(deck)
+    assert arrays.is_ramp[0]
+    assert arrays.mana_produced[0] == expected
+
+
+def test_green_dork_cannot_fix_blue_spells():
+    deck = [
+        make_card("Forest", count=17, types=["Land"], colors=["G"]),
+        make_card("Green Dork", cmc=1, mana_cost="{G}", types=["Creature"],
+                  colors=["G"], tags=["fixing_ramp"], text="{T}: Add {G}."),
+        make_card("Blue Spell", count=22, cmc=4, mana_cost="{3}{U}", types=["Creature"]),
+    ]
+    assert simulate_deck(deck, iterations=2000)["cast_t4"] == 0.0
+
+
 def test_simulator_invalid_deck_size():
     """Verify the simulator immediately rejects decks with fewer than 40 cards."""
     # Create a 39 card deck
@@ -56,7 +85,10 @@ def test_parsing_bitmasks_and_flags():
             "Unknown Shores", count=1, types=["Land"], text="add one mana of any color"
         ),
         # 4. Ramp Artifact (Any Color)
-        make_card("Manalith", count=1, types=["Artifact"], tags=["fixing_ramp"]),
+        make_card(
+            "Manalith", count=1, types=["Artifact"], tags=["fixing_ramp"],
+            text="{T}: Add one mana of any color.",
+        ),
         # 5. Removal Spell
         make_card(
             "Murder",

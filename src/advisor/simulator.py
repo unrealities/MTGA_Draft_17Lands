@@ -1,3 +1,9 @@
+"""Approximate early-turn deck castability with lands and non-land mana sources.
+
+Known limitation: mana available only via a separately cast prepared spell,
+such as Konstrari Improviser's ability, is not modeled.
+"""
+
 import re
 from typing import NamedTuple
 
@@ -90,21 +96,31 @@ def _parse_deck_to_arrays(deck_list):
         types = c.get("types", [])
         tags = c.get("tags", [])
         text = str(c.get("oracle_text", c.get("text", ""))).lower()
+        any_color = re.search(r"\bany (?:one |combination of )?colors?\b", text) is not None
 
         is_land[i] = "Land" in types
         is_ramp[i] = (
-            "fixing_ramp" in tags or "any color" in text or "treasure" in text
+            "fixing_ramp" in tags or any_color or "treasure" in text
         ) and not is_land[i]
         is_removal[i] = "removal" in tags
 
         # Calculate produced mana bitmask
         if is_land[i] or is_ramp[i]:
-            if "any color" in text or "fixing_ramp" in tags:
+            if any_color or "treasure" in text:
                 mana_produced[i] = ANY_COLOR
             else:
+                # Read production clauses, excluding symbols in activation costs.
+                symbols = []
+                for clause in re.findall(r"\badd\b([^.;\n]*)", text):
+                    symbols.extend(PIP_PATTERN.findall(clause))
                 mask = 0
-                for color in c.get("colors", []):
-                    mask |= COLOR_BITS.get(color, 0)
+                if symbols:
+                    for symbol in symbols:
+                        for color in symbol.upper().split("/"):
+                            mask |= COLOR_BITS.get(color, 0)
+                else:
+                    for color in c.get("colors", []):
+                        mask |= COLOR_BITS.get(color, 0)
                 mana_produced[i] = mask
 
         # Printed cost (castability deliberately ignores cycling / alt costs)
