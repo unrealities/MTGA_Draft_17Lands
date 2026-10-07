@@ -591,7 +591,7 @@ class ArenaScanner:
             return False
 
         with self.lock:
-            self._check_and_wipe_stale_pool(pack, pick, pack_cards, draft_id)
+            self._check_and_wipe_stale_pool(pack, pick, pack_cards, draft_id, is_pack=True)
 
             expected_players = (
                 4
@@ -716,7 +716,7 @@ class ArenaScanner:
             self._save_state()
         return True
 
-    def _check_and_wipe_stale_pool(self, pack, pick, current_cards, draft_id=None):
+    def _check_and_wipe_stale_pool(self, pack, pick, current_cards, draft_id=None, is_pack=False):
         wipe = False
         str_draft_id = str(draft_id) if draft_id else ""
         str_current_id = str(self.current_draft_id) if self.current_draft_id else ""
@@ -731,36 +731,25 @@ class ArenaScanner:
             if not self._load_state(str_draft_id) and self.taken_cards:
                 wipe = True
 
-            # 2. Time-Travel Protection (When Draft ID is missing or new)
-            if not wipe:
-                if pack == 1 and pick == 1 and len(self.taken_cards) > 0:
-                    # STRICT WIPE: It is P1P1, but we have cards from an old draft.
-                    wipe = True
-                elif pack < self.current_pack or (
-                    pack == self.current_pack and pick < self.current_pick
-                ):
-                    # We are seeing an older pack/pick.
-                    is_historical = False
-                    if not current_cards:
-                        is_historical = True
-                    elif self.draft_history:
-                        for entry in self.draft_history:
-                            if entry["Pack"] == pack and entry["Pick"] == pick:
-                                if any(c in entry["Cards"] for c in current_cards):
-                                    is_historical = True
-                                break
-
-                    if not is_historical:
-                        wipe = True
-
-            elif pack == 1 and pick == 1 and self.taken_cards:
-                # If we see P1P1 and we already have a massive pool, we missed the end of the last draft.
-                if (
-                    len(self.taken_cards) > 15
-                    or self.current_pack > 1
-                    or self.current_pick > 1
-                ):
-                    wipe = True
+        # ID-less bot drafts still need reset detection. A replayed pick can
+        # contain a subset of its recorded pack; one shared card is not enough
+        # to identify an entire new pack as historical.
+        position = (self.current_pack, self.current_pick)
+        if is_pack:
+            # Picks are scanned before packs. Their newer watermark must not
+            # make earlier, not-yet-reconstructed packs look like a new draft.
+            position = max(
+                [(self.previous_scanned_pack, 0)]
+                + [(entry["Pack"], entry["Pick"]) for entry in self.draft_history]
+            )
+        backwards = (pack, pick) < position
+        if not wipe and backwards and current_cards:
+            is_historical = any(
+                entry["Pack"] == pack and entry["Pick"] == pick
+                and all(c in entry["Cards"] for c in current_cards)
+                for entry in self.draft_history
+            )
+            wipe = not is_historical
 
         if wipe:
             logger.info(

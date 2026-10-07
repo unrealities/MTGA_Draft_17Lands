@@ -6,6 +6,7 @@ and encapsulates the associated file dialogs and export logic.
 
 import tkinter
 import os
+import webbrowser
 from tkinter import filedialog, messagebox
 from src import constants
 from src.ui.styles import Theme
@@ -19,6 +20,18 @@ class AppMenuBar:
         self.app_context = app_context
         self.config = app_context.configuration
         self._setup_menu()
+
+    def notify_app_update(self, version):
+        """Offer the official release page once per version, on the UI thread."""
+        if getattr(self, "_notified_version", None) == version:
+            return
+        self._notified_version = version
+        if messagebox.askyesno(
+            "Application Update",
+            f"MTGA Draft Tool {version} is available. Open the release page?",
+            parent=self.root,
+        ):
+            webbrowser.open("https://github.com/unrealities/MTGA_Draft_17Lands/releases/latest")
 
     def _setup_menu(self):
         m = tkinter.Menu(self.root)

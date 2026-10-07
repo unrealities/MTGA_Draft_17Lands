@@ -52,7 +52,15 @@ graph TD
 
 ### Phase B: The Draft Loop (Active)
 
-The application polls for file changes via a background thread every **100ms** to ensure zero UI freezing.
+The log watchdog polls for file changes every **500ms**; the UI drains its update queue every **100ms**.
+
+Card getters read cached metadata only. Missing IDs are queued for a separate
+`card-resolver` worker, which performs SQLite and Scryfall IO without holding the
+scanner lock. It resolves against a private dataset snapshot and discards results
+if the dataset is cleared or switched before completion. Successful resolution
+queues a UI refresh even if the log has not grown. Failed lookups remain pending
+with exponential retry delays of 5 seconds up to 5 minutes; failures are never
+persisted as resolved cards.
 
 1. **State: Waiting for Event**
    - Listens for: `[UnityCrossThreadLogger]==> Event_Join` or `"CardPool":[`

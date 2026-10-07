@@ -25,6 +25,19 @@ def mock_app_context(root):
     return app
 
 
+@pytest.mark.parametrize("accepted", [True, False])
+def test_update_notification_opens_only_official_page(root, mock_app_context, accepted):
+    menu = AppMenuBar(root, mock_app_context)
+    with patch("src.ui.menu_bar.messagebox.askyesno", return_value=accepted) as prompt, patch("src.ui.menu_bar.webbrowser.open") as browser:
+        menu.notify_app_update("99.99")
+        menu.notify_app_update("99.99")
+        prompt.assert_called_once()
+        if accepted:
+            browser.assert_called_once_with("https://github.com/unrealities/MTGA_Draft_17Lands/releases/latest")
+        else:
+            browser.assert_not_called()
+
+
 @patch("src.ui.menu_bar.Theme.apply")
 @patch("src.ui.menu_bar.write_configuration")
 def test_update_theme(mock_write, mock_theme_apply, root, mock_app_context):

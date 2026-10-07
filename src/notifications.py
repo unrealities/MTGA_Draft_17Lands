@@ -78,6 +78,7 @@ class Notifications:
     def check_dataset(self):
         if (
             self.configuration.settings.update_notifications_enabled
+            and self.configuration.settings.auto_sync_datasets
             and self.configuration.card_data.latest_dataset
         ):
             import threading
@@ -85,6 +86,9 @@ class Notifications:
             threading.Thread(target=self.update_dataset, daemon=True).start()
 
     def update_dataset(self):
+        # Recheck in the worker in case Preferences changed after it was queued.
+        if not self.configuration.settings.auto_sync_datasets:
+            return
         try:
             from src.dataset_updater import DatasetUpdater
 

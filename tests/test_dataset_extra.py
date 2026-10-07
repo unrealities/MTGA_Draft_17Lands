@@ -73,7 +73,7 @@ def test_get_data_by_id_scryfall_bulk_fallback(mock_post, mock_load, mock_save):
     mock_post.return_value = mock_response
 
     # Act: Request an ID we have no data for
-    result = dataset.get_data_by_id(["999"])
+    result = dataset.resolve_data_by_id(["999"])
 
     # Assert
     assert len(result) == 1
@@ -93,8 +93,10 @@ def test_get_data_by_id_scryfall_api_failure(mock_post, mock_load, mock_save):
     dataset = Dataset(retrieve_unknown=True, db_path=None)
     mock_post.side_effect = Exception("Network Timeout")
 
-    result = dataset.get_data_by_id(["999"])
+    result = dataset.resolve_data_by_id(["999"])
 
     assert len(result) == 1
     assert result[0][DATA_FIELD_NAME] == "999"  # Falls back to the string ID
     assert "deck_colors" in result[0]  # Must be initialized safely!
+    assert "999" not in dataset._fallback_ratings
+    mock_save.assert_not_called()

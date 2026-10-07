@@ -135,3 +135,13 @@ def test_file_swap_queue_processing(orchestrator):
 
     # Verify scanner was updated
     orchestrator.scanner.set_arena_file.assert_called_with("historical_draft_2.log")
+
+
+def test_resolution_refresh_runs_when_log_is_unchanged(orchestrator):
+    orchestrator._file_has_changed = MagicMock(return_value=False)
+    orchestrator._stop_event.is_set = MagicMock(side_effect=[False, True])
+    orchestrator.scanner.set_data.start_resolution.side_effect = lambda callback: callback()
+    with patch("src.ui.orchestrator.time.sleep"):
+        orchestrator.run()
+    orchestrator.scanner.draft_data_search.assert_not_called()
+    assert orchestrator.update_queue.get_nowait() == "REFRESH"

@@ -20,9 +20,10 @@ def mock_session():
 
 
 @pytest.fixture
-def seventeenlands(mock_session):
+def seventeenlands(mock_session, monkeypatch, tmp_path):
     """Fixture to create a Seventeenlands instance with a mocked session."""
     session, _ = mock_session
+    monkeypatch.setattr(Seventeenlands, "CACHE_DIR", str(tmp_path))
     sl = Seventeenlands()
     sl.session = session
     return sl
@@ -395,3 +396,95 @@ def test_download_color_ratings_http_errors(mock_session, seventeenlands):
     response.status_code = 403
     with pytest.raises(Exception, match="Access Denied"):
         seventeenlands.download_color_ratings("TLA", "Draft", "ALL_TIME", "All")
+
+
+@pytest.mark.parametrize(
+    "payload",
+    [None, {}, {"error": "Unavailable"}, {"data": None}, {"data": {}},
+     {"data": "invalid"}, [None], ["card"]],
+)
+def test_invalid_card_response_preserves_cache_and_ratings(
+    payload, mock_session, seventeenlands, tmp_path
+):
+    """Malformed successes must neither erase ratings nor poison an old cache."""
+    _, response = mock_session
+    response.json.return_value = payload
+    cache_path = tmp_path / "otj_premierdraft_all_time_all_all_v2.json"
+    original = json.dumps([{"name": "Previous Card"}])
+    cache_path.write_text(original, encoding="utf-8")
+    with patch("src.seventeenlands.is_cache_stale", return_value=True):
+        with pytest.raises(ValueError, match="Invalid 17Lands card data"):
+            seventeenlands._fetch_archetype_with_cache(
+                "OTJ", "PremierDraft", "ALL_TIME", "All"
+            )
+    assert cache_path.read_text(encoding="utf-8") == original
+    ratings = {"Existing Card": {"ratings": []}}
+    with pytest.raises(ValueError, match="Invalid 17Lands card data"):
+        seventeenlands.download_card_ratings(
+            "OTJ", "All Decks", "PremierDraft", "ALL_TIME", "All", ratings
+        )
+    assert ratings == {"Existing Card": {"ratings": []}}
+
+
+@pytest.mark.parametrize(
+    "cached", [b"{broken", b"\xff", b'{"error": "Unavailable"}', b'[null]']
+)
+def test_unusable_cache_is_refetched(cached, mock_session, seventeenlands, tmp_path):
+    session, response = mock_session
+    cards = [{"name": "Fresh Card"}]
+    response.json.return_value = {"data": cards}
+    cache_path = tmp_path / "otj_premierdraft_all_time_all_all_v2.json"
+    cache_path.write_bytes(cached)
+    assert seventeenlands._fetch_archetype_with_cache(
+        "OTJ", "PremierDraft", "ALL_TIME", "All"
+    ) == (cards, False)
+    session.get.assert_called_once()
+    assert json.loads(cache_path.read_text(encoding="utf-8")) == cards
+
+
+@pytest.mark.parametrize(
+    "failure_point", ["is_cache_stale", "open", "tempfile.mkstemp", "os.replace"]
+)
+def test_cache_io_failure_does_not_discard_download(
+    failure_point, mock_session, seventeenlands, tmp_path
+):
+    _, response = mock_session
+    cards = [{"name": "Fresh Card"}]
+    response.json.return_value = {"data": cards}
+    cache_path = tmp_path / "otj_premierdraft_all_time_all_all_v2.json"
+    # Empty caches always trigger a download, allowing read and write failures.
+    cache_path.write_text("[]", encoding="utf-8")
+    with patch(
+        "src.seventeenlands." + failure_point,
+        side_effect=OSError("Cache unavailable"),
+    ):
+        assert seventeenlands._fetch_archetype_with_cache(
+            "OTJ", "PremierDraft", "ALL_TIME", "All"
+        ) == (cards, False)
+    assert list(tmp_path.iterdir()) == [cache_path]
+    if failure_point in ("tempfile.mkstemp", "os.replace"):
+        assert cache_path.read_text(encoding="utf-8") == "[]"
+
+
+def test_cache_directory_failure_allows_download(mock_session, monkeypatch, tmp_path):
+    session, response = mock_session
+    response.json.return_value = {"data": [{"name": "Fresh Card"}]}
+    monkeypatch.setattr(Seventeenlands, "CACHE_DIR", str(tmp_path / "unavailable"))
+    with patch("src.seventeenlands.os.makedirs", side_effect=PermissionError):
+        client = Seventeenlands()
+    client.session = session
+    assert client._fetch_archetype_with_cache(
+        "OTJ", "PremierDraft", "ALL_TIME", "All"
+    ) == ([{"name": "Fresh Card"}], False)
+
+
+@pytest.mark.parametrize("payload", [[], {"data": []}])
+def test_empty_card_response_is_valid_and_not_cached(
+    payload, mock_session, seventeenlands, tmp_path
+):
+    _, response = mock_session
+    response.json.return_value = payload
+    assert seventeenlands._fetch_archetype_with_cache(
+        "OTJ", "PremierDraft", "ALL_TIME", "All"
+    ) == ([], False)
+    assert not list(tmp_path.iterdir())

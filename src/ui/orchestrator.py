@@ -159,6 +159,12 @@ class DraftOrchestrator(threading.Thread):
                 # Acquire lock briefly, do work, release
                 self.step_process()
 
+            # Card getters queue unknown IDs; a separate worker handles slow IO
+            # without holding the scanner lock or delaying the next log scan.
+            self.scanner.set_data.start_resolution(
+                lambda: self.update_queue.put("REFRESH")
+            )
+
             # Yield to the UI thread between polls
             time.sleep(0.5)
 

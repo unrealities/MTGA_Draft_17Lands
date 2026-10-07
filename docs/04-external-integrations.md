@@ -41,6 +41,13 @@ The app uses the `ScryfallTagger` to harvest community-sourced roles to feed the
 
 If the local Arena Database fails to resolve an ID, the app sends a bulk query using the `/cards/collection` endpoint in chunks of 75.
 
+`Dataset.get_data_by_id()` and name getters perform no database or network IO.
+They enqueue unresolved IDs; the watchdog starts one resolver worker at a time.
+`resolve_data_by_id()` is the blocking worker operation. Transient errors,
+non-200 responses, and missing cards remain retryable, with delays starting at
+5 seconds and doubling to a 300-second cap. Only successfully resolved metadata
+is written to `custom_cards.json`; legacy numeric placeholders are ignored.
+
 ---
 
 ## 3. Local MTGA SQLite Database (Zero-Day Fallback)
@@ -60,6 +67,22 @@ To ensure the app works seamlessly on Day 1 of a new set release without waiting
   1. Fetch `tag_name` (e.g., `v4.15`).
   2. Compare with internal constant `APPLICATION_VERSION`.
   3. If `Remote > Local`: Prompt user to open the release URL.
+
+The prompt runs on the UI thread, appears at most once per version per session,
+and opens the fixed official release page only when accepted.
+
+The public releases page treats release names, tags, asset names, and Markdown
+as untrusted content. It escapes text, allows only a small set of formatting
+elements, removes event attributes, and restricts links to HTTP(S). Raw release
+HTML is displayed as text. Links opening a new tab use `noopener noreferrer`.
+
+### Dataset preferences
+
+`Auto-Sync Cloud Datasets` controls automatic dataset downloads at startup and
+through the notification worker. `Check for Dataset Updates` enables the latter
+only when auto-sync is also enabled. Disabling auto-sync stops that background
+download path; explicit downloads remain available in Datasets. The existing
+one-time version migration in `main.load_data()` still forces a dataset refresh.
 
 ---
 
