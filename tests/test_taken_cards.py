@@ -174,6 +174,35 @@ class TestTakenCardsPanel:
             len(children) == 8
         )  # 8 distinct piles (Lands, 1, 2, 3, 4, 5, 6+, Unknown)
 
+    def test_color_filter_independent_of_global_deck_filter(self, root, mock_draft):
+        """The Card Pool tab's color-pair selector must stay independent of
+        configuration.settings.deck_filter (which drives the Live Pack advisor)."""
+        mock_draft.retrieve_color_win_rate.return_value = {
+            "Auto": constants.FILTER_OPTION_AUTO,
+            "All Decks": constants.FILTER_OPTION_ALL_DECKS,
+            "Dimir (55%)": "UB",
+            "Gruul (52%)": "RG",
+        }
+
+        config = Configuration()
+        config.settings.deck_filter = "RG"  # Global filter picks RG
+        panel = TakenCardsPanel(root, mock_draft, config)
+
+        for card in mock_draft.retrieve_taken_cards.return_value:
+            card["deck_colors"] = {
+                "UB": {constants.DATA_FIELD_GIHWR: 60.0},
+                "RG": {constants.DATA_FIELD_GIHWR: 50.0},
+            }
+
+        panel.refresh()  # Populates pool_filter_map from the mocked rate_map.
+
+        # Selecting "Dimir (55%)" locally must win over the global "RG" filter.
+        panel._on_pool_filter_select("Dimir (55%)")
+
+        assert panel.pool_filter_key == "UB"
+        assert panel.active_color == "UB"
+        assert config.settings.deck_filter == "RG"  # untouched
+
     @patch("src.ui.windows.taken_cards.CardToolTip.create")
     def test_on_selection(self, mock_tooltip, root, mock_draft):
         panel = TakenCardsPanel(root, mock_draft, Configuration())
