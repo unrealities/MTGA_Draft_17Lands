@@ -30,6 +30,12 @@ class TakenCardsPanel(ttk.Frame):
         self.view_mode = "list"  # "list" or "visual"
         self.active_color = "All Decks"
 
+        # Independent color-pair filter for this tab (separate from the
+        # app-wide Deck Filter, which also drives the Live Pack advisor).
+        self.pool_filter_key = constants.FILTER_OPTION_AUTO
+        self.pool_filter_map = {}
+        self.pool_filter_var = tkinter.StringVar(value=constants.FILTER_OPTION_AUTO)
+
         # UI State for Checkbuttons
         self.vars = {}
 
@@ -40,6 +46,8 @@ class TakenCardsPanel(ttk.Frame):
         return self.table_manager.tree if hasattr(self, "table_manager") else None
 
     def refresh(self):
+        self._update_color_filter_options()
+
         raw_pool = self.draft.retrieve_taken_cards()
         if not raw_pool:
             self.current_display_list = []  # Ensure it's an empty list, not None
@@ -50,7 +58,7 @@ class TakenCardsPanel(ttk.Frame):
             metrics = self.draft.retrieve_set_metrics()
             colors = filter_options(
                 raw_pool,
-                self.configuration.settings.deck_filter,
+                self.pool_filter_key,
                 metrics,
                 self.configuration,
             )
@@ -88,6 +96,8 @@ class TakenCardsPanel(ttk.Frame):
                     filtered.append(c)
 
             self.current_display_list = stack_cards(filtered)
+
+        self._update_auto_detect_label()
 
         (
             self._update_table_view()
@@ -127,6 +137,33 @@ class TakenCardsPanel(ttk.Frame):
                 type_grp, text=lbl, variable=var, command=self.refresh
             ).pack(side="left", padx=Theme.scaled_val(3))
 
+        # Color-pair stats filter (independent of the app-wide Deck Filter)
+        color_grp = ttk.Frame(self.filter_frame, style="Card.TFrame")
+        color_grp.pack(side="left", padx=Theme.scaled_val(10))
+
+        ttk.Label(
+            color_grp,
+            text="COLORS:",
+            font=Theme.scaled_font(8, "bold"),
+            bootstyle="primary",
+        ).pack(side="left", padx=Theme.scaled_val(5))
+
+        self.om_pool_filter = ttk.OptionMenu(
+            color_grp,
+            self.pool_filter_var,
+            constants.FILTER_OPTION_AUTO,
+            style="TMenubutton",
+        )
+        self.om_pool_filter.pack(side="left")
+
+        self.lbl_pool_auto_detect = ttk.Label(
+            color_grp,
+            text="",
+            font=Theme.scaled_font(9, "italic"),
+            bootstyle="info",
+        )
+        self.lbl_pool_auto_detect.pack(side="left", padx=Theme.scaled_val(5))
+
         # View Toggle & Export
         btn_frame = ttk.Frame(self.filter_frame, style="Card.TFrame")
         btn_frame.pack(side="right")
@@ -163,6 +200,67 @@ class TakenCardsPanel(ttk.Frame):
 
     def _on_theme_change(self, event=None):
         pass
+
+    def _update_color_filter_options(self):
+        """Populates the tab-local color-pair dropdown from the loaded dataset's
+        win rates. Kept independent of the app-wide Deck Filter."""
+        try:
+            rate_map = self.draft.retrieve_color_win_rate(
+                self.configuration.settings.filter_format
+            )
+        except Exception:
+            rate_map = {}
+
+        if not rate_map:
+            return
+
+        self.pool_filter_map = rate_map
+        menu = self.om_pool_filter["menu"]
+        menu.delete(0, "end")
+        for label, key in rate_map.items():
+            menu.add_command(
+                label=label,
+                command=lambda l=label: self._on_pool_filter_select(l),
+            )
+
+        target_label = next(
+            (label for label, key in rate_map.items() if key == self.pool_filter_key),
+            None,
+        )
+        if target_label is None:
+            self.pool_filter_key = constants.FILTER_OPTION_AUTO
+            target_label = next(
+                (
+                    label
+                    for label, key in rate_map.items()
+                    if key == constants.FILTER_OPTION_AUTO
+                ),
+                constants.FILTER_OPTION_AUTO,
+            )
+        self.pool_filter_var.set(target_label)
+
+    def _on_pool_filter_select(self, label):
+        self.pool_filter_key = self.pool_filter_map.get(
+            label, constants.FILTER_OPTION_AUTO
+        )
+        self.pool_filter_var.set(label)
+        self.refresh()
+
+    def _update_auto_detect_label(self):
+        if self.pool_filter_key != constants.FILTER_OPTION_AUTO:
+            self.lbl_pool_auto_detect.config(text="")
+            return
+
+        if self.active_color == constants.FILTER_OPTION_ALL_DECKS:
+            self.lbl_pool_auto_detect.config(text="(Auto: Detecting...)")
+        else:
+            display_name = (
+                constants.COLOR_NAMES_DICT.get(self.active_color, self.active_color)
+                if self.configuration.settings.filter_format
+                == constants.DECK_FILTER_FORMAT_NAMES
+                else self.active_color
+            )
+            self.lbl_pool_auto_detect.config(text=f"(Auto: {display_name})")
 
     def _toggle_view(self):
         if self.view_mode == "list":
