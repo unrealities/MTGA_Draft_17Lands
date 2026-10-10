@@ -171,8 +171,8 @@ class PracticeDialog(tkinter.Toplevel):
                 filepath
             )
             write_configuration(self.app_context.configuration)
-            self.app_context._update_data_sources()
-            self.app_context._update_deck_filter_options()
+            self.app_context.top_bar.update_data_sources()
+            self.app_context.top_bar.update_deck_filter_options()
         except Exception:
             pass
 
