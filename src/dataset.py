@@ -48,6 +48,10 @@ class Dataset:
         self._resolving = False
         self._load_custom_cache()
 
+    # Failed lookups retry with backoff this many times, then wait for a
+    # dataset switch to be re-queued instead of hitting Scryfall forever.
+    MAX_RESOLVE_ATTEMPTS = 10
+
     def _load_custom_cache(self):
         import os
         import json
@@ -86,14 +90,20 @@ class Dataset:
                 os.remove(tmp_path)
 
     def clear(self) -> None:
-        """Clears the dataset and all memory caches."""
+        """Clears the dataset and its derived in-memory caches.
+
+        ``_fallback_ratings`` is deliberately kept: it mirrors the on-disk
+        custom_cards.json of IDs no dataset knows (e.g. new-set basic lands).
+        Wiping it on every dataset switch forced those IDs to be re-resolved and
+        the cache file rewritten each draft, and get_data_by_id already prefers
+        the current dataset's statistics when a name is present in both.
+        """
         with self._resolution_lock:
             self._invalidate_resolution()
             self._dataset = None
             self._name_index.clear()
             self._id_index.clear()
             self.unknown_id_cache.clear()
-            self._fallback_ratings.clear()
 
     def _invalidate_resolution(self):
         with self._resolution_lock:
@@ -140,9 +150,15 @@ class Dataset:
                             self._retry_counts.pop(aid, None)
                             changed = True
                         else:
-                            attempts = min(self._retry_counts.get(aid, 0) + 1, 7)
+                            attempts = self._retry_counts.get(aid, 0) + 1
                             self._retry_counts[aid] = attempts
-                            self._retry_after[aid] = time.monotonic() + min(300, 5 * 2 ** (attempts - 1))
+                            if attempts >= self.MAX_RESOLVE_ATTEMPTS:
+                                # Give up until a dataset switch re-queues it.
+                                self._retry_after[aid] = float("inf")
+                            else:
+                                self._retry_after[aid] = time.monotonic() + min(
+                                    300, 5 * 2 ** (attempts - 1)
+                                )
                     if changed:
                         if self._dataset:
                             self._dataset = {**self._dataset, "card_ratings": ratings}

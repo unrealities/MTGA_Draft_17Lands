@@ -84,7 +84,21 @@ def json_find(key, obj):
     return result
 
 
-_LOCAL_SET_CACHE = {"mtime": 0.0, "files": []}
+# "mtime" is the Sets folder mtime (fast path). "entries" maps each filename
+# to (stamp, dataset_info) so a folder change re-parses only files whose own
+# size/mtime changed. Any rename inside Sets (e.g. the resolver rewriting
+# custom_cards.json) bumps the folder mtime; without the per-file stamps that
+# meant re-reading every dataset JSON on the UI thread.
+_LOCAL_SET_CACHE = {"mtime": 0.0, "files": [], "entries": {}}
+
+
+def _file_stamp(filename):
+    """(size, mtime_ns) for a file in the Sets folder, or None if unreadable."""
+    try:
+        st = os.stat(os.path.join(SETS_FOLDER, filename))
+        return (st.st_size, st.st_mtime_ns)
+    except OSError:
+        return None
 
 
 def invalidate_local_set_cache():
@@ -145,19 +159,30 @@ def retrieve_local_set_list(codes=None, names=None):
     ):
         all_files = _LOCAL_SET_CACHE["files"]
     else:
-        # CACHE MISS - Deep Scan (Runs only on boot or when a new dataset is downloaded)
+        # CACHE MISS: the folder changed. Re-read only files whose own stamp
+        # changed; everything else comes from the per-file cache.
         all_files = []
+        old_entries = _LOCAL_SET_CACHE.get("entries") or {}
+        new_entries = {}
         if os.path.exists(SETS_FOLDER):
             for file in os.listdir(SETS_FOLDER):
-                try:
-                    # Read without codes/names filter to cache the raw underlying data
-                    dataset_info = read_dataset_info(file, None, None)
-                    if dataset_info:
-                        all_files.append(dataset_info)
-                except Exception as error:
-                    error_list.append(error)
+                stamp = _file_stamp(file)
+                cached = old_entries.get(file)
+                if stamp is not None and cached is not None and cached[0] == stamp:
+                    dataset_info = cached[1]
+                else:
+                    try:
+                        # Read without codes/names filter to cache the raw underlying data
+                        dataset_info = read_dataset_info(file, None, None)
+                    except Exception as error:
+                        error_list.append(error)
+                        continue
+                new_entries[file] = (stamp, dataset_info)
+                if dataset_info:
+                    all_files.append(dataset_info)
         _LOCAL_SET_CACHE["mtime"] = current_mtime
         _LOCAL_SET_CACHE["files"] = all_files
+        _LOCAL_SET_CACHE["entries"] = new_entries
 
     # APPLY FILTERS INSTANTLY
     cleaned_codes = [clean_string(code) for code in codes] if codes else None
