@@ -1,0 +1,1102 @@
+{
+  "Abrade": [
+    "removal"
+  ],
+  "Aetherize": [
+    "removal"
+  ],
+  "Affectionate Indrik": [
+    "removal"
+  ],
+  "Angelic Edict": [
+    "removal"
+  ],
+  "An Offer You Can't Refuse": [
+    "removal"
+  ],
+  "Ayli, Eternal Pilgrim": [
+    "removal",
+    "lifegain"
+  ],
+  "Bake into a Pie": [
+    "removal",
+    "lifegain"
+  ],
+  "Banishing Light": [
+    "removal"
+  ],
+  "Bigfin Bouncer": [
+    "removal"
+  ],
+  "Bite Down": [
+    "removal"
+  ],
+  "Blasphemous Edict": [
+    "removal"
+  ],
+  "Boltwave": [
+    "removal"
+  ],
+  "Boros Charm": [
+    "removal",
+    "combat_trick"
+  ],
+  "Broken Wings": [
+    "removal"
+  ],
+  "Burst Lightning": [
+    "removal",
+    "mana_sink"
+  ],
+  "Bushwhack": [
+    "removal",
+    "card_advantage"
+  ],
+  "Cancel": [
+    "removal"
+  ],
+  "Cathar Commando": [
+    "removal"
+  ],
+  "Chandra, Flameshaper": [
+    "removal",
+    "fixing_ramp"
+  ],
+  "Day of Judgment": [
+    "removal"
+  ],
+  "Deadly Brew": [
+    "removal",
+    "card_advantage"
+  ],
+  "Deadly Plot": [
+    "removal",
+    "card_advantage"
+  ],
+  "Deadly Riposte": [
+    "removal",
+    "lifegain"
+  ],
+  "Deathmark": [
+    "removal"
+  ],
+  "Demolition Field": [
+    "removal",
+    "fixing_ramp",
+    "card_advantage"
+  ],
+  "Demonic Pact": [
+    "removal",
+    "lifegain"
+  ],
+  "Devout Decree": [
+    "removal"
+  ],
+  "Disenchant": [
+    "removal"
+  ],
+  "Drakuseth, Maw of Flames": [
+    "removal",
+    "evasion"
+  ],
+  "Eaten Alive": [
+    "removal"
+  ],
+  "Eaten by Piranhas": [
+    "removal",
+    "combat_trick"
+  ],
+  "Elspeth's Smite": [
+    "removal"
+  ],
+  "Essence Scatter": [
+    "removal"
+  ],
+  "Exclusion Mage": [
+    "removal"
+  ],
+  "Fanatical Firebrand": [
+    "removal"
+  ],
+  "Feed the Swarm": [
+    "removal"
+  ],
+  "Felidar Cub": [
+    "removal"
+  ],
+  "Felling Blow": [
+    "removal"
+  ],
+  "Fiery Annihilation": [
+    "removal"
+  ],
+  "Firebrand Archer": [
+    "removal"
+  ],
+  "Firespitter Whelp": [
+    "removal",
+    "evasion"
+  ],
+  "Flashfreeze": [
+    "removal"
+  ],
+  "Fumigate": [
+    "removal",
+    "lifegain"
+  ],
+  "Garna, Bloodfist of Keld": [
+    "removal"
+  ],
+  "Gatekeeper of Malakir": [
+    "removal",
+    "mana_sink"
+  ],
+  "Goblin Firebomb": [
+    "removal"
+  ],
+  "Goblin Negotiation": [
+    "removal"
+  ],
+  "Gorehorn Raider": [
+    "removal"
+  ],
+  "Guttersnipe": [
+    "removal"
+  ],
+  "Harbinger of the Tides": [
+    "removal"
+  ],
+  "Heartfire Immolator": [
+    "removal"
+  ],
+  "Hero's Downfall": [
+    "removal"
+  ],
+  "Hidetsugu's Second Rite": [
+    "removal"
+  ],
+  "Impact Tremors": [
+    "removal"
+  ],
+  "Imprisoned in the Moon": [
+    "removal",
+    "fixing_ramp"
+  ],
+  "Incinerating Blast": [
+    "removal"
+  ],
+  "Into the Roil": [
+    "removal",
+    "card_advantage",
+    "mana_sink"
+  ],
+  "Joust Through": [
+    "removal",
+    "lifegain"
+  ],
+  "Liliana, Dreadhorde General": [
+    "removal"
+  ],
+  "Luminous Rebuke": [
+    "removal"
+  ],
+  "Maelstrom Pulse": [
+    "removal"
+  ],
+  "Make Your Move": [
+    "removal"
+  ],
+  "Massacre Wurm": [
+    "removal"
+  ],
+  "Meteor Golem": [
+    "removal"
+  ],
+  "Mindsparker": [
+    "removal"
+  ],
+  "Moment of Craving": [
+    "removal",
+    "lifegain"
+  ],
+  "Mortify": [
+    "removal"
+  ],
+  "Negate": [
+    "removal"
+  ],
+  "Obliterating Bolt": [
+    "removal"
+  ],
+  "Pacifism": [
+    "removal"
+  ],
+  "Perforating Artist": [
+    "removal"
+  ],
+  "Prayer of Binding": [
+    "removal",
+    "lifegain"
+  ],
+  "Primal Might": [
+    "removal"
+  ],
+  "Reclamation Sage": [
+    "removal"
+  ],
+  "Refute": [
+    "removal"
+  ],
+  "River's Rebuke": [
+    "removal"
+  ],
+  "Run Away Together": [
+    "removal"
+  ],
+  "Scorching Dragonfire": [
+    "removal"
+  ],
+  "Seeker's Folly": [
+    "removal"
+  ],
+  "Seismic Rupture": [
+    "removal"
+  ],
+  "Skeleton Archer": [
+    "removal"
+  ],
+  "Slagstorm": [
+    "removal"
+  ],
+  "Spitfire Lagac": [
+    "removal"
+  ],
+  "Stab": [
+    "removal",
+    "combat_trick"
+  ],
+  "Starlight Snare": [
+    "removal"
+  ],
+  "Stasis Snare": [
+    "removal"
+  ],
+  "Steel Hellkite": [
+    "removal",
+    "evasion",
+    "mana_sink"
+  ],
+  "Stroke of Midnight": [
+    "removal"
+  ],
+  "Thrashing Brontodon": [
+    "removal"
+  ],
+  "Time Stop": [
+    "removal"
+  ],
+  "Tragic Banshee": [
+    "removal"
+  ],
+  "Tribute to Hunger": [
+    "removal",
+    "lifegain"
+  ],
+  "Trygon Predator": [
+    "removal",
+    "evasion"
+  ],
+  "Uncharted Voyage": [
+    "removal",
+    "card_advantage"
+  ],
+  "Unsummon": [
+    "removal"
+  ],
+  "Valorous Stance": [
+    "removal",
+    "combat_trick"
+  ],
+  "Viashino Pyromancer": [
+    "removal"
+  ],
+  "Vivien Reid": [
+    "removal"
+  ],
+  "Volley Veteran": [
+    "removal"
+  ],
+  "Voracious Greatshark": [
+    "removal"
+  ],
+  "Witness Protection": [
+    "removal"
+  ],
+  "Brass's Bounty": [
+    "fixing_ramp"
+  ],
+  "Burnished Hart": [
+    "fixing_ramp",
+    "card_advantage"
+  ],
+  "Carnelian Orb of Dragonkind": [
+    "fixing_ramp"
+  ],
+  "Circuitous Route": [
+    "fixing_ramp",
+    "card_advantage"
+  ],
+  "Confiscate": [
+    "fixing_ramp"
+  ],
+  "Corsair Captain": [
+    "fixing_ramp"
+  ],
+  "Cultivator's Caravan": [
+    "fixing_ramp"
+  ],
+  "Druid of the Cowl": [
+    "fixing_ramp"
+  ],
+  "Elvish Archdruid": [
+    "fixing_ramp"
+  ],
+  "Evolving Wilds": [
+    "fixing_ramp",
+    "card_advantage"
+  ],
+  "Fake Your Own Death": [
+    "fixing_ramp",
+    "combat_trick"
+  ],
+  "Genesis Wave": [
+    "fixing_ramp"
+  ],
+  "Giada, Font of Hope": [
+    "fixing_ramp",
+    "evasion"
+  ],
+  "Gilded Lotus": [
+    "fixing_ramp"
+  ],
+  "Gleaming Barrier": [
+    "fixing_ramp"
+  ],
+  "Goldvein Pick": [
+    "fixing_ramp"
+  ],
+  "Grow from the Ashes": [
+    "fixing_ramp",
+    "card_advantage",
+    "mana_sink"
+  ],
+  "Hedron Archive": [
+    "fixing_ramp"
+  ],
+  "Heraldic Banner": [
+    "fixing_ramp"
+  ],
+  "Involuntary Employment": [
+    "fixing_ramp"
+  ],
+  "Llanowar Elves": [
+    "fixing_ramp"
+  ],
+  "Loot, Exuberant Explorer": [
+    "fixing_ramp"
+  ],
+  "New Horizons": [
+    "fixing_ramp"
+  ],
+  "Ordeal of Nylea": [
+    "fixing_ramp",
+    "card_advantage"
+  ],
+  "Pyromancer's Goggles": [
+    "fixing_ramp"
+  ],
+  "Ramos, Dragon Engine": [
+    "fixing_ramp",
+    "evasion"
+  ],
+  "Rapacious Dragon": [
+    "fixing_ramp",
+    "evasion"
+  ],
+  "Ruby, Daring Tracker": [
+    "fixing_ramp"
+  ],
+  "Savage Ventmaw": [
+    "fixing_ramp",
+    "evasion"
+  ],
+  "Seize the Spoils": [
+    "fixing_ramp"
+  ],
+  "Solemn Simulacrum": [
+    "fixing_ramp",
+    "card_advantage"
+  ],
+  "Springbloom Druid": [
+    "fixing_ramp",
+    "card_advantage"
+  ],
+  "Abyssal Harvester": [
+    "card_advantage",
+    "hate"
+  ],
+  "Alesha, Who Laughs at Fate": [
+    "card_advantage"
+  ],
+  "Angelic Destiny": [
+    "card_advantage"
+  ],
+  "Campus Guide": [
+    "card_advantage"
+  ],
+  "Cemetery Recruitment": [
+    "card_advantage"
+  ],
+  "Cephalid Inkmage": [
+    "card_advantage",
+    "evasion"
+  ],
+  "Crash Through": [
+    "card_advantage"
+  ],
+  "Darksteel Colossus": [
+    "card_advantage",
+    "evasion"
+  ],
+  "Driver of the Dead": [
+    "card_advantage"
+  ],
+  "Elvish Regrower": [
+    "card_advantage"
+  ],
+  "Expedition Map": [
+    "card_advantage"
+  ],
+  "Feldon's Cane": [
+    "card_advantage"
+  ],
+  "Fiendish Panda": [
+    "card_advantage"
+  ],
+  "Fierce Empath": [
+    "card_advantage"
+  ],
+  "Finale of Revelation": [
+    "card_advantage"
+  ],
+  "Flamewake Phoenix": [
+    "card_advantage",
+    "evasion"
+  ],
+  "Fleeting Distraction": [
+    "card_advantage",
+    "combat_trick"
+  ],
+  "Garruk's Uprising": [
+    "card_advantage"
+  ],
+  "Gate Colossus": [
+    "card_advantage",
+    "evasion"
+  ],
+  "Helpful Hunter": [
+    "card_advantage"
+  ],
+  "Hoarding Dragon": [
+    "card_advantage",
+    "evasion"
+  ],
+  "Inspiration from Beyond": [
+    "card_advantage"
+  ],
+  "Inspiring Overseer": [
+    "card_advantage",
+    "evasion",
+    "lifegain"
+  ],
+  "Lightshell Duo": [
+    "card_advantage"
+  ],
+  "Macabre Waltz": [
+    "card_advantage"
+  ],
+  "Maze's End": [
+    "card_advantage",
+    "mana_sink"
+  ],
+  "Micromancer": [
+    "card_advantage"
+  ],
+  "Muldrotha, the Gravetide": [
+    "card_advantage"
+  ],
+  "Mystical Teachings": [
+    "card_advantage"
+  ],
+  "Nullpriest of Oblivion": [
+    "card_advantage",
+    "evasion",
+    "mana_sink",
+    "lifegain"
+  ],
+  "Opt": [
+    "card_advantage"
+  ],
+  "Progenitus": [
+    "card_advantage",
+    "evasion"
+  ],
+  "Quilled Greatwurm": [
+    "card_advantage",
+    "evasion"
+  ],
+  "Raise the Past": [
+    "card_advantage"
+  ],
+  "Reassembling Skeleton": [
+    "card_advantage"
+  ],
+  "Rise of the Dark Realms": [
+    "card_advantage"
+  ],
+  "Rune-Scarred Demon": [
+    "card_advantage",
+    "evasion"
+  ],
+  "Rune-Sealed Wall": [
+    "card_advantage"
+  ],
+  "Sanguine Indulgence": [
+    "card_advantage"
+  ],
+  "Shipwreck Dowser": [
+    "card_advantage"
+  ],
+  "Skyship Buccaneer": [
+    "card_advantage",
+    "evasion"
+  ],
+  "Sphinx of Forgotten Lore": [
+    "card_advantage",
+    "evasion"
+  ],
+  "Storm Fleet Spy": [
+    "card_advantage"
+  ],
+  "Sun-Blessed Healer": [
+    "card_advantage",
+    "mana_sink",
+    "lifegain"
+  ],
+  "Think Twice": [
+    "card_advantage"
+  ],
+  "Vampire Soulcaller": [
+    "card_advantage",
+    "evasion"
+  ],
+  "Vanguard Seraph": [
+    "card_advantage",
+    "evasion"
+  ],
+  "Vile Entomber": [
+    "card_advantage"
+  ],
+  "Wary Thespian": [
+    "card_advantage"
+  ],
+  "Wishclaw Talisman": [
+    "card_advantage"
+  ],
+  "Zombify": [
+    "card_advantage"
+  ],
+  "Zul Ashur, Lich Lord": [
+    "card_advantage"
+  ],
+  "Aggressive Mammoth": [
+    "evasion"
+  ],
+  "Ancestor Dragon": [
+    "evasion",
+    "lifegain"
+  ],
+  "Angel of Finality": [
+    "evasion",
+    "hate"
+  ],
+  "Angel of Vitality": [
+    "evasion"
+  ],
+  "Arbiter of Woe": [
+    "evasion",
+    "lifegain"
+  ],
+  "Archway Angel": [
+    "evasion",
+    "lifegain"
+  ],
+  "Ashroot Animist": [
+    "evasion"
+  ],
+  "Aurelia, the Warleader": [
+    "evasion"
+  ],
+  "Ball Lightning": [
+    "evasion"
+  ],
+  "Balmor, Battlemage Captain": [
+    "evasion"
+  ],
+  "Beast-Kin Ranger": [
+    "evasion"
+  ],
+  "Billowing Shriekmass": [
+    "evasion"
+  ],
+  "Bloodthirsty Conqueror": [
+    "evasion",
+    "lifegain"
+  ],
+  "Bloodtithe Collector": [
+    "evasion"
+  ],
+  "Clinquant Skymage": [
+    "evasion"
+  ],
+  "Cloudblazer": [
+    "evasion",
+    "lifegain"
+  ],
+  "Courageous Goblin": [
+    "evasion"
+  ],
+  "Crow of Dark Tidings": [
+    "evasion"
+  ],
+  "Crypt Feaster": [
+    "evasion"
+  ],
+  "Curator of Destinies": [
+    "evasion"
+  ],
+  "Dawnwing Marshal": [
+    "evasion",
+    "mana_sink"
+  ],
+  "Dazzling Angel": [
+    "evasion",
+    "lifegain"
+  ],
+  "Desecration Demon": [
+    "evasion"
+  ],
+  "Dragon Mage": [
+    "evasion"
+  ],
+  "Dreadwing Scavenger": [
+    "evasion"
+  ],
+  "Drogskol Reaver": [
+    "evasion",
+    "lifegain"
+  ],
+  "Eager Trufflesnout": [
+    "evasion",
+    "lifegain"
+  ],
+  "Elenda, Saint of Dusk": [
+    "evasion",
+    "lifegain"
+  ],
+  "Empyrean Eagle": [
+    "evasion"
+  ],
+  "Enigma Drake": [
+    "evasion"
+  ],
+  "Exemplar of Light": [
+    "evasion"
+  ],
+  "Fog Bank": [
+    "evasion"
+  ],
+  "Gateway Sneak": [
+    "evasion"
+  ],
+  "Ghalta, Primal Hunger": [
+    "evasion"
+  ],
+  "Giant Cindermaw": [
+    "evasion"
+  ],
+  "Gnarlback Rhino": [
+    "evasion"
+  ],
+  "Healer's Hawk": [
+    "evasion",
+    "lifegain"
+  ],
+  "Herald of Eternal Dawn": [
+    "evasion"
+  ],
+  "Herald of Faith": [
+    "evasion",
+    "lifegain"
+  ],
+  "High Fae Trickster": [
+    "evasion"
+  ],
+  "High-Society Hunter": [
+    "evasion"
+  ],
+  "Icewind Elemental": [
+    "evasion"
+  ],
+  "Immersturm Predator": [
+    "evasion",
+    "hate"
+  ],
+  "Infestation Sage": [
+    "evasion"
+  ],
+  "Kargan Dragonrider": [
+    "evasion"
+  ],
+  "Kitesail Corsair": [
+    "evasion"
+  ],
+  "Koma, World-Eater": [
+    "evasion"
+  ],
+  "Kykar, Zephyr Awakener": [
+    "evasion",
+    "protection"
+  ],
+  "Lathliss, Dragon Queen": [
+    "evasion",
+    "mana_sink"
+  ],
+  "Lathril, Blade of the Elves": [
+    "evasion",
+    "lifegain"
+  ],
+  "Leonin Skyhunter": [
+    "evasion"
+  ],
+  "Lyra Dawnbringer": [
+    "evasion",
+    "lifegain"
+  ],
+  "Mischievous Mystic": [
+    "evasion"
+  ],
+  "Mocking Sprite": [
+    "evasion"
+  ],
+  "Mossborn Hydra": [
+    "evasion"
+  ],
+  "Niv-Mizzet, Visionary": [
+    "evasion"
+  ],
+  "Ovika, Enigma Goliath": [
+    "evasion"
+  ],
+  "Pelakka Wurm": [
+    "evasion",
+    "lifegain"
+  ],
+  "Rampaging Baloths": [
+    "evasion"
+  ],
+  "Redcap Gutter-Dweller": [
+    "evasion"
+  ],
+  "Serra Angel": [
+    "evasion"
+  ],
+  "Shivan Dragon": [
+    "evasion",
+    "mana_sink"
+  ],
+  "Sire of Seven Deaths": [
+    "evasion",
+    "lifegain"
+  ],
+  "Skyknight Squire": [
+    "evasion"
+  ],
+  "Spectral Sailor": [
+    "evasion",
+    "mana_sink"
+  ],
+  "Sphinx of the Final Word": [
+    "evasion"
+  ],
+  "Strix Lookout": [
+    "evasion"
+  ],
+  "Stromkirk Noble": [
+    "evasion"
+  ],
+  "Swiftblade Vindicator": [
+    "evasion"
+  ],
+  "Tajuru Pathwarden": [
+    "evasion"
+  ],
+  "Tempest Djinn": [
+    "evasion"
+  ],
+  "Terror of Mount Velus": [
+    "evasion"
+  ],
+  "Twinflame Tyrant": [
+    "evasion"
+  ],
+  "Vampire Gourmand": [
+    "evasion"
+  ],
+  "Vampire Interloper": [
+    "evasion"
+  ],
+  "Vampire Nighthawk": [
+    "evasion",
+    "lifegain"
+  ],
+  "Youthful Valkyrie": [
+    "evasion"
+  ],
+  "Zetalpa, Primal Dawn": [
+    "evasion"
+  ],
+  "Adamant Will": [
+    "combat_trick"
+  ],
+  "Burrog Befuddler": [
+    "combat_trick"
+  ],
+  "Celestial Armor": [
+    "combat_trick"
+  ],
+  "Dive Down": [
+    "combat_trick"
+  ],
+  "Divine Resilience": [
+    "combat_trick",
+    "mana_sink"
+  ],
+  "Fleeting Flight": [
+    "combat_trick"
+  ],
+  "Giant Growth": [
+    "combat_trick"
+  ],
+  "Goblin Surprise": [
+    "combat_trick"
+  ],
+  "Ingenious Leonin": [
+    "combat_trick",
+    "mana_sink"
+  ],
+  "Inspiring Call": [
+    "combat_trick"
+  ],
+  "Kindled Fury": [
+    "combat_trick"
+  ],
+  "Make a Stand": [
+    "combat_trick"
+  ],
+  "Moment of Triumph": [
+    "combat_trick",
+    "lifegain"
+  ],
+  "Offer Immortality": [
+    "combat_trick"
+  ],
+  "Snakeskin Veil": [
+    "combat_trick"
+  ],
+  "Sure Strike": [
+    "combat_trick"
+  ],
+  "Twinblade Blessing": [
+    "combat_trick"
+  ],
+  "Undying Malice": [
+    "combat_trick"
+  ],
+  "Crawling Barrens": [
+    "mana_sink"
+  ],
+  "Gnarlid Colony": [
+    "mana_sink"
+  ],
+  "Jazal Goldmane": [
+    "mana_sink"
+  ],
+  "Rite of Replication": [
+    "mana_sink"
+  ],
+  "Rogue's Passage": [
+    "mana_sink"
+  ],
+  "Scavenging Ooze": [
+    "mana_sink",
+    "lifegain",
+    "hate"
+  ],
+  "Sower of Chaos": [
+    "mana_sink"
+  ],
+  "Squad Rallier": [
+    "mana_sink"
+  ],
+  "Treetop Snarespinner": [
+    "mana_sink"
+  ],
+  "Wildborn Preserver": [
+    "mana_sink"
+  ],
+  "Wildheart Invoker": [
+    "mana_sink"
+  ],
+  "Apothecary Stomper": [
+    "lifegain"
+  ],
+  "Authority of the Consuls": [
+    "lifegain"
+  ],
+  "Basilisk Collar": [
+    "lifegain"
+  ],
+  "Bishop's Soldier": [
+    "lifegain"
+  ],
+  "Bloodfell Caves": [
+    "lifegain"
+  ],
+  "Blossoming Sands": [
+    "lifegain"
+  ],
+  "Cat Collector": [
+    "lifegain"
+  ],
+  "Charming Prince": [
+    "lifegain",
+    "protection"
+  ],
+  "Crossway Troublemakers": [
+    "lifegain"
+  ],
+  "Diamond Mare": [
+    "lifegain"
+  ],
+  "Dismal Backwater": [
+    "lifegain"
+  ],
+  "Dwynen, Gilt-Leaf Daen": [
+    "lifegain"
+  ],
+  "Exsanguinate": [
+    "lifegain"
+  ],
+  "Felidar Savior": [
+    "lifegain"
+  ],
+  "Guarded Heir": [
+    "lifegain"
+  ],
+  "Hinterland Sanctifier": [
+    "lifegain"
+  ],
+  "Jungle Hollow": [
+    "lifegain"
+  ],
+  "Kalastria Highborn": [
+    "lifegain"
+  ],
+  "Leonin Vanguard": [
+    "lifegain"
+  ],
+  "Linden, the Steadfast Queen": [
+    "lifegain"
+  ],
+  "Mazemind Tome": [
+    "lifegain"
+  ],
+  "Midnight Snack": [
+    "lifegain"
+  ],
+  "Primeval Bounty": [
+    "lifegain"
+  ],
+  "Regal Caracal": [
+    "lifegain"
+  ],
+  "Rugged Highlands": [
+    "lifegain"
+  ],
+  "Sanguine Syphoner": [
+    "lifegain"
+  ],
+  "Scoured Barrens": [
+    "lifegain"
+  ],
+  "Soul-Shackled Zombie": [
+    "lifegain",
+    "hate"
+  ],
+  "Swiftwater Cliffs": [
+    "lifegain"
+  ],
+  "Tatyova, Benthic Druid": [
+    "lifegain"
+  ],
+  "Thornwood Falls": [
+    "lifegain"
+  ],
+  "Tranquil Cove": [
+    "lifegain"
+  ],
+  "Unflinching Courage": [
+    "lifegain"
+  ],
+  "Vampire Neonate": [
+    "lifegain"
+  ],
+  "Vampire Spawn": [
+    "lifegain"
+  ],
+  "Vampiric Rites": [
+    "lifegain"
+  ],
+  "Vengeful Bloodwitch": [
+    "lifegain"
+  ],
+  "Wardens of the Cycle": [
+    "lifegain"
+  ],
+  "Wind-Scarred Crag": [
+    "lifegain"
+  ],
+  "Ambush Wolf": [
+    "hate"
+  ],
+  "Dryad Militant": [
+    "hate"
+  ],
+  "Soul-Guide Lantern": [
+    "hate"
+  ],
+  "Tinybones, Bauble Burglar": [
+    "hate"
+  ]
+}

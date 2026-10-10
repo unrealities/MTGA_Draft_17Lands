@@ -1,0 +1,848 @@
+{
+  "as_of": "2026-10-10",
+  "source_url": "https://mtgpile.com/api/v1/events/arena/all.json",
+  "attribution": "Event schedule from mtgpile.com, compiled from Wizards of the Coast's published MTG Arena event-schedule articles.",
+  "events": [
+    {
+      "set_code": "TMT",
+      "formats": [
+        "PickTwoDraft"
+      ],
+      "start_date": "2026-03-03",
+      "end_date": "2026-04-20",
+      "source_url": "https://magic.wizards.com/en/news/mtg-arena/teenage-mutant-ninja-turtles-event-schedule"
+    },
+    {
+      "set_code": "TMT",
+      "formats": [
+        "PremierDraft"
+      ],
+      "start_date": "2026-03-03",
+      "end_date": "2026-04-20",
+      "source_url": "https://magic.wizards.com/en/news/mtg-arena/teenage-mutant-ninja-turtles-event-schedule"
+    },
+    {
+      "set_code": "TMT",
+      "formats": [
+        "Sealed"
+      ],
+      "start_date": "2026-03-03",
+      "end_date": "2026-03-26",
+      "source_url": "https://magic.wizards.com/en/news/mtg-arena/teenage-mutant-ninja-turtles-event-schedule"
+    },
+    {
+      "set_code": "TMT",
+      "formats": [
+        "TradDraft"
+      ],
+      "start_date": "2026-03-03",
+      "end_date": "2026-04-20",
+      "source_url": "https://magic.wizards.com/en/news/mtg-arena/teenage-mutant-ninja-turtles-event-schedule"
+    },
+    {
+      "set_code": "TMT",
+      "formats": [
+        "TradSealed"
+      ],
+      "start_date": "2026-03-03",
+      "end_date": "2026-03-17",
+      "source_url": "https://magic.wizards.com/en/news/mtg-arena/teenage-mutant-ninja-turtles-event-schedule"
+    },
+    {
+      "set_code": "TMT",
+      "formats": [
+        "QuickDraft"
+      ],
+      "start_date": "2026-03-12",
+      "end_date": "2026-03-22",
+      "source_url": "https://magic.wizards.com/en/news/mtg-arena/teenage-mutant-ninja-turtles-event-schedule"
+    },
+    {
+      "set_code": "MAT",
+      "formats": [
+        "PremierDraft"
+      ],
+      "start_date": "2026-03-17",
+      "end_date": "2026-03-23",
+      "source_url": "https://magic.wizards.com/en/news/mtg-arena/teenage-mutant-ninja-turtles-event-schedule"
+    },
+    {
+      "set_code": "TMT",
+      "formats": [
+        "QualifierPlayInSealed"
+      ],
+      "start_date": "2026-03-21",
+      "end_date": "2026-03-21",
+      "source_url": "https://magic.wizards.com/en/news/mtg-arena/teenage-mutant-ninja-turtles-event-schedule"
+    },
+    {
+      "set_code": "FDN",
+      "formats": [
+        "QuickDraft"
+      ],
+      "start_date": "2026-03-23",
+      "end_date": "2026-04-06",
+      "source_url": "https://magic.wizards.com/en/news/mtg-arena/teenage-mutant-ninja-turtles-event-schedule"
+    },
+    {
+      "set_code": "TMT",
+      "formats": [
+        "QualifierPlayInTradSealed"
+      ],
+      "start_date": "2026-03-27",
+      "end_date": "2026-03-27",
+      "source_url": "https://magic.wizards.com/en/news/mtg-arena/teenage-mutant-ninja-turtles-event-schedule"
+    },
+    {
+      "set_code": "BLB",
+      "formats": [
+        "PremierDraft"
+      ],
+      "start_date": "2026-03-31",
+      "end_date": "2026-04-06",
+      "source_url": "https://magic.wizards.com/en/news/mtg-arena/teenage-mutant-ninja-turtles-event-schedule"
+    },
+    {
+      "set_code": "Cube - Powered",
+      "formats": [
+        "PremierDraft",
+        "TradDraft"
+      ],
+      "start_date": "2026-03-31",
+      "end_date": "2026-04-20",
+      "source_url": "https://magic.wizards.com/en/news/mtg-arena/teenage-mutant-ninja-turtles-event-schedule"
+    },
+    {
+      "set_code": "FDN",
+      "formats": [
+        "PremierDraft"
+      ],
+      "start_date": "2026-04-07",
+      "end_date": "2026-04-13",
+      "source_url": "https://magic.wizards.com/en/news/mtg-arena/teenage-mutant-ninja-turtles-event-schedule"
+    },
+    {
+      "set_code": "TMT",
+      "formats": [
+        "QuickDraft"
+      ],
+      "start_date": "2026-04-07",
+      "end_date": "2026-04-20",
+      "source_url": "https://magic.wizards.com/en/news/mtg-arena/teenage-mutant-ninja-turtles-event-schedule"
+    },
+    {
+      "set_code": "NEO",
+      "formats": [
+        "PremierDraft"
+      ],
+      "start_date": "2026-04-14",
+      "end_date": "2026-04-20",
+      "source_url": "https://magic.wizards.com/en/news/mtg-arena/teenage-mutant-ninja-turtles-event-schedule"
+    },
+    {
+      "set_code": "SOS",
+      "formats": [
+        "PickTwoDraft"
+      ],
+      "start_date": "2026-04-21",
+      "end_date": "2026-06-22",
+      "source_url": "https://magic.wizards.com/en/news/mtg-arena/secrets-of-strixhaven-event-schedule"
+    },
+    {
+      "set_code": "SOS",
+      "formats": [
+        "PremierDraft"
+      ],
+      "start_date": "2026-04-21",
+      "end_date": "2026-06-22",
+      "source_url": "https://magic.wizards.com/en/news/mtg-arena/secrets-of-strixhaven-event-schedule"
+    },
+    {
+      "set_code": "SOS",
+      "formats": [
+        "TradDraft"
+      ],
+      "start_date": "2026-04-21",
+      "end_date": "2026-06-22",
+      "source_url": "https://magic.wizards.com/en/news/mtg-arena/secrets-of-strixhaven-event-schedule"
+    },
+    {
+      "set_code": "SOS",
+      "formats": [
+        "TradSealed"
+      ],
+      "start_date": "2026-04-21",
+      "end_date": "2026-05-04",
+      "source_url": "https://magic.wizards.com/en/news/mtg-arena/secrets-of-strixhaven-event-schedule"
+    },
+    {
+      "set_code": "TDM",
+      "formats": [
+        "QuickDraft"
+      ],
+      "start_date": "2026-04-21",
+      "end_date": "2026-04-29",
+      "source_url": "https://magic.wizards.com/en/news/mtg-arena/secrets-of-strixhaven-event-schedule"
+    },
+    {
+      "set_code": "SOS",
+      "formats": [
+        "QuickDraft"
+      ],
+      "start_date": "2026-04-30",
+      "end_date": "2026-05-10",
+      "source_url": "https://magic.wizards.com/en/news/mtg-arena/secrets-of-strixhaven-event-schedule"
+    },
+    {
+      "set_code": "SOS",
+      "formats": [
+        "QualifierPlayInSealed"
+      ],
+      "start_date": "2026-05-09",
+      "end_date": "2026-05-09",
+      "source_url": "https://magic.wizards.com/en/news/mtg-arena/secrets-of-strixhaven-event-schedule"
+    },
+    {
+      "set_code": "EOE",
+      "formats": [
+        "QuickDraft"
+      ],
+      "start_date": "2026-05-11",
+      "end_date": "2026-05-25",
+      "source_url": "https://magic.wizards.com/en/news/mtg-arena/secrets-of-strixhaven-event-schedule"
+    },
+    {
+      "set_code": "SOS",
+      "formats": [
+        "QualifierPlayInTradSealed"
+      ],
+      "start_date": "2026-05-15",
+      "end_date": "2026-05-15",
+      "source_url": "https://magic.wizards.com/en/news/mtg-arena/secrets-of-strixhaven-event-schedule"
+    },
+    {
+      "set_code": "SOS",
+      "formats": [
+        "ContenderDraft"
+      ],
+      "start_date": "2026-05-22",
+      "end_date": "2026-05-28",
+      "source_url": "https://magic.wizards.com/en/news/mtg-arena/secrets-of-strixhaven-event-schedule"
+    },
+    {
+      "set_code": "SOS",
+      "formats": [
+        "QuickDraft"
+      ],
+      "start_date": "2026-05-26",
+      "end_date": "2026-06-07",
+      "source_url": "https://magic.wizards.com/en/news/mtg-arena/secrets-of-strixhaven-event-schedule"
+    },
+    {
+      "set_code": "STX",
+      "formats": [
+        "PremierDraft"
+      ],
+      "start_date": "2026-05-26",
+      "end_date": "2026-06-01",
+      "source_url": "https://magic.wizards.com/en/news/mtg-arena/secrets-of-strixhaven-event-schedule"
+    },
+    {
+      "set_code": "Cube - Powered",
+      "formats": [
+        "PremierDraft",
+        "TradDraft"
+      ],
+      "start_date": "2026-06-02",
+      "end_date": "2026-06-22",
+      "source_url": "https://magic.wizards.com/en/news/mtg-arena/secrets-of-strixhaven-event-schedule"
+    },
+    {
+      "set_code": "TLA",
+      "formats": [
+        "PremierDraft"
+      ],
+      "start_date": "2026-06-02",
+      "end_date": "2026-06-08",
+      "source_url": "https://magic.wizards.com/en/news/mtg-arena/secrets-of-strixhaven-event-schedule"
+    },
+    {
+      "set_code": "MKM",
+      "formats": [
+        "QuickDraft"
+      ],
+      "start_date": "2026-06-08",
+      "end_date": "2026-06-16",
+      "source_url": "https://magic.wizards.com/en/news/mtg-arena/secrets-of-strixhaven-event-schedule"
+    },
+    {
+      "set_code": "TDM",
+      "formats": [
+        "PremierDraft"
+      ],
+      "start_date": "2026-06-09",
+      "end_date": "2026-06-15",
+      "source_url": "https://magic.wizards.com/en/news/mtg-arena/secrets-of-strixhaven-event-schedule"
+    },
+    {
+      "set_code": "FIN",
+      "formats": [
+        "PremierDraft"
+      ],
+      "start_date": "2026-06-16",
+      "end_date": "2026-06-22",
+      "source_url": "https://magic.wizards.com/en/news/mtg-arena/secrets-of-strixhaven-event-schedule"
+    },
+    {
+      "set_code": "BLB",
+      "formats": [
+        "QuickDraft"
+      ],
+      "start_date": "2026-06-17",
+      "end_date": "2026-07-01",
+      "source_url": "https://magic.wizards.com/en/news/mtg-arena/secrets-of-strixhaven-event-schedule"
+    },
+    {
+      "set_code": "BLB",
+      "formats": [
+        "PremierDraft"
+      ],
+      "start_date": "2026-06-23",
+      "end_date": "2026-07-01",
+      "source_url": "https://magic.wizards.com/en/news/mtg-arena/marvel-super-heroes-event-schedule"
+    },
+    {
+      "set_code": "MSH",
+      "formats": [
+        "PickTwoDraft"
+      ],
+      "start_date": "2026-06-23",
+      "end_date": "2026-08-10",
+      "source_url": "https://magic.wizards.com/en/news/mtg-arena/marvel-super-heroes-event-schedule"
+    },
+    {
+      "set_code": "MSH",
+      "formats": [
+        "PremierDraft"
+      ],
+      "start_date": "2026-06-23",
+      "end_date": "2026-08-10",
+      "source_url": "https://magic.wizards.com/en/news/mtg-arena/marvel-super-heroes-event-schedule"
+    },
+    {
+      "set_code": "MSH",
+      "formats": [
+        "Sealed"
+      ],
+      "start_date": "2026-06-23",
+      "end_date": "2026-07-20",
+      "source_url": "https://magic.wizards.com/en/news/mtg-arena/marvel-super-heroes-event-schedule"
+    },
+    {
+      "set_code": "MSH",
+      "formats": [
+        "TradDraft"
+      ],
+      "start_date": "2026-06-23",
+      "end_date": "2026-08-10",
+      "source_url": "https://magic.wizards.com/en/news/mtg-arena/marvel-super-heroes-event-schedule"
+    },
+    {
+      "set_code": "MSH",
+      "formats": [
+        "TradSealed"
+      ],
+      "start_date": "2026-06-23",
+      "end_date": "2026-08-06",
+      "source_url": "https://magic.wizards.com/en/news/mtg-arena/marvel-super-heroes-event-schedule"
+    },
+    {
+      "set_code": "MSH",
+      "formats": [
+        "ArenaDirect_Sealed"
+      ],
+      "start_date": "2026-06-30",
+      "end_date": "2026-07-05",
+      "source_url": "https://magic.wizards.com/en/news/mtg-arena/marvel-super-heroes-event-schedule"
+    },
+    {
+      "set_code": "MSH",
+      "formats": [
+        "QuickDraft"
+      ],
+      "start_date": "2026-07-02",
+      "end_date": "2026-07-11",
+      "source_url": "https://magic.wizards.com/en/news/mtg-arena/marvel-super-heroes-event-schedule"
+    },
+    {
+      "set_code": "MSH",
+      "formats": [
+        "QualifierPlayInSealed"
+      ],
+      "start_date": "2026-07-04",
+      "end_date": "2026-07-04",
+      "source_url": "https://magic.wizards.com/en/news/mtg-arena/marvel-super-heroes-event-schedule"
+    },
+    {
+      "set_code": "MSH",
+      "formats": [
+        "ContenderDraft"
+      ],
+      "start_date": "2026-07-07",
+      "end_date": "2026-07-13",
+      "source_url": "https://magic.wizards.com/en/news/mtg-arena/marvel-super-heroes-event-schedule"
+    },
+    {
+      "set_code": "MSH",
+      "formats": [
+        "QualifierPlayInTradSealed"
+      ],
+      "start_date": "2026-07-10",
+      "end_date": "2026-07-10",
+      "source_url": "https://magic.wizards.com/en/news/mtg-arena/marvel-super-heroes-event-schedule"
+    },
+    {
+      "set_code": "ECL",
+      "formats": [
+        "QuickDraft"
+      ],
+      "start_date": "2026-07-12",
+      "end_date": "2026-07-20",
+      "source_url": "https://magic.wizards.com/en/news/mtg-arena/marvel-super-heroes-event-schedule"
+    },
+    {
+      "set_code": "DFT",
+      "formats": [
+        "PremierDraft"
+      ],
+      "start_date": "2026-07-14",
+      "end_date": "2026-07-20",
+      "source_url": "https://magic.wizards.com/en/news/mtg-arena/marvel-super-heroes-event-schedule"
+    },
+    {
+      "set_code": "MSH",
+      "formats": [
+        "ArenaDirect_Sealed"
+      ],
+      "start_date": "2026-07-17",
+      "end_date": "2026-07-26",
+      "source_url": "https://magic.wizards.com/en/news/mtg-arena/marvel-super-heroes-event-schedule"
+    },
+    {
+      "set_code": "Cube - Planar",
+      "formats": [
+        "PremierDraft"
+      ],
+      "start_date": "2026-07-21",
+      "end_date": "2026-08-10",
+      "source_url": "https://magic.wizards.com/en/news/mtg-arena/marvel-super-heroes-event-schedule"
+    },
+    {
+      "set_code": "DSK",
+      "formats": [
+        "PremierDraft"
+      ],
+      "start_date": "2026-07-21",
+      "end_date": "2026-07-27",
+      "source_url": "https://magic.wizards.com/en/news/mtg-arena/marvel-super-heroes-event-schedule"
+    },
+    {
+      "set_code": "OTJ",
+      "formats": [
+        "QuickDraft"
+      ],
+      "start_date": "2026-07-21",
+      "end_date": "2026-07-30",
+      "source_url": "https://magic.wizards.com/en/news/mtg-arena/marvel-super-heroes-event-schedule"
+    },
+    {
+      "set_code": "EOE",
+      "formats": [
+        "PremierDraft"
+      ],
+      "start_date": "2026-07-28",
+      "end_date": "2026-08-03",
+      "source_url": "https://magic.wizards.com/en/news/mtg-arena/marvel-super-heroes-event-schedule"
+    },
+    {
+      "set_code": "MSH",
+      "formats": [
+        "QuickDraft"
+      ],
+      "start_date": "2026-07-31",
+      "end_date": "2026-08-10",
+      "source_url": "https://magic.wizards.com/en/news/mtg-arena/marvel-super-heroes-event-schedule"
+    },
+    {
+      "set_code": "TLA",
+      "formats": [
+        "ArenaDirect_Sealed"
+      ],
+      "start_date": "2026-07-31",
+      "end_date": "2026-08-02",
+      "source_url": "https://magic.wizards.com/en/news/mtg-arena/marvel-super-heroes-event-schedule"
+    },
+    {
+      "set_code": "MSH",
+      "formats": [
+        "ContenderDraft"
+      ],
+      "start_date": "2026-08-04",
+      "end_date": "2026-08-09",
+      "source_url": "https://magic.wizards.com/en/news/mtg-arena/marvel-super-heroes-event-schedule"
+    },
+    {
+      "set_code": "WAR",
+      "formats": [
+        "PremierDraft"
+      ],
+      "start_date": "2026-08-04",
+      "end_date": "2026-08-10",
+      "source_url": "https://magic.wizards.com/en/news/mtg-arena/marvel-super-heroes-event-schedule"
+    },
+    {
+      "set_code": "DSK",
+      "formats": [
+        "QuickDraft"
+      ],
+      "start_date": "2026-08-11",
+      "end_date": "2026-08-19",
+      "source_url": "https://magic.wizards.com/en/news/mtg-arena/the-hobbit-event-schedule"
+    },
+    {
+      "set_code": "HOB",
+      "formats": [
+        "PickTwoDraft"
+      ],
+      "start_date": "2026-08-11",
+      "end_date": "2026-09-29",
+      "source_url": "https://magic.wizards.com/en/news/mtg-arena/the-hobbit-event-schedule"
+    },
+    {
+      "set_code": "HOB",
+      "formats": [
+        "PremierDraft"
+      ],
+      "start_date": "2026-08-11",
+      "end_date": "2026-09-29",
+      "source_url": "https://magic.wizards.com/en/news/mtg-arena/the-hobbit-event-schedule"
+    },
+    {
+      "set_code": "HOB",
+      "formats": [
+        "Sealed"
+      ],
+      "start_date": "2026-08-11",
+      "end_date": "2026-09-08",
+      "source_url": "https://magic.wizards.com/en/news/mtg-arena/the-hobbit-event-schedule"
+    },
+    {
+      "set_code": "HOB",
+      "formats": [
+        "TradDraft"
+      ],
+      "start_date": "2026-08-11",
+      "end_date": "2026-09-29",
+      "source_url": "https://magic.wizards.com/en/news/mtg-arena/the-hobbit-event-schedule"
+    },
+    {
+      "set_code": "HOB",
+      "formats": [
+        "TradSealed"
+      ],
+      "start_date": "2026-08-11",
+      "end_date": "2026-08-25",
+      "source_url": "https://magic.wizards.com/en/news/mtg-arena/the-hobbit-event-schedule"
+    },
+    {
+      "set_code": "HOB",
+      "formats": [
+        "ArenaDirect_Sealed"
+      ],
+      "start_date": "2026-08-14",
+      "end_date": "2026-08-23",
+      "source_url": "https://magic.wizards.com/en/news/mtg-arena/the-hobbit-event-schedule"
+    },
+    {
+      "set_code": "HOB",
+      "formats": [
+        "QuickDraft"
+      ],
+      "start_date": "2026-08-20",
+      "end_date": "2026-08-30",
+      "source_url": "https://magic.wizards.com/en/news/mtg-arena/the-hobbit-event-schedule"
+    },
+    {
+      "set_code": "HOB",
+      "formats": [
+        "ContenderDraft"
+      ],
+      "start_date": "2026-08-24",
+      "end_date": "2026-09-29",
+      "source_url": "https://magic.wizards.com/en/news/mtg-arena/the-hobbit-event-schedule"
+    },
+    {
+      "set_code": "LTR",
+      "formats": [
+        "PremierDraft"
+      ],
+      "start_date": "2026-08-25",
+      "end_date": "2026-09-07",
+      "source_url": "https://magic.wizards.com/en/news/mtg-arena/the-hobbit-event-schedule"
+    },
+    {
+      "set_code": "HOB",
+      "formats": [
+        "ArenaDirect_Sealed"
+      ],
+      "start_date": "2026-08-28",
+      "end_date": "2026-09-06",
+      "source_url": "https://magic.wizards.com/en/news/mtg-arena/the-hobbit-event-schedule"
+    },
+    {
+      "set_code": "SOS",
+      "formats": [
+        "QuickDraft"
+      ],
+      "start_date": "2026-08-31",
+      "end_date": "2026-09-07",
+      "source_url": "https://magic.wizards.com/en/news/mtg-arena/the-hobbit-event-schedule"
+    },
+    {
+      "set_code": "Cube - Powered",
+      "formats": [
+        "PremierDraft",
+        "TradDraft"
+      ],
+      "start_date": "2026-09-08",
+      "end_date": "2026-09-28",
+      "source_url": "https://magic.wizards.com/en/news/mtg-arena/the-hobbit-event-schedule"
+    },
+    {
+      "set_code": "MH3",
+      "formats": [
+        "PremierDraft"
+      ],
+      "start_date": "2026-09-08",
+      "end_date": "2026-09-15",
+      "source_url": "https://magic.wizards.com/en/news/mtg-arena/the-hobbit-event-schedule"
+    },
+    {
+      "set_code": "HOB",
+      "formats": [
+        "QualifierPlayInSealed"
+      ],
+      "start_date": "2026-09-12",
+      "end_date": "2026-09-12",
+      "source_url": "https://magic.wizards.com/en/news/mtg-arena/the-hobbit-event-schedule"
+    },
+    {
+      "set_code": "DFT",
+      "formats": [
+        "ArenaDirect_Sealed"
+      ],
+      "start_date": "2026-09-15",
+      "end_date": "2026-09-20",
+      "source_url": "https://magic.wizards.com/en/news/mtg-arena/the-hobbit-event-schedule"
+    },
+    {
+      "set_code": "DMU",
+      "formats": [
+        "PremierDraft"
+      ],
+      "start_date": "2026-09-16",
+      "end_date": "2026-09-21",
+      "source_url": "https://magic.wizards.com/en/news/mtg-arena/the-hobbit-event-schedule"
+    },
+    {
+      "set_code": "HOB",
+      "formats": [
+        "QualifierPlayInTradSealed"
+      ],
+      "start_date": "2026-09-18",
+      "end_date": "2026-09-18",
+      "source_url": "https://magic.wizards.com/en/news/mtg-arena/the-hobbit-event-schedule"
+    },
+    {
+      "set_code": "OTJ",
+      "formats": [
+        "PremierDraft"
+      ],
+      "start_date": "2026-09-22",
+      "end_date": "2026-09-28",
+      "source_url": "https://magic.wizards.com/en/news/mtg-arena/the-hobbit-event-schedule"
+    },
+    {
+      "set_code": "MOM",
+      "formats": [
+        "ArenaDirect_Sealed"
+      ],
+      "start_date": "2026-09-25",
+      "end_date": "2026-09-27",
+      "source_url": "https://magic.wizards.com/en/news/mtg-arena/the-hobbit-event-schedule"
+    },
+    {
+      "set_code": "FRA",
+      "formats": [
+        "PickTwoDraft"
+      ],
+      "start_date": "2026-09-29",
+      "end_date": "2026-11-09",
+      "source_url": "https://magic.wizards.com/en/news/mtg-arena/reality-fracture-event-schedule"
+    },
+    {
+      "set_code": "FRA",
+      "formats": [
+        "PremierDraft"
+      ],
+      "start_date": "2026-09-29",
+      "end_date": "2026-11-09",
+      "source_url": "https://magic.wizards.com/en/news/mtg-arena/reality-fracture-event-schedule"
+    },
+    {
+      "set_code": "FRA",
+      "formats": [
+        "Sealed"
+      ],
+      "start_date": "2026-09-29",
+      "end_date": "2026-10-27",
+      "source_url": "https://magic.wizards.com/en/news/mtg-arena/reality-fracture-event-schedule"
+    },
+    {
+      "set_code": "FRA",
+      "formats": [
+        "TradDraft"
+      ],
+      "start_date": "2026-09-29",
+      "end_date": "2026-11-09",
+      "source_url": "https://magic.wizards.com/en/news/mtg-arena/reality-fracture-event-schedule"
+    },
+    {
+      "set_code": "FRA",
+      "formats": [
+        "TradSealed"
+      ],
+      "start_date": "2026-09-29",
+      "end_date": "2026-10-13",
+      "source_url": "https://magic.wizards.com/en/news/mtg-arena/reality-fracture-event-schedule"
+    },
+    {
+      "set_code": "WOE",
+      "formats": [
+        "QuickDraft"
+      ],
+      "start_date": "2026-09-29",
+      "end_date": "2026-10-07",
+      "source_url": "https://magic.wizards.com/en/news/mtg-arena/reality-fracture-event-schedule"
+    },
+    {
+      "set_code": "FRA",
+      "formats": [
+        "ArenaDirect_Sealed"
+      ],
+      "start_date": "2026-10-02",
+      "end_date": "2026-10-11",
+      "source_url": "https://magic.wizards.com/en/news/mtg-arena/reality-fracture-event-schedule"
+    },
+    {
+      "set_code": "FRA",
+      "formats": [
+        "QuickDraft"
+      ],
+      "start_date": "2026-10-08",
+      "end_date": "2026-10-18",
+      "source_url": "https://magic.wizards.com/en/news/mtg-arena/reality-fracture-event-schedule"
+    },
+    {
+      "set_code": "FRA",
+      "formats": [
+        "ContenderDraft"
+      ],
+      "start_date": "2026-10-13",
+      "end_date": "2026-11-09",
+      "source_url": "https://magic.wizards.com/en/news/mtg-arena/reality-fracture-event-schedule"
+    },
+    {
+      "set_code": "DFT",
+      "formats": [
+        "QuickDraft"
+      ],
+      "start_date": "2026-10-19",
+      "end_date": "2026-10-26",
+      "source_url": "https://magic.wizards.com/en/news/mtg-arena/reality-fracture-event-schedule"
+    },
+    {
+      "set_code": "Cube - Powered",
+      "formats": [
+        "PremierDraft",
+        "TradDraft"
+      ],
+      "start_date": "2026-10-20",
+      "end_date": "2026-11-09",
+      "source_url": "https://magic.wizards.com/en/news/mtg-arena/reality-fracture-event-schedule"
+    },
+    {
+      "set_code": "VOW",
+      "formats": [
+        "PremierDraft"
+      ],
+      "start_date": "2026-10-20",
+      "end_date": "2026-10-26",
+      "source_url": "https://magic.wizards.com/en/news/mtg-arena/reality-fracture-event-schedule"
+    },
+    {
+      "set_code": "FRA",
+      "formats": [
+        "ArenaDirect_Sealed"
+      ],
+      "start_date": "2026-10-23",
+      "end_date": "2026-11-01",
+      "source_url": "https://magic.wizards.com/en/news/mtg-arena/reality-fracture-event-schedule"
+    },
+    {
+      "set_code": "FRA",
+      "formats": [
+        "QualifierPlayInSealed"
+      ],
+      "start_date": "2026-10-25",
+      "end_date": "2026-10-25",
+      "source_url": "https://magic.wizards.com/en/news/mtg-arena/reality-fracture-event-schedule"
+    },
+    {
+      "set_code": "FRA",
+      "formats": [
+        "QuickDraft"
+      ],
+      "start_date": "2026-10-27",
+      "end_date": "2026-11-06",
+      "source_url": "https://magic.wizards.com/en/news/mtg-arena/reality-fracture-event-schedule"
+    },
+    {
+      "set_code": "MID",
+      "formats": [
+        "PremierDraft"
+      ],
+      "start_date": "2026-10-27",
+      "end_date": "2026-11-02",
+      "source_url": "https://magic.wizards.com/en/news/mtg-arena/reality-fracture-event-schedule"
+    },
+    {
+      "set_code": "PIO",
+      "formats": [
+        "PremierDraft"
+      ],
+      "start_date": "2026-11-03",
+      "end_date": "2026-11-10",
+      "source_url": "https://magic.wizards.com/en/news/mtg-arena/reality-fracture-event-schedule"
+    },
+    {
+      "set_code": "EOE",
+      "formats": [
+        "ArenaDirect_Sealed"
+      ],
+      "start_date": "2026-11-06",
+      "end_date": "2026-11-08",
+      "source_url": "https://magic.wizards.com/en/news/mtg-arena/reality-fracture-event-schedule"
+    }
+  ]
+}
