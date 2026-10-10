@@ -166,6 +166,8 @@ DATA_SET_FIELDS = [
 
 FILTER_OPTION_ALL_DECKS = "All Decks"
 FILTER_OPTION_AUTO = "Auto"
+# Tab-local color selectors use this to defer to the app-wide deck_filter.
+FILTER_OPTION_FOLLOW = "Follow Deck Filter"
 FILTER_OPTION_TIER = "TIER"
 
 FIELD_LABEL_ATA = "ATA: Average Taken At"

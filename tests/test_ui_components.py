@@ -424,3 +424,103 @@ class TestUIComponents:
             assert not tooltip.winfo_exists()
         except Exception as e:
             pytest.fail(f"CardToolTip crashed on initialization: {e}")
+
+
+class TestColorFilterSelector:
+    @pytest.fixture
+    def root(self):
+        root = tkinter.Tk()
+        Theme.apply(root, "Dark")
+        yield root
+        root.destroy()
+
+    @pytest.fixture
+    def scanner(self):
+        scanner = MagicMock()
+        scanner.retrieve_color_win_rate.return_value = {
+            "Auto": constants.FILTER_OPTION_AUTO,
+            "All Decks": constants.FILTER_OPTION_ALL_DECKS,
+            "Dimir (55%)": "UB",
+        }
+        scanner.set_data.get_color_ratings.return_value = {"UB": 55.0}
+        return scanner
+
+    @staticmethod
+    def _labels(selector):
+        menu = selector.option_menu["menu"]
+        end = menu.index("end")
+        if end is None:
+            return []
+        return [menu.entrycget(i, "label") for i in range(end + 1)]
+
+    def test_sync_builds_menu_with_leading_options_first(self, root, scanner):
+        from src.ui.components import ColorFilterSelector
+
+        sel = ColorFilterSelector(
+            root,
+            scanner,
+            Configuration(),
+            leading_options={"Follow": "FOLLOW"},
+            default_key="FOLLOW",
+        )
+        assert sel.sync() is True
+        assert self._labels(sel) == ["Follow", "Auto", "All Decks", "Dimir (55%)"]
+        assert sel.selected_key == "FOLLOW"
+        assert sel.variable.get() == "Follow"
+
+    def test_sync_selects_requested_key_and_falls_back(self, root, scanner):
+        from src.ui.components import ColorFilterSelector
+
+        sel = ColorFilterSelector(root, scanner, Configuration())
+        sel.sync(selected_key="UB")
+        assert sel.variable.get() == "Dimir (55%)"
+        assert sel.selected_key == "UB"
+
+        sel.sync(selected_key="WG")  # not in dataset
+        assert sel.selected_key == constants.FILTER_OPTION_AUTO
+        assert sel.variable.get() == "Auto"
+
+    def test_sync_is_a_noop_when_dataset_unchanged(self, root, scanner):
+        from src.ui.components import ColorFilterSelector
+
+        sel = ColorFilterSelector(root, scanner, Configuration())
+        sel.sync(selected_key="UB")
+        with patch.object(sel.option_menu["menu"], "delete") as rm:
+            assert sel.sync() is False
+            rm.assert_not_called()
+        assert sel.selected_key == "UB"
+
+    def test_empty_dataset_keeps_default_key_as_label(self, root, scanner):
+        from src.ui.components import ColorFilterSelector
+
+        scanner.retrieve_color_win_rate.return_value = {}
+        sel = ColorFilterSelector(root, scanner, Configuration())
+        sel.sync(selected_key="UB")
+        assert self._labels(sel) == []
+        assert sel.variable.get() == "Auto"
+        assert sel.selected_key == "Auto"
+
+    def test_menu_click_sets_variable_and_notifies(self, root, scanner):
+        from src.ui.components import ColorFilterSelector
+
+        seen = []
+        var = tkinter.StringVar()
+        sel = ColorFilterSelector(
+            root, scanner, Configuration(), variable=var, on_select=seen.append
+        )
+        sel.sync()
+        sel.option_menu["menu"].invoke(self._labels(sel).index("Dimir (55%)"))
+        assert var.get() == "Dimir (55%)"
+        assert seen == ["UB"]
+
+    def test_describe_color_respects_filter_format(self, root, scanner):
+        from src.ui.components import ColorFilterSelector
+
+        config = Configuration()
+        sel = ColorFilterSelector(root, scanner, config)
+
+        config.settings.filter_format = constants.DECK_FILTER_FORMAT_NAMES
+        assert sel.describe_color("UB") == "Dimir 55.0%"
+        config.settings.filter_format = constants.DECK_FILTER_FORMAT_COLORS
+        assert sel.describe_color("UB") == "UB 55.0%"
+        assert sel.describe_color("WG") == "WG"  # no rating -> no suffix

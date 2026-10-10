@@ -16,6 +16,7 @@ from src.ui.components import (
     CardToolTip,
     ScrolledFrame,
     CardPile,
+    ColorFilterSelector,
 )
 from src.card_logic import format_win_rate
 
@@ -28,13 +29,7 @@ class TakenCardsPanel(ttk.Frame):
 
         self.current_display_list = []
         self.view_mode = "list"  # "list" or "visual"
-        self.active_color = "All Decks"
-
-        # Independent color-pair filter for this tab (separate from the
-        # app-wide Deck Filter, which also drives the Live Pack advisor).
-        self.pool_filter_key = constants.FILTER_OPTION_AUTO
-        self.pool_filter_map = {}
-        self.pool_filter_var = tkinter.StringVar(value=constants.FILTER_OPTION_AUTO)
+        self.active_color = constants.FILTER_OPTION_ALL_DECKS
 
         # UI State for Checkbuttons
         self.vars = {}
@@ -46,23 +41,26 @@ class TakenCardsPanel(ttk.Frame):
         return self.table_manager.tree if hasattr(self, "table_manager") else None
 
     def refresh(self):
-        self._update_color_filter_options()
+        # Rebuilds the dropdown only when the dataset's archetype list changed.
+        self.color_filter.sync()
 
         raw_pool = self.draft.retrieve_taken_cards()
         if not raw_pool:
             self.current_display_list = []  # Ensure it's an empty list, not None
-            self.active_color = "All Decks"
+            self.active_color = constants.FILTER_OPTION_ALL_DECKS
         else:
             from src.card_logic import filter_options
 
             metrics = self.draft.retrieve_set_metrics()
             colors = filter_options(
                 raw_pool,
-                self.pool_filter_key,
+                self.resolved_filter_option(),
                 metrics,
                 self.configuration,
             )
-            self.active_color = colors[0] if colors else "All Decks"
+            self.active_color = (
+                colors[0] if colors else constants.FILTER_OPTION_ALL_DECKS
+            )
 
             # 2. Filter
             active_types = []
@@ -97,7 +95,7 @@ class TakenCardsPanel(ttk.Frame):
 
             self.current_display_list = stack_cards(filtered)
 
-        self._update_auto_detect_label()
+        self._update_filter_status()
 
         (
             self._update_table_view()
@@ -137,32 +135,25 @@ class TakenCardsPanel(ttk.Frame):
                 type_grp, text=lbl, variable=var, command=self.refresh
             ).pack(side="left", padx=Theme.scaled_val(3))
 
-        # Color-pair stats filter (independent of the app-wide Deck Filter)
-        color_grp = ttk.Frame(self.filter_frame, style="Card.TFrame")
-        color_grp.pack(side="left", padx=Theme.scaled_val(10))
-
-        ttk.Label(
-            color_grp,
-            text="COLORS:",
-            font=Theme.scaled_font(8, "bold"),
-            bootstyle="primary",
-        ).pack(side="left", padx=Theme.scaled_val(5))
-
-        self.om_pool_filter = ttk.OptionMenu(
-            color_grp,
-            self.pool_filter_var,
-            constants.FILTER_OPTION_AUTO,
-            style="TMenubutton",
+        # Tab-local color-pair override. It defaults to following the app-wide
+        # Deck Filter, so existing behavior is unchanged; picking a pair here
+        # changes only this tab (the Live Pack advisor, Compare and Deck
+        # Builder keep using the global filter). Deliberately session-only:
+        # an override is a situational "how does my pool look in Gruul?"
+        # check rather than a preference, so it is not persisted to settings.
+        self.color_filter = ColorFilterSelector(
+            self.filter_frame,
+            self.draft,
+            self.configuration,
+            leading_options={
+                constants.FILTER_OPTION_FOLLOW: constants.FILTER_OPTION_FOLLOW
+            },
+            default_key=constants.FILTER_OPTION_FOLLOW,
+            on_select=lambda key: self.refresh(),
+            caption="COLORS:",
+            style="Card.TFrame",
         )
-        self.om_pool_filter.pack(side="left")
-
-        self.lbl_pool_auto_detect = ttk.Label(
-            color_grp,
-            text="",
-            font=Theme.scaled_font(9, "italic"),
-            bootstyle="info",
-        )
-        self.lbl_pool_auto_detect.pack(side="left", padx=Theme.scaled_val(5))
+        self.color_filter.pack(side="left", padx=Theme.scaled_val(10))
 
         # View Toggle & Export
         btn_frame = ttk.Frame(self.filter_frame, style="Card.TFrame")
@@ -201,66 +192,30 @@ class TakenCardsPanel(ttk.Frame):
     def _on_theme_change(self, event=None):
         pass
 
-    def _update_color_filter_options(self):
-        """Populates the tab-local color-pair dropdown from the loaded dataset's
-        win rates. Kept independent of the app-wide Deck Filter."""
-        try:
-            rate_map = self.draft.retrieve_color_win_rate(
-                self.configuration.settings.filter_format
-            )
-        except Exception:
-            rate_map = {}
+    def resolved_filter_option(self) -> str:
+        """The option this tab feeds to filter_options(): the local override
+        when one is set, otherwise the app-wide Deck Filter."""
+        key = self.color_filter.selected_key
+        if key == constants.FILTER_OPTION_FOLLOW:
+            return self.configuration.settings.deck_filter
+        return key
 
-        if not rate_map:
+    def _update_filter_status(self):
+        """Names the archetype the stat columns currently reflect. Blank when
+        a local override is set, since the dropdown already names it."""
+        if self.color_filter.selected_key != constants.FILTER_OPTION_FOLLOW:
+            self.color_filter.set_status("")
             return
 
-        self.pool_filter_map = rate_map
-        menu = self.om_pool_filter["menu"]
-        menu.delete(0, "end")
-        for label, key in rate_map.items():
-            menu.add_command(
-                label=label,
-                command=lambda l=label: self._on_pool_filter_select(l),
-            )
-
-        target_label = next(
-            (label for label, key in rate_map.items() if key == self.pool_filter_key),
-            None,
+        following_auto = (
+            self.configuration.settings.deck_filter == constants.FILTER_OPTION_AUTO
         )
-        if target_label is None:
-            self.pool_filter_key = constants.FILTER_OPTION_AUTO
-            target_label = next(
-                (
-                    label
-                    for label, key in rate_map.items()
-                    if key == constants.FILTER_OPTION_AUTO
-                ),
-                constants.FILTER_OPTION_AUTO,
-            )
-        self.pool_filter_var.set(target_label)
-
-    def _on_pool_filter_select(self, label):
-        self.pool_filter_key = self.pool_filter_map.get(
-            label, constants.FILTER_OPTION_AUTO
-        )
-        self.pool_filter_var.set(label)
-        self.refresh()
-
-    def _update_auto_detect_label(self):
-        if self.pool_filter_key != constants.FILTER_OPTION_AUTO:
-            self.lbl_pool_auto_detect.config(text="")
-            return
-
-        if self.active_color == constants.FILTER_OPTION_ALL_DECKS:
-            self.lbl_pool_auto_detect.config(text="(Auto: Detecting...)")
+        if following_auto and self.active_color == constants.FILTER_OPTION_ALL_DECKS:
+            text = "(Auto: Detecting...)"
         else:
-            display_name = (
-                constants.COLOR_NAMES_DICT.get(self.active_color, self.active_color)
-                if self.configuration.settings.filter_format
-                == constants.DECK_FILTER_FORMAT_NAMES
-                else self.active_color
-            )
-            self.lbl_pool_auto_detect.config(text=f"(Auto: {display_name})")
+            prefix = "Auto" if following_auto else "Deck Filter"
+            text = f"({prefix}: {self.color_filter.describe_color(self.active_color)})"
+        self.color_filter.set_status(text)
 
     def _toggle_view(self):
         if self.view_mode == "list":
