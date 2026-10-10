@@ -254,3 +254,53 @@ def test_get_functional_cmc_mechanics():
     # 4. Empty/Missing Data
     assert get_functional_cmc({}) == 0
     assert get_functional_cmc({"cmc": 2, "oracle_text": None}) == 2
+
+
+class _FakeMetrics:
+    def __init__(self, count):
+        self.count = count
+
+    def get_metrics(self, color, field):
+        return (55.0, 3.0)
+
+    def get_sample_count(self, color, field):
+        return self.count
+
+
+def _six_card_pool():
+    return [{"name": f"Card {i}", "colors": ["W", "U"]} for i in range(6)]
+
+
+@pytest.mark.parametrize(
+    "count, expected",
+    [
+        (constants.AUTO_FILTER_MIN_CARDS - 1, constants.FILTER_OPTION_ALL_DECKS),
+        (constants.AUTO_FILTER_MIN_CARDS, "WU"),
+    ],
+)
+def test_auto_filter_requires_per_card_coverage(count, expected):
+    """A pair mean alone is not enough: sparse datasets (FRA Quick Draft had
+    WU values for 11 of 1266 cards) must keep Auto on All Decks or every card
+    renders as '-'."""
+    from src import card_logic
+
+    with patch.object(card_logic, "identify_top_pairs", return_value=[["W", "U"]]):
+        colors = card_logic.filter_options(
+            _six_card_pool(),
+            constants.FILTER_OPTION_AUTO,
+            _FakeMetrics(count),
+            Configuration(),
+        )
+    assert colors == [expected]
+
+
+def test_auto_filter_waits_for_five_picks():
+    from src import card_logic
+
+    colors = card_logic.filter_options(
+        _six_card_pool()[:4],
+        constants.FILTER_OPTION_AUTO,
+        _FakeMetrics(1000),
+        Configuration(),
+    )
+    assert colors == [constants.FILTER_OPTION_ALL_DECKS]
