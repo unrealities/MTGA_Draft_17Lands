@@ -524,3 +524,31 @@ class TestColorFilterSelector:
         config.settings.filter_format = constants.DECK_FILTER_FORMAT_COLORS
         assert sel.describe_color("UB") == "UB 55.0%"
         assert sel.describe_color("WG") == "WG"  # no rating -> no suffix
+
+
+class TestSignalMeterScaling:
+    @pytest.fixture
+    def root(self):
+        root = tkinter.Tk()
+        Theme.apply(root, "Dark")
+        yield root
+        root.destroy()
+
+    def test_small_scores_render_visible_bars(self, root):
+        """Sparse-dataset drafts produce whole-draft totals under 10; the top
+        color must still fill most of the meter."""
+        from src.ui.components import SignalMeter
+
+        meter = SignalMeter(root)
+        meter.canvas.winfo_width = MagicMock(return_value=200)
+        meter.update_values({"W": 4.0, "U": 1.0, "B": 0.0, "R": 0.0, "G": 0.0})
+
+        rects = [
+            meter.canvas.coords(i)
+            for i in meter.canvas.find_all()
+            if meter.canvas.type(i) == "rectangle"
+        ]
+        heights = sorted((r[3] - r[1] for r in rects), reverse=True)
+        usable = meter.canvas_height - 18
+        assert heights[0] >= usable * 0.75
+        assert heights[1] == pytest.approx(heights[0] / 4, abs=1.0)

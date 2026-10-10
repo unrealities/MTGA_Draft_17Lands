@@ -1227,6 +1227,11 @@ class DynamicTreeviewManager(ttk.Frame):
 
 
 class SignalMeter(tb.Frame):
+    # Bars are scaled to the strongest color, never below this score. The old
+    # floor of 20 was tuned for full-coverage Premier datasets; with sparse
+    # Quick Draft win rates whole-draft totals of 5-10 rendered 1-3 px tall.
+    SCALE_FLOOR = 5.0
+
     def __init__(self, parent, **kwargs):
         super().__init__(parent, **kwargs)
         self.canvas_height, self.bar_width, self.gap, self.scores = (
@@ -1269,7 +1274,8 @@ class SignalMeter(tb.Frame):
         tw = (len(cl) * self.bar_width) + ((len(cl) - 1) * self.gap)
         sx, sc = (
             (w - tw) / 2,
-            (self.canvas_height - 18) / max(max(self.scores.values(), default=1), 20),
+            (self.canvas_height - 18)
+            / max(max(self.scores.values(), default=1), self.SCALE_FLOOR),
         )
         for i, c in enumerate(cl):
             v = self.scores.get(c, 0.0)
