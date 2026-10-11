@@ -141,3 +141,34 @@ def test_load_cache_discards_legacy_failed_lookups(tmp_path, monkeypatch):
     }))
     loaded = Dataset(retrieve_unknown=True)
     assert loaded._fallback_ratings == {"123": {"name": "Known Card"}}
+
+
+def test_clear_keeps_persisted_fallback(dataset):
+    """Dataset switches must not throw away resolved IDs (they mirror
+    custom_cards.json); otherwise every draft re-resolves the same lands and
+    rewrites the cache file."""
+    dataset._fallback_ratings = {
+        "106526": {"name": "Plains", "types": ["Land", "Basic"], "colors": ["W"]}
+    }
+    dataset.clear()
+    assert dataset.get_data_by_id([106526])[0]["name"] == "Plains"
+    assert dataset.start_resolution(Mock()) is None  # nothing queued
+
+
+def test_resolver_gives_up_after_max_attempts(dataset, monkeypatch):
+    clock = [100.0]
+    monkeypatch.setattr("src.dataset.time.monotonic", lambda: clock[0])
+    post = Mock(return_value=response())  # Scryfall knows nothing about it
+    monkeypatch.setattr("requests.post", post)
+
+    dataset.get_data_by_id([999])
+    for _ in range(Dataset.MAX_RESOLVE_ATTEMPTS):
+        finish(dataset.start_resolution(Mock()))
+        clock[0] += 1000.0
+
+    assert post.call_count == Dataset.MAX_RESOLVE_ATTEMPTS
+    assert dataset.start_resolution(Mock()) is None
+    # A dataset switch clears the bookkeeping and may re-queue it.
+    dataset.clear()
+    dataset.get_data_by_id([999])
+    assert dataset.start_resolution(Mock()) is not None

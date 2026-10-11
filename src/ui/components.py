@@ -114,7 +114,7 @@ class CollapsibleFrame(ttk.Frame):
                 fill="both", expand=True, pady=Theme.scaled_val((5, 0))
             )
         self._apply_bindings()
-        self.bind_all("<<ThemeChanged>>", self._on_theme_change, add="+")
+        Theme.bind_theme_change(self, self._on_theme_change)
 
     def _apply_bindings(self):
         try:
@@ -849,8 +849,8 @@ class ModernTreeview(ttk.Treeview):
 
     def _setup_row_colors(self):
         # Bind theme updates so zebra striping changes seamlessly
-        self.bind(
-            "<<ThemeChanged>>", lambda e: self._apply_dynamic_row_colors(), add="+"
+        Theme.bind_theme_change(
+            self, lambda e: self._apply_dynamic_row_colors(), application_wide=False
         )
         self._apply_dynamic_row_colors()
 
@@ -1227,6 +1227,11 @@ class DynamicTreeviewManager(ttk.Frame):
 
 
 class SignalMeter(tb.Frame):
+    # Bars are scaled to the strongest color, never below this score. The old
+    # floor of 20 was tuned for full-coverage Premier datasets; with sparse
+    # Quick Draft win rates whole-draft totals of 5-10 rendered 1-3 px tall.
+    SCALE_FLOOR = 5.0
+
     def __init__(self, parent, **kwargs):
         super().__init__(parent, **kwargs)
         self.canvas_height, self.bar_width, self.gap, self.scores = (
@@ -1240,7 +1245,7 @@ class SignalMeter(tb.Frame):
         )
         self.canvas.pack(fill=BOTH, expand=True)
         self.canvas.bind("<Configure>", lambda e: self.redraw())
-        self.bind_all("<<ThemeChanged>>", self._on_theme_change, add="+")
+        Theme.bind_theme_change(self, self._on_theme_change)
 
     def _on_theme_change(self, event=None):
         if self.winfo_exists():
@@ -1269,7 +1274,8 @@ class SignalMeter(tb.Frame):
         tw = (len(cl) * self.bar_width) + ((len(cl) - 1) * self.gap)
         sx, sc = (
             (w - tw) / 2,
-            (self.canvas_height - 18) / max(max(self.scores.values(), default=1), 20),
+            (self.canvas_height - 18)
+            / max(max(self.scores.values(), default=1), self.SCALE_FLOOR),
         )
         for i, c in enumerate(cl):
             v = self.scores.get(c, 0.0)
@@ -1304,7 +1310,7 @@ class ManaCurvePlot(tb.Frame):
         )
         self.canvas.pack(fill=BOTH, expand=True)
         self.canvas.bind("<Configure>", lambda e: self.redraw())
-        self.bind_all("<<ThemeChanged>>", self._on_theme_change, add="+")
+        Theme.bind_theme_change(self, self._on_theme_change)
 
     def _on_theme_change(self, event=None):
         if self.winfo_exists():
@@ -1387,7 +1393,7 @@ class TypePieChart(tb.Frame):
         )
         self.canvas.pack(fill=BOTH, expand=True)
         self.canvas.bind("<Configure>", lambda e: self.redraw())
-        self.bind_all("<<ThemeChanged>>", self._on_theme_change, add="+")
+        Theme.bind_theme_change(self, self._on_theme_change)
 
     def _on_theme_change(self, event=None):
         if self.winfo_exists():
@@ -1608,3 +1614,146 @@ class CardPile(tb.Frame):
         ch.bind("<Button-1>", _trigger_tooltip)
         cv.bind("<Button-1>", _trigger_tooltip)
         lb.bind("<Button-1>", _trigger_tooltip)
+
+
+class ColorFilterSelector(ttk.Frame):
+    """
+    Dropdown for choosing a deck-color archetype (Auto / All Decks / UB ...)
+    backed by the active dataset's color win rates, plus an italic status
+    label naming the archetype currently in effect.
+
+    Shared by the top bar (the app-wide Deck Filter) and by tab-local
+    overrides such as the Card Pool tab, so the label<->key map, the
+    rebuild-only-when-changed rule and the stale-key fallback live in one
+    place instead of drifting across copies.
+
+    ``leading_options`` (label -> key) are listed before the dataset entries;
+    the Card Pool uses this for its "Follow Deck Filter" entry.
+    """
+
+    def __init__(
+        self,
+        parent,
+        scanner,
+        configuration,
+        variable=None,
+        on_select=None,
+        leading_options=None,
+        default_key=constants.FILTER_OPTION_AUTO,
+        caption=None,
+        status_first=False,
+        **kwargs,
+    ):
+        super().__init__(parent, **kwargs)
+        self.scanner = scanner
+        self.configuration = configuration
+        self.on_select = on_select
+        self.leading_options = dict(leading_options or {})
+        self.default_key = default_key
+        self.variable = (
+            variable if variable is not None else tkinter.StringVar(value="")
+        )
+        self.filter_map: Dict[str, str] = {}  # display label -> filter key
+
+        if caption:
+            ttk.Label(
+                self,
+                text=caption,
+                font=Theme.scaled_font(8, "bold"),
+                bootstyle="primary",
+            ).pack(side="left", padx=Theme.scaled_val(5))
+
+        self.option_menu = ttk.OptionMenu(
+            self, self.variable, "", style="TMenubutton"
+        )
+        self.status_label = ttk.Label(
+            self, text="", font=Theme.scaled_font(9, "italic"), bootstyle="info"
+        )
+        if status_first:
+            self.status_label.pack(side="left", padx=Theme.scaled_val(8))
+            self.option_menu.pack(side="left", padx=Theme.scaled_val(2))
+        else:
+            self.option_menu.pack(side="left", padx=Theme.scaled_val(2))
+            self.status_label.pack(side="left", padx=Theme.scaled_val(8))
+
+    # --- state ---
+
+    @property
+    def selected_key(self) -> str:
+        """Filter key for the current dropdown label (the label itself when
+        the dataset has not been loaded yet, e.g. "Auto")."""
+        label = self.variable.get()
+        return self.filter_map.get(label, label)
+
+    def label_for(self, key) -> Optional[str]:
+        return next((lbl for lbl, k in self.filter_map.items() if k == key), None)
+
+    def sync(self, selected_key=None) -> bool:
+        """
+        Refresh the menu from the active dataset. Tk entries are rebuilt only
+        when the option set actually changed, so this is cheap enough to call
+        on every refresh tick. ``selected_key`` picks the entry to show
+        (default: keep the current one); a key the dataset lacks falls back to
+        ``default_key``. Returns True when the menu was rebuilt.
+        """
+        rate_map = (
+            self.scanner.retrieve_color_win_rate(
+                self.configuration.settings.filter_format
+            )
+            or {}
+        )
+        new_map = {**self.leading_options, **rate_map}
+        if selected_key is None:
+            selected_key = self.selected_key
+
+        rebuilt = new_map != self.filter_map
+        if rebuilt:
+            self.filter_map = new_map
+            menu = self.option_menu["menu"]
+            menu.delete(0, "end")
+            for label in new_map:
+                menu.add_command(
+                    label=label, command=lambda lbl=label: self._select(lbl)
+                )
+
+        self.set_key(selected_key)
+        return rebuilt
+
+    def set_key(self, key) -> str:
+        """Select ``key`` (falling back to ``default_key`` when the dataset
+        lacks it) and return the key actually selected."""
+        label = self.label_for(key)
+        if label is None:
+            key = self.default_key
+            label = self.label_for(key) or key
+        if self.variable.get() != label:
+            self.variable.set(label)
+        return key
+
+    def _select(self, label):
+        # Always set, even when unchanged, so variable traces fire like a
+        # plain OptionMenu click would.
+        self.variable.set(label)
+        if self.on_select:
+            self.on_select(self.filter_map.get(label, label))
+
+    # --- presentation ---
+
+    def describe_color(self, color) -> str:
+        """'Dimir 55%' or 'UB 55%' depending on filter_format; the win rate
+        is omitted when the dataset has none for that archetype."""
+        name = color
+        if (
+            self.configuration.settings.filter_format
+            == constants.DECK_FILTER_FORMAT_NAMES
+        ):
+            name = constants.COLOR_NAMES_DICT.get(color, color)
+        try:
+            ratings = self.scanner.set_data.get_color_ratings()
+            rate = ratings[color] if ratings and color in ratings else None
+        except Exception:
+            rate = None
+        return f"{name} {rate}%" if rate is not None else name
+
+    def set_status(self, text):
+        self.status_label.config(text=text)

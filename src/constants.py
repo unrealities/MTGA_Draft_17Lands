@@ -32,9 +32,9 @@ def get_resource_dir():
 BASE_DIR = get_base_dir()
 RESOURCE_DIR = get_resource_dir()
 
-APPLICATION_VERSION = "4.23"
+APPLICATION_VERSION = "4.24"
 OLD_APPLICATION_VERSION = "4.22"
-PREVIOUS_APPLICATION_VERSION = "0422"
+PREVIOUS_APPLICATION_VERSION = "0423"
 
 FONT_SANS_SERIF = "Arial"
 FONT_MONO_SPACE = "Courier"
@@ -166,6 +166,12 @@ DATA_SET_FIELDS = [
 
 FILTER_OPTION_ALL_DECKS = "All Decks"
 FILTER_OPTION_AUTO = "Auto"
+# Tab-local color selectors use this to defer to the app-wide deck_filter.
+FILTER_OPTION_FOLLOW = "Follow Deck Filter"
+# Auto only switches to a color pair when at least this many distinct cards
+# carry a win rate for it; thinner coverage renders almost every card as '-'.
+# The dropdowns themselves list every pair with a non-zero archetype win rate.
+AUTO_FILTER_MIN_CARDS = 30
 FILTER_OPTION_TIER = "TIER"
 
 FIELD_LABEL_ATA = "ATA: Average Taken At"

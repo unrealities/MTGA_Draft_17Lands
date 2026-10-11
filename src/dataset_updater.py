@@ -169,7 +169,9 @@ class DatasetUpdater:
             for key, file_info in remote_manifest["datasets"].items():
                 # The warehouse also retains historical sets. Only the schedule's
                 # exact set identifiers are eligible for automatic downloads.
-                if key.rsplit("_", 2)[0] not in active_set_codes:
+                # Keys are SET_EVENT_GROUP and an event may itself contain an
+                # underscore (ArenaDirect_Sealed), so the set is the leading segment.
+                if key.split("_", 1)[0] not in active_set_codes:
                     continue
                 local_filename = file_info["filename"][:-3]
                 if local_filename in self.config.card_data.excluded_datasets:

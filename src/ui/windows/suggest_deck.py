@@ -83,7 +83,7 @@ class SuggestDeckPanel(ttk.Frame):
             bootstyle="primary",
         )
         self.lbl_archetype.pack(side="left", padx=Theme.scaled_val(5))
-        self.bind_all("<<ThemeChanged>>", self._on_theme_change, add="+")
+        Theme.bind_theme_change(self, self._on_theme_change)
 
         self.var_archetype = tkinter.StringVar()
         self.om_archetype = ttk.OptionMenu(

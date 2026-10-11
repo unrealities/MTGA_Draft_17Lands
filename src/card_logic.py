@@ -83,10 +83,17 @@ def filter_options(deck, option_selection, metrics, configuration):
             # Convert ["U", "B"] -> "UB" in strict WUBRG order
             pair_str = normalize_color_string("".join(top_pair[0]))
 
-            # Check if we actually have data for this archetype
+            # Check if we actually have data for this archetype. A sparse
+            # dataset (e.g. an early Quick Draft file) can carry a pair mean
+            # built from a handful of cards while almost no individual card has
+            # a value for that pair; switching then renders every card as "-".
+            # Stay on All Decks until per-card coverage is real.
             if pair_str:
                 mean, std = metrics.get_metrics(pair_str, constants.DATA_FIELD_GIHWR)
-                if mean > 0.0:
+                sample_count = metrics.get_sample_count(
+                    pair_str, constants.DATA_FIELD_GIHWR
+                )
+                if mean > 0.0 and sample_count >= constants.AUTO_FILTER_MIN_CARDS:
                     return [pair_str]
 
     except Exception as e:

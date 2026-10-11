@@ -13,6 +13,7 @@ from datetime import datetime
 
 from src import constants
 from src.ui.styles import Theme
+from src.ui.components import ColorFilterSelector
 from src.utils import retrieve_local_set_list
 from src.configuration import write_configuration
 
@@ -81,21 +82,18 @@ class TopBarControls(ttk.Frame):
         self.dataset_controls_frame = ttk.Frame(row2)
         self.dataset_controls_frame.pack(side="right")
 
-        self.om_filter = ttk.OptionMenu(
+        # Shared selector widget (the Card Pool tab uses the same class).
+        self.filter_selector = ColorFilterSelector(
             self.dataset_controls_frame,
-            self.app.vars["deck_filter"],
-            "",
-            style="TMenubutton",
+            self.app.orchestrator.scanner,
+            self.app.configuration,
+            variable=self.app.vars["deck_filter"],
+            status_first=True,
         )
-        self.om_filter.pack(side="right", padx=Theme.scaled_val(2))
-
-        self.lbl_auto_detect = ttk.Label(
-            self.dataset_controls_frame,
-            text="",
-            font=Theme.scaled_font(9, "italic"),
-            bootstyle="info",
-        )
-        self.lbl_auto_detect.pack(side="right", padx=Theme.scaled_val(8))
+        self.filter_selector.pack(side="right")
+        # Aliases: tests and other modules reach these widgets by name.
+        self.om_filter = self.filter_selector.option_menu
+        self.lbl_auto_detect = self.filter_selector.status_label
 
         self.om_group = ttk.OptionMenu(
             self.dataset_controls_frame,
@@ -134,28 +132,16 @@ class TopBarControls(ttk.Frame):
 
     def update_auto_detect_label(self, colors):
         """Updates the label that tells the user what lane 'Auto' has detected."""
-        if self.app.configuration.settings.deck_filter == constants.FILTER_OPTION_AUTO:
-            active_color = colors[0] if colors else "All Decks"
-            if active_color == "All Decks":
-                self.lbl_auto_detect.config(text="(Auto: Detecting...)")
-            else:
-                color_ratings = (
-                    self.app.orchestrator.scanner.set_data.get_color_ratings()
-                )
-                wr_str = (
-                    f" {color_ratings[active_color]}%"
-                    if active_color in color_ratings
-                    else ""
-                )
-                display_name = (
-                    constants.COLOR_NAMES_DICT.get(active_color, active_color)
-                    if self.app.configuration.settings.filter_format
-                    == constants.DECK_FILTER_FORMAT_NAMES
-                    else active_color
-                )
-                self.lbl_auto_detect.config(text=f"(Auto: {display_name}{wr_str})")
-        else:
+        if self.app.configuration.settings.deck_filter != constants.FILTER_OPTION_AUTO:
             self.lbl_auto_detect.config(text="")
+            return
+
+        active_color = colors[0] if colors else constants.FILTER_OPTION_ALL_DECKS
+        if active_color == constants.FILTER_OPTION_ALL_DECKS:
+            self.lbl_auto_detect.config(text="(Auto: Detecting...)")
+        else:
+            described = self.filter_selector.describe_color(active_color)
+            self.lbl_auto_detect.config(text=f"(Auto: {described})")
 
     def set_history_dropdown_state(self, state):
         self.combo_history.configure(state=state)
@@ -236,29 +222,14 @@ class TopBarControls(ttk.Frame):
         old_loading = self.app._loading
         self.app._loading = True
         try:
-            rate_map = self.app.orchestrator.scanner.retrieve_color_win_rate(
-                self.app.configuration.settings.filter_format
+            self.filter_selector.sync(
+                selected_key=self.app.configuration.settings.deck_filter
             )
-            self.app.deck_filter_map = rate_map
-
-            menu = self.om_filter["menu"]
-            menu.delete(0, "end")
-            for label in rate_map.keys():
-                menu.add_command(
-                    label=label,
-                    command=lambda v=label: self.app.vars["deck_filter"].set(v),
-                )
-
-            current_setting = self.app.configuration.settings.deck_filter
-            if current_setting not in rate_map.values():
-                current_setting = constants.FILTER_OPTION_AUTO
-                self.app.configuration.settings.deck_filter = current_setting
-
-            target_label = next(
-                (label for label, key in rate_map.items() if key == current_setting),
-                current_setting,
+            self.app.deck_filter_map = self.filter_selector.filter_map
+            # sync() falls back to Auto when the dataset lacks the saved key.
+            self.app.configuration.settings.deck_filter = (
+                self.filter_selector.selected_key
             )
-            self.app.vars["deck_filter"].set(target_label)
         finally:
             self.app._loading = old_loading
 

@@ -52,7 +52,56 @@ class TestTakenCardsPanel:
         ]
         draft.retrieve_set_metrics.return_value = MagicMock()
         draft.retrieve_tier_data.return_value = {}
+        draft.retrieve_color_win_rate.return_value = {
+            "Auto": constants.FILTER_OPTION_AUTO,
+            "All Decks": constants.FILTER_OPTION_ALL_DECKS,
+            "Dimir (55%)": "UB",
+            "Gruul (52%)": "RG",
+        }
+        draft.set_data.get_color_ratings.return_value = {"UB": 55.0, "RG": 52.0}
         return draft
+
+    # --- helpers for the color-filter tests ---
+
+    def _stats_panel(self, root, mock_draft, deck_filter="RG"):
+        """Panel whose cards carry UB=60.0 / RG=50.0 GIHWR so the rendered
+        column reveals which archetype is in effect."""
+        for card in mock_draft.retrieve_taken_cards.return_value:
+            card["deck_colors"] = {
+                "UB": {constants.DATA_FIELD_GIHWR: 60.0},
+                "RG": {constants.DATA_FIELD_GIHWR: 50.0},
+            }
+        config = Configuration()
+        config.settings.deck_filter = deck_filter
+        config.settings.filter_format = constants.DECK_FILTER_FORMAT_NAMES
+        config.settings.result_format = constants.RESULT_FORMAT_WIN_RATE
+        config.settings.column_configs["taken_table"] = ["name", "gihwr"]
+        panel = TakenCardsPanel(root, mock_draft, config)
+        panel.refresh()
+        return panel, config
+
+    @staticmethod
+    def _gihwr_values(panel):
+        tree = panel.table
+        idx = panel.table_manager.active_fields.index("gihwr")
+        return {
+            tree.item(i)["text"]: str(tree.item(i)["values"][idx])
+            for i in tree.get_children()
+        }
+
+    @staticmethod
+    def _menu_labels(panel):
+        menu = panel.color_filter.option_menu["menu"]
+        return [menu.entrycget(i, "label") for i in range(menu.index("end") + 1)]
+
+    def _pick(self, panel, label):
+        """Invoke a dropdown entry exactly as a click would."""
+        menu = panel.color_filter.option_menu["menu"]
+        menu.invoke(self._menu_labels(panel).index(label))
+
+    @staticmethod
+    def _status(panel):
+        return panel.color_filter.status_label.cget("text")
 
     def test_card_stacking(self, root, mock_draft):
         """Verify duplicate cards are stacked with the correct count."""
@@ -173,6 +222,112 @@ class TestTakenCardsPanel:
         assert (
             len(children) == 8
         )  # 8 distinct piles (Lands, 1, 2, 3, 4, 5, 6+, Unknown)
+
+    def test_color_filter_defaults_to_following_global_deck_filter(
+        self, root, mock_draft
+    ):
+        """Out of the box the tab tracks configuration.settings.deck_filter,
+        so existing users see no behavior change."""
+        panel, config = self._stats_panel(root, mock_draft, deck_filter="RG")
+
+        assert panel.color_filter.selected_key == constants.FILTER_OPTION_FOLLOW
+        assert panel.active_color == "RG"
+        assert self._gihwr_values(panel)["Aven"] == "50.0"
+        assert self._status(panel) == "(Deck Filter: Gruul 52.0%)"
+
+        # A top-bar change is picked up on the next refresh.
+        config.settings.deck_filter = "UB"
+        panel.refresh()
+        assert panel.active_color == "UB"
+        assert self._gihwr_values(panel)["Aven"] == "60.0"
+        assert self._status(panel) == "(Deck Filter: Dimir 55.0%)"
+
+    def test_color_filter_menu_lists_follow_first(self, root, mock_draft):
+        panel, _ = self._stats_panel(root, mock_draft)
+        labels = self._menu_labels(panel)
+        assert labels[0] == constants.FILTER_OPTION_FOLLOW
+        assert "Dimir (55%)" in labels and "Gruul (52%)" in labels
+
+    def test_color_filter_override_wins_without_touching_global(
+        self, root, mock_draft
+    ):
+        """Picking a pair from the dropdown changes this tab only."""
+        panel, config = self._stats_panel(root, mock_draft, deck_filter="RG")
+
+        self._pick(panel, "Dimir (55%)")
+
+        assert panel.color_filter.selected_key == "UB"
+        assert panel.active_color == "UB"
+        assert self._gihwr_values(panel)["Aven"] == "60.0"
+        assert config.settings.deck_filter == "RG"  # advisor filter untouched
+        assert self._status(panel) == ""  # dropdown already names the pair
+
+        # Later global changes do not disturb the override...
+        config.settings.deck_filter = "WG"
+        panel.refresh()
+        assert panel.active_color == "UB"
+
+        # ...until the user hands control back.
+        self._pick(panel, constants.FILTER_OPTION_FOLLOW)
+        assert panel.resolved_filter_option() == "WG"
+
+    def test_color_filter_follow_auto_status(self, root, mock_draft):
+        """Following an Auto deck filter shows what Auto resolved to."""
+        panel, _ = self._stats_panel(
+            root, mock_draft, deck_filter=constants.FILTER_OPTION_AUTO
+        )
+        # filter_options() needs >=5 cards and real metrics for a pair; the
+        # mocked metrics make it fall back to All Decks, i.e. "Detecting".
+        assert self._status(panel) == "(Auto: Detecting...)"
+
+        panel.active_color = "UB"
+        panel._update_filter_status()
+        assert self._status(panel) == "(Auto: Dimir 55.0%)"
+
+    def test_color_filter_refresh_keeps_selection_and_skips_rebuild(
+        self, root, mock_draft
+    ):
+        """Per-pick refreshes must not tear the menu down or reset the choice."""
+        panel, _ = self._stats_panel(root, mock_draft)
+        self._pick(panel, "Dimir (55%)")
+
+        with patch.object(panel.color_filter.option_menu["menu"], "delete") as rm:
+            panel.refresh()
+            panel.refresh()
+            rm.assert_not_called()
+
+        assert panel.color_filter.selected_key == "UB"
+        assert panel.color_filter.variable.get() == "Dimir (55%)"
+
+    def test_color_filter_dataset_change_drops_stale_override(
+        self, root, mock_draft
+    ):
+        """A new dataset without the chosen pair falls back to following."""
+        panel, config = self._stats_panel(root, mock_draft, deck_filter="RG")
+        self._pick(panel, "Dimir (55%)")
+
+        mock_draft.retrieve_color_win_rate.return_value = {
+            "Auto": constants.FILTER_OPTION_AUTO,
+            "All Decks": constants.FILTER_OPTION_ALL_DECKS,
+            "Gruul (52%)": "RG",
+        }
+        panel.refresh()
+
+        assert panel.color_filter.selected_key == constants.FILTER_OPTION_FOLLOW
+        assert panel.color_filter.variable.get() == constants.FILTER_OPTION_FOLLOW
+        assert "Dimir (55%)" not in self._menu_labels(panel)
+        assert panel.active_color == "RG"
+
+    def test_color_filter_empty_rate_map_resets_to_follow(self, root, mock_draft):
+        """No dataset loaded: only the follow entry remains and nothing is stale."""
+        panel, _ = self._stats_panel(root, mock_draft)
+        self._pick(panel, "Dimir (55%)")
+
+        mock_draft.retrieve_color_win_rate.return_value = {}
+        panel.refresh()
+
+        assert self._menu_labels(panel) == [constants.FILTER_OPTION_FOLLOW]
+        assert panel.color_filter.selected_key == constants.FILTER_OPTION_FOLLOW
 
     @patch("src.ui.windows.taken_cards.CardToolTip.create")
     def test_on_selection(self, mock_tooltip, root, mock_draft):

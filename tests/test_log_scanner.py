@@ -515,3 +515,24 @@ def test_log_suspend(session_scanner):
     # Unsuspend it
     session_scanner.log_suspend(False)
     assert session_scanner.draft_log.level == logging.INFO
+
+
+def test_scanner_color_win_rate_hides_zero_percent_pairs():
+    """Pairs the dataset lists at 0.0% (no games) are not offered; pairs with
+    any win rate are, however thin their per-card coverage. Auto and All Decks
+    are always present."""
+    from src import constants
+
+    scanner = ArenaScanner("log.txt", MagicMock(), retrieve_unknown=False)
+    scanner.set_data.get_color_ratings = MagicMock(
+        return_value={"All Decks": 55.0, "WU": 57.2, "WR": 0.0, "UB": 0, "RG": None}
+    )
+
+    offered = scanner.retrieve_color_win_rate(constants.DECK_FILTER_FORMAT_COLORS)
+
+    assert set(offered.values()) == {
+        constants.FILTER_OPTION_AUTO,
+        constants.FILTER_OPTION_ALL_DECKS,
+        "WU",
+    }
+    assert "WU (57.2%)" in offered

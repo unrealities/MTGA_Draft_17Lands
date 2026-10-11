@@ -296,23 +296,28 @@ class TestDownloadPanel:
         panel = DownloadWindow(root, mock_sets_data, config, MagicMock())
         monkeypatch.setattr("src.constants.SETS_FOLDER", str(tmp_path))
         active = "OTJ_PremierDraft_All_Data.json"
+        # Other formats of the active set, and any set the manifest lists as
+        # live, are not "inactive" and must survive the cleanup.
+        live_siblings = ["OTJ_QuickDraft_All_Data.json", "FRA_TradDraft_Top_Data.json"]
         unwanted = ["HOB_PremierDraft_All_Data.json", "MSH_QuickDraft_All_Data.json"]
         config.card_data.latest_dataset = active
         config.settings.last_run_version = "4.23"
         config.card_data.excluded_datasets = ["older_Data.json"]
-        for name in [active, *unwanted, "local_manifest.json", "notes.txt"]:
+        for name in [active, *live_siblings, *unwanted, "local_manifest.json", "notes.txt"]:
             (tmp_path / name).write_text("{}")
         (tmp_path / "directory_Data.json").mkdir()
 
         with patch("tkinter.messagebox.askyesno", return_value=True), patch(
             "src.ui.windows.download.write_configuration", return_value=True
-        ) as write, patch("tkinter.messagebox.showinfo"), patch.object(
-            panel, "_update_table"
-        ) as update:
+        ) as write, patch("tkinter.messagebox.showinfo"), patch(
+            "src.ui.windows.download.read_local_manifest",
+            return_value={"active_sets": ["FRA"]},
+        ), patch.object(panel, "_update_table") as update:
             panel._clear_inactive_datasets()
 
         assert all(not (tmp_path / name).exists() for name in unwanted)
         assert (tmp_path / active).exists()
+        assert all((tmp_path / name).exists() for name in live_siblings)
         assert (tmp_path / "local_manifest.json").exists()
         assert (tmp_path / "notes.txt").exists()
         assert (tmp_path / "directory_Data.json").is_dir()

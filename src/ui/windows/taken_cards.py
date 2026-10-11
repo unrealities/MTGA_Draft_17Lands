@@ -16,6 +16,7 @@ from src.ui.components import (
     CardToolTip,
     ScrolledFrame,
     CardPile,
+    ColorFilterSelector,
 )
 from src.card_logic import format_win_rate
 
@@ -28,7 +29,7 @@ class TakenCardsPanel(ttk.Frame):
 
         self.current_display_list = []
         self.view_mode = "list"  # "list" or "visual"
-        self.active_color = "All Decks"
+        self.active_color = constants.FILTER_OPTION_ALL_DECKS
 
         # UI State for Checkbuttons
         self.vars = {}
@@ -40,21 +41,26 @@ class TakenCardsPanel(ttk.Frame):
         return self.table_manager.tree if hasattr(self, "table_manager") else None
 
     def refresh(self):
+        # Rebuilds the dropdown only when the dataset's archetype list changed.
+        self.color_filter.sync()
+
         raw_pool = self.draft.retrieve_taken_cards()
         if not raw_pool:
             self.current_display_list = []  # Ensure it's an empty list, not None
-            self.active_color = "All Decks"
+            self.active_color = constants.FILTER_OPTION_ALL_DECKS
         else:
             from src.card_logic import filter_options
 
             metrics = self.draft.retrieve_set_metrics()
             colors = filter_options(
                 raw_pool,
-                self.configuration.settings.deck_filter,
+                self.resolved_filter_option(),
                 metrics,
                 self.configuration,
             )
-            self.active_color = colors[0] if colors else "All Decks"
+            self.active_color = (
+                colors[0] if colors else constants.FILTER_OPTION_ALL_DECKS
+            )
 
             # 2. Filter
             active_types = []
@@ -89,6 +95,8 @@ class TakenCardsPanel(ttk.Frame):
 
             self.current_display_list = stack_cards(filtered)
 
+        self._update_filter_status()
+
         (
             self._update_table_view()
             if self.view_mode == "list"
@@ -112,7 +120,7 @@ class TakenCardsPanel(ttk.Frame):
             bootstyle="primary",
         )
         self.lbl_filter.pack(side="left", padx=Theme.scaled_val(5))
-        self.bind_all("<<ThemeChanged>>", self._on_theme_change, add="+")
+        Theme.bind_theme_change(self, self._on_theme_change)
 
         self.vars = {}
         for lbl, key in [
@@ -126,6 +134,26 @@ class TakenCardsPanel(ttk.Frame):
             ttk.Checkbutton(
                 type_grp, text=lbl, variable=var, command=self.refresh
             ).pack(side="left", padx=Theme.scaled_val(3))
+
+        # Tab-local color-pair override. It defaults to following the app-wide
+        # Deck Filter, so existing behavior is unchanged; picking a pair here
+        # changes only this tab (the Live Pack advisor, Compare and Deck
+        # Builder keep using the global filter). Deliberately session-only:
+        # an override is a situational "how does my pool look in Gruul?"
+        # check rather than a preference, so it is not persisted to settings.
+        self.color_filter = ColorFilterSelector(
+            self.filter_frame,
+            self.draft,
+            self.configuration,
+            leading_options={
+                constants.FILTER_OPTION_FOLLOW: constants.FILTER_OPTION_FOLLOW
+            },
+            default_key=constants.FILTER_OPTION_FOLLOW,
+            on_select=lambda key: self.refresh(),
+            caption="COLORS:",
+            style="Card.TFrame",
+        )
+        self.color_filter.pack(side="left", padx=Theme.scaled_val(10))
 
         # View Toggle & Export
         btn_frame = ttk.Frame(self.filter_frame, style="Card.TFrame")
@@ -163,6 +191,31 @@ class TakenCardsPanel(ttk.Frame):
 
     def _on_theme_change(self, event=None):
         pass
+
+    def resolved_filter_option(self) -> str:
+        """The option this tab feeds to filter_options(): the local override
+        when one is set, otherwise the app-wide Deck Filter."""
+        key = self.color_filter.selected_key
+        if key == constants.FILTER_OPTION_FOLLOW:
+            return self.configuration.settings.deck_filter
+        return key
+
+    def _update_filter_status(self):
+        """Names the archetype the stat columns currently reflect. Blank when
+        a local override is set, since the dropdown already names it."""
+        if self.color_filter.selected_key != constants.FILTER_OPTION_FOLLOW:
+            self.color_filter.set_status("")
+            return
+
+        following_auto = (
+            self.configuration.settings.deck_filter == constants.FILTER_OPTION_AUTO
+        )
+        if following_auto and self.active_color == constants.FILTER_OPTION_ALL_DECKS:
+            text = "(Auto: Detecting...)"
+        else:
+            prefix = "Auto" if following_auto else "Deck Filter"
+            text = f"({prefix}: {self.color_filter.describe_color(self.active_color)})"
+        self.color_filter.set_status(text)
 
     def _toggle_view(self):
         if self.view_mode == "list":

@@ -13,6 +13,7 @@ from src.constants import (
 class ColorMetrics(BaseModel):
     mean: float = 0.0
     std: float = 0.0
+    count: int = 0  # distinct cards with a non-zero value for this color/field
 
 
 class SetMetrics:
@@ -108,6 +109,12 @@ class SetMetrics:
 
         return round(mean, self._digits), round(std, self._digits)
 
+    def get_sample_count(self, color: str, field: str) -> int:
+        """Number of distinct cards that contributed to get_metrics(color, field)."""
+        if field in self._color_metrics and color in self._color_metrics[field]:
+            return self._color_metrics[field][color].count
+        return 0
+
     def calculate_percentile(self, winrate: float, colors: str, field: str) -> float:
         """
         Calculate the percentile for a given win rate, color, and field using the cumulative distribution function (CDF) of a normal distribution.
@@ -180,6 +187,7 @@ class SetMetrics:
         if not unique_gihwr:
             return metrics
 
+        metrics.count = len(unique_gihwr)
         metrics.mean = stats.mean(unique_gihwr)
         metrics.std = stats.pstdev(unique_gihwr)
 

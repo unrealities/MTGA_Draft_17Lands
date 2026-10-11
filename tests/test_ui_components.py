@@ -370,8 +370,8 @@ class TestUIComponents:
         pie.update_counts({"Creature": 10, "Instant": 5})
         assert len(pie.canvas.find_all()) > 0
 
-        # Trigger theme change virtual event
-        root.event_generate("<<ThemeChanged>>")
+        # A real theme change (Theme.apply) must still restyle the canvases.
+        Theme.apply(root, "Dark")
         root.update()
 
         assert meter.canvas.cget("bg") == Theme.BG_PRIMARY
@@ -424,3 +424,177 @@ class TestUIComponents:
             assert not tooltip.winfo_exists()
         except Exception as e:
             pytest.fail(f"CardToolTip crashed on initialization: {e}")
+
+
+class TestColorFilterSelector:
+    @pytest.fixture
+    def root(self):
+        root = tkinter.Tk()
+        Theme.apply(root, "Dark")
+        yield root
+        root.destroy()
+
+    @pytest.fixture
+    def scanner(self):
+        scanner = MagicMock()
+        scanner.retrieve_color_win_rate.return_value = {
+            "Auto": constants.FILTER_OPTION_AUTO,
+            "All Decks": constants.FILTER_OPTION_ALL_DECKS,
+            "Dimir (55%)": "UB",
+        }
+        scanner.set_data.get_color_ratings.return_value = {"UB": 55.0}
+        return scanner
+
+    @staticmethod
+    def _labels(selector):
+        menu = selector.option_menu["menu"]
+        end = menu.index("end")
+        if end is None:
+            return []
+        return [menu.entrycget(i, "label") for i in range(end + 1)]
+
+    def test_sync_builds_menu_with_leading_options_first(self, root, scanner):
+        from src.ui.components import ColorFilterSelector
+
+        sel = ColorFilterSelector(
+            root,
+            scanner,
+            Configuration(),
+            leading_options={"Follow": "FOLLOW"},
+            default_key="FOLLOW",
+        )
+        assert sel.sync() is True
+        assert self._labels(sel) == ["Follow", "Auto", "All Decks", "Dimir (55%)"]
+        assert sel.selected_key == "FOLLOW"
+        assert sel.variable.get() == "Follow"
+
+    def test_sync_selects_requested_key_and_falls_back(self, root, scanner):
+        from src.ui.components import ColorFilterSelector
+
+        sel = ColorFilterSelector(root, scanner, Configuration())
+        sel.sync(selected_key="UB")
+        assert sel.variable.get() == "Dimir (55%)"
+        assert sel.selected_key == "UB"
+
+        sel.sync(selected_key="WG")  # not in dataset
+        assert sel.selected_key == constants.FILTER_OPTION_AUTO
+        assert sel.variable.get() == "Auto"
+
+    def test_sync_is_a_noop_when_dataset_unchanged(self, root, scanner):
+        from src.ui.components import ColorFilterSelector
+
+        sel = ColorFilterSelector(root, scanner, Configuration())
+        sel.sync(selected_key="UB")
+        with patch.object(sel.option_menu["menu"], "delete") as rm:
+            assert sel.sync() is False
+            rm.assert_not_called()
+        assert sel.selected_key == "UB"
+
+    def test_empty_dataset_keeps_default_key_as_label(self, root, scanner):
+        from src.ui.components import ColorFilterSelector
+
+        scanner.retrieve_color_win_rate.return_value = {}
+        sel = ColorFilterSelector(root, scanner, Configuration())
+        sel.sync(selected_key="UB")
+        assert self._labels(sel) == []
+        assert sel.variable.get() == "Auto"
+        assert sel.selected_key == "Auto"
+
+    def test_menu_click_sets_variable_and_notifies(self, root, scanner):
+        from src.ui.components import ColorFilterSelector
+
+        seen = []
+        var = tkinter.StringVar()
+        sel = ColorFilterSelector(
+            root, scanner, Configuration(), variable=var, on_select=seen.append
+        )
+        sel.sync()
+        sel.option_menu["menu"].invoke(self._labels(sel).index("Dimir (55%)"))
+        assert var.get() == "Dimir (55%)"
+        assert seen == ["UB"]
+
+    def test_describe_color_respects_filter_format(self, root, scanner):
+        from src.ui.components import ColorFilterSelector
+
+        config = Configuration()
+        sel = ColorFilterSelector(root, scanner, config)
+
+        config.settings.filter_format = constants.DECK_FILTER_FORMAT_NAMES
+        assert sel.describe_color("UB") == "Dimir 55.0%"
+        config.settings.filter_format = constants.DECK_FILTER_FORMAT_COLORS
+        assert sel.describe_color("UB") == "UB 55.0%"
+        assert sel.describe_color("WG") == "WG"  # no rating -> no suffix
+
+
+class TestSignalMeterScaling:
+    @pytest.fixture
+    def root(self):
+        root = tkinter.Tk()
+        Theme.apply(root, "Dark")
+        yield root
+        root.destroy()
+
+    def test_small_scores_render_visible_bars(self, root):
+        """Sparse-dataset drafts produce whole-draft totals under 10; the top
+        color must still fill most of the meter."""
+        from src.ui.components import SignalMeter
+
+        meter = SignalMeter(root)
+        meter.canvas.winfo_width = MagicMock(return_value=200)
+        meter.update_values({"W": 4.0, "U": 1.0, "B": 0.0, "R": 0.0, "G": 0.0})
+
+        rects = [
+            meter.canvas.coords(i)
+            for i in meter.canvas.find_all()
+            if meter.canvas.type(i) == "rectangle"
+        ]
+        heights = sorted((r[3] - r[1] for r in rects), reverse=True)
+        usable = meter.canvas_height - 18
+        assert heights[0] >= usable * 0.75
+        assert heights[1] == pytest.approx(heights[0] / 4, abs=1.0)
+
+
+class TestThemeChangeGate:
+    @pytest.fixture
+    def root(self):
+        root = tkinter.Tk()
+        Theme.apply(root, "Dark")
+        yield root
+        root.destroy()
+
+    def test_callback_runs_once_per_apply_not_per_event(self, root):
+        """ttkbootstrap emits <<ThemeChanged>> for every new bootstyle widget;
+        only Theme.apply() counts as a theme change."""
+        import ttkbootstrap as tb
+
+        calls = []
+        Theme.bind_theme_change(root, lambda e: calls.append(e))
+
+        for i in range(5):
+            tb.Label(root, text=str(i), bootstyle="info").pack()
+        root.event_generate("<<ThemeChanged>>")
+        root.update()
+        assert calls == []
+
+        Theme.apply(root, "Dark")
+        root.update()
+        assert len(calls) == 1
+
+        root.event_generate("<<ThemeChanged>>")
+        root.update()
+        assert len(calls) == 1
+
+    def test_advisor_panel_does_not_rebuild_on_widget_creation(self, root):
+        import ttkbootstrap as tb
+        from src.ui.advisor_view import AdvisorPanel
+
+        panel = AdvisorPanel(root, Configuration())
+        with patch.object(panel, "update_recommendations") as rebuild:
+            for i in range(5):
+                tb.Button(root, text=str(i), bootstyle="success-outline").pack()
+            root.update()
+            rebuild.assert_not_called()
+
+            Theme.apply(root, "Dark")
+            root.update()
+            rebuild.assert_called_once()

@@ -222,3 +222,87 @@ def test_clear_set_history_removes_datasets(tmp_path, monkeypatch):
     assert not (tmp_path / "MSH_PremierDraft_All_Data.json").exists()
     assert not (tmp_path / "local_manifest.json").exists()
     assert (tmp_path / "unrelated.txt").exists()
+
+
+@patch("src.utils._save_persisted_index")
+@patch("src.utils._load_persisted_index", return_value={})
+@patch("src.utils.os.path.getmtime")
+@patch("src.utils._file_stamp")
+@patch("src.utils.os.path.exists")
+@patch("src.utils.os.listdir")
+@patch("src.utils.check_file_integrity")
+def test_retrieve_local_set_list_reparses_only_changed_files(
+    mock_integrity, mock_listdir, mock_exists, mock_stamp, mock_getmtime, _load, _save
+):
+    """A folder mtime bump (e.g. custom_cards.json being rewritten by the card
+    resolver) must not re-read every dataset; only files whose own stamp
+    changed are parsed again."""
+    import os
+    import src.utils
+
+    src.utils._LOCAL_SET_CACHE = {"mtime": 0.0, "files": []}
+    mock_exists.return_value = True
+    mock_listdir.return_value = MOCKED_DATASETS
+    mock_integrity.return_value = (Result.VALID, MOCKED_DATASET_JSON)
+    mock_getmtime.return_value = 100.0
+    mock_stamp.side_effect = lambda name: (1, 1)
+
+    first, _ = retrieve_local_set_list(MOCKED_SET_CODES)
+    parsed = mock_integrity.call_count
+    assert parsed > 0
+
+    # Sibling file rewritten: folder mtime changes, dataset stamps do not.
+    mock_getmtime.return_value = 200.0
+    second, _ = retrieve_local_set_list(MOCKED_SET_CODES)
+    assert second == first
+    assert mock_integrity.call_count == parsed
+
+    # One dataset replaced: only that file is re-read.
+    changed = os.path.basename(mock_integrity.call_args_list[0][0][0])
+    mock_stamp.side_effect = lambda name: (2, 2) if name == changed else (1, 1)
+    mock_getmtime.return_value = 300.0
+    retrieve_local_set_list(MOCKED_SET_CODES)
+    assert mock_integrity.call_count == parsed + 1
+
+
+@patch("src.utils.os.path.getmtime")
+@patch("src.utils._file_stamp")
+@patch("src.utils.os.path.exists")
+@patch("src.utils.os.listdir")
+@patch("src.utils.check_file_integrity")
+def test_retrieve_local_set_list_index_survives_restart(
+    mock_integrity, mock_listdir, mock_exists, mock_stamp, mock_getmtime, tmp_path
+):
+    """The per-file index is persisted, so a fresh process (empty in-memory
+    cache) parses nothing when no dataset changed. Boot used to cost ~0.1 s
+    per dataset on the UI thread."""
+    import src.utils
+
+    index_file = tmp_path / "dataset_index.json"
+    with patch("src.utils._index_path", return_value=str(index_file)):
+        src.utils._LOCAL_SET_CACHE = {"mtime": 0.0, "files": []}
+        mock_exists.return_value = True
+        mock_listdir.return_value = MOCKED_DATASETS
+        mock_integrity.return_value = (Result.VALID, MOCKED_DATASET_JSON)
+        mock_getmtime.return_value = 100.0
+        mock_stamp.side_effect = lambda name: (1, 1)
+
+        first, _ = retrieve_local_set_list(MOCKED_SET_CODES)
+        parsed = mock_integrity.call_count
+        assert parsed > 0
+        assert index_file.exists()
+
+        # New process: in-memory cache empty, index on disk.
+        src.utils._LOCAL_SET_CACHE = {"mtime": 0.0, "files": []}
+        second, _ = retrieve_local_set_list(MOCKED_SET_CODES)
+        assert second == first
+        assert mock_integrity.call_count == parsed
+
+        # A changed file is still re-read after a restart.
+        import os
+
+        changed = os.path.basename(mock_integrity.call_args_list[0][0][0])
+        src.utils._LOCAL_SET_CACHE = {"mtime": 0.0, "files": []}
+        mock_stamp.side_effect = lambda name: (2, 2) if name == changed else (1, 1)
+        retrieve_local_set_list(MOCKED_SET_CODES)
+        assert mock_integrity.call_count >= parsed + 1

@@ -84,7 +84,74 @@ def json_find(key, obj):
     return result
 
 
-_LOCAL_SET_CACHE = {"mtime": 0.0, "files": []}
+# "mtime" is the Sets folder mtime (fast path). "entries" maps each filename
+# to (stamp, dataset_info) so a folder change re-parses only files whose own
+# size/mtime changed. Any rename inside Sets (e.g. the resolver rewriting
+# custom_cards.json) bumps the folder mtime; without the per-file stamps that
+# meant re-reading every dataset JSON on the UI thread.
+_LOCAL_SET_CACHE = {"mtime": 0.0, "files": [], "entries": {}}
+
+
+def _file_stamp(filename):
+    """(size, mtime_ns) for a file in the Sets folder, or None if unreadable."""
+    try:
+        st = os.stat(os.path.join(SETS_FOLDER, filename))
+        return (st.st_size, st.st_mtime_ns)
+    except OSError:
+        return None
+
+
+def _index_path():
+    from src.constants import TEMP_FOLDER
+
+    return os.path.join(TEMP_FOLDER, "dataset_index.json")
+
+
+def _load_persisted_index():
+    """Per-file index saved by a previous run: filename -> (stamp, info).
+    Lets a fresh launch skip parsing every dataset JSON (about 0.1 s each) on
+    the UI thread; stamps still guard against files that changed since."""
+    try:
+        with open(_index_path(), "r", encoding="utf-8") as f:
+            raw = json.load(f)
+    except Exception:
+        return {}
+    entries = {}
+    if isinstance(raw, dict):
+        for name, item in raw.items():
+            stamp = item.get("stamp") if isinstance(item, dict) else None
+            info = item.get("info") if isinstance(item, dict) else None
+            if (
+                isinstance(stamp, list)
+                and len(stamp) == 2
+                and isinstance(info, list)
+                and info
+            ):
+                entries[name] = (tuple(stamp), tuple(info))
+    return entries
+
+
+def _save_persisted_index(entries):
+    payload = {
+        name: {"stamp": list(stamp), "info": list(info)}
+        for name, (stamp, info) in entries.items()
+        if stamp is not None and info
+    }
+    if not payload:
+        return
+    path = _index_path()
+    tmp_path = path + ".tmp"
+    try:
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        with open(tmp_path, "w", encoding="utf-8") as f:
+            json.dump(payload, f)
+        os.replace(tmp_path, path)
+    except Exception:
+        try:
+            if os.path.exists(tmp_path):
+                os.remove(tmp_path)
+        except OSError:
+            pass
 
 
 def invalidate_local_set_cache():
@@ -145,19 +212,34 @@ def retrieve_local_set_list(codes=None, names=None):
     ):
         all_files = _LOCAL_SET_CACHE["files"]
     else:
-        # CACHE MISS - Deep Scan (Runs only on boot or when a new dataset is downloaded)
+        # CACHE MISS: the folder changed. Re-read only files whose own stamp
+        # changed; everything else comes from the per-file cache.
         all_files = []
+        old_entries = _LOCAL_SET_CACHE.get("entries") or _load_persisted_index()
+        new_entries = {}
+        parsed_any = False
         if os.path.exists(SETS_FOLDER):
             for file in os.listdir(SETS_FOLDER):
-                try:
-                    # Read without codes/names filter to cache the raw underlying data
-                    dataset_info = read_dataset_info(file, None, None)
-                    if dataset_info:
-                        all_files.append(dataset_info)
-                except Exception as error:
-                    error_list.append(error)
+                stamp = _file_stamp(file)
+                cached = old_entries.get(file)
+                if stamp is not None and cached is not None and cached[0] == stamp:
+                    dataset_info = cached[1]
+                else:
+                    try:
+                        # Read without codes/names filter to cache the raw underlying data
+                        dataset_info = read_dataset_info(file, None, None)
+                    except Exception as error:
+                        error_list.append(error)
+                        continue
+                    parsed_any = True
+                new_entries[file] = (stamp, dataset_info)
+                if dataset_info:
+                    all_files.append(dataset_info)
         _LOCAL_SET_CACHE["mtime"] = current_mtime
         _LOCAL_SET_CACHE["files"] = all_files
+        _LOCAL_SET_CACHE["entries"] = new_entries
+        if parsed_any:
+            _save_persisted_index(new_entries)
 
     # APPLY FILTERS INSTANTLY
     cleaned_codes = [clean_string(code) for code in codes] if codes else None
