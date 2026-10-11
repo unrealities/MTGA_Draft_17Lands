@@ -50,4 +50,8 @@ class LoadingOverlay(ttk.Frame):
     def update_status(self, text):
         """Updates the sub-text of the loading screen."""
         self.status_lbl.config(text=text)
-        self.update_idletasks()
+        # A forced synchronous redraw only matters while the overlay is on
+        # screen. The deck builder also reports progress during a draft, when
+        # this is hidden, and each forced redraw stalled the UI 0.3-0.5 s.
+        if self.winfo_ismapped():
+            self.update_idletasks()
