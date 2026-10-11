@@ -274,8 +274,8 @@ def _six_card_pool():
 @pytest.mark.parametrize(
     "count, expected",
     [
-        (constants.DECK_FILTER_MIN_CARDS - 1, constants.FILTER_OPTION_ALL_DECKS),
-        (constants.DECK_FILTER_MIN_CARDS, "WU"),
+        (constants.AUTO_FILTER_MIN_CARDS - 1, constants.FILTER_OPTION_ALL_DECKS),
+        (constants.AUTO_FILTER_MIN_CARDS, "WU"),
     ],
 )
 def test_auto_filter_requires_per_card_coverage(count, expected):
