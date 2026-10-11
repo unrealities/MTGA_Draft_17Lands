@@ -93,7 +93,7 @@ def filter_options(deck, option_selection, metrics, configuration):
                 sample_count = metrics.get_sample_count(
                     pair_str, constants.DATA_FIELD_GIHWR
                 )
-                if mean > 0.0 and sample_count >= constants.AUTO_FILTER_MIN_CARDS:
+                if mean > 0.0 and sample_count >= constants.DECK_FILTER_MIN_CARDS:
                     return [pair_str]
 
     except Exception as e:

@@ -1148,6 +1148,18 @@ class ArenaScanner:
             deck_colors = {}
             try:
                 ratings = self.set_data.get_color_ratings()
+                # Sparse datasets carry an archetype win rate for pairs that
+                # almost no individual card has data for; offering those only
+                # produces a table of "-". Hide them whenever the dataset has
+                # per-card data at all (a dataset with none keeps the old
+                # archetype-only listing).
+                metrics = self.retrieve_set_metrics()
+                has_card_data = (
+                    metrics.get_sample_count(
+                        constants.FILTER_OPTION_ALL_DECKS, constants.DATA_FIELD_GIHWR
+                    )
+                    > 0
+                )
                 for filter_key in constants.DECK_FILTERS:
                     std_key = normalize_color_string(filter_key)
                     display_label = std_key
@@ -1162,7 +1174,11 @@ class ArenaScanner:
                         if std_key in ratings:
                             display_label = f"{display_label} ({ratings[std_key]}%)"
                         deck_colors[filter_key] = display_label
-                    elif std_key in ratings:
+                    elif std_key in ratings and (
+                        not has_card_data
+                        or metrics.get_sample_count(std_key, constants.DATA_FIELD_GIHWR)
+                        >= constants.DECK_FILTER_MIN_CARDS
+                    ):
                         deck_colors[filter_key] = (
                             f"{display_label} ({ratings[std_key]}%)"
                         )

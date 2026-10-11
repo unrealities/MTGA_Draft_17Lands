@@ -168,9 +168,10 @@ FILTER_OPTION_ALL_DECKS = "All Decks"
 FILTER_OPTION_AUTO = "Auto"
 # Tab-local color selectors use this to defer to the app-wide deck_filter.
 FILTER_OPTION_FOLLOW = "Follow Deck Filter"
-# Auto only switches to a color pair when at least this many distinct cards
-# carry a win rate for it; thinner coverage renders almost every card as '-'.
-AUTO_FILTER_MIN_CARDS = 30
+# A color pair is offered in the deck-filter dropdowns, and chosen by Auto,
+# only when at least this many distinct cards carry a win rate for it;
+# thinner coverage renders almost every card as '-'.
+DECK_FILTER_MIN_CARDS = 30
 FILTER_OPTION_TIER = "TIER"
 
 FIELD_LABEL_ATA = "ATA: Average Taken At"

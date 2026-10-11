@@ -515,3 +515,40 @@ def test_log_suspend(session_scanner):
     # Unsuspend it
     session_scanner.log_suspend(False)
     assert session_scanner.draft_log.level == logging.INFO
+
+
+def test_scanner_color_win_rate_hides_pairs_without_card_data():
+    """A pair with an archetype win rate but almost no per-card values (FRA
+    Quick Draft: WU on 11 of 1266 cards) must not be offered in the dropdowns;
+    Auto and All Decks always are."""
+    from src import constants
+
+    def card(name, pair_values):
+        return {
+            "name": name,
+            "deck_colors": {
+                "All Decks": {"gihwr": 55.0},
+                **{pair: {"gihwr": wr} for pair, wr in pair_values.items()},
+            },
+        }
+
+    cards = {}
+    for i in range(constants.DECK_FILTER_MIN_CARDS):
+        cards[str(i)] = card(f"Deep {i}", {"WU": 56.0, "WR": 0.0})
+    for i in range(5):
+        cards[f"thin{i}"] = card(f"Thin {i}", {"WR": 58.0})
+
+    scanner = ArenaScanner("log.txt", MagicMock(), retrieve_unknown=False)
+    scanner.set_data.get_card_ratings = MagicMock(return_value=cards)
+    scanner.set_data.get_color_ratings = MagicMock(
+        return_value={"All Decks": 55.0, "WU": 57.2, "WR": 58.1}
+    )
+    scanner._metrics_cache = None
+
+    offered = scanner.retrieve_color_win_rate(constants.DECK_FILTER_FORMAT_COLORS)
+
+    assert set(offered.values()) == {
+        constants.FILTER_OPTION_AUTO,
+        constants.FILTER_OPTION_ALL_DECKS,
+        "WU",
+    }
