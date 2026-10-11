@@ -165,3 +165,14 @@ def patch_dataset_skip_unresolved():
     Dataset.skip_unresolved_ids = False
     yield
     Dataset.skip_unresolved_ids = original
+
+
+@pytest.fixture(autouse=True)
+def isolate_dataset_index(tmp_path, monkeypatch):
+    """Keep the persisted dataset index (Temp/dataset_index.json) out of tests:
+    a mocked filename that matches a real file in Sets/ would otherwise be served
+    from the real index instead of the test's mocked contents."""
+    import src.utils as utils
+
+    monkeypatch.setattr(utils, "_index_path", lambda: str(tmp_path / "dataset_index.json"))
+    yield
