@@ -355,26 +355,37 @@ class DownloadWindow(ttk.Frame):
             return
 
         active_filename = self.configuration.card_data.latest_dataset
+        # "Inactive" means a set the server no longer lists as live, not merely
+        # "not the file currently selected": the other formats of the live set
+        # (Premier/Quick/Trad/Sealed) are kept, otherwise clearing during a
+        # Quick Draft deleted and permanently excluded the set's Premier data.
+        live_sets = self._live_set_codes(active_filename)
         try:
             filenames = [
                 name
                 for name in os.listdir(constants.SETS_FOLDER)
                 if name.endswith(constants.SET_FILE_SUFFIX)
                 and name != active_filename
+                and name.split("_", 1)[0].upper() not in live_sets
                 and os.path.isfile(os.path.join(constants.SETS_FOLDER, name))
             ]
         except OSError as error:
             messagebox.showerror("Error", f"Could not read the dataset folder:\n{error}")
             return
 
+        live_label = ", ".join(sorted(live_sets)) or "none"
         if not filenames:
-            messagebox.showinfo("Clear Inactive Datasets", "There are no inactive datasets to clear.")
+            messagebox.showinfo(
+                "Clear Inactive Datasets",
+                f"There are no inactive datasets to clear. Live sets: {live_label}.",
+            )
             return
         if not messagebox.askyesno(
             "Clear Inactive Datasets",
-            f"Delete all {len(filenames)} inactive dataset(s)?\n\n"
-            "Your active dataset will be kept. Cleared datasets will stay excluded "
-            "from automatic downloads, including after restarting the app.\n\n"
+            f"Delete all {len(filenames)} dataset(s) from sets that are no longer live?\n\n"
+            f"Datasets for live sets ({live_label}) and your active dataset will be kept. "
+            "Cleared datasets will stay excluded from automatic downloads, including "
+            "after restarting the app.\n\n"
             "Use Restore Deleted Datasets to allow automatic downloads again.",
         ):
             return
@@ -415,9 +426,25 @@ class DownloadWindow(ttk.Frame):
         else:
             messagebox.showinfo(
                 "Inactive Datasets Cleared",
-                f"Removed {removed} dataset(s). Your active dataset was kept. "
-                "Cleared datasets will not return on restart.",
+                f"Removed {removed} dataset(s). Datasets for live sets ({live_label}) "
+                "and your active dataset were kept. Cleared datasets will not return "
+                "on restart.",
             )
+
+    @staticmethod
+    def _live_set_codes(active_filename):
+        """Set codes the synced manifest marks live, plus the active file's set.
+        Falls back to the active file's set alone when no manifest is present."""
+        codes = set()
+        try:
+            for code in read_local_manifest().get("active_sets") or []:
+                if isinstance(code, str) and code.strip():
+                    codes.add(code.strip().upper())
+        except Exception:
+            pass
+        if isinstance(active_filename, str) and active_filename:
+            codes.add(active_filename.split("_", 1)[0].upper())
+        return codes
 
     def _restore_deleted_datasets(self):
         if not messagebox.askyesno(

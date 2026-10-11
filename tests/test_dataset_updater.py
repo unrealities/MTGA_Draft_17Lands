@@ -286,3 +286,15 @@ def test_existing_symlink_cannot_escape_sets(mock_get, updater, tmp_path, payloa
     updater.sync_datasets(MagicMock())
     assert mock_get.call_count == 2
     assert outside.read_bytes() == b"untouched"
+
+
+@patch("src.dataset_updater.requests.get")
+def test_auto_sync_includes_live_set_events_with_underscores(mock_get, updater, tmp_path, payload):
+    """Keys are SET_EVENT_GROUP; an event like ArenaDirect_Sealed must not make
+    the set-code check read 'MH3_ArenaDirect' and skip a live-set dataset."""
+    compressed = gzip.compress(payload)
+    key = "MH3_ArenaDirect_Sealed_All"
+    manifest = {"active_sets": ["MH3"], "datasets": {key: file_info(compressed, key + "_Data.json.gz")}}
+    mock_sync(mock_get, manifest, compressed)
+    updater.sync_datasets(MagicMock())
+    assert (tmp_path / (key + "_Data.json")).read_bytes() == payload
