@@ -120,7 +120,7 @@ class TakenCardsPanel(ttk.Frame):
             bootstyle="primary",
         )
         self.lbl_filter.pack(side="left", padx=Theme.scaled_val(5))
-        self.bind_all("<<ThemeChanged>>", self._on_theme_change, add="+")
+        Theme.bind_theme_change(self, self._on_theme_change)
 
         self.vars = {}
         for lbl, key in [

@@ -114,7 +114,7 @@ class CollapsibleFrame(ttk.Frame):
                 fill="both", expand=True, pady=Theme.scaled_val((5, 0))
             )
         self._apply_bindings()
-        self.bind_all("<<ThemeChanged>>", self._on_theme_change, add="+")
+        Theme.bind_theme_change(self, self._on_theme_change)
 
     def _apply_bindings(self):
         try:
@@ -849,8 +849,8 @@ class ModernTreeview(ttk.Treeview):
 
     def _setup_row_colors(self):
         # Bind theme updates so zebra striping changes seamlessly
-        self.bind(
-            "<<ThemeChanged>>", lambda e: self._apply_dynamic_row_colors(), add="+"
+        Theme.bind_theme_change(
+            self, lambda e: self._apply_dynamic_row_colors(), application_wide=False
         )
         self._apply_dynamic_row_colors()
 
@@ -1245,7 +1245,7 @@ class SignalMeter(tb.Frame):
         )
         self.canvas.pack(fill=BOTH, expand=True)
         self.canvas.bind("<Configure>", lambda e: self.redraw())
-        self.bind_all("<<ThemeChanged>>", self._on_theme_change, add="+")
+        Theme.bind_theme_change(self, self._on_theme_change)
 
     def _on_theme_change(self, event=None):
         if self.winfo_exists():
@@ -1310,7 +1310,7 @@ class ManaCurvePlot(tb.Frame):
         )
         self.canvas.pack(fill=BOTH, expand=True)
         self.canvas.bind("<Configure>", lambda e: self.redraw())
-        self.bind_all("<<ThemeChanged>>", self._on_theme_change, add="+")
+        Theme.bind_theme_change(self, self._on_theme_change)
 
     def _on_theme_change(self, event=None):
         if self.winfo_exists():
@@ -1393,7 +1393,7 @@ class TypePieChart(tb.Frame):
         )
         self.canvas.pack(fill=BOTH, expand=True)
         self.canvas.bind("<Configure>", lambda e: self.redraw())
-        self.bind_all("<<ThemeChanged>>", self._on_theme_change, add="+")
+        Theme.bind_theme_change(self, self._on_theme_change)
 
     def _on_theme_change(self, event=None):
         if self.winfo_exists():

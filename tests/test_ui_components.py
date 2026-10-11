@@ -370,8 +370,8 @@ class TestUIComponents:
         pie.update_counts({"Creature": 10, "Instant": 5})
         assert len(pie.canvas.find_all()) > 0
 
-        # Trigger theme change virtual event
-        root.event_generate("<<ThemeChanged>>")
+        # A real theme change (Theme.apply) must still restyle the canvases.
+        Theme.apply(root, "Dark")
         root.update()
 
         assert meter.canvas.cget("bg") == Theme.BG_PRIMARY
@@ -552,3 +552,49 @@ class TestSignalMeterScaling:
         usable = meter.canvas_height - 18
         assert heights[0] >= usable * 0.75
         assert heights[1] == pytest.approx(heights[0] / 4, abs=1.0)
+
+
+class TestThemeChangeGate:
+    @pytest.fixture
+    def root(self):
+        root = tkinter.Tk()
+        Theme.apply(root, "Dark")
+        yield root
+        root.destroy()
+
+    def test_callback_runs_once_per_apply_not_per_event(self, root):
+        """ttkbootstrap emits <<ThemeChanged>> for every new bootstyle widget;
+        only Theme.apply() counts as a theme change."""
+        import ttkbootstrap as tb
+
+        calls = []
+        Theme.bind_theme_change(root, lambda e: calls.append(e))
+
+        for i in range(5):
+            tb.Label(root, text=str(i), bootstyle="info").pack()
+        root.event_generate("<<ThemeChanged>>")
+        root.update()
+        assert calls == []
+
+        Theme.apply(root, "Dark")
+        root.update()
+        assert len(calls) == 1
+
+        root.event_generate("<<ThemeChanged>>")
+        root.update()
+        assert len(calls) == 1
+
+    def test_advisor_panel_does_not_rebuild_on_widget_creation(self, root):
+        import ttkbootstrap as tb
+        from src.ui.advisor_view import AdvisorPanel
+
+        panel = AdvisorPanel(root, Configuration())
+        with patch.object(panel, "update_recommendations") as rebuild:
+            for i in range(5):
+                tb.Button(root, text=str(i), bootstyle="success-outline").pack()
+            root.update()
+            rebuild.assert_not_called()
+
+            Theme.apply(root, "Dark")
+            root.update()
+            rebuild.assert_called_once()
