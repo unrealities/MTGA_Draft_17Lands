@@ -1,0 +1,268 @@
+"""This module encompasses functions for reading from, writing to, and resetting the configuration file"""
+
+import json
+import os
+import sys
+import tempfile
+import threading
+from pydantic import BaseModel, field_validator, Field
+from typing import List, Dict, Tuple
+from src import constants
+from src.logger import create_logger
+from src.constants import BASE_DIR
+
+logger = create_logger()
+CONFIG_LOCK = threading.RLock()
+
+
+def get_config_path():
+    """Returns the platform-specific path for the configuration file."""
+    app_name = "MTGA_Draft_Tool"
+    if sys.platform == "win32":
+        base_path = os.getenv("APPDATA")
+    elif sys.platform == "darwin":
+        base_path = os.path.expanduser("~/Library/Application Support")
+    else:  # Linux/Unix
+        base_path = os.path.expanduser("~/.config")
+
+    config_dir = os.path.join(base_path, app_name)
+    if not os.path.exists(config_dir):
+        try:
+            os.makedirs(config_dir)
+        except Exception:
+            pass
+
+    return os.path.join(config_dir, "config.json")
+
+
+# Use local config if it exists (Development mode), otherwise use User Data path
+LOCAL_CONFIG = os.path.join(BASE_DIR, "config.json")
+if os.path.exists(LOCAL_CONFIG):
+    CONFIG_FILE = LOCAL_CONFIG
+    logger.info(f"Using local configuration file: {CONFIG_FILE}")
+else:
+    CONFIG_FILE = get_config_path()
+    logger.info(f"Using system configuration file: {CONFIG_FILE}")
+
+
+class DeckType(BaseModel):
+    """This class holds the data for the various deck types (Aggro, Mid, and Control)"""
+
+    distribution: list = Field(default_factory=lambda: [0, 0, 0, 0, 0, 0, 0])
+    maximum_card_count: int = 0
+    recommended_creature_count: int = 0
+    cmc_average: float = 0.0
+
+
+class Settings(BaseModel):
+    """This class holds UI settings"""
+
+    table_width: int = 270
+    overlay_geometry: str = "300x600+50+50"
+
+    main_window_geometry: str = "600x1080"
+    paned_window_sash: int = 500
+    dashboard_sash: int = 800
+
+    collapsible_states: Dict[str, bool] = Field(default_factory=dict)
+
+    column_configs: Dict[str, List[str]] = Field(
+        default_factory=lambda: {
+            "pack_table": ["name", "value", "gihwr"],
+            "missing_table": ["name", "alsa"],
+            "taken_table": ["name", "count", "gihwr"],
+            "compare_table": ["name", "gihwr", "iwd"],
+            "overlay_table": ["name", "value", "gihwr"],
+            "overlay_pool_table": ["name", "count", "gihwr"],
+        }
+    )
+
+    table_sort_states: Dict[str, dict] = Field(default_factory=dict)
+    column_display_orders: Dict[str, List[str]] = Field(default_factory=dict)
+    deck_filter: str = constants.DECK_FILTER_DEFAULT
+    filter_format: str = constants.DECK_FILTER_FORMAT_COLORS
+    result_format: str = constants.RESULT_FORMAT_WIN_RATE
+    ui_size: str = constants.UI_SIZE_DEFAULT
+    theme: str = "Dark"
+    theme_base: str = "clam"  # aqua, vista, clam, etc.
+    theme_palette: str = "Neutral"  # Forest, Island, etc.
+    theme_custom_path: str = ""  # Path to user's .tcl file
+
+    # Core Feature Toggles
+    card_colors_enabled: bool = False
+    draft_log_enabled: bool = True
+    p1p1_ocr_enabled: bool = True
+    save_screenshot_enabled: bool = False
+    update_notifications_enabled: bool = True
+    missing_notifications_enabled: bool = True
+
+    # System Paths (Restored)
+    arena_log_location: str = ""
+    database_location: str = ""
+
+    @field_validator("deck_filter")
+    @classmethod
+    def validate_deck_filter(cls, value, info):
+        allowed_values = constants.DECK_FILTERS
+        if value not in allowed_values:
+            return cls.model_fields[info.field_name].default
+        return value
+
+    @field_validator("filter_format")
+    @classmethod
+    def validate_filter_format(cls, value, info):
+        allowed_values = constants.DECK_FILTER_FORMAT_LIST
+        if value not in allowed_values:
+            return cls.model_fields[info.field_name].default
+        return value
+
+    @field_validator("result_format")
+    @classmethod
+    def validate_result_format(cls, value, info):
+        allowed_values = constants.RESULT_FORMAT_LIST
+        if value not in allowed_values:
+            return cls.model_fields[info.field_name].default
+        return value
+
+    @field_validator("ui_size")
+    @classmethod
+    def validate_ui_size(cls, value, info):
+        allowed_values = constants.UI_SIZE_DICT
+        if value not in allowed_values:
+            return cls.model_fields[info.field_name].default
+        return value
+
+
+class CardLogic(BaseModel):
+    """This class represents the configuration for card logic within the application"""
+
+    minimum_creatures: int = 9
+    minimum_noncreatures: int = 6
+    ratings_threshold: int = 500
+    alsa_weight: float = 0.0
+    iwd_weight: float = 0.0
+    deck_mid: DeckType = DeckType(
+        distribution=[0, 0, 4, 3, 2, 1, 0],
+        maximum_card_count=23,
+        recommended_creature_count=15,
+        cmc_average=3.04,
+    )
+    deck_aggro: DeckType = DeckType(
+        distribution=[0, 2, 5, 3, 0, 0, 0],
+        maximum_card_count=24,
+        recommended_creature_count=17,
+        cmc_average=2.40,
+    )
+    deck_control: DeckType = DeckType(
+        distribution=[0, 0, 3, 2, 2, 1, 0],
+        maximum_card_count=22,
+        recommended_creature_count=10,
+        cmc_average=3.68,
+    )
+
+
+class Features(BaseModel):
+    """This class represents a collection of features that can be enabled or disabled within the overlay"""
+
+    override_scale_factor: float = 0.0
+    hotkey_enabled: bool = True
+    images_enabled: bool = True
+
+
+class CardData(BaseModel):
+    """This class holds the data used for building a card list from the local Arena files"""
+
+    database_size: int = 0
+    latest_dataset: str = ""
+    last_check: float = 0
+    last_auto_check: float = 0
+
+
+class Configuration(BaseModel):
+    """This class groups together the data stored in the config.json file"""
+
+    settings: Settings = Field(default_factory=lambda: Settings())
+    card_logic: CardLogic = Field(default_factory=lambda: CardLogic())
+    features: Features = Field(default_factory=lambda: Features())
+    card_data: CardData = Field(default_factory=lambda: CardData())
+
+
+def read_configuration(file_location: str = CONFIG_FILE) -> Tuple[Configuration, bool]:
+    """Reads the configuration object from disk safely."""
+    config_object = Configuration()
+    success = False
+
+    try:
+        with open(file_location, "r", encoding="utf8", errors="replace") as data:
+            file_content = data.read()
+            if not file_content.strip():
+                raise json.JSONDecodeError("File is empty", file_content, 0)
+
+            config_data = json.loads(file_content)
+
+        config_object = Configuration.model_validate(config_data)
+        success = True
+    except (FileNotFoundError, json.JSONDecodeError) as error:
+        logger.warning(f"Using default config. Could not read {file_location}: {error}")
+    except Exception as error:
+        logger.error(f"Unexpected error loading config: {error}")
+
+    return config_object, success
+
+
+def write_configuration(
+    config_object: Configuration, file_location: str = CONFIG_FILE
+) -> bool:
+    """Atomically writes the configuration object to disk using Pydantic's native JSON dumper."""
+    success = False
+
+    with CONFIG_LOCK:
+        try:
+            dir_name = os.path.dirname(file_location)
+
+            # Ensure the target directory actually exists before writing
+            if not os.path.exists(dir_name):
+                os.makedirs(dir_name)
+
+            fd, tmp_path = tempfile.mkstemp(dir=dir_name, suffix=".tmp")
+
+            with os.fdopen(fd, "w", encoding="utf8") as data:
+                # Use Pydantic's native JSON dumper to guarantee 100% safe serialization
+                json_str = config_object.model_dump_json(indent=4)
+                data.write(json_str)
+
+            # Atomic replacement prevents 0-byte corruption
+            os.replace(tmp_path, file_location)
+            success = True
+
+        except Exception as error:
+            logger.error(f"Config write error: {error}")
+            print(f"Failed to save settings to {file_location}: {error}")
+
+            # Clean up the temp file if the replace failed
+            try:
+                if "tmp_path" in locals() and os.path.exists(tmp_path):
+                    os.remove(tmp_path)
+            except Exception:
+                pass
+
+    return success
+
+
+def reset_configuration(file_location: str = CONFIG_FILE) -> bool:
+    """function is responsible for reseting the contents of a Configuration object to a specified file location"""
+    config_object = Configuration()
+    success = False
+    try:
+        with open(file_location, "w", encoding="utf8", errors="replace") as data:
+            json.dump(config_object.model_dump(), data, ensure_ascii=False, indent=4)
+        success = True
+    except (FileNotFoundError, TypeError, OSError) as error:
+        logger.error(error)
+
+    return success
+
+
+# Safety Check: Initialize file if missing on boot
+if not os.path.exists(CONFIG_FILE):
+    reset_configuration(CONFIG_FILE)
