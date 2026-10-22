@@ -2,8 +2,11 @@ name: Daily Dataset ETL Pipeline
 
 on:
   schedule:
-    # Runs at 10:00 AM UTC every day (Adjust as needed)
-    - cron: "0 10 * * *"
+    # Off the top of the hour: GitHub drops scheduled runs in congested
+    # slots, and :00 is the most congested. Two slots so a dropped
+    # morning run still gets a retry in the afternoon.
+    - cron: "23 10 * * *"
+    - cron: "41 16 * * *"
   workflow_dispatch: # Allows manual triggering from the GitHub UI
     inputs:
       initialize_warehouse:
