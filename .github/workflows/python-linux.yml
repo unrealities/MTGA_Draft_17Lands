@@ -40,8 +40,11 @@ jobs:
 
       - name: Post Coverage Report to PR
         uses: MishaKav/pytest-coverage-comment@main
-        # 'if: always()' ensures the coverage report posts even if a test fails
-        if: always()
+        # Post after test failures, but only when the PR token can write comments.
+        if: >-
+          always() &&
+          github.event_name == 'pull_request' &&
+          github.event.pull_request.head.repo.full_name == github.repository
         with:
           pytest-xml-coverage-path: ./coverage.xml
           title: "🧪 Test Coverage Report"
