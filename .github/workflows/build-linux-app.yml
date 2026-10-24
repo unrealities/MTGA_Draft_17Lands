@@ -38,7 +38,7 @@ jobs:
           echo "Launching executable to verify C-extension imports..."
           # We use xvfb-r un to simulate a display server for Tkinter on Linux headless runners
           sudo apt-get install -y xvfb
-          xvfb-run -a ./dist/MTGA_Draft_Tool/MTGA_Draft_Tool --version
+          xvfb-run -a ./dist/MTGA_Draft_Tool --version
 
       - name: Package to Tarball and Checksum
         run: |

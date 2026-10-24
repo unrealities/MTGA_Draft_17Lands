@@ -165,23 +165,50 @@ class TestDashboardFrame:
         # ManaCurvePlot stores current distribution in .current
         assert dashboard.curve_plot.current == mock_distribution
 
-    def test_card_selection_callback(self, root, mock_config):
+    def test_card_selection_callback(self, root, mock_config, tmp_path, monkeypatch):
         """Verify that clicking a row in the pack table triggers the callback."""
+        monkeypatch.setattr(constants, "SETS_FOLDER", str(tmp_path))
+        (tmp_path / "TST_PremierDraft_All_Data.json").write_text("{}")
+        # The callback test does not need the sidebar's delayed sash layout.
+        mock_config.settings.collapsible_states["sidebar_panel"] = False
         mock_callback = MagicMock()
-        dashboard = DashboardFrame(
-            root, mock_config, mock_callback, MagicMock(), MagicMock()
-        )
-        pack_tree = dashboard.pack_manager.tree
+        window = tkinter.Toplevel(root)
+        window.withdraw()
+        window.geometry("1200x800")
+        try:
+            dashboard = DashboardFrame(
+                window, mock_config, mock_callback, MagicMock(), MagicMock()
+            )
+            pack_tree = dashboard.pack_manager.tree
+            dashboard.pack(fill="both", expand=True)
+            dashboard.update_pack_data(
+                [{constants.DATA_FIELD_NAME: "Test Card"}], [], None, {}, 1,
+                picked_cards=[],
+            )
+            row = pack_tree.get_children()[0]
 
-        pack_tree.insert("", "end", iid="row_1", values=("Test Card",))
-        pack_tree.selection_set("row_1")
+            # Map an active draft in its own window before generating a click.
+            window.deiconify()
+            window.update()
+            pack_tree.see(row)
+            window.update_idletasks()
+            bounds = pack_tree.bbox(row)
+            assert bounds, "The active pack row must be visible before clicking it"
+            x, y, width, height = bounds
+            pack_tree.selection_set(row)
+            pack_tree.event_generate(
+                "<ButtonRelease-1>", x=x + width // 2, y=y + height // 2
+            )
+            window.update()
 
-        # Mock identify_region so the safety check passes
-        pack_tree.identify_region = MagicMock(return_value="cell")
-
-        # Generate left click release
-        pack_tree.event_generate("<ButtonRelease-1>", x=10, y=10)
-        assert mock_callback.called
+            mock_callback.assert_called_once()
+            event, tree, source = mock_callback.call_args.args
+            assert event.widget is pack_tree
+            assert tree is pack_tree
+            assert source == "pack"
+            assert pack_tree.selection() == (row,)
+        finally:
+            window.destroy()
 
     def test_empty_data_resilience(self, root, mock_config):
         """Verify dashboard doesn't crash when passed empty card lists."""

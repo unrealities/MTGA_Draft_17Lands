@@ -348,6 +348,9 @@ class TestDownloadPanel:
     ):
         import os
 
+        # Keep this cleanup scenario independent of the user's synced live sets.
+        monkeypatch.setattr("src.ui.windows.download.read_local_manifest", lambda: {})
+
         panel = DownloadWindow(root, mock_sets_data, config, MagicMock())
         monkeypatch.setattr("src.constants.SETS_FOLDER", str(tmp_path))
         blocked = tmp_path / "HOB_PremierDraft_All_Data.json"
