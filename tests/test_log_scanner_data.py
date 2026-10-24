@@ -40,6 +40,7 @@ TEST_SETS = SetDictionary(
         "TDM": SetInfo(seventeenlands=["TDM"], set_code="TDM"),
         "DSK": SetInfo(seventeenlands=["DSK"], set_code="DSK"),
         "MH3": SetInfo(seventeenlands=["MH3"], set_code="MH3"),
+        "FRA": SetInfo(seventeenlands=["FRA"], set_code="FRA"),
         "OTJ": SetInfo(seventeenlands=["OTJ"], set_code="OTJ"),
         "MKM": SetInfo(seventeenlands=["MKM"], set_code="MKM"),
         "DMU": SetInfo(seventeenlands=["DMU"], set_code="DMU"),

@@ -457,6 +457,9 @@ class ArenaScanner:
         events = [
             i for i in constants.LIMITED_TYPES_DICT for x in event_sections if i in x
         ]
+        if not events and "Bot" in event_sections and "Draft" in event_sections:
+            events.append(constants.LIMITED_TYPE_STRING_DRAFT_QUICK)
+
         if not events and [
             i
             for i in constants.DRAFT_DETECTION_CATCH_ALL
