@@ -165,23 +165,43 @@ class TestDashboardFrame:
         # ManaCurvePlot stores current distribution in .current
         assert dashboard.curve_plot.current == mock_distribution
 
-    def test_card_selection_callback(self, root, mock_config):
+    def test_card_selection_callback(self, root, mock_config, tmp_path, monkeypatch):
         """Verify that clicking a row in the pack table triggers the callback."""
+        monkeypatch.setattr(constants, "SETS_FOLDER", str(tmp_path))
+        (tmp_path / "TST_PremierDraft_All_Data.json").write_text("{}")
         mock_callback = MagicMock()
         dashboard = DashboardFrame(
             root, mock_config, mock_callback, MagicMock(), MagicMock()
         )
         pack_tree = dashboard.pack_manager.tree
 
-        pack_tree.insert("", "end", iid="row_1", values=("Test Card",))
-        pack_tree.selection_set("row_1")
+        dashboard.pack(fill="both", expand=True)
+        dashboard.update_pack_data(
+            [{constants.DATA_FIELD_NAME: "Test Card"}], [], None, {}, 1, picked_cards=[]
+        )
+        row = pack_tree.get_children()[0]
 
-        # Mock identify_region so the safety check passes
-        pack_tree.identify_region = MagicMock(return_value="cell")
+        # Real mouse events need a laid-out widget and a running event loop,
+        # particularly on macOS/Tk 9. The shared test root starts withdrawn.
+        root.deiconify()
+        try:
+            root.update()
+            assert pack_tree.winfo_ismapped()
+            x, y, width, height = pack_tree.bbox(row)
+            pack_tree.selection_set(row)
+            pack_tree.event_generate(
+                "<ButtonRelease-1>", x=x + width // 2, y=y + height // 2
+            )
+            root.update()
 
-        # Generate left click release
-        pack_tree.event_generate("<ButtonRelease-1>", x=10, y=10)
-        assert mock_callback.called
+            mock_callback.assert_called_once()
+            event, tree, source = mock_callback.call_args.args
+            assert event.widget is pack_tree
+            assert tree is pack_tree
+            assert source == "pack"
+            assert pack_tree.selection() == (row,)
+        finally:
+            root.withdraw()
 
     def test_empty_data_resilience(self, root, mock_config):
         """Verify dashboard doesn't crash when passed empty card lists."""
