@@ -1,3 +1,9 @@
+===================== RELEASE NOTES 4.25 =====================
+* fr3iheit: [Bug] Quick Draft events with names such as Y26_FRA_Bot_Draft_20261017 are now recognized as bot drafts. Live packs and picks populate correctly instead of waiting for human-draft messages that never arrive (#214).
+* fr3iheit: [Bug] Fixed a macOS crash during Suggest Deck caused by background workers calling Tk. Progress, completion, and errors now reach the UI through a queue processed on the main thread; stale updates from an earlier build are ignored (#215).
+* unrealities: [Reliability] Daily dataset ETL now runs at 10:23 and 16:41 UTC, avoiding the congested top-of-hour slot and providing a second same-day opportunity to refresh datasets (#213).
+* unrealities: [Development] Updated compatible Python runtime, test, and packaging dependencies and refreshed both dependency lockfiles. Upgraded Pillow to 13 and ttkbootstrap to 2 to address known Pillow vulnerabilities, enabling the toolkit's compatibility API for existing widgets. Updated JavaScript test dependencies to resolve high-severity brace-expansion and js-yaml advisories.
+
 ===================== RELEASE NOTES 4.24 =====================
 * unrealities: [Performance] Panels no longer re-render on the internal style events the UI toolkit emits while widgets are being created (dozens at launch and on every pick); they re-render only when the theme actually changes. Removes the 2-3 second stall after the window appears and most sub-second stalls between picks.
 * unrealities: [Bug] Clear Inactive Datasets now keeps every dataset of a live set (as listed by the sync manifest) plus your active dataset, instead of deleting and permanently excluding the live set's other formats. Automatic sync also no longer skips live-set datasets whose event name contains an underscore (e.g. Arena Direct Sealed).

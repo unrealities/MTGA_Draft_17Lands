@@ -6,6 +6,9 @@ on:
     branches: ["main", "master"]
     paths:
       - "**.py"
+      - "pyproject.toml"
+      - "poetry.lock"
+      - ".github/workflows/python-linux.yml"
 
 jobs:
   build:

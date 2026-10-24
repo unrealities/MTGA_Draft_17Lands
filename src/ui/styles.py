@@ -7,6 +7,10 @@ without cross-polluting the state.
 
 import tkinter
 import ttkbootstrap as ttk
+
+# ttkbootstrap 2 makes bootstyle support on standard Tk widgets opt-in.
+# Enable it here so every UI entry point retains the existing widget API.
+ttk.enable_global_api()
 from ttkbootstrap.constants import *
 import sys
 import os

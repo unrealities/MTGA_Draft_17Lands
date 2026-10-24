@@ -6,6 +6,9 @@ on:
     branches: [ 'main' ]
     paths: 
     - '**.js'
+    - 'Tools/TierScraper17Lands/package.json'
+    - 'Tools/TierScraper17Lands/package-lock.json'
+    - '.github/workflows/javascript-tier-scraper.yml'
 
 jobs:
   test:
@@ -23,7 +26,7 @@ jobs:
           node-version: '20'
 
       - name: Install dependencies
-        run: npm install --save-dev jest-environment-jsdom
+        run: npm ci
         working-directory: ./Tools/TierScraper17Lands
 
       - name: Run Jest tests

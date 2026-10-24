@@ -6,6 +6,9 @@ on:
     branches: ["main"]
     paths:
       - "**.py"
+      - "pyproject.toml"
+      - "poetry.lock"
+      - ".github/workflows/python-windows.yml"
 
 jobs:
   build:
