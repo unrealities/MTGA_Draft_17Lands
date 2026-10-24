@@ -536,3 +536,40 @@ def test_scanner_color_win_rate_hides_zero_percent_pairs():
         "WU",
     }
     assert "WU (57.2%)" in offered
+
+
+# Arena's "Y26_FRA_Bot_Draft_<date>" event names split on "_" into "Bot" and
+# "Draft": neither matches a known type, so they used to fall through to the
+# human PremierDraft catch-all and the bot-draft log messages were never read.
+FRA_BOT_DRAFT_EVENT = r'[UnityCrossThreadLogger]==> EventJoin {"id":"450a2b19-8439-46ab-98e8-668b70e5bc12","request":"{\"EventName\":\"Y26_FRA_Bot_Draft_20261017\",\"EntryCurrencyType\":\"None\",\"EntryCurrencyPaid\":0,\"CustomTokenId\":null,\"EventChoice\":\"\",\"DebugIgnoreEntryLimits\":false}"}'
+FRA_BOT_DRAFT_STATUS_P1P1 = r'{"CurrentModule":"BotDraft","Payload":"{\"Result\":\"Success\",\"EventName\":\"Y26_FRA_Bot_Draft_20261017\",\"DraftStatus\":\"PickNext\",\"PackNumber\":0,\"PickNumber\":0,\"NumCardsToPick\":1,\"DraftPack\":[\"106360\",\"106259\",\"106355\",\"106272\",\"106237\"],\"PackStyles\":[],\"PickedCards\":[],\"PickedStyles\":[]}"}'
+FRA_BOT_DRAFT_STATUS_P1P2 = r'{"CurrentModule":"BotDraft","Payload":"{\"Result\":\"Success\",\"EventName\":\"Y26_FRA_Bot_Draft_20261017\",\"DraftStatus\":\"PickNext\",\"PackNumber\":0,\"PickNumber\":1,\"NumCardsToPick\":1,\"DraftPack\":[\"106237\",\"106252\",\"106418\"],\"PackStyles\":[],\"PickedCards\":[\"106259\"],\"PickedStyles\":[]}"}'
+
+
+def test_bot_draft_event_name_is_quick_draft(function_scanner):
+    with open(TEST_LOG_FILE_LOCATION, "a", encoding="utf-8") as log_file:
+        log_file.write(FRA_BOT_DRAFT_EVENT + "\n")
+
+    assert function_scanner.draft_start_search()
+    assert function_scanner.retrieve_current_limited_event() == ("FRA", "QuickDraft")
+
+
+def test_bot_draft_event_name_reads_pack_and_pick(function_scanner):
+    def append(*lines):
+        with open(TEST_LOG_FILE_LOCATION, "a", encoding="utf-8") as log_file:
+            log_file.write("\n".join(lines) + "\n")
+
+    append(FRA_BOT_DRAFT_EVENT)
+    assert function_scanner.draft_start_search()
+
+    append(FRA_BOT_DRAFT_STATUS_P1P1)
+    assert function_scanner.draft_data_search()
+    assert function_scanner.retrieve_current_pack_and_pick() == (1, 1)
+
+    append(
+        r'[UnityCrossThreadLogger]==> BotDraftDraftPick {"id":"5d026cdb-91bd-4bbf-bcbf-4ef734670c3e","request":"{\"EventName\":\"Y26_FRA_Bot_Draft_20261017\",\"PickInfo\":{\"EventName\":\"Y26_FRA_Bot_Draft_20261017\",\"CardIds\":[\"106259\"],\"PackNumber\":0,\"PickNumber\":0}}"}',
+        FRA_BOT_DRAFT_STATUS_P1P2,
+    )
+    assert function_scanner.draft_data_search()
+    assert function_scanner.retrieve_current_pack_and_pick() == (1, 2)
+    assert function_scanner.taken_cards == ["106259"]
