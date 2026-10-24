@@ -5,10 +5,20 @@ Validation for the Dynamic Deck Builder UI.
 
 import pytest
 import tkinter
+import time
 from unittest.mock import MagicMock, patch
 from src.ui.windows.suggest_deck import SuggestDeckPanel
 from src.configuration import Configuration
 from src import constants
+
+
+def wait_for_build(root, panel, timeout=5.0):
+    """Process Tk events until queued builder results are applied."""
+    deadline = time.monotonic() + timeout
+    while panel.is_building:
+        assert time.monotonic() < deadline, "Deck builder did not finish in time"
+        root.update()
+        time.sleep(0.01)
 
 
 class TestSuggestDeckPanel:
@@ -87,11 +97,11 @@ class TestSuggestDeckPanel:
         with patch("src.card_logic.suggest_deck", return_value=mock_variants):
             panel = SuggestDeckPanel(root, mock_draft, Configuration())
 
-            # Execute background task synchronously so assertions don't fire too early
+            # Run the calculation synchronously; UI delivery still uses Tk events.
             panel.sim_executor.submit = lambda fn, *args, **kwargs: fn(*args, **kwargs)
 
             panel.refresh()
-            root.update()
+            wait_for_build(root, panel)
 
             menu = panel.om_archetype["menu"]
             last = menu.index("end")
@@ -104,11 +114,11 @@ class TestSuggestDeckPanel:
         with patch("src.card_logic.suggest_deck", return_value=mock_variants):
             panel = SuggestDeckPanel(root, mock_draft, Configuration())
 
-            # Execute background task synchronously so assertions don't fire too early
+            # Run the calculation synchronously; UI delivery still uses Tk events.
             panel.sim_executor.submit = lambda fn, *args, **kwargs: fn(*args, **kwargs)
 
             panel.refresh()
-            root.update()
+            wait_for_build(root, panel)
 
             # Select the Splash deck
             splash_label = [k for k in panel.suggestions.keys() if "Splash" in k][0]
