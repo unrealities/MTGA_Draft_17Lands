@@ -183,6 +183,8 @@ class TestDashboardFrame:
 
         # Real mouse events need a laid-out widget and a running event loop,
         # particularly on macOS/Tk 9. The shared test root starts withdrawn.
+        previous_geometry = root.geometry()
+        root.geometry("1200x800")
         root.deiconify()
         try:
             root.update()
@@ -202,6 +204,7 @@ class TestDashboardFrame:
             assert pack_tree.selection() == (row,)
         finally:
             root.withdraw()
+            root.geometry(previous_geometry)
 
     def test_empty_data_resilience(self, root, mock_config):
         """Verify dashboard doesn't crash when passed empty card lists."""
