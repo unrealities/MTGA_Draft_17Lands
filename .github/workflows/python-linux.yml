@@ -18,8 +18,9 @@ jobs:
       contents: read
 
     strategy:
+      fail-fast: false
       matrix:
-        python-version: ["3.12"]
+        python-version: ["3.12", "3.13", "3.14"]
 
     steps:
       - uses: actions/checkout@v4
@@ -46,6 +47,7 @@ jobs:
         # Post after test failures, but only when the PR token can write comments.
         if: >-
           always() &&
+          matrix.python-version == '3.12' &&
           github.event_name == 'pull_request' &&
           github.event.pull_request.head.repo.full_name == github.repository
         with:
