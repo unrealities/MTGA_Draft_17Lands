@@ -1,0 +1,85 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main, master]
+  schedule:
+    - cron: "17 8 * * 0" # Sundays at 08:17 UTC
+  workflow_dispatch:
+    inputs:
+      full_matrix:
+        description: Run all supported Python versions on all three platforms
+        type: boolean
+        default: false
+  workflow_call:
+    inputs:
+      full_matrix:
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  python:
+    name: Python / ${{ matrix.os }} / ${{ matrix.python-version }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        os: ${{ fromJSON((github.event_name == 'schedule' || inputs.full_matrix) && '["ubuntu-latest", "macos-latest", "windows-latest"]' || '["ubuntu-latest"]') }}
+        python-version: ${{ fromJSON((github.event_name == 'schedule' || inputs.full_matrix) && '["3.12", "3.13", "3.14"]' || '["3.12"]') }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install Poetry
+        run: python -m pip install poetry==2.4.1
+      - name: Install locked dependencies
+        run: poetry install --no-interaction
+      - name: Validate lockfile
+        run: poetry check --lock
+      - name: Test on Linux with coverage
+        if: runner.os == 'Linux'
+        run: xvfb-run -a poetry run pytest tests/ --cov --cov-report=xml
+      - name: Test on macOS and Windows
+        if: runner.os != 'Linux'
+        run: poetry run pytest tests/
+      - name: Audit Python dependencies
+        if: >-
+          (github.event_name == 'schedule' || inputs.full_matrix) &&
+          matrix.os == 'ubuntu-latest' && matrix.python-version == '3.12'
+        shell: bash
+        run: |
+          python -m venv "$RUNNER_TEMP/dependency-audit"
+          "$RUNNER_TEMP/dependency-audit/bin/python" -m pip install pip-audit
+          site_packages=$(poetry run python -c "import sysconfig; print(sysconfig.get_path('purelib'))")
+          "$RUNNER_TEMP/dependency-audit/bin/pip-audit" --path "$site_packages" --progress-spinner off
+
+  javascript:
+    name: JavaScript
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    defaults:
+      run:
+        working-directory: Tools/TierScraper17Lands
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: Tools/TierScraper17Lands/package-lock.json
+      - name: Install locked dependencies
+        run: npm ci
+      - name: Test
+        run: npm test -- --runInBand
+      - name: Audit JavaScript dependencies
+        if: github.event_name == 'schedule' || inputs.full_matrix
+        run: npm audit

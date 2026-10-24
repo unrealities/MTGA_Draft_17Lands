@@ -224,6 +224,20 @@ To run tests with coverage reporting:
 poetry run pytest tests/ --cov=src
 ```
 
+### Continuous Integration
+
+Every pull request runs two jobs: the full Python test suite on Linux/Python 3.12
+with coverage, and the JavaScript tests. The CI workflow runs Python 3.12, 3.13
+and 3.14 on Linux, macOS and Windows every Sunday at 08:17 UTC. Weekly runs also
+audit Python and JavaScript dependencies. CI can be dispatched manually with
+`full_matrix=true` to run the same extended checks on a branch.
+
+Before releasing, run **Build & Publish Release** on the release branch with
+**publish disabled** (the default). This runs all nine Python combinations,
+JavaScript tests, dependency audits, and builds and smoke-tests the three platform
+packages without publishing. The same checks gate automatic publication after
+merging to `main` or `master`.
+
 ### Automated Releases & Version Management
 
 This project uses a fully automated CI/CD pipeline via GitHub Actions. Creating a new public release is entirely frictionless.
@@ -238,7 +252,7 @@ The pipeline triggers **automatically whenever code is merged into the `master` 
    - **Manual Set:** `poetry run python bump_version.py --set 4.50`
 2. The script will update your config files and ask: `Would you like to automatically commit and push these changes to your branch? (y/N)`
 3. Type `y` and press **Enter**.
-4. Go to GitHub and merge your Pull Request into your main branch. The release will build and publish automatically.
+4. Validate the release branch as described above, then merge your Pull Request into your main branch. The release publishes automatically only after the full tests and all three platform builds and smoke tests pass.
 
 *(Note: If you merge code into main without bumping the version number, the pipeline will simply rebuild and update the executables on the existing release—perfect for hotfixes)*
 

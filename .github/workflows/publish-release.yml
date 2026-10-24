@@ -6,11 +6,22 @@ on:
       - master
       - main
   workflow_dispatch:
+    inputs:
+      publish:
+        description: Publish after validation (leave disabled to check a release branch)
+        type: boolean
+        default: false
 
 permissions:
-  contents: write # Required to create the GitHub Release
+  contents: read
 
 jobs:
+  tests:
+    name: Full release tests
+    uses: ./.github/workflows/ci.yml
+    with:
+      full_matrix: true
+
   build-macos:
     runs-on: macos-latest
     steps:
@@ -25,6 +36,8 @@ jobs:
         run: poetry install --no-interaction
       - name: Build executable
         run: poetry run pyinstaller main.spec --clean
+      - name: Smoke Test Executable
+        run: ./dist/MTGA_Draft_Tool.app/Contents/MacOS/MTGA_Draft_Tool --version
       - name: Package to ZIP and Checksum
         run: |
           VER_CODE=$(python -c "import re; val = re.search(r'APPLICATION_VERSION\s*=\s*[^0-9]*([0-9.]+)', open('src/constants.py').read()).group(1); print('%04d' % int(round(float(val) * 100)))")
@@ -48,7 +61,7 @@ jobs:
       - name: Install System Dependencies (Tkinter)
         run: |
           sudo apt-get update
-          sudo apt-get install -y python3-tk
+          sudo apt-get install -y python3-tk xvfb
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
@@ -59,6 +72,8 @@ jobs:
         run: poetry install --no-interaction
       - name: Build executable
         run: poetry run pyinstaller main.spec --clean
+      - name: Smoke Test Executable
+        run: xvfb-run -a ./dist/MTGA_Draft_Tool --version
       - name: Package to Tarball and Checksum
         run: |
           VER_CODE=$(python -c "import re; val = re.search(r'APPLICATION_VERSION\s*=\s*[^0-9]*([0-9.]+)', open('src/constants.py').read()).group(1); print('%04d' % int(round(float(val) * 100)))")
@@ -109,8 +124,11 @@ jobs:
             windows_hash.txt
 
   publish:
-    needs: [build-macos, build-linux, build-windows]
+    if: github.event_name == 'push' || inputs.publish
+    needs: [tests, build-macos, build-linux, build-windows]
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v4
       - name: Download all artifacts
