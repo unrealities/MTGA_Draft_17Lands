@@ -675,6 +675,11 @@ class ArenaScanner:
                     self.draft_type = constants.LIMITED_TYPE_DRAFT_PICK_TWO_QUICK
                 else:
                     self.draft_type = constants.LIMITED_TYPE_DRAFT_PICK_TWO
+                # Keep packs recorded under 8 seats; picks 1-4 use the same slot in a
+                # 4-seat pod. A seat-count mismatch would otherwise discard them.
+                self.initial_pack = self.initial_pack[:4]
+                self.pack_cards = self.pack_cards[:4]
+                self.picked_cards = self.picked_cards[:4]
 
             # Enforce maximum cards per pick to prevent MTGA JSON array-bloat bugs
             cards = cards[: self.cards_per_pick]
