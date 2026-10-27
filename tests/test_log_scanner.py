@@ -573,3 +573,32 @@ def test_bot_draft_event_name_reads_pack_and_pick(function_scanner):
     assert function_scanner.draft_data_search()
     assert function_scanner.retrieve_current_pack_and_pick() == (1, 2)
     assert function_scanner.taken_cards == ["106259"]
+
+
+OTJ_QUICK_DRAFT_PICK_P1P9 = r'[UnityCrossThreadLogger]==> BotDraft_DraftPick {"id":"3b1f0c52-7d0e-4c1a-9a0e-2f6c1d8e4b17","request":"{\"Type\":1801,\"TransId\":\"3b1f0c52-7d0e-4c1a-9a0e-2f6c1d8e4b17\",\"Payload\":\"{\\\"EventName\\\":\\\"QuickDraft_OTJ_20240426\\\",\\\"PickInfo\\\":{\\\"EventName\\\":\\\"QuickDraft_OTJ_20240426\\\",\\\"CardId\\\":\\\"90627\\\",\\\"PackNumber\\\":0,\\\"PickNumber\\\":8}}\"}"}'
+
+
+def test_quick_draft_pick_after_picked_cards_resync_counts_once(function_scanner):
+    """When the log is missing picks 2-8, the pool is restored from the P1P9
+    PickedCards list. The P1P9 pick lands in slot 0 and must be added once."""
+    entries = {label: line for label, _, line in OTJ_QUICK_DRAFT_ENTRIES}
+
+    def append(*lines):
+        with open(TEST_LOG_FILE_LOCATION, "a", encoding="utf-8") as log_file:
+            log_file.write("\n".join(lines) + "\n")
+
+    append(entries["Event Start"])
+    assert function_scanner.draft_start_search()
+
+    append(entries["P1P1 - Pack"], entries["P1P1 - Pick"], entries["P1P2 - Pack"])
+    assert function_scanner.draft_data_search()
+    assert function_scanner.taken_cards == ["90428"]
+
+    append(entries["P1P9 - Pack"])
+    assert function_scanner.draft_data_search()
+    restored = list(function_scanner.taken_cards)
+    assert len(restored) == 8
+
+    append(OTJ_QUICK_DRAFT_PICK_P1P9)
+    assert function_scanner.draft_data_search()
+    assert function_scanner.taken_cards == restored + ["90627"]
