@@ -2,7 +2,7 @@
 
 Magic: The Gathering Arena draft tool that utilizes 17Lands data.
 
-**Version 4.25:** Fixed Quick Draft event detection and a macOS crash during Suggest Deck, added a second daily dataset refresh slot, and updated dependencies. See the [release notes](release_notes.txt) for details.
+**Version 4.26:** Fixed a Quick Draft pick being counted twice after a pool resync, and kept the first pack when a mislabelled Pick-Two draft is detected. See the [release notes](release_notes.txt) for details.
 
 **This application will automatically support new sets as soon as the sets are released on Arena _and_ the data is available on the [17Lands card ratings](https://www.17lands.com/card_ratings) page.**
 
