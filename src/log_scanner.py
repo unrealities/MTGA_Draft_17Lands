@@ -999,7 +999,8 @@ class ArenaScanner:
                 )
                 if len(picked_list) > len(self.taken_cards):
                     self.taken_cards = picked_list
-                    self.picked_cards[0] = self.taken_cards
+                    # Copy: sharing one list makes the next slot-0 pick count twice.
+                    self.picked_cards[0] = list(picked_list)
                     changed = True
             return changed
 
