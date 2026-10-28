@@ -6,6 +6,7 @@ Test suite for the ArenaScanner class logic.
 import pytest
 import os
 from unittest.mock import patch, MagicMock
+from src import constants
 from src.log_scanner import ArenaScanner
 from tests.test_log_scanner_data import (
     TEST_SETS,
@@ -573,6 +574,48 @@ def test_bot_draft_event_name_reads_pack_and_pick(function_scanner):
     assert function_scanner.draft_data_search()
     assert function_scanner.retrieve_current_pack_and_pick() == (1, 2)
     assert function_scanner.taken_cards == ["106259"]
+
+
+def test_mislabelled_pick_two_draft_keeps_first_pack():
+    """A Pick-Two draft logged under a standard event name is switched to
+    Pick-Two on its first two-card pick. The P1P1 pack recorded before the
+    switch must survive, or the P1P5 wheel shows no missing cards."""
+    if os.path.exists(TEST_LOG_FILE_LOCATION):
+        os.remove(TEST_LOG_FILE_LOCATION)
+    scanner = ArenaScanner(
+        TEST_LOG_FILE_LOCATION,
+        TEST_SETS,
+        sets_location=TEST_LOG_DIRECTORY,
+        retrieve_unknown=True,
+    )
+    scanner.log_enable(False)
+    try:
+        for entry_label, expected, entry_string in OM1_PICK_TWO_PREMIER_DRAFT_ENTRIES:
+            with open(TEST_LOG_FILE_LOCATION, "a", encoding="utf-8") as log_file:
+                log_file.write(
+                    entry_string.replace("PickTwoDraft_OM1", "PremierDraft_OM1") + "\n"
+                )
+            scanner.draft_start_search()
+            scanner.draft_data_search()
+
+            assert scanner.retrieve_current_pack_and_pick() == (
+                expected.current_pack,
+                expected.current_pick,
+            ), entry_label
+            assert [
+                x["name"] for x in scanner.retrieve_current_pack_cards()
+            ] == expected.pack, entry_label
+            assert [
+                x["name"] for x in scanner.retrieve_taken_cards()
+            ] == expected.card_pool, entry_label
+            assert [
+                x["name"] for x in scanner.retrieve_current_missing_cards()
+            ] == expected.missing, entry_label
+
+        assert scanner.draft_type == constants.LIMITED_TYPE_DRAFT_PICK_TWO
+    finally:
+        if os.path.exists(TEST_LOG_FILE_LOCATION):
+            os.remove(TEST_LOG_FILE_LOCATION)
 
 
 OTJ_QUICK_DRAFT_PICK_P1P9 = r'[UnityCrossThreadLogger]==> BotDraft_DraftPick {"id":"3b1f0c52-7d0e-4c1a-9a0e-2f6c1d8e4b17","request":"{\"Type\":1801,\"TransId\":\"3b1f0c52-7d0e-4c1a-9a0e-2f6c1d8e4b17\",\"Payload\":\"{\\\"EventName\\\":\\\"QuickDraft_OTJ_20240426\\\",\\\"PickInfo\\\":{\\\"EventName\\\":\\\"QuickDraft_OTJ_20240426\\\",\\\"CardId\\\":\\\"90627\\\",\\\"PackNumber\\\":0,\\\"PickNumber\\\":8}}\"}"}'
