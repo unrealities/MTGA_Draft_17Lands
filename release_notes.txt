@@ -1,3 +1,8 @@
+===================== RELEASE NOTES 4.26 =====================
+* JamesYouL2: [Bug] Quick Draft picks are no longer counted twice after the tool restores your pool from the draft status (when pick lines were missing from the log). Previously the duplicate stayed in the pool for the rest of the draft (#217).
+* JamesYouL2: [Bug] Pick-Two drafts that MTGA logs under a standard event name now keep the first pack when the tool switches to Pick-Two, so the P1P5 wheel shows missing cards again (#218).
+* JamesYouL2: [Development] Added a regression test that keeps the card tables from resizing when their scrollbar appears or disappears (#172).
+
 ===================== RELEASE NOTES 4.25 =====================
 * fr3iheit: [Bug] Quick Draft events with names such as Y26_FRA_Bot_Draft_20261017 are now recognized as bot drafts. Live packs and picks populate correctly instead of waiting for human-draft messages that never arrive (#214).
 * fr3iheit: [Bug] Fixed a macOS crash during Suggest Deck caused by background workers calling Tk. Progress, completion, and errors now reach the UI through a queue processed on the main thread; stale updates from an earlier build are ignored (#215).
