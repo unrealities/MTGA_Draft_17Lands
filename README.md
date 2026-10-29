@@ -2,7 +2,7 @@
 
 Magic: The Gathering Arena draft tool that utilizes 17Lands data.
 
-**Version 4.25:** Fixed Quick Draft event detection and a macOS crash during Suggest Deck, added a second daily dataset refresh slot, and updated dependencies. See the [release notes](release_notes.txt) for details.
+**Version 4.27:** The Wheel column no longer shows a chance for packs that can't come back, and the Sealeddeck.tech export only opens sealeddeck.tech links. Also includes the 4.26 Quick Draft and Pick-Two fixes, which were never published separately. See the [release notes](release_notes.txt) for details.
 
 **This application will automatically support new sets as soon as the sets are released on Arena _and_ the data is available on the [17Lands card ratings](https://www.17lands.com/card_ratings) page.**
 

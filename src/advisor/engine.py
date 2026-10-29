@@ -239,7 +239,7 @@ class DraftAdvisor:
                 # --- STEP 8: Wheel logic ---
                 rank_in_pack = pack_ranks.get(name, 99)
                 wheel_mult, _, wheel_pct = self._check_relative_wheel(
-                    card, safe_pick, rank_in_pack
+                    card, safe_pick, rank_in_pack, pack_size=len(pack_cards)
                 )
 
                 # === MASTER ALGORITHM ===
@@ -564,9 +564,11 @@ class DraftAdvisor:
         return 1.0, ""
 
     def _check_relative_wheel(
-        self, card: Dict, pick: int, rank_in_pack: int
+        self, card: Dict, pick: int, rank_in_pack: int, pack_size: int = None
     ) -> Tuple[float, str, float]:
-        if pick >= 9:
+        # A pack comes back after 8 picks, so it needs 9+ cards now. Pick alone
+        # isn't enough: 13- and 14-card packs can't wheel from picks 6 and 7.
+        if pick >= 9 or (pack_size is not None and pack_size < 9):
             return 1.0, "", 0.0
         try:
             alsa = float(
