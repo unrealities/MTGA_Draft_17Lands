@@ -303,12 +303,31 @@ class Dataset:
             return []
         with self._resolution_lock:
             ratings = self._dataset["card_ratings"] if self._dataset else self._fallback_ratings
+
+            def _stale_fallback(card):
+                """Cross-set (or legacy unstamped) fallback entry: a previous
+                set's ratings must not resolve as current. Basic lands keep
+                resolving — they carry set-specific arena IDs the active
+                dataset may lack on day one."""
+                if card is None:
+                    return True
+                fallback_name = str(card.get(DATA_FIELD_NAME, "")).removeprefix(
+                    "Snow-Covered "
+                )
+                return card.get(_FALLBACK_SOURCE_KEY) != self._dataset_source and (
+                    fallback_name not in _BASIC_LAND_NAMES
+                )
+
             result = []
             for arena_id in id_list:
                 aid = str(arena_id)
                 card = ratings.get(aid)
+                if self._dataset is None and card is not None and _stale_fallback(card):
+                    card = None
                 if not card:
                     card = self._fallback_ratings.get(aid)
+                    if _stale_fallback(card):
+                        card = None
                 unresolved = not card or str(card.get(DATA_FIELD_NAME, "")).isdigit()
                 if unresolved and self._retrieve_unknown:
                     self._pending_ids.add(aid)
