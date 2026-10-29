@@ -2,7 +2,7 @@
 import pytest
 import tkinter
 from unittest.mock import MagicMock, patch
-from src.ui.windows.sealed_studio import SealedStudioWindow
+from src.ui.windows.sealed_studio import SealedStudioWindow, is_sealeddeck_url
 from src.configuration import Configuration
 from src.ui.styles import Theme
 from src.constants import DATA_FIELD_NAME
@@ -75,6 +75,39 @@ def test_clipboard_import_sections_preserve_main_missing_card_reporting(heading)
     assert "Missing Main" in dialogs.showwarning.call_args.args[1]
     assert "Missing Side" not in dialogs.showwarning.call_args.args[1]
     dialogs.showerror.assert_not_called()
+
+
+@pytest.mark.parametrize(
+    "url",
+    [
+        "https://sealeddeck.tech/abc123",
+        "https://www.sealeddeck.tech/abc123",
+        "HTTPS://SealedDeck.tech/abc123",
+    ],
+)
+def test_sealeddeck_url_accepted(url):
+    assert is_sealeddeck_url(url)
+
+
+@pytest.mark.parametrize(
+    "url",
+    [
+        r"C:\Windows\System32\calc.exe",
+        r"\\attacker\share\payload.exe",
+        "file:///C:/Windows/System32/calc.exe",
+        "http://sealeddeck.tech/abc123",
+        "https://evil.example/sealeddeck.tech",
+        "https://sealeddeck.tech.evil.example/abc123",
+        "https://sealeddeck.tech@evil.example/abc123",
+        "https://sealeddeck.tech/abc 123",
+        "https://sealeddeck.tech/abc\n123",
+        "",
+        None,
+        123,
+    ],
+)
+def test_sealeddeck_url_rejected(url):
+    assert not is_sealeddeck_url(url)
 
 
 class TestSealedStudio:
@@ -328,6 +361,44 @@ class TestSealedStudio:
                 root.update()
 
             mock_open_file.assert_called_once_with("https://sealeddeck.tech/123")
+
+    @patch("src.ui.windows.sealed_studio.messagebox")
+    @patch("src.ui.windows.sealed_studio.requests.post")
+    @patch("src.ui.windows.sealed_studio.open_file")
+    def test_export_to_sealeddeck_refuses_unexpected_url(
+        self,
+        mock_open_file,
+        mock_post,
+        mock_messagebox,
+        root,
+        mock_app_context,
+        mock_pool,
+    ):
+        """A response pointing anywhere but sealeddeck.tech is not opened."""
+        with patch("src.ui.windows.sealed_studio.ThreadPoolExecutor"):
+            studio = SealedStudioWindow(
+                root, mock_app_context, Configuration(), mock_pool, MagicMock()
+            )
+
+            mock_response = MagicMock()
+            mock_response.status_code = 200
+            mock_response.json.return_value = {"url": r"C:\Windows\System32\calc.exe"}
+            mock_post.return_value = mock_response
+
+            def sync_thread(target=None, *args, **kwargs):
+                mock_instance = MagicMock()
+                if target:
+                    mock_instance.start = lambda: target()
+                return mock_instance
+
+            with patch("threading.Thread", side_effect=sync_thread):
+                studio._export_to_sealeddeck_tech()
+                root.update()
+
+            mock_open_file.assert_not_called()
+            # Falls back to the clipboard and the usual warning.
+            mock_messagebox.showwarning.assert_called_once()
+            assert "Plains" in root.clipboard_get()
 
     def test_clear_and_add_all(self, root, mock_app_context, mock_pool):
         """Verify Clear and Add All buttons bulk move cards between arrays."""
