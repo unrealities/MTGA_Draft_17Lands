@@ -130,6 +130,52 @@ def test_check_relative_wheel(mock_metrics):
     assert "Wheels" in reason
 
 
+@pytest.mark.parametrize("pick, pack_size", [(6, 8), (7, 8), (8, 7)])
+def test_check_relative_wheel_needs_nine_cards(mock_metrics, pick, pack_size):
+    """A pack with fewer than 9 cards can't come back, whatever the pick."""
+    advisor = DraftAdvisor(mock_metrics, [])
+    mult, reason, pct = advisor._check_relative_wheel(
+        {"deck_colors": {"All Decks": {"alsa": 8.5}}},
+        pick=pick,
+        rank_in_pack=5,
+        pack_size=pack_size,
+    )
+
+    assert (mult, reason, pct) == (1.0, "", 0.0)
+
+
+def test_check_relative_wheel_allows_last_wheelable_pick(mock_metrics):
+    advisor = DraftAdvisor(mock_metrics, [])
+    _, _, pct = advisor._check_relative_wheel(
+        {"deck_colors": {"All Decks": {"alsa": 8.5}}},
+        pick=6,
+        rank_in_pack=5,
+        pack_size=9,
+    )
+
+    assert pct > 0.0
+
+
+@pytest.mark.parametrize("pack_size, wheels", [(8, False), (9, True)])
+def test_evaluate_pack_wheel_chance_uses_pack_size(mock_metrics, pack_size, wheels):
+    """Pick 7 of a 14-card pack (8 cards) can't wheel; pick 7 of 15 (9 cards) can."""
+    advisor = DraftAdvisor(mock_metrics, [])
+    pack = [
+        {
+            "name": f"Filler{i}",
+            "colors": ["G"],
+            "types": ["Creature"],
+            "cmc": 2,
+            "deck_colors": {"All Decks": {"gihwr": 50.0, "alsa": 8.5}},
+        }
+        for i in range(pack_size)
+    ]
+
+    recs = advisor.evaluate_pack(pack, current_pick=7)
+
+    assert any(r.wheel_chance > 0 for r in recs) is wheels
+
+
 def test_evaluate_pack_elite_detection(mock_metrics):
     # Establish a baseline pool
     pool = [
