@@ -221,8 +221,7 @@ class AppController:
             for c, v in sig_calc.calculate_pack_signals(h_pack, entry["Pick"]).items():
                 scores[c] += v
 
-        # Pass signals securely into Advisor
-        advisor = DraftAdvisor(metrics, taken_cards, signals=scores)
+        advisor = DraftAdvisor(metrics, taken_cards)
         recommendations = advisor.evaluate_pack(pack_cards, pi, current_pack=pk)
 
         # UPDATE UI STATE
