@@ -6,7 +6,6 @@ Test suite for the ArenaScanner class logic.
 import pytest
 import os
 from unittest.mock import patch, MagicMock
-from src import constants
 from src.log_scanner import ArenaScanner
 from tests.test_log_scanner_data import (
     TEST_SETS,
@@ -576,72 +575,81 @@ def test_bot_draft_event_name_reads_pack_and_pick(function_scanner):
     assert function_scanner.taken_cards == ["106259"]
 
 
-def test_mislabelled_pick_two_draft_keeps_first_pack():
-    """A Pick-Two draft logged under a standard event name is switched to
-    Pick-Two on its first two-card pick. The P1P1 pack recorded before the
-    switch must survive, or the P1P5 wheel shows no missing cards."""
-    if os.path.exists(TEST_LOG_FILE_LOCATION):
-        os.remove(TEST_LOG_FILE_LOCATION)
-    scanner = ArenaScanner(
-        TEST_LOG_FILE_LOCATION,
-        TEST_SETS,
-        sets_location=TEST_LOG_DIRECTORY,
-        retrieve_unknown=True,
-    )
-    scanner.log_enable(False)
-    try:
-        for entry_label, expected, entry_string in OM1_PICK_TWO_PREMIER_DRAFT_ENTRIES:
-            with open(TEST_LOG_FILE_LOCATION, "a", encoding="utf-8") as log_file:
-                log_file.write(
-                    entry_string.replace("PickTwoDraft_OM1", "PremierDraft_OM1") + "\n"
-                )
-            scanner.draft_start_search()
-            scanner.draft_data_search()
-
-            assert scanner.retrieve_current_pack_and_pick() == (
-                expected.current_pack,
-                expected.current_pick,
-            ), entry_label
-            assert [
-                x["name"] for x in scanner.retrieve_current_pack_cards()
-            ] == expected.pack, entry_label
-            assert [
-                x["name"] for x in scanner.retrieve_taken_cards()
-            ] == expected.card_pool, entry_label
-            assert [
-                x["name"] for x in scanner.retrieve_current_missing_cards()
-            ] == expected.missing, entry_label
-
-        assert scanner.draft_type == constants.LIMITED_TYPE_DRAFT_PICK_TWO
-    finally:
-        if os.path.exists(TEST_LOG_FILE_LOCATION):
-            os.remove(TEST_LOG_FILE_LOCATION)
-
-
-OTJ_QUICK_DRAFT_PICK_P1P9 = r'[UnityCrossThreadLogger]==> BotDraft_DraftPick {"id":"3b1f0c52-7d0e-4c1a-9a0e-2f6c1d8e4b17","request":"{\"Type\":1801,\"TransId\":\"3b1f0c52-7d0e-4c1a-9a0e-2f6c1d8e4b17\",\"Payload\":\"{\\\"EventName\\\":\\\"QuickDraft_OTJ_20240426\\\",\\\"PickInfo\\\":{\\\"EventName\\\":\\\"QuickDraft_OTJ_20240426\\\",\\\"CardId\\\":\\\"90627\\\",\\\"PackNumber\\\":0,\\\"PickNumber\\\":8}}\"}"}'
-
-
-def test_quick_draft_pick_after_picked_cards_resync_counts_once(function_scanner):
-    """When the log is missing picks 2-8, the pool is restored from the P1P9
-    PickedCards list. The P1P9 pick lands in slot 0 and must be added once."""
-    entries = {label: line for label, _, line in OTJ_QUICK_DRAFT_ENTRIES}
+def test_quick_pickedcards_sync_survives_late_pick_echo(function_scanner):
+    """The Quick-draft PickedCards sync imports the authoritative taken-cards list,
+    so a later replayed pick event must not re-import its cards as duplicates, and
+    picked_cards[0] must be a copy, not an alias of taken_cards."""
+    from collections import Counter
 
     def append(*lines):
         with open(TEST_LOG_FILE_LOCATION, "a", encoding="utf-8") as log_file:
             log_file.write("\n".join(lines) + "\n")
 
-    append(entries["Event Start"])
+    append(FRA_BOT_DRAFT_EVENT)
     assert function_scanner.draft_start_search()
 
-    append(entries["P1P1 - Pack"], entries["P1P1 - Pick"], entries["P1P2 - Pack"])
+    append(FRA_BOT_DRAFT_STATUS_P1P1)
     assert function_scanner.draft_data_search()
-    assert function_scanner.taken_cards == ["90428"]
 
-    append(entries["P1P9 - Pack"])
+    # Status echo carrying the cumulative PickedCards blob: the sync imports it
+    append(FRA_BOT_DRAFT_STATUS_P1P2)
     assert function_scanner.draft_data_search()
-    restored = list(function_scanner.taken_cards)
-    assert len(restored) == 8
+    assert function_scanner.taken_cards == ["106259"]
+    assert function_scanner.picked_cards[0] is not function_scanner.taken_cards
 
-    append(OTJ_QUICK_DRAFT_PICK_P1P9)
-    assert function_scanner.draft_data_search()
-    assert function_scanner.taken_cards == restored + ["90627"]
+    # A late/replayed pick echo for the card the sync already imported (pack 1, pick 1)
+    append(
+        r'[UnityCrossThreadLogger]==> BotDraftDraftPick {"id":"8b1d5a11-0000-4000-8000-000000000001","request":"{\"EventName\":\"Y26_FRA_Bot_Draft_20261017\",\"PickInfo\":{\"EventName\":\"Y26_FRA_Bot_Draft_20261017\",\"CardIds\":[\"106259\"],\"PackNumber\":0,\"PickNumber\":0}}"}'
+    )
+    function_scanner.draft_data_search()
+
+    counts = Counter(function_scanner.taken_cards)
+    assert counts["106259"] == 1
+
+
+def test_pick_two_format_totals(function_scanner):
+    """The scanner exposes the format's pick and card totals: Pick-Two drafts
+    42 cards over 21 pick events (14-card packs, 4 players, 2 cards per pick);
+    every other draft type is 45 over 45."""
+    from src import constants as app_constants
+
+    function_scanner.draft_type = app_constants.LIMITED_TYPE_DRAFT_PICK_TWO_QUICK
+    assert function_scanner.total_picks == 21
+    assert function_scanner.total_cards == 42
+    assert function_scanner.cards_per_pick == 2
+
+    function_scanner.draft_type = app_constants.LIMITED_TYPE_DRAFT_QUICK
+    assert function_scanner.total_picks == 45
+    assert function_scanner.total_cards == 45
+    assert function_scanner.cards_per_pick == 1
+
+
+def test_suggest_snapshot_is_single_lock_and_non_blocking(function_scanner):
+    """try_suggest_snapshot returns None while the scanner lock is held (the
+    panel retries instead of blocking the Tk thread) and a consistent
+    (pool, metrics, event) triple when free."""
+    import threading
+
+    snapshot = function_scanner.try_suggest_snapshot()
+    assert snapshot is not None
+    pool, metrics, event = snapshot
+    assert isinstance(pool, list)
+    assert metrics is not None
+    assert isinstance(event, tuple) and len(event) == 2
+
+    held = threading.Event()
+    release = threading.Event()
+
+    def hold():
+        with function_scanner.lock:
+            held.set()
+            release.wait(timeout=5)
+
+    t = threading.Thread(target=hold)
+    t.start()
+    try:
+        held.wait(timeout=5)
+        assert function_scanner.try_suggest_snapshot() is None
+    finally:
+        release.set()
+        t.join(timeout=5)

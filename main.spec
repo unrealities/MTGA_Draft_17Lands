@@ -5,7 +5,18 @@ a = Analysis(
     ["main.py"],
     pathex=[],
     binaries=[],
-    datas=[("themes/*.tcl", "themes")],
+    datas=[
+        ("themes/*.tcl", "themes"),
+        # The card-prior assets must ship with the app: the loader resolves
+        # them relative to the bundled advisor module, and a release build
+        # without them silently loses the entire prior feature.
+        ("assets/models/card_prior_z_table.npz", "assets/models"),
+        ("assets/models/card_prior_z_table_manifest.json", "assets/models"),
+        ("assets/models/card_prior.npz", "assets/models"),
+        ("assets/models/card_prior_manifest.json", "assets/models"),
+        ("assets/models/card_prior_nr.npz", "assets/models"),
+        ("assets/models/card_prior_nr_manifest.json", "assets/models"),
+    ],
     hiddenimports=[
         "jaraco.text",
         "platformdirs",

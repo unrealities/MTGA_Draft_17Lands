@@ -295,3 +295,234 @@ def test_estimate_record():
     # BO3 (Traditional Draft)
     assert "3-0" in estimate_record(90.0, is_bo3=True)
     assert "0-2" in estimate_record(50.0, is_bo3=True)
+
+
+def test_denominator_concepts_are_named_not_bare():
+    """The 45-based pick/card totals live in the engine as named class
+    constants; the 42-based spell-target projection lives here as named module
+    constants — the two stay distinct numbers with documented semantics."""
+    import inspect
+
+    import src.advisor.deck_scorer as scorer
+    from src.advisor.engine import DraftAdvisor
+
+    assert scorer.SPELL_TARGET_PROJECTION_BASE == 42
+    assert scorer.TARGET_SPELL_COUNT == 23
+    assert DraftAdvisor.TOTAL_PICKS == 45  # pick-index clamp, distinct concept
+    assert DraftAdvisor.TOTAL_CARDS_DRAFTED == 45  # projection base, distinct concept
+
+    for line in inspect.getsource(scorer).splitlines():
+        if "expected_spells = int(" in line or "TARGET_SPELL_COUNT" in line and "min(" in line:
+            assert "42" not in line.split("#")[0], f"bare 42 in expression: {line}"
+            assert "23 *" not in line, f"bare 23 multiplier in expression: {line}"
+
+
+# --- B5: unrated spells are charged, not free ---
+
+
+def _holistic(spells, pool_size=45):
+    from unittest.mock import MagicMock
+
+    from src.card_logic import calculate_holistic_score
+
+    metrics = MagicMock()
+    metrics.get_metrics.return_value = (54.0, 4.0)
+    return calculate_holistic_score(spells, ["U"], pool_size, metrics)[0]
+
+
+def test_unrated_spells_lower_the_deck_average():
+    """The remaining rated spells average above the mean (60.0), so a deck
+    carrying five unrated spells must score below the same deck filled with
+    54% spells: the parent dropped unrated spells from the average entirely."""
+    rated = [
+        {"name": f"Rated {i}", "colors": ["U"], "types": ["Creature"], "cmc": 3,
+         "mana_cost": "{2}{U}", "count": 1,
+         "deck_colors": {"All Decks": {"gihwr": 60.0}}}
+        for i in range(18)
+    ]
+    unrated = [
+        {"name": f"Mystery {i}", "colors": ["U"], "types": ["Creature"], "cmc": 3,
+         "mana_cost": "{2}{U}", "count": 1, "deck_colors": {}}
+        for i in range(5)
+    ]
+    fillers = [
+        {"name": f"Filler {i}", "colors": ["U"], "types": ["Creature"], "cmc": 3,
+         "mana_cost": "{2}{U}", "count": 1,
+         "deck_colors": {"All Decks": {"gihwr": 54.0}}}
+        for i in range(5)
+    ]
+
+    score_unrated = _holistic(rated + unrated)
+    score_fillers = _holistic(rated + fillers)
+    assert score_unrated < score_fillers - 1.0
+
+
+# --- Cycle 2 item 1a: shared shrunk posteriors ---
+
+
+def _post_card(global_wr=54.0, arch_wr=64.0, samples=0, arch="RG"):
+    dc = {"All Decks": {"gihwr": global_wr}}
+    if arch:
+        dc[arch] = {"gihwr": arch_wr, "samples": samples}
+    return {"name": "Posterior Card", "colors": ["R", "G"], "types": ["Creature"],
+            "cmc": 3, "deck_colors": dc}
+
+
+def _flat_metrics(mean=54.0, std=4.0):
+    from unittest.mock import MagicMock
+
+    m = MagicMock()
+    m.get_metrics.return_value = (mean, std)
+    return m
+
+
+def test_shrunk_wr_formula_and_n_zero_passthrough():
+    from src.advisor.deck_scorer import SHRINKAGE_K, shrunk_wr
+
+    assert shrunk_wr(64.0, 54.0, 0) == 64.0  # no data: raw value, no shrinkage
+    assert shrunk_wr(64.0, 54.0, 20000) == 54.0 + 10.0 * (
+        20000 / (20000 + SHRINKAGE_K)
+    )
+    # monotone in raw at fixed n: order preserved under shrinkage
+    assert shrunk_wr(66.0, 54.0, 500) > shrunk_wr(64.0, 54.0, 500)
+
+
+def test_spike_card_rates_global_dominated(monkeypatch):
+    """A ten-game 64% spike is shrunk to the prior: the rating stays at the
+    global-dominated value (offset 0 under flat metrics)."""
+    from src.advisor.deck_scorer import get_card_rating
+    import src.advisor.deck_scorer as _ds
+    monkeypatch.setattr(_ds, "_feature_prior_z", lambda card, use_nr=False: 0.0)
+
+    card = _post_card(samples=10)
+    rating = get_card_rating(card, ["R", "G"], _flat_metrics())
+    assert rating == pytest.approx(54.0, abs=0.3)
+
+
+def test_engine_blend_uses_shared_posterior_exact_number(monkeypatch):
+    """global 54, arch 64, n=20000, k=2000, offset 0, progress 31 (w=0.6822):
+    shrunk arch = 63.0909..., blended = 60.2016..., base = 73.256..."""
+    from src.advisor.deck_scorer import SHRINKAGE_K
+    from src.advisor.engine import DraftAdvisor
+    import src.advisor.deck_scorer as _ds
+    monkeypatch.setattr(_ds, "_feature_prior_z", lambda card, use_nr=False: 0.0)
+
+    metrics = _flat_metrics(54.0, 4.0)
+    pool = [
+        {"name": f"RG {i}", "colors": ["R", "G"], "types": ["Creature"], "cmc": 3,
+         "deck_colors": {"All Decks": {"gihwr": 54.0}}}
+        for i in range(12)
+    ]
+    advisor = DraftAdvisor(
+        metrics, pool,
+        draft_progress={"picks": 31, "total_picks": 45, "cards": 30, "total_cards": 45},
+    )
+    card = _post_card(samples=20000)
+    base = advisor._calculate_weighted_score(card, 31)
+    w = 0.2 + (31 / 45) * 0.7  # arch ramp at progress 31
+    shrunk = 54.0 + 10.0 * (20000 / (20000 + SHRINKAGE_K))
+    expected = 50.0 + (((54.0 + (shrunk - 54.0) * w) - 54.0) / 4.0) * 15.0
+    assert base == pytest.approx(expected, abs=1e-6)
+
+
+def test_no_samples_keeps_pinned_raw_behavior():
+    """Shipped fixture datasets carry no `samples`: every rating path must
+    reproduce the pre-cycle-2 numbers exactly (the 57.0 blend pin)."""
+    from src.advisor.deck_scorer import get_card_rating
+
+    card = _post_card(global_wr=50.0, arch_wr=60.0, samples=0)
+    assert get_card_rating(card, ["R", "G"], _flat_metrics()) == pytest.approx(57.0)
+
+
+def test_low_sample_bad_cards_do_not_flip_pair_selection():
+    """The playable gate uses raw WR: low-n cards shrunk toward the mean must
+    not cross the baseline and steer identify_top_pairs."""
+    from src.advisor.deck_scorer import identify_top_pairs
+
+    good = [
+        {"name": f"Good U {i}", "colors": ["U"], "types": ["Creature"], "cmc": 2,
+         "deck_colors": {"All Decks": {"gihwr": 56.0, "samples": 50000}}}
+        for i in range(14)
+    ]
+    noisy_bad = [
+        {"name": f"Noisy B {i}", "colors": ["B"], "types": ["Creature"], "cmc": 3,
+         "deck_colors": {"All Decks": {"gihwr": 44.0, "samples": 5}}}
+        for i in range(10)
+    ]
+    pairs = identify_top_pairs(good + noisy_bad, _flat_metrics(54.0, 4.0))
+    assert pairs and "U" in pairs[0]  # deep good-U lane outranks the noisy lane
+
+
+# --- Cycle 2 item 1c: pair selection in 3+ color contexts + tier_data ---
+
+
+def test_three_color_context_uses_the_cards_own_best_pair():
+    """A WUB soup pricing its spells: the spell whose UB pair carries the
+    strong rate must be priced under UB, not the positionally-truncated WU."""
+    from src.advisor.deck_scorer import get_card_rating
+
+    card = {
+        "name": "UB Specialist", "colors": ["U", "B"], "types": ["Creature"],
+        "cmc": 3, "deck_colors": {"All Decks": {"gihwr": 54.0},
+                                  "WU": {"gihwr": 52.0}, "UB": {"gihwr": 58.0}},
+    }
+    rating = get_card_rating(card, ["W", "U", "B"], _flat_metrics(54.0, 4.0))
+    # blend of shrunk-free raw values (no samples): 0.7*58 + 0.3*54 = 56.8
+    assert rating == pytest.approx(56.8)
+
+
+def test_two_color_context_is_unchanged():
+    from src.advisor.deck_scorer import get_card_rating
+
+    card = {
+        "name": "Plain Pair", "colors": ["U", "B"], "types": ["Creature"],
+        "cmc": 3, "deck_colors": {"All Decks": {"gihwr": 54.0},
+                                  "UB": {"gihwr": 60.0}},
+    }
+    assert get_card_rating(card, ["B", "U"], _flat_metrics()) == pytest.approx(58.2)
+
+
+# --- Cycle 2 item 5: color scores are per-color averages ---
+
+
+def test_few_bombs_outrank_deep_mediocre_in_pair_selection():
+    """A deep lane of mediocre playables must not drown a short lane of
+    bombs: color strength is the per-color average, not the raw count sum."""
+    from src.advisor.deck_scorer import identify_top_pairs
+
+    deep_mediocre = [
+        {"name": f"Deep B {i}", "colors": ["B"], "types": ["Creature"], "cmc": 3,
+         "deck_colors": {"All Decks": {"gihwr": 55.0}}}
+        for i in range(16)
+    ]
+    short_bombs = [
+        {"name": f"Bomb U {i}", "colors": ["U"], "types": ["Creature"], "cmc": 3,
+         "deck_colors": {"All Decks": {"gihwr": 61.0}}}
+        for i in range(6)
+    ]
+    pairs = identify_top_pairs(deep_mediocre + short_bombs, _flat_metrics(54.0, 4.0))
+    assert pairs and "U" in pairs[0]
+
+
+def test_two_card_gold_lanes_cannot_displace_real_lanes():
+    """A 5-color-gold pool must keep its deep B/R lanes in the top-4: an
+    average over two eligible golds is noise, not a lane (24-playable B and
+    9-playable R vs 2-5 eligible gold-only lanes)."""
+    from src.advisor.deck_scorer import identify_top_pairs
+
+    pool = (
+        [
+            {"name": f"BR Core {i}", "colors": ["B", "R"], "types": ["Creature"],
+             "cmc": 3, "deck_colors": {"All Decks": {"gihwr": 55.5}}}
+            for i in range(24)
+        ]
+        + [
+            {"name": f"Gold {i}", "colors": ["W", "U", "B", "R", "G"],
+             "types": ["Creature"], "cmc": 4,
+             "deck_colors": {"All Decks": {"gihwr": 58.0}}}
+            for i in range(5)
+        ]
+    )
+    pairs = identify_top_pairs(pool, _flat_metrics(54.0, 4.0))
+    assert pairs, "a real two-lane pool must produce pairs"
+    assert all(set(p) & {"B", "R"} for p in pairs)

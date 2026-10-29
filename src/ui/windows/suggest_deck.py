@@ -862,7 +862,13 @@ class SuggestDeckPanel(ttk.Frame):
             hand_canvas.configure(bg=Theme.BG_PRIMARY)
 
     def _calculate_suggestions(self):
-        raw_pool = self.draft.retrieve_taken_cards()
+        snapshot = self.draft.try_suggest_snapshot()
+        if snapshot is None:
+            # Scanner busy (dataset sync holds the lock): retry on the next
+            # tick instead of blocking the Tk thread or reading torn state.
+            self.after(100, self._calculate_suggestions)
+            return
+        raw_pool, metrics, (_, event_type) = snapshot
 
         playable_spells = [
             c for c in (raw_pool or []) if "Land" not in c.get("types", [])
@@ -890,17 +896,8 @@ class SuggestDeckPanel(ttk.Frame):
         self.suggestions = {}
         self.incremental_labels = []
 
-        metrics = (
-            self.orchestrator.scanner.retrieve_set_metrics()
-            if hasattr(self, "orchestrator")
-            else self.draft.retrieve_set_metrics()
-        )
-        _, event_type = (
-            self.orchestrator.scanner.retrieve_current_limited_event()
-            if hasattr(self, "orchestrator")
-            else self.draft.retrieve_current_limited_event()
-        )
         dataset_name = self.configuration.card_data.latest_dataset
+        tier_data = self.draft.retrieve_tier_data()
 
         # suggest_deck() and its progress callback run on the sim-executor
         # pool thread. tkinter is not thread-safe: calling Tk from there
@@ -971,6 +968,7 @@ class SuggestDeckPanel(ttk.Frame):
                     event_type,
                     _progress_cb,
                     dataset_name,
+                    tier_data,
                 )
                 progress_q.put({"done": raw_results})
             except Exception as e:

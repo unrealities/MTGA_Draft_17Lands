@@ -50,6 +50,11 @@ class TestAppOrchestrator:
         scanner.retrieve_set_metrics.return_value.get_metrics.return_value = (55.0, 5.0)
         scanner.retrieve_tier_data.return_value = {}
         scanner.arena_file = "mock.log"
+        # Draft-progress inputs the controller snapshots per refresh (B1):
+        scanner.taken_cards = []
+        scanner.cards_per_pick = 1
+        scanner.total_picks = 45
+        scanner.total_cards = 45
         return scanner
 
     @pytest.fixture

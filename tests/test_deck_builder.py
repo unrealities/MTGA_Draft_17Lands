@@ -356,3 +356,464 @@ def test_greedy_skips_unsupported_pair_instead_of_over_splashing(mock_metrics):
     deck, splash_col = build_variant_greedy(pool, ["B", "G"], mock_metrics)
 
     assert deck is None
+
+
+# --- B3a/B3b: greedy fixing count and 23rd-slot splash swap ---
+
+
+def _wb_spells(n):
+    cards = []
+    for i in range(n):
+        cards.append(
+            {
+                "name": f"WB Spell {i}",
+                "colors": ["W", "B"],
+                "types": ["Creature"],
+                "cmc": 3,
+                "mana_cost": "{1}{W}{B}",
+                "deck_colors": {"All Decks": {"gihwr": 58.0}, "WB": {"gihwr": 59.0}},
+            }
+        )
+    return cards
+
+
+def _duals(a, b, n):
+    return [
+        {
+            "name": f"Dual {a}{b} {i}",
+            "colors": [a, b],
+            "types": ["Land"],
+            "deck_colors": {"All Decks": {"gihwr": 55.0}},
+        }
+        for i in range(n)
+    ]
+
+
+def _off_color_double_pip(global_wr=65.0):
+    return {
+        "name": "GG Bomb",
+        "colors": ["G"],
+        "types": ["Creature"],
+        "cmc": 6,
+        "mana_cost": "{4}{G}{G}",
+        "deck_colors": {"All Decks": {"gihwr": global_wr}},
+    }
+
+
+def test_double_pip_splash_gate_counts_fixing_once(mock_metrics):
+    """Two real G-fixing sources must not pass a >= 3 gate: the old code
+    recomputed count_fixing per card and added it to itself, doubling it."""
+    from src.card_logic import build_variant_greedy
+
+    pool = _wb_spells(20) + _duals("W", "G", 2) + [_off_color_double_pip()]
+    deck, splash = build_variant_greedy(pool, ["W", "B"], mock_metrics)
+
+    assert splash == ""
+    assert deck is None or not any(c["name"] == "GG Bomb" for c in deck)
+
+
+def test_splash_must_beat_the_cut_spell_on_the_shared_scale(mock_metrics):
+    """Scale reversal: the splash rates higher on the All-Decks-only scale the
+    candidate pass uses (62 global vs the 23rd spell's 55 global), but the
+    23rd spell is pair-proven (WB blend 65.0) — the unconditional swap used to
+    cut it anyway."""
+    from src.card_logic import build_variant_greedy
+
+    pool = [
+        {
+            "name": f"WB Filler {i}",
+            "colors": ["W", "B"],
+            "types": ["Creature"],
+            "cmc": 3,
+            "mana_cost": "{1}{W}{B}",
+            "deck_colors": {"All Decks": {"gihwr": 64.0}},
+        }
+        for i in range(22)
+    ]
+    # Lowest-rated on the deck's own scale (blend 62.3 under the 64.0 fillers)
+    # but far from a free cut for a 61.5 global splash.
+    pool.append(
+        {
+            "name": "WB Diluted Pair",
+            "colors": ["W", "B"],
+            "types": ["Creature"],
+            "cmc": 3,
+            "mana_cost": "{1}{W}{B}",
+            "deck_colors": {"All Decks": {"gihwr": 62.0}, "WB": {"gihwr": 63.0}},
+        }
+    )
+    pool += _duals("W", "G", 3) + [_off_color_double_pip(global_wr=61.5)]
+
+    deck, splash = build_variant_greedy(pool, ["W", "B"], mock_metrics)
+
+    assert splash == ""
+    assert any(c["name"] == "WB Diluted Pair" for c in deck)
+    assert not any(c["name"] == "GG Bomb" for c in deck)
+
+
+def test_deserving_splash_still_swaps_in(mock_metrics):
+    """Preservation: a splash that beats the 23rd spell even on the deck's own
+    scale still enters the deck."""
+    from src.card_logic import build_variant_greedy
+
+    pool = _wb_spells(23) + _duals("W", "G", 3) + [_off_color_double_pip(global_wr=70.0)]
+
+    deck, splash = build_variant_greedy(pool, ["W", "B"], mock_metrics)
+
+    assert splash == "G"
+    assert any(c["name"] == "GG Bomb" for c in deck)
+
+
+# --- B4: decks are scored under their color identity, everywhere ---
+
+
+def _gb_pool_with_stray_w_pip():
+    pool = []
+    for i in range(21):
+        pool.append(
+            {
+                "name": f"GB Spell {i}",
+                "colors": ["G", "B"],
+                "types": ["Creature"],
+                "cmc": 3,
+                "mana_cost": "{1}{G}{B}",
+                "deck_colors": {"All Decks": {"gihwr": 58.0}, "GB": {"gihwr": 60.0}},
+            }
+        )
+    pool.append(
+        {
+            "name": "Gold Stray W Pip",
+            "colors": ["G", "B", "W"],
+            "types": ["Creature"],
+            "cmc": 3,
+            "mana_cost": "{1}{G}{B}{W}",
+            "deck_colors": {"All Decks": {"gihwr": 59.0}},
+        }
+    )
+    pool += [
+        {
+            "name": f"Dual GW {i}",
+            "colors": ["G", "W"],
+            "types": ["Land"],
+            "deck_colors": {"All Decks": {"gihwr": 55.0}},
+        }
+        for i in range(2)
+    ]
+    return pool
+
+
+def test_suggester_scores_stray_pip_deck_under_identity(mock_metrics):
+    """A Golgari deck with one gold card carrying a single white pip is still
+    2-color: no Greedy Mana Strain penalty, identity == GB (parent passed the
+    raw 3-color active list to the holistic scorer)."""
+    from src.card_logic import suggest_deck
+    from src.configuration import Configuration
+
+    pool = _gb_pool_with_stray_w_pip()
+    variants = suggest_deck(pool, mock_metrics, Configuration(), event_type="PremierDraft")
+    stray = [
+        (label, vd)
+        for label, vd in (variants or {}).items()
+        if any(c.get("name") == "Gold Stray W Pip" for c in vd.get("deck_cards", []))
+    ]
+    assert stray, "the gold card must land in some variant"
+    for label, vd in stray:
+        assert "Greedy Mana Strain" not in str(vd.get("breakdown", ""))
+        assert set(vd.get("identity_colors", [])) == {"G", "B"}
+
+
+def test_lookahead_scores_stray_pip_deck_under_identity(mock_metrics):
+    """The engine's greedy lookahead branch must score the same deck under the
+    same identity the suggester uses — captured at the calculate_holistic_score
+    call site."""
+    from unittest.mock import patch
+    from src.card_logic import calculate_holistic_score
+    from src.advisor.engine import DraftAdvisor
+
+    pool = _gb_pool_with_stray_w_pip()
+
+    captured = []
+    real = calculate_holistic_score
+
+    def spy(deck, colors, pool_size, metrics):
+        captured.append((tuple(sorted(colors)), any(c.get("name") == "Gold Stray W Pip" for c in deck)))
+        return real(deck, colors, pool_size, metrics)
+
+    advisor = DraftAdvisor(mock_metrics, pool)
+    # No color options: only the soup branch runs, and soup is the variant that
+    # carries the multi-color gold card.
+    with patch("src.card_logic.calculate_holistic_score", side_effect=spy):
+        advisor._get_fast_best_deck_score(pool, [], pool_size=len(pool))
+
+    stray_calls = [colors for colors, has_stray in captured if has_stray]
+    assert stray_calls, "the soup deck must contain and score the gold card"
+    assert all(set(colors) == {"G", "B"} for colors in stray_calls)
+
+
+# --- B11: variant diversity is measured over spells, not the 40-card deck ---
+
+
+def _div_variant(label, rating, spells, lands):
+    return (
+        label,
+        {
+            "rating": rating,
+            "deck_cards": spells + lands,
+            "label_prefix": label,
+        },
+    )
+
+
+def test_same_spells_different_basics_is_one_deck():
+    """Two variants with identical 23 spells and a different basic split are
+    duplicates: the second must be dropped (the parent compared all 40 cards,
+    so a 3+-basic difference kept the same deck twice)."""
+    from src.advisor.deck_builder import _diversity_filter
+
+    spells = [
+        {"name": f"Spell {i}", "types": ["Creature"], "count": 1, "colors": ["W"]}
+        for i in range(23)
+    ]
+    lands_a = [{"name": "Plains", "types": ["Land"], "count": 9, "colors": []},
+               {"name": "Island", "types": ["Land"], "count": 8, "colors": []}]
+    lands_b = [{"name": "Plains", "types": ["Land"], "count": 12, "colors": []},
+               {"name": "Island", "types": ["Land"], "count": 5, "colors": []}]
+
+    final_list = [
+        _div_variant("WB Alpha", 90.0, spells, lands_a),
+        _div_variant("WB Beta", 88.0, spells, lands_b),   # same 23 spells, split differs
+        _div_variant("WB Gamma", 85.0, spells[:14] + [
+            {"name": f"Other {i}", "types": ["Creature"], "count": 1, "colors": ["W"]}
+            for i in range(9)
+        ], lands_a),
+    ]
+    kept = _diversity_filter(final_list)
+    kept_labels = [label for label, _ in kept]
+    assert "WB Alpha" in kept_labels
+    assert "WB Beta" not in kept_labels
+    assert "WB Gamma" in kept_labels  # 9 different spells: a genuinely different deck
+
+
+# --- B15: internal builder failures surface as errors, not empty results ---
+
+
+def test_internal_builder_error_raises_instead_of_empty_dict(
+    mock_metrics, sample_pool
+):
+    """A crash inside the builders must reach the UI worker's error branch —
+    the old blanket except converted it into the 'not enough playables'
+    empty result."""
+    from unittest.mock import patch
+
+    import pytest as _pytest
+
+    from src.card_logic import suggest_deck
+    from src.configuration import Configuration
+
+    boom = RuntimeError("boom: injected builder failure")
+    with (
+        patch("src.advisor.deck_builder.build_variant_consistency", side_effect=boom),
+        patch("src.advisor.deck_builder.build_variant_curve", side_effect=boom),
+        patch("src.advisor.deck_builder.build_variant_greedy", side_effect=boom),
+        patch("src.card_logic.build_variant_consistency", side_effect=boom),
+        patch("src.card_logic.build_variant_curve", side_effect=boom),
+        patch("src.card_logic.build_variant_greedy", side_effect=boom),
+    ):
+        with _pytest.raises(RuntimeError):
+            suggest_deck(
+                sample_pool, mock_metrics, Configuration(), event_type="PremierDraft"
+            )
+
+
+# --- Cycle 2 item 2b: one rescaled MC objective, deterministic seeds ---
+
+
+def test_hinge_cliffs_replaced_by_continuous_mana_term(mock_metrics, sample_pool):
+    """A deck with color_screw_t3 = 11 used to eat a cliff penalty; the mana
+    term now prices it continuously (breakdown carries 'Mana (+x)', never
+    'Color Screw')."""
+    from unittest.mock import patch
+
+    from src.card_logic import suggest_deck
+    from src.configuration import Configuration
+    from src.advisor import deck_builder
+
+    fake_stats = {
+        "mulligans": 5.0, "screw_t3": 10.0, "screw_t4": 10.0, "flood_t5": 10.0,
+        "cast_t2": 80.0, "cast_t3": 70.0, "cast_t4": 60.0, "curve_out": 50.0,
+        "removal_t4": 0.0, "color_screw_t3": 11.0, "avg_hand_size": 6.8,
+    }
+    with patch.object(deck_builder, "simulate_deck", return_value=fake_stats):
+        variants = suggest_deck(
+            sample_pool, mock_metrics, Configuration(), event_type="PremierDraft"
+        )
+    assert variants
+    joined = " | ".join(str(vd.get("breakdown", "")) for vd in variants.values())
+    assert "Color Screw" not in joined
+    assert "Mana (+" in joined
+
+
+def test_suggest_deck_is_deterministic_run_to_run(mock_metrics, sample_pool):
+    """Per-deck CRC32 seeds make the suggester's MC term reproducible across
+    runs (cache cleared between the two invocations)."""
+    from src.card_logic import suggest_deck
+    from src.configuration import Configuration
+    from src.advisor import deck_builder
+
+    deck_builder.GLOBAL_DECK_CACHE.clear()
+    first = suggest_deck(
+        sample_pool, mock_metrics, Configuration(), event_type="PremierDraft"
+    )
+    deck_builder.GLOBAL_DECK_CACHE.clear()
+    second = suggest_deck(
+        sample_pool, mock_metrics, Configuration(), event_type="PremierDraft"
+    )
+    ratings_a = {k: round(v["rating"], 6) for k, v in first.items()}
+    ratings_b = {k: round(v["rating"], 6) for k, v in second.items()}
+    assert ratings_a == ratings_b
+
+
+def test_mc_anchor_card_quality_dominates(mock_metrics):
+    """The rescaled mana term cannot outweigh a >=1-sigma difference in
+    average card quality: two otherwise identical pools whose spells differ
+    by +4.0 WR (~1 sigma) must rank ~12 holistic points apart, far beyond the
+    mana term's realistic swing (<= ~6)."""
+    from src.card_logic import suggest_deck
+    from src.configuration import Configuration
+
+    def pool(gihwr):
+        cards = []
+        for i in range(24):
+            cards.append(
+                {
+                    "name": f"WB Anchor {i}",
+                    "colors": ["W", "B"],
+                    "types": ["Creature"],
+                    "cmc": 3,
+                    "mana_cost": "{1}{W}{B}",
+                    "deck_colors": {"All Decks": {"gihwr": gihwr}},
+                }
+            )
+        cards += [
+            {"name": f"Dual WB {i}", "colors": ["W", "B"], "types": ["Land"],
+             "deck_colors": {"All Decks": {"gihwr": 55.0}}}
+            for i in range(4)
+        ]
+        return cards
+
+    from src.advisor import deck_builder
+
+    hi = suggest_deck(pool(58.0), mock_metrics, Configuration(), event_type="PremierDraft")
+    deck_builder.GLOBAL_DECK_CACHE.clear()  # pool_sig is name-based: bypass it
+    lo = suggest_deck(pool(54.0), mock_metrics, Configuration(), event_type="PremierDraft")
+    best_hi = max(v["rating"] for v in hi.values())
+    best_lo = max(v["rating"] for v in lo.values())
+    assert best_hi > best_lo + 6.0
+
+
+# --- Cycle 2 item 2c: cache identity ---
+
+
+def test_same_names_different_stats_never_share_cache(mock_metrics):
+    """Two pools with identical name:count signatures but different win rates
+    must not share variants: the cache key is stats-sensitive."""
+    from src.card_logic import suggest_deck
+    from src.configuration import Configuration
+    from src.advisor import deck_builder
+
+    def pool(gihwr):
+        cards = []
+        for i in range(24):
+            cards.append(
+                {
+                    "name": f"WB Cache {i}",
+                    "colors": ["W", "B"],
+                    "types": ["Creature"],
+                    "cmc": 3,
+                    "mana_cost": "{1}{W}{B}",
+                    "deck_colors": {"All Decks": {"gihwr": gihwr}},
+                }
+            )
+        cards += [
+            {"name": f"Dual WBC {i}", "colors": ["W", "B"], "types": ["Land"],
+             "deck_colors": {"All Decks": {"gihwr": 55.0}}}
+            for i in range(4)
+        ]
+        return cards
+
+    hi = suggest_deck(pool(58.0), mock_metrics, Configuration(), event_type="PremierDraft")
+    lo = suggest_deck(pool(50.0), mock_metrics, Configuration(), event_type="PremierDraft")
+    assert max(v["rating"] for v in hi.values()) > max(v["rating"] for v in lo.values())
+
+
+# --- Cycle 2 item 4: finalist mana base, exact-40 gated ---
+
+
+def test_finalist_wrapper_rejects_invalid_decks(mock_metrics, sample_pool):
+    """The wrapper fails loudly where mana_base.brute_force_mana_base silently
+    returns its first permutation ([] for empty input)."""
+    from src.advisor.deck_builder import _finalist_mana_base
+
+    forty_one = [{"name": f"S{i}", "types": ["Creature"], "count": 1,
+                  "colors": ["U"], "deck_colors": {"All Decks": {"gihwr": 55.0}}}
+                 for i in range(41)]
+    with pytest.raises(ValueError, match="40"):
+        _finalist_mana_base(forty_one, sample_pool, ["U"], mock_metrics)
+
+    cheater = [
+        {"name": "Only Copy", "types": ["Creature"], "count": 1, "colors": ["U"],
+         "deck_colors": {"All Decks": {"gihwr": 55.0}}}
+    ] * 40
+    cheater = [dict(c, name=f"Only Copy {i}") for i, c in enumerate(cheater)]
+    pool_one = [{"name": "Only Copy 0", "count": 1, "types": ["Creature"]}]
+    four = [dict(cheater[0], count=4)] + cheater[1:37]
+    with pytest.raises(ValueError, match="copies"):
+        _finalist_mana_base(four, pool_one, ["U"], mock_metrics)
+
+
+def test_brute_force_characterization_keeps_deck_legal():
+    """Non-mocked characterization of the live optimizer Auto-Lands uses: on a
+    U-heavy 24-spell deck with a deliberately bad 16-Swamp split, the returned
+    basics sum to the forced count, the deck stays exactly 40, and the split
+    shifts toward Islands."""
+    from src.advisor.mana_base import brute_force_mana_base
+
+    spells = []
+    for i in range(24):
+        spells.append(
+            {"name": f"U Spell {i}", "types": ["Creature"], "count": 1,
+             "colors": ["U"], "mana_cost": "{1}{U}", "cmc": 2,
+             "deck_colors": {"All Decks": {"gihwr": 55.0}}}
+        )
+    basics = brute_force_mana_base(spells, [], ["U", "B"], forced_count=16)
+    assert basics, "optimizer must return a basic configuration"
+    total = sum(c.get("count", 1) for c in basics)
+    assert total == 16
+    islands = sum(c.get("count", 1) for c in basics if c.get("name") == "Island")
+    swamps = sum(c.get("count", 1) for c in basics if c.get("name") == "Swamp")
+    assert islands + swamps == 16
+    assert islands > swamps  # a 24-single-U-pip deck wants Islands first
+
+
+def test_suggest_deck_finalists_stay_legal_after_rebasing(mock_metrics, sample_pool):
+    """End-to-end: after the finalist mana pass every emitted deck is exactly
+    40 cards with 22-24 spells, and pool legality holds for spells and
+    nonbasics."""
+    from src.card_logic import suggest_deck
+    from src.configuration import Configuration
+
+    variants = suggest_deck(
+        sample_pool, mock_metrics, Configuration(), event_type="PremierDraft"
+    )
+    assert variants
+    owned = {}
+    for c in sample_pool:
+        owned[c["name"]] = owned.get(c["name"], 0) + c.get("count", 1)
+    for label, vd in variants.items():
+        deck = vd["deck_cards"]
+        assert sum(c.get("count", 1) for c in deck) == 40, label
+        spells = [c for c in deck if "Land" not in c.get("types", [])]
+        assert 22 <= sum(c.get("count", 1) for c in spells) <= 24, label
+        for c in spells:
+            if c.get("name") in owned:  # synthetic names not in pool are fixture-only
+                assert c.get("count", 1) <= owned[c["name"]], label

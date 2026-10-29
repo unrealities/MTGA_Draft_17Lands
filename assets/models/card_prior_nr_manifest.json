@@ -1,0 +1,11 @@
+{
+ "schema": "card_prior_nr_v1",
+ "feature_hash": "48d7bb4ebac83e89",
+ "feature_count": 242,
+ "trees": 500,
+ "z_clamps": [
+  -2.9010532107253524,
+  1.9670082480334385
+ ],
+ "purpose": "cube / OOD cards (no rarity; monotone constraints carry the ordering)"
+}

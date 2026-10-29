@@ -1,0 +1,237 @@
+{
+ "schema": "card_prior_v1",
+ "feature_hash": "cf8d5b363ef390c2",
+ "feature_count": 246,
+ "trees": 500,
+ "z_clamps": [
+  -2.9290613596300292,
+  2.3023021367821395
+ ],
+ "loso": {
+  "AFR": {
+   "n_train": 7351,
+   "n_hold": 241,
+   "rmse_model": 1.3859,
+   "rmse_setmean": 1.627,
+   "beats_setmean": true
+  },
+  "BLB": {
+   "n_train": 7405,
+   "n_hold": 249,
+   "rmse_model": 1.2136,
+   "rmse_setmean": 1.4747,
+   "beats_setmean": true
+  },
+  "BRO": {
+   "n_train": 7342,
+   "n_hold": 298,
+   "rmse_model": 1.4086,
+   "rmse_setmean": 1.8322,
+   "beats_setmean": true
+  },
+  "DFT": {
+   "n_train": 7356,
+   "n_hold": 253,
+   "rmse_model": 1.2883,
+   "rmse_setmean": 1.5344,
+   "beats_setmean": true
+  },
+  "DMU": {
+   "n_train": 7417,
+   "n_hold": 228,
+   "rmse_model": 1.3771,
+   "rmse_setmean": 1.6981,
+   "beats_setmean": true
+  },
+  "DSK": {
+   "n_train": 7400,
+   "n_hold": 264,
+   "rmse_model": 1.4817,
+   "rmse_setmean": 1.5514,
+   "beats_setmean": true
+  },
+  "ECL": {
+   "n_train": 7386,
+   "n_hold": 267,
+   "rmse_model": 1.2554,
+   "rmse_setmean": 1.4651,
+   "beats_setmean": true
+  },
+  "EOE": {
+   "n_train": 7376,
+   "n_hold": 281,
+   "rmse_model": 1.382,
+   "rmse_setmean": 1.6807,
+   "beats_setmean": true
+  },
+  "FDN": {
+   "n_train": 7294,
+   "n_hold": 255,
+   "rmse_model": 1.2835,
+   "rmse_setmean": 1.6381,
+   "beats_setmean": true
+  },
+  "FIN": {
+   "n_train": 7407,
+   "n_hold": 246,
+   "rmse_model": 1.4806,
+   "rmse_setmean": 1.7481,
+   "beats_setmean": true
+  },
+  "FRA": {
+   "n_train": 7462,
+   "n_hold": 197,
+   "rmse_model": 1.386,
+   "rmse_setmean": 1.6503,
+   "beats_setmean": true
+  },
+  "HBG": {
+   "n_train": 7387,
+   "n_hold": 209,
+   "rmse_model": 1.237,
+   "rmse_setmean": 1.554,
+   "beats_setmean": true
+  },
+  "HOB": {
+   "n_train": 7521,
+   "n_hold": 148,
+   "rmse_model": 1.3958,
+   "rmse_setmean": 1.7153,
+   "beats_setmean": true
+  },
+  "KTK": {
+   "n_train": 7348,
+   "n_hold": 244,
+   "rmse_model": 1.3293,
+   "rmse_setmean": 1.6533,
+   "beats_setmean": true
+  },
+  "LCI": {
+   "n_train": 7421,
+   "n_hold": 237,
+   "rmse_model": 1.1665,
+   "rmse_setmean": 1.5497,
+   "beats_setmean": true
+  },
+  "LTR": {
+   "n_train": 7456,
+   "n_hold": 212,
+   "rmse_model": 1.5746,
+   "rmse_setmean": 1.6812,
+   "beats_setmean": true
+  },
+  "MH3": {
+   "n_train": 7389,
+   "n_hold": 270,
+   "rmse_model": 1.5363,
+   "rmse_setmean": 1.8277,
+   "beats_setmean": true
+  },
+  "MID": {
+   "n_train": 7432,
+   "n_hold": 208,
+   "rmse_model": 1.3733,
+   "rmse_setmean": 1.5825,
+   "beats_setmean": true
+  },
+  "MKM": {
+   "n_train": 7366,
+   "n_hold": 282,
+   "rmse_model": 1.4597,
+   "rmse_setmean": 1.7527,
+   "beats_setmean": true
+  },
+  "MOM": {
+   "n_train": 7392,
+   "n_hold": 221,
+   "rmse_model": 1.0244,
+   "rmse_setmean": 1.3462,
+   "beats_setmean": true
+  },
+  "MSH": {
+   "n_train": 7444,
+   "n_hold": 199,
+   "rmse_model": 1.3282,
+   "rmse_setmean": 1.5987,
+   "beats_setmean": true
+  },
+  "NEO": {
+   "n_train": 7380,
+   "n_hold": 231,
+   "rmse_model": 1.1173,
+   "rmse_setmean": 1.393,
+   "beats_setmean": true
+  },
+  "ONE": {
+   "n_train": 7430,
+   "n_hold": 227,
+   "rmse_model": 1.2814,
+   "rmse_setmean": 1.4909,
+   "beats_setmean": true
+  },
+  "OTJ": {
+   "n_train": 7303,
+   "n_hold": 331,
+   "rmse_model": 1.3359,
+   "rmse_setmean": 1.6475,
+   "beats_setmean": true
+  },
+  "PIO": {
+   "n_train": 7294,
+   "n_hold": 324,
+   "rmse_model": 1.4493,
+   "rmse_setmean": 1.5833,
+   "beats_setmean": true
+  },
+  "SIR": {
+   "n_train": 7342,
+   "n_hold": 299,
+   "rmse_model": 1.2616,
+   "rmse_setmean": 1.4447,
+   "beats_setmean": true
+  },
+  "SNC": {
+   "n_train": 7403,
+   "n_hold": 243,
+   "rmse_model": 1.3693,
+   "rmse_setmean": 1.7137,
+   "beats_setmean": true
+  },
+  "SOS": {
+   "n_train": 7337,
+   "n_hold": 279,
+   "rmse_model": 1.4116,
+   "rmse_setmean": 1.6149,
+   "beats_setmean": true
+  },
+  "TDM": {
+   "n_train": 7348,
+   "n_hold": 254,
+   "rmse_model": 1.2634,
+   "rmse_setmean": 1.5099,
+   "beats_setmean": true
+  },
+  "TLA": {
+   "n_train": 7415,
+   "n_hold": 245,
+   "rmse_model": 1.3237,
+   "rmse_setmean": 1.634,
+   "beats_setmean": true
+  },
+  "TMT": {
+   "n_train": 7522,
+   "n_hold": 138,
+   "rmse_model": 1.3388,
+   "rmse_setmean": 1.5634,
+   "beats_setmean": true
+  },
+  "WOE": {
+   "n_train": 7390,
+   "n_hold": 244,
+   "rmse_model": 1.5133,
+   "rmse_setmean": 1.9682,
+   "beats_setmean": true
+  }
+ },
+ "notes": "flat-tree inference per evaluator ADR; fallback=set mean"
+}

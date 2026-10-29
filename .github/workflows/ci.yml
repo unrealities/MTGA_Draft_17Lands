@@ -82,6 +82,4 @@ jobs:
         run: npm test -- --runInBand
       - name: Audit JavaScript dependencies
         if: github.event_name == 'schedule' || inputs.full_matrix
-        # Low advisories are still reported. deepmerge (via jest) has an
-        # unpatched low advisory, GHSA-gcqx-w48m-w2h4, that blocked releases.
-        run: npm audit --audit-level=moderate
+        run: npm audit

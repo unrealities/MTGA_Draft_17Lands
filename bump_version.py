@@ -39,7 +39,7 @@ def calculate_new_version(current_ver, mode, manual_ver=None):
 
 def bump_constants(content, new_ver):
     # Regex to find APPLICATION_VERSION = "3.37"
-    ver_match = re.search(r"\bAPPLICATION_VERSION\s*=\s*[\"']?(\d+\.\d+)[\"']?", content)
+    ver_match = re.search(r"APPLICATION_VERSION\s*=\s*[\"']?(\d+\.\d+)[\"']?", content)
     if not ver_match:
         raise ValueError("Could not find APPLICATION_VERSION in constants.py")
 
@@ -52,7 +52,7 @@ def bump_constants(content, new_ver):
 
     # 1. Update APPLICATION_VERSION
     new_content = re.sub(
-        r"\bAPPLICATION_VERSION\s*=\s*[\"']?\d+\.\d+[\"']?",
+        r"APPLICATION_VERSION\s*=\s*[\"']?\d+\.\d+[\"']?",
         f'APPLICATION_VERSION = "{new_ver}"',
         content,
     )
@@ -100,7 +100,7 @@ def prepend_release_notes(path, new_ver):
 def get_current_version_from_file():
     content = read_file(CONSTANTS_PATH)
     # Added [\"']? to handle quotes
-    ver_match = re.search(r"\bAPPLICATION_VERSION\s*=\s*[\"']?(\d+\.\d+)[\"']?", content)
+    ver_match = re.search(r"APPLICATION_VERSION\s*=\s*[\"']?(\d+\.\d+)[\"']?", content)
     if not ver_match:
         raise ValueError("Could not find current version.")
     return float(ver_match.group(1)), content

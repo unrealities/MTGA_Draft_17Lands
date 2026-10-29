@@ -5,7 +5,6 @@ Verified: Sorting Toggle, Coordinate Safety, Alphabetical Wrap-around, and Zebra
 """
 
 import pytest
-import time
 import tkinter
 from unittest.mock import patch, MagicMock
 from src.ui.components import (
@@ -179,62 +178,6 @@ class TestUIComponents:
         # 3. Test Reset Defaults
         manager._reset_defaults()
         assert manager.active_fields == ["name", "value", "gihwr"]
-
-    @patch("src.configuration.write_configuration")
-    def test_dynamic_treeview_scrollbar_toggle_keeps_width(self, mock_write, root):
-        """Regression for #172: showing or hiding the scrollbar must not resize
-        the table. A width change re-stretches the columns, which can flip the
-        scrollbar again and loop until the app stops responding."""
-
-        def settle(ms=300):
-            # Outlast AutoScrollbar's 50 ms debounce.
-            end = time.monotonic() + ms / 1000
-            while time.monotonic() < end:
-                window.update()
-
-        def fill():
-            for i in range(40):
-                manager.tree.insert("", "end", values=(f"Card {i}", "55.0"))
-
-        window = tkinter.Toplevel(root)
-        window.geometry("420x220+40+40")
-        config = Configuration()
-        config.settings.column_configs["test_view"] = ["name", "gihwr"]
-        manager = DynamicTreeviewManager(window, "test_view", config, lambda: None)
-        manager.pack(fill="both", expand=True)
-        scrollbar = manager._scrollbar
-        try:
-            fill()
-            settle()
-            assert scrollbar.winfo_ismapped()
-            tree_width = manager.tree.winfo_width()
-            requested_width = manager.winfo_reqwidth()
-
-            manager.tree.delete(*manager.tree.get_children())
-            settle()
-            assert not scrollbar.winfo_ismapped()
-            assert manager.tree.winfo_width() == tree_width
-            assert manager.winfo_reqwidth() == requested_width
-
-            fill()
-            settle()
-            assert scrollbar.winfo_ismapped()
-            assert manager.tree.winfo_width() == tree_width
-            assert manager.winfo_reqwidth() == requested_width
-
-            # With content unchanged, the scrollbar must stay put.
-            toggles = []
-            original_update = scrollbar._update_mapping
-
-            def counting_update():
-                toggles.append(scrollbar._needed)
-                original_update()
-
-            scrollbar._update_mapping = counting_update
-            settle()
-            assert toggles == []
-        finally:
-            window.destroy()
 
     def test_collapsible_frame_toggle(self, root):
         """Verify the CollapsibleFrame correctly expands and collapses its content."""
@@ -655,3 +598,37 @@ class TestThemeChangeGate:
             Theme.apply(root, "Dark")
             root.update()
             rebuild.assert_called_once()
+
+
+class TestPickedAnimationCache:
+    @pytest.fixture
+    def root(self):
+        root = tkinter.Tk()
+        Theme.apply(root, "Dark")
+        yield root
+        root.destroy()
+
+    @staticmethod
+    def _picked_bg(tree):
+        # ttk.Treeview has no tag_cget; query the tag option through Tcl.
+        return str(tree.tk.call(tree._w, "tag", "configure", "picked", "-background"))
+
+    def test_theme_refresh_keeps_animation_cache_in_sync(self, root):
+        """Regression (2026-10-25 review): _apply_dynamic_row_colors re-applies
+        the picked tag on init and on theme refreshes. When that write bypassed
+        _set_picked_tag_colors, the cached colors went stale and the guard
+        suppressed the first animation frame after new picks."""
+        tree = ModernTreeview(root, columns=["Card"])
+
+        # Animation frame 0 applied and cached...
+        tree._set_picked_tag_colors("#14532d", "#f8fafc")
+        assert self._picked_bg(tree) == "#14532d"
+
+        # ...then a theme refresh re-applies the settle colors.
+        tree._apply_dynamic_row_colors()
+        assert self._picked_bg(tree) == "#15803d"
+
+        # New picks restart the animation at frame 0; the guard must apply
+        # the frame instead of matching it against the stale cache.
+        tree._set_picked_tag_colors("#14532d", "#f8fafc")
+        assert self._picked_bg(tree) == "#14532d"

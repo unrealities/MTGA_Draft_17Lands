@@ -126,9 +126,13 @@ class TopBarControls(ttk.Frame):
 
     def update_status_dot(self, current_ts, prev_ts):
         """Updates the status dot color to indicate if the log is actively writing."""
-        self.status_dot.config(
-            bootstyle="success" if current_ts != prev_ts else "secondary"
-        )
+        # Reconfiguring with the same value still dirties the widget, which on
+        # macOS makes CoreAnimation recomposite the whole window on every tick;
+        # only reconfigure when the state actually flips.
+        bootstyle = "success" if current_ts != prev_ts else "secondary"
+        if bootstyle != getattr(self, "_status_dot_bootstyle", None):
+            self.status_dot.config(bootstyle=bootstyle)
+            self._status_dot_bootstyle = bootstyle
 
     def update_auto_detect_label(self, colors):
         """Updates the label that tells the user what lane 'Auto' has detected."""

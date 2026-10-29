@@ -36,6 +36,15 @@ class TestSuggestDeckPanel:
             {"name": "Lightning Bolt", "types": ["Instant"]}
         ] * 25
         draft.retrieve_set_metrics.return_value = MagicMock()
+
+        def _snapshot():
+            return (
+                draft.retrieve_taken_cards(),
+                draft.retrieve_set_metrics(),
+                draft.retrieve_current_limited_event(),
+            )
+
+        draft.try_suggest_snapshot.side_effect = _snapshot
         draft.retrieve_current_limited_event.return_value = ("SET", "PremierDraft")
         return draft
 

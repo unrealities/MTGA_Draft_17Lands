@@ -30,6 +30,18 @@ import argparse
 import os
 import sys
 import logging
+
+# PATCH (2026-10-24): disable cyclic GC. A crash report (2026-10-25) shows a
+# GC cycle on a worker thread finalizing a Tk object and calling Tcl off the
+# main thread (gc_collect_main -> slot_tp_finalize -> Tkapp_Call) while the
+# main thread was inside Tcl -> corrupted interpreter ("Tcl_AppendFormatToObj
+# called with shared object" panic, SIGSEGVs). Refcounting still frees
+# acyclic garbage; only cyclic collection is disabled, so reference cycles
+# (e.g. rescheduling closures in the deck panels) accumulate for the
+# session — an accepted local trade-off, not something to upstream as-is.
+import gc
+
+gc.disable()
 from src import constants
 from src.configuration import read_configuration, write_configuration
 from src.limited_sets import LimitedSets
@@ -217,6 +229,37 @@ def load_data(args, config, progress_callback):
         logging.getLogger().removeHandler(splash_handler)
 
 
+def _warm_advisor_simulator():
+    """Compile the numba deck simulator once, on the main thread.
+
+    Without this, the first simulate_deck call JIT-compiles on whatever
+    worker first needs it; numba's compiler then imports and compiles
+    concurrently with the main thread's initial Tk layout, and the crash
+    reports collected on 2026-10-25 (startup Tcl-corruption SIGSEGVs on
+    macOS) all fall in that window. Compiling here — after CLI handling,
+    before the Tk root window and any worker thread exist — closes it.
+    Measured on the affected machine: 3/8 -> 5/6 launches surviving
+    startup (together with gc.disable); a mitigation backed by those
+    results, not a complete root-cause fix. cache=True keeps later
+    launches cheap.
+    """
+    try:
+        from src.advisor.simulator import simulate_deck
+
+        simulate_deck(
+            [
+                {"count": 17, "types": ["Land"], "colors": ["W"]},
+                {"count": 23, "mana_cost": "{1}{W}", "cmc": 2},
+            ],
+            iterations=10,
+        )
+    except Exception:
+        logging.getLogger(__name__).exception(
+            "advisor simulator warm-up failed; the startup JIT window is "
+            "open again (known crash race)"
+        )
+
+
 def main():
     import time
     from src import constants
@@ -249,6 +292,10 @@ def main():
     if args.version:
         print(f"MTGA Draft Tool v{constants.APPLICATION_VERSION}")
         sys.exit(0)
+
+    # Compile the numba simulator before any Tk window or worker thread
+    # exists — but after the CLI exits above, so --help/--version stay instant.
+    _warm_advisor_simulator()
 
     # Load Config
     config, _ = read_configuration()

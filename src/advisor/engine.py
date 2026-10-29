@@ -13,14 +13,40 @@ from typing import List, Dict, Any, Tuple
 from src.advisor.schema import Recommendation
 from src import constants
 from src.card_utils import get_functional_cmc
+from src.advisor.deck_scorer import SHRINKAGE_K, _table_prior_z, _load_prior_z_table
+
+# (pool_signature, card_name) -> improvement bonus for the pack-3 lookahead:
+# the same pool + candidate card recurs every UI refresh, and the heuristic
+# path must stay synchronous (no Monte Carlo here). Cleared with the deck
+# caches between tests and on dataset switches.
+_LOOKAHEAD_CACHE = {}
 from src.advisor.mana_base import count_fixing
 from src.utils import normalize_color_string
 
 logger = logging.getLogger(__name__)
 
 
+
+def _has_hybrid_route(card, lane_colors):
+    """True when the card's single OFF-COLOR pip is itself a hybrid ({U/B}):
+    payable through either color. A payable hybrid elsewhere must NOT
+    excuse an unrelated solid off-color pip."""
+    import re as _re
+
+    cost = str(card.get("mana_cost", ""))
+    off_color = []
+    for sym in _re.findall(r"\{(.*?)\}", cost):
+        opts = [c for c in sym.split("/") if c in "WUBRG"]
+        if opts and not any(o in lane_colors for o in opts):
+            off_color.append(sym)
+    return len(off_color) == 1 and "/" in off_color[0]
+
+
 class DraftAdvisor:
-    TOTAL_PICKS = 45
+    TOTAL_PICKS = 45  # upper bound for the pack-local pick index
+    # Projection base: cards in a full draft. Distinct concept from TOTAL_PICKS
+    # on purpose (Pick-Two drafts 42 cards over 21 picks); do not unify.
+    TOTAL_CARDS_DRAFTED = 45
     TARGET_EARLY_PLAYS = 7
     TARGET_HARD_REMOVAL = 3
     CAP_COMBAT_TRICKS = 3
@@ -30,20 +56,42 @@ class DraftAdvisor:
     IWD_PREMIUM_THRESHOLD = 4.5
 
     def __init__(
-        self, set_metrics, taken_cards: List[Dict], signals: Dict[str, float] = None
+        self,
+        set_metrics,
+        taken_cards: List[Dict],
+        signals: Dict[str, float] = None,
+        draft_progress: Dict = None,
     ):
         self.metrics = set_metrics
         self.pool = taken_cards or []
         self.signals = signals or {}
 
-        # 1. Base statistical baselines
-        self.global_mean, self.global_std = self.metrics.get_metrics(
-            "All Decks", "gihwr"
+        # Initialize the prior table eagerly: the cold-start picker path
+        # calls _table_prior_z before any posterior helper would warm the
+        # lazy loader (fresh-session day-one picks had no prior at all).
+        _load_prior_z_table()
+
+        # Draft progress captured from the controller's locked scanner snapshot:
+        # picks (1-based, already normalized by cards_per_pick), total_picks,
+        # cards (raw picked-ID count, before metadata resolution), total_cards.
+        # None = legacy derivation for tests of other mechanics: progress from
+        # the pack-local pick, counts from the (filtered) pool.
+        self.draft_progress = draft_progress or {}
+        self._progress_picks = self.draft_progress.get("picks")
+        self._total_picks = self.draft_progress.get("total_picks", self.TOTAL_PICKS)
+        self._total_cards = self.draft_progress.get(
+            "total_cards", self.TOTAL_CARDS_DRAFTED
         )
-        if self.global_mean <= 0:
-            self.global_mean = 54.0
-        if self.global_std <= 0:
-            self.global_std = 4.0
+        self._raw_card_count = self.draft_progress.get("cards", len(self.pool))
+
+        # 1. Base statistical baselines. set_has_data records whether the
+        # active dataset carries real win rates at all: on a day-1 set every
+        # card routes through HeuristicEvaluator (n=0 state matrix, state 3),
+        # matching deck_scorer.get_card_rating's fallback.
+        raw_mean, raw_std = self.metrics.get_metrics("All Decks", "gihwr")
+        self.set_has_data = bool(raw_mean and raw_mean > 0)
+        self.global_mean = raw_mean if self.set_has_data else 54.0
+        self.global_std = raw_std if (self.set_has_data and raw_std > 0) else 4.0
 
         # 2. Identify established lane
         self.main_colors, self.color_counts = self._identify_main_colors()
@@ -59,12 +107,29 @@ class DraftAdvisor:
         self.pool_metrics = self._analyze_pool()
 
     def evaluate_pack(
-        self, pack_cards: List[Dict], current_pick: int, current_pack: int = 1
+        self,
+        pack_cards: List[Dict],
+        current_pick: int,
+        current_pack: int = 1,
+        draft_progress: Dict = None,
     ) -> List[Recommendation]:
         if not pack_cards:
             return []
         safe_pick = max(1, min(self.TOTAL_PICKS, current_pick))
         pack_number = max(1, current_pack)
+        if draft_progress:
+            self.draft_progress = draft_progress
+            self._progress_picks = draft_progress.get("picks")
+            self._total_picks = draft_progress.get("total_picks", self.TOTAL_PICKS)
+            self._total_cards = draft_progress.get(
+                "total_cards", self.TOTAL_CARDS_DRAFTED
+            )
+            self._raw_card_count = draft_progress.get("cards", len(self.pool))
+        # Draft-wide progress (pick events made + 1), clamped to the format's
+        # pick total. The pack-local safe_pick keeps feeding the wheel path,
+        # castability and lateness terms.
+        progress_picks = self._progress_picks or safe_pick
+        progress_picks = max(1, min(self._total_picks, progress_picks))
 
         on_color_pool = [
             c
@@ -103,7 +168,7 @@ class DraftAdvisor:
 
         self.base_deck_score = 0.0
         self.color_options = []
-        if pack_number >= 3 and len(self.pool) >= 23:
+        if pack_number >= 3 and self._raw_card_count >= 23:
             try:
                 from src.card_logic import identify_top_pairs
 
@@ -130,7 +195,19 @@ class DraftAdvisor:
                 reasons, synergy_bonus = [], 0.0
 
                 # --- STEP 1: Blended Base Score (With Bayesian Smoothing & Signals) ---
-                base_score = self._calculate_weighted_score(card, safe_pick)
+                base_score = self._calculate_weighted_score(card, progress_picks)
+
+                # Reliability of the card's own record gates every raw-rate
+                # bonus path below (bomb z-score, lateness capitalization): a
+                # small-sample spike must not buy its bonuses back through a
+                # path the shared posterior does not cover. No samples field
+                # (shipped fixtures) keeps full weight.
+                global_samples = int(stats.get("samples", 0) or 0)
+                reliability = (
+                    global_samples / (global_samples + SHRINKAGE_K)
+                    if global_samples > 0
+                    else 1.0
+                )
 
                 # --- STEP 2: Bomb Detection ---
                 z_score = (raw_gihwr - pack_mean) / pack_std
@@ -139,13 +216,17 @@ class DraftAdvisor:
                     if (raw_iwd > self.IWD_PREMIUM_THRESHOLD and z_score > 1.0)
                     else 1.0
                 )
-                power_bonus = max(0, z_score * 10 * iwd_mult) if z_score > 0.5 else 0
+                power_bonus = (
+                    max(0, z_score * 10 * iwd_mult) * reliability
+                    if z_score > 0.5
+                    else 0
+                )
 
                 # --- STEP 3: Signal Capitalization ---
                 if pack_number == 1 and safe_pick >= 5 and alsa > 0:
                     lateness = safe_pick - alsa
                     if lateness >= 2.0 and z_score > 0.5:
-                        power_bonus += lateness * z_score * 3.0
+                        power_bonus += lateness * z_score * 3.0 * reliability
                         reasons.append(f"LATE SIGNAL")
 
                 # --- STEP 4: Archetype Synergy & 'Glue Cards' ---
@@ -155,13 +236,20 @@ class DraftAdvisor:
                     else True
                 )
                 if len(self.main_colors) >= 2:
-                    arch_wr = float(
-                        card.get("deck_colors", {})
-                        .get(self.main_archetype, {})
-                        .get("gihwr", 0.0)
+                    arch_stats = (
+                        card.get("deck_colors", {}).get(self.main_archetype, {})
                     )
-                    if arch_wr > 0.0:
-                        delta = arch_wr - raw_gihwr
+                    arch_wr = float(arch_stats.get("gihwr", 0.0))
+                    pair_n = int(arch_stats.get("samples", 0) or 0)
+                    if arch_wr > 0.0 and pair_n >= 30:
+                        # Reliability-adjusted synergy: a one-game 100% pair
+                        # record used to add delta*5 on its RAW gap (a common
+                        # outranking established bombs). The pair edge counts
+                        # only as far as its own sample size supports.
+                        shrunk_pair = raw_gihwr + (arch_wr - raw_gihwr) * (
+                            pair_n / (pair_n + SHRINKAGE_K)
+                        )
+                        delta = shrunk_pair - raw_gihwr
 
                         # GLUE CARD DETECTION:
                         # If a Common/Uncommon heavily outperforms its global average in our specific lane,
@@ -221,15 +309,29 @@ class DraftAdvisor:
 
                 # --- STEP 7.5: Late Draft Deck Improvement ---
                 deck_improvement_bonus = 0.0
-                if pack_number >= 3 and len(self.pool) >= 23:
+                if pack_number >= 3 and self._raw_card_count >= 23:
                     try:
-                        test_pool = self.pool + [card]
-                        new_score = self._get_fast_best_deck_score(
-                            test_pool, self.color_options
+                        cache_key = (
+                            "|".join(
+                                sorted(
+                                    f"{c.get('name', '')}:{c.get('count', 1)}"
+                                    for c in self.pool
+                                )
+                            ),
+                            name,
                         )
-                        improvement = new_score - self.base_deck_score
-                        if improvement > 0.1:
-                            deck_improvement_bonus = improvement * 3.0
+                        if cache_key in _LOOKAHEAD_CACHE:
+                            deck_improvement_bonus = _LOOKAHEAD_CACHE[cache_key]
+                        else:
+                            test_pool = self.pool + [card]
+                            new_score = self._get_fast_best_deck_score(
+                                test_pool, self.color_options, pool_size=len(self.pool)
+                            )
+                            improvement = new_score - self.base_deck_score
+                            if improvement > 0.1:
+                                deck_improvement_bonus = improvement * 3.0
+                            _LOOKAHEAD_CACHE[cache_key] = deck_improvement_bonus
+                        if deck_improvement_bonus > 0:
                             reasons.append(
                                 f"Improves Best Deck (+{deck_improvement_bonus:.1f})"
                             )
@@ -239,15 +341,19 @@ class DraftAdvisor:
                 # --- STEP 8: Wheel logic ---
                 rank_in_pack = pack_ranks.get(name, 99)
                 wheel_mult, _, wheel_pct = self._check_relative_wheel(
-                    card, safe_pick, rank_in_pack, pack_size=len(pack_cards)
+                    card, safe_pick, rank_in_pack
                 )
 
                 # === MASTER ALGORITHM ===
+                # The deck-improvement bonus compares decks whose builders
+                # already filter is_castable(strict=True): applying cast_mult
+                # here discounted the same signal twice.
                 final_score = (
-                    (base_score + power_bonus + synergy_bonus + deck_improvement_bonus)
+                    (base_score + power_bonus + synergy_bonus)
                     * cast_mult
                     * role_mult
                     * wheel_mult
+                    + deck_improvement_bonus
                 )
 
                 is_basic_land = name in constants.BASIC_LANDS or (
@@ -322,7 +428,7 @@ class DraftAdvisor:
                 continue
         sorted_w = sorted(color_weights.items(), key=lambda x: x[1], reverse=True)
         main_colors = []
-        if total_pool_size >= 15 and sum(color_counts.values()) > 5:
+        if self._raw_card_count >= 15 and sum(color_counts.values()) > 5:
             threshold = sum(color_counts.values()) * 0.15
             leader_set = [
                 v[0]
@@ -411,6 +517,13 @@ class DraftAdvisor:
             "counters_enablers": counters_enablers,
         }
 
+    def _projected_total(self, count: int) -> float:
+        """Projects a resolved-pool count to a full draft. Both the numerator
+        count and the denominator pool are resolved-card quantities, so the
+        projection legitimately moves when a card resolves and changes
+        composition; only progress-derived terms must be resolution-invariant."""
+        return count * (self._total_cards / max(1, len(self.pool)))
+
     def _calculate_composition_bonus(self, card: Dict, pack: int) -> Tuple[float, str]:
         tags, cmc = card.get("tags", []), get_functional_cmc(card)
         types = card.get("types", [])
@@ -421,8 +534,8 @@ class DraftAdvisor:
 
         # 2. Creature Quota Check
         if pack >= 2 and "Creature" in types:
-            projected_creatures = self.pool_metrics["creature_count"] * (
-                self.TOTAL_PICKS / max(1, len(self.pool))
+            projected_creatures = self._projected_total(
+                self.pool_metrics["creature_count"]
             )
             if projected_creatures < 13:
                 return 1.25, "Critical: Needs Creatures"
@@ -470,9 +583,7 @@ class DraftAdvisor:
 
         # 6. Early Interaction
         if cmc <= 2 and ("Creature" in types or "removal" in tags):
-            projected = self.pool_metrics["early_plays"] * (
-                self.TOTAL_PICKS / max(1, len(self.pool))
-            )
+            projected = self._projected_total(self.pool_metrics["early_plays"])
             if projected < self.TARGET_EARLY_PLAYS:
                 return (
                     (
@@ -491,17 +602,34 @@ class DraftAdvisor:
         card_colors = card.get("colors", [])
         top_2_lane = self.main_colors[:2]
 
+        off_color_pips = 0
+        required_colorless = 0
         if mana_cost:
-            off_color_pips = 0
             is_on_lane = True
             pips = re.findall(r"\{(.*?)\}", mana_cost)
             for pip in pips:
-                options = [c for c in pip.split("/") if c in "WUBRG"]
-                if not options:
+                if "/" in pip:
+                    # Hybrid and phyrexian pips are flexible payments, but
+                    # only when the alternate option is actually payable:
+                    # {2/W} and {B/P} have generic/life alternates (flexible);
+                    # {U/B} — purely colored — is a hard off-color pip when
+                    # neither color is in the lane.
+                    options = [c for c in pip.split("/") if c in "WUBRG"]
+                    has_noncolor_alt = any(
+                        c not in "WUBRG" for c in pip.split("/")
+                    )
+                    if options and any(opt in top_2_lane for opt in options):
+                        continue
+                    if has_noncolor_alt:
+                        continue  # generic/life payment available
+                    off_color_pips += 1
+                    is_on_lane = False
+                if pip == "C":
+                    required_colorless += 1
                     continue
-                if any(opt in top_2_lane for opt in options):
-                    continue
-                else:
+                if pip in "WUBRG":
+                    if pip in top_2_lane:
+                        continue
                     off_color_pips += 1
                     is_on_lane = False
         else:
@@ -519,6 +647,13 @@ class DraftAdvisor:
                 if len(card_colors) > 1 and off_color_pips > 0
                 else (max(0.4, pressure), "Off-Color")
             )
+
+        if required_colorless > 0:
+            colorless_sources = self.fixing_map.get("C", 0)
+            if colorless_sources < required_colorless:
+                # {C} must be paid with colorless mana specifically; basic
+                # lands produce their color, not colorless.
+                return 0.15, "Colorless Requirement"
 
         if not is_on_lane:
             if (
@@ -540,7 +675,11 @@ class DraftAdvisor:
             # Allow premium 1-for-1s to be splashed just like game-winning bombs
             if z_score >= self.BOMB_Z_SCORE or is_premium_removal:
                 if off_color_pips == 1:
-                    if has_specific_fixing or self.pool_metrics["fixing_count"] >= (
+                    # Color-specific conjunction: generic fixing_count alone
+                    # must not unlock a splash (three green duals do not pay
+                    # for a blue pip); the pool must also be fixing-rich
+                    # enough overall (3 before pack 3, 4 in pack 3).
+                    if has_specific_fixing and self.pool_metrics["fixing_count"] >= (
                         4 if pack == 3 else 3
                     ):
                         reason = (
@@ -554,21 +693,30 @@ class DraftAdvisor:
                     and get_functional_cmc(card) >= 5
                     and z_score >= self.BOMB_Z_SCORE
                 ):
-                    if self.pool_metrics["fixing_count"] >= 4:
+                    # Same color-specific conjunction as the single-pip
+                    # branch: generic fixing_count alone must not unlock a
+                    # double-pip splash with zero sources of that color.
+                    if (
+                        has_specific_fixing
+                        and self.pool_metrics["fixing_count"] >= 4
+                    ):
                         return 0.30, "Greedy Bomb Splash"
 
-            if off_color_pips == 1 and has_specific_fixing:
+            # Hybrid ({U/B}) off-lane: ONE payable route suffices — the
+            # card can be cast through either color. Requiring both
+            # blocked every hybrid splash candidate.
+            if off_color_pips == 1 and (
+                has_specific_fixing or _has_hybrid_route(card, top_2_lane)
+            ):
                 return 0.3, "Splashable"
 
             return 0.01 if pack == 3 else 0.05, "Off-Color"
         return 1.0, ""
 
     def _check_relative_wheel(
-        self, card: Dict, pick: int, rank_in_pack: int, pack_size: int = None
+        self, card: Dict, pick: int, rank_in_pack: int
     ) -> Tuple[float, str, float]:
-        # A pack comes back after 8 picks, so it needs 9+ cards now. Pick alone
-        # isn't enough: 13- and 14-card packs can't wheel from picks 6 and 7.
-        if pick >= 9 or (pack_size is not None and pack_size < 9):
+        if pick >= 9:
             return 1.0, "", 0.0
         try:
             alsa = float(
@@ -593,21 +741,53 @@ class DraftAdvisor:
 
     def _calculate_weighted_score(self, card: Dict, pick_number: int) -> float:
         try:
+            if not self.set_has_data:
+                # Day 1 before any data exists. The shipped card prior still
+                # speaks here: what the card DOES predicts its expected z, and
+                # a table hit beats metadata heuristics (fresh adversarial
+                # round: the prior was advertised for exactly this state but
+                # never consulted in it). Pure heuristics remain for cards
+                # outside the table.
+                prior_z = _table_prior_z(card)
+                if prior_z:
+                    return max(0.0, 50.0 + prior_z * 15.0)
+                from src.sealed_logic import HeuristicEvaluator
+
+                h = HeuristicEvaluator.evaluate(card)
+                return max(
+                    0.0,
+                    50.0
+                    + ((h - self.global_mean) / max(0.1, self.global_std)) * 15.0,
+                )
+
             stats = card.get("deck_colors", {})
             global_wr = float(stats.get("All Decks", {}).get("gihwr", 0.0))
-            arch_weight = min(0.9, 0.2 + (pick_number / self.TOTAL_PICKS) * 0.7)
+            arch_weight = min(0.9, 0.2 + (pick_number / self._total_picks) * 0.7)
             arch_stats = stats.get(self.main_archetype, {})
             arch_wr = float(arch_stats.get("gihwr", global_wr))
 
-            # BAYESIAN SMOOTHING: Confidently blend global & archetype win rates based on sample size
+            # BAYESIAN SMOOTHING via the shared posterior helper (cycle 2,
+            # item 1a): the archetype rate shrinks toward global + pair-offset
+            # with n/(n+k); n <= 0 keeps the raw value (shipped fixtures have
+            # no samples field, so their pinned numbers are unchanged).
+            from src.advisor.deck_scorer import card_wr_posteriors
+
+            post = card_wr_posteriors(card, [self.main_archetype], self.metrics)
             samples = int(arch_stats.get("samples", 0))
-            confidence = min(1.0, samples / 1000.0)
-            trusted_arch_wr = (arch_wr * confidence) + (global_wr * (1.0 - confidence))
+            trusted_arch_wr = (
+                post["shrunk_arch"] if post["n"] > 0 else arch_wr
+            )
+            # The GLOBAL side of the blend is the posterior too: the raw rate
+            # let a one-game 100% spike outrank established bombs in the
+            # base score (fresh adversarial round R1).
+            trusted_global_wr = (
+                post["shrunk_global"] if post["n_global"] > 0 else global_wr
+            )
 
             blended_wr = (
-                (global_wr * (1.0 - arch_weight)) + (trusted_arch_wr * arch_weight)
+                (trusted_global_wr * (1.0 - arch_weight)) + (trusted_arch_wr * arch_weight)
                 if (arch_wr > 0 and samples >= 10)
-                else global_wr
+                else trusted_global_wr
             )
 
             base_score = max(
@@ -628,8 +808,16 @@ class DraftAdvisor:
             return 0.0
 
     def _get_fast_best_deck_score(
-        self, pool: List[Dict], color_options: List[List[str]]
+        self,
+        pool: List[Dict],
+        color_options: List[List[str]],
+        pool_size: int = None,
     ) -> float:
+        """Best holistic deck score over the variant builders. `pool_size`
+        overrides the pool length fed to the scorer: the pack-3 lookahead
+        passes the baseline's size so the comparison is not contaminated by
+        the expected-spells step penalty (a +1 pool crossing a step shifts
+        the penalty by a constant -10 with no deck change at all)."""
         from src.card_logic import (
             build_variant_consistency,
             build_variant_greedy,
@@ -638,31 +826,43 @@ class DraftAdvisor:
             calculate_holistic_score,
         )
 
+        effective_size = len(pool) if pool_size is None else pool_size
         best_score = 0.0
         for main_colors in color_options:
             for builder in [build_variant_consistency, build_variant_curve]:
                 deck = builder(pool, main_colors, self.metrics)
                 if deck:
                     score, _ = calculate_holistic_score(
-                        deck, main_colors, len(pool), self.metrics
+                        deck, main_colors, effective_size, self.metrics
                     )
                     if score > best_score:
                         best_score = score
 
             deck, splash = build_variant_greedy(pool, main_colors, self.metrics)
             if deck:
-                target_colors = main_colors + [splash] if splash else main_colors
+                # Score by the deck's own identity (shared helper with the
+                # suggester) so the lookahead and the suggester never score the
+                # same deck under different color regimes.
+                from src.advisor.deck_builder import deck_color_identity
+
+                target_colors = deck_color_identity(deck) or (
+                    main_colors + [splash] if splash else main_colors
+                )
                 score, _ = calculate_holistic_score(
-                    deck, target_colors, len(pool), self.metrics
+                    deck, target_colors, effective_size, self.metrics
                 )
                 if score > best_score:
                     best_score = score
 
         deck, soup_colors = build_variant_soup(pool, self.metrics)
         if deck:
-            target_colors = soup_colors[:3] if soup_colors else ["All Decks"]
+            from src.advisor.deck_builder import deck_color_identity
+
+            target_colors = deck_color_identity(deck) or (
+                soup_colors[:3] if soup_colors else ["All Decks"]
+            )
             score, _ = calculate_holistic_score(
-                deck, target_colors, len(pool), self.metrics
+                deck, target_colors, effective_size, self.metrics
             )
             if score > best_score:
                 best_score = score

@@ -1,0 +1,11 @@
+{
+ "schema": "card_prior_z_table_v2",
+ "base": "card_prior_v5_full level-1 (spearman .6648 FRA / .6149 DFT)",
+ "override": "absolute structural floors (forge v2 signals; mana/draw/turn/tutor economics, calibrated Jitte z=5.44 TMT / Wurmcoil z=3.96 BRO)",
+ "n_cards": 38542,
+ "n_lifted": 28,
+ "z_clamps": [
+  -5.5,
+  5.5
+ ]
+}

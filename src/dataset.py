@@ -28,12 +28,21 @@ from src.constants import (
 )
 
 
+# Fallback-cache provenance: entries stamped with the dataset file they were
+# resolved against. Cross-set entries (stamp != active dataset, or unstamped
+# legacy entries) serve only basic lands; everything else resolves as
+# unresolved so a previous set's win rates are never shown as current.
+_FALLBACK_SOURCE_KEY = "_fallback_source"
+_BASIC_LAND_NAMES = {"Plains", "Island", "Swamp", "Mountain", "Forest", "Wastes"}
+
+
 class Dataset:
     # Configuration flag to allow the UI to drop unresolved numeric IDs
     skip_unresolved_ids = True
 
     def __init__(self, retrieve_unknown: bool = False, db_path: str = None):
         self._dataset = None
+        self._dataset_source = None
         self._retrieve_unknown = retrieve_unknown
         self.db_path = db_path
         self._name_index = {}
@@ -101,6 +110,7 @@ class Dataset:
         with self._resolution_lock:
             self._invalidate_resolution()
             self._dataset = None
+            self._dataset_source = None
             self._name_index.clear()
             self._id_index.clear()
             self.unknown_id_cache.clear()
@@ -295,6 +305,7 @@ class Dataset:
             self._name_index = name_index
             self._id_index = id_index
             self._dataset = json_data
+            self._dataset_source = file_location
         return result
 
     def get_data_by_id(self, id_list: List[str]) -> List[Dict]:
@@ -303,12 +314,34 @@ class Dataset:
             return []
         with self._resolution_lock:
             ratings = self._dataset["card_ratings"] if self._dataset else self._fallback_ratings
+
+            def _stale_fallback(card):
+                """Cross-set (or legacy unstamped) fallback entry: a previous
+                set's ratings must not resolve as current. Basic lands keep
+                resolving — they carry set-specific arena IDs the active
+                dataset may lack on day one."""
+                if card is None:
+                    return True
+                fallback_name = str(card.get(DATA_FIELD_NAME, "")).removeprefix(
+                    "Snow-Covered "
+                )
+                return card.get(_FALLBACK_SOURCE_KEY) != self._dataset_source and (
+                    fallback_name not in _BASIC_LAND_NAMES
+                )
+
             result = []
             for arena_id in id_list:
                 aid = str(arena_id)
                 card = ratings.get(aid)
+                if self._dataset is None and card is not None and _stale_fallback(card):
+                    # No active dataset: the cache itself is the source, and
+                    # entries from a previous set must not resolve as current
+                    # (the guard used to run only on the inner fallback read).
+                    card = None
                 if not card:
                     card = self._fallback_ratings.get(aid)
+                    if _stale_fallback(card):
+                        card = None
                 unresolved = not card or str(card.get(DATA_FIELD_NAME, "")).isdigit()
                 if unresolved and self._retrieve_unknown:
                     self._pending_ids.add(aid)
@@ -447,7 +480,10 @@ class Dataset:
                                 ratings[aid] = matched_card
                                 result_map[aid] = matched_card
                                 # Store it in the fallback cache so we don't have to look it up next launch
-                                self._fallback_ratings[aid] = matched_card
+                                self._fallback_ratings[aid] = {
+                                    **matched_card,
+                                    _FALLBACK_SOURCE_KEY: self._dataset_source,
+                                }
                                 made_new_cache_entries = True
                             else:
                                 from src.file_extractor import extract_types
@@ -468,7 +504,10 @@ class Dataset:
                                 ratings[aid] = empty_dict
                                 result_map[aid] = empty_dict
 
-                                self._fallback_ratings[aid] = empty_dict
+                                self._fallback_ratings[aid] = {
+                                    **empty_dict,
+                                    _FALLBACK_SOURCE_KEY: self._dataset_source,
+                                }
                                 made_new_cache_entries = True
 
                             if aid in unknown_ids_to_fetch:

@@ -675,11 +675,6 @@ class ArenaScanner:
                     self.draft_type = constants.LIMITED_TYPE_DRAFT_PICK_TWO_QUICK
                 else:
                     self.draft_type = constants.LIMITED_TYPE_DRAFT_PICK_TWO
-                # Keep packs recorded under 8 seats; picks 1-4 use the same slot in a
-                # 4-seat pod. A seat-count mismatch would otherwise discard them.
-                self.initial_pack = self.initial_pack[:4]
-                self.pack_cards = self.pack_cards[:4]
-                self.picked_cards = self.picked_cards[:4]
 
             # Enforce maximum cards per pick to prevent MTGA JSON array-bloat bugs
             cards = cards[: self.cards_per_pick]
@@ -998,9 +993,27 @@ class ArenaScanner:
                     else str(picked).split(",")
                 )
                 if len(picked_list) > len(self.taken_cards):
-                    self.taken_cards = picked_list
-                    # Copy: sharing one list makes the next slot-0 pick count twice.
-                    self.picked_cards[0] = list(picked_list)
+                    # The blob is the authoritative cumulative list: import a copy
+                    # under the lock and advance the pick watermarks so a late or
+                    # replayed pick event cannot re-import its cards as duplicates.
+                    with self.lock:
+                        self.taken_cards = list(picked_list)
+                        self.picked_cards[0] = list(picked_list)
+                        # PickNext status: "next pick is `pick`" — the blob covers
+                        # picks 1..pick-1. Advance the watermarks to that coverage
+                        # so a late or replayed echo of an already-covered pick
+                        # cannot re-import its cards as duplicates, while the echo
+                        # of pick `pick` itself still lands.
+                        covered = pick - 1
+                        if covered >= 1 and (
+                            pack > self.previous_picked_pack
+                            or (
+                                pack == self.previous_picked_pack
+                                and covered > self.current_picked_pick
+                            )
+                        ):
+                            self.previous_picked_pack = pack
+                            self.current_picked_pick = covered
                     changed = True
             return changed
 
@@ -1139,6 +1152,25 @@ class ArenaScanner:
             result = self.set_data.open_file(file)
             self._metrics_cache = SetMetrics(self.set_data)
             return result
+
+    def try_suggest_snapshot(self):
+        """Single-lock snapshot for the suggest panel: (pool, metrics, event).
+        Returns None when the scanner lock is momentarily held — the caller
+        retries on its next tick, so the Tk thread never blocks on a dataset
+        sync and never reads pool/metrics/event from different moments."""
+        if not self.lock.acquire(blocking=False):
+            return None
+        try:
+            if not hasattr(self, "_metrics_cache") or self._metrics_cache is None:
+                self._metrics_cache = SetMetrics(self.set_data)
+            pool = self.set_data.get_data_by_id(self.taken_cards)
+            event = (
+                (self.draft_sets[0] if self.draft_sets else ""),
+                self.draft_label,
+            )
+            return pool, self._metrics_cache, event
+        finally:
+            self.lock.release()
 
     def retrieve_set_metrics(self):
         with self.lock:
@@ -1301,6 +1333,28 @@ class ArenaScanner:
         ]:
             return 2
         return 1
+
+    @property
+    def total_picks(self):
+        """Total pick events in the active draft format (Pick-Two: 21, otherwise 45)."""
+        if self.draft_type in [
+            constants.LIMITED_TYPE_DRAFT_PICK_TWO,
+            constants.LIMITED_TYPE_DRAFT_PICK_TWO_TRAD,
+            constants.LIMITED_TYPE_DRAFT_PICK_TWO_QUICK,
+        ]:
+            return 21
+        return 45
+
+    @property
+    def total_cards(self):
+        """Total cards drafted in the active format (Pick-Two: 42, otherwise 45)."""
+        if self.draft_type in [
+            constants.LIMITED_TYPE_DRAFT_PICK_TWO,
+            constants.LIMITED_TYPE_DRAFT_PICK_TWO_TRAD,
+            constants.LIMITED_TYPE_DRAFT_PICK_TWO_QUICK,
+        ]:
+            return 42
+        return 45
 
     def retrieve_taken_cards(self):
         with self.lock:

@@ -205,6 +205,13 @@ class AppController:
                 self.orchestrator.scanner.retrieve_current_picked_cards()
             )
             history = self.orchestrator.scanner.retrieve_draft_history()
+            # Draft progress inputs captured atomically with the pool: the raw
+            # picked-ID count is the only count source unaffected by metadata
+            # resolution (retrieve_taken_cards drops unresolved IDs).
+            raw_picked_count = len(self.orchestrator.scanner.taken_cards)
+            cards_per_pick = self.orchestrator.scanner.cards_per_pick
+            total_picks = self.orchestrator.scanner.total_picks
+            total_cards = self.orchestrator.scanner.total_cards
             draft_id = self.orchestrator.scanner.current_draft_id
             start_time = self.orchestrator.scanner.draft_start_time
             event_string = self.orchestrator.scanner.event_string
@@ -222,7 +229,15 @@ class AppController:
                 scores[c] += v
 
         # Pass signals securely into Advisor
-        advisor = DraftAdvisor(metrics, taken_cards, signals=scores)
+        draft_progress = {
+            "picks": (raw_picked_count // cards_per_pick + 1) if cards_per_pick else 1,
+            "total_picks": total_picks,
+            "cards": raw_picked_count,
+            "total_cards": total_cards,
+        }
+        advisor = DraftAdvisor(
+            metrics, taken_cards, signals=scores, draft_progress=draft_progress
+        )
         recommendations = advisor.evaluate_pack(pack_cards, pi, current_pack=pk)
 
         # UPDATE UI STATE

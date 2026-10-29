@@ -617,3 +617,67 @@ def test_dataset_normalization_on_load(tmp_path):
         card_colors = cards["1"]["deck_colors"]
         assert "WG" in card_colors
         assert "GW" not in card_colors
+
+
+MKM_PREMIER_SNAPSHOT = os.path.join(
+    os.getcwd(), "tests", "data", "MKM_PremierDraft_Data_2024_5_3.json"
+)
+
+
+def _fallback_entry(name, gihwr=70.0, stamp=None):
+    from src.constants import DATA_FIELD_NAME
+    from src.dataset import _FALLBACK_SOURCE_KEY
+
+    card = {
+        DATA_FIELD_NAME: name,
+        "types": ["Creature"],
+        "colors": [],
+        "cmc": 3,
+        "deck_colors": {"All Decks": {"gihwr": gihwr}},
+    }
+    if stamp is not None:
+        card[_FALLBACK_SOURCE_KEY] = stamp
+    return card
+
+
+def test_cross_set_fallback_ratings_are_not_served(production_resolution):
+    """A fallback entry resolved against an earlier dataset must not serve that
+    set's win rates as current when the active dataset lacks the card."""
+    ds = Dataset()
+    assert ds.open_file(MKM_PREMIER_SNAPSHOT) == Result.VALID
+    ds._fallback_ratings["900001"] = _fallback_entry(
+        "Stale Cross-Set Bomb", 70.0, stamp=MKM_PREMIER_SNAPSHOT
+    )
+    assert ds.open_file(OTJ_PREMIER_SNAPSHOT) == Result.VALID
+
+    assert ds.get_data_by_id(["900001"]) == []
+
+
+def test_cross_set_fallback_still_serves_basic_lands(production_resolution):
+    """Basic lands carry set-specific arena IDs absent from a day-1 dataset, so
+    they are the one cross-set fallback carve-out."""
+    ds = Dataset()
+    assert ds.open_file(MKM_PREMIER_SNAPSHOT) == Result.VALID
+    ds._fallback_ratings["900002"] = _fallback_entry(
+        "Plains", 55.0, stamp=MKM_PREMIER_SNAPSHOT
+    )
+    ds._fallback_ratings["900003"] = _fallback_entry(
+        "Snow-Covered Forest", 55.0, stamp=MKM_PREMIER_SNAPSHOT
+    )
+    assert ds.open_file(OTJ_PREMIER_SNAPSHOT) == Result.VALID
+
+    resolved = ds.get_data_by_id(["900002", "900003"])
+    assert [c["name"] for c in resolved] == ["Plains", "Snow-Covered Forest"]
+
+
+def test_same_set_fallback_entry_still_resolves(production_resolution):
+    """An entry stamped with the active dataset's own file resolves normally."""
+    ds = Dataset()
+    assert ds.open_file(MKM_PREMIER_SNAPSHOT) == Result.VALID
+    ds._fallback_ratings["900004"] = _fallback_entry(
+        "Custom Same-Set Card", 60.0, stamp=MKM_PREMIER_SNAPSHOT
+    )
+
+    resolved = ds.get_data_by_id(["900004"])
+    assert len(resolved) == 1
+    assert resolved[0]["name"] == "Custom Same-Set Card"

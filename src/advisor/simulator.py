@@ -99,9 +99,53 @@ def _parse_deck_to_arrays(deck_list):
         any_color = re.search(r"\bany (?:one |combination of )?colors?\b", text) is not None
 
         is_land[i] = "Land" in types
+        # Mana FILTERS (Prophetic Prism, Chromatic Star etc.) exchange or
+        # convert existing mana — they do not add an independent source.
+        # Treating them as ramp manufactured mana out of nothing (a
+        # two-land hand could cast a 3-drop through a Prism).
+        is_filter = re.search(
+            r"\b(?:exchange|convert)\b", text
+        ) is not None and "add" not in text
+        # 0-CMC colored artifacts (Moxen) ARE independent mana sources.
+        # 17Lands datasets carry no oracle_text, so detect structurally:
+        # cmc=0 + Artifact + has colors is a Mox-like card. Without
+        # oracle_text, the mana color falls back to the card's own colors.
+        # 0-CMC colored artifacts: Moxen (structural, no oracle_text needed)
+        is_zero_cost_mana = (
+            not is_land[i]
+            and not is_filter
+            and c.get("cmc", 0) == 0
+            and "Artifact" in types
+            and c.get("colors")
+        )
+        # Untagged mana CREATURES (Llanowar Elves, Birds of Paradise):
+        # cube datasets strip tags, so the structural signal is a creature
+        # with a very low cmc and "add" in its oracle_text (when present)
+        # or the classic elf/bird pattern. When oracle_text is absent too
+        # (17Lands cube), a 1-cmc creature with a single color is the
+        # strongest heuristic — false positives are 1-drops that don't
+        # produce mana, which cost only a mild simulation overestimate.
+        is_untagged_mana_creature = (
+            not is_land[i]
+            and not is_filter
+            and "Creature" in types
+            and not ("fixing_ramp" in tags or any_color or "treasure" in text)
+            and c.get("cmc", 0) in (0, 1)
+            and len(c.get("colors", [])) == 1
+            and text
+            and re.search(r"\badd\s*\{", text) is not None
+        )
         is_ramp[i] = (
-            "fixing_ramp" in tags or any_color or "treasure" in text
-        ) and not is_land[i]
+            (
+                "fixing_ramp" in tags
+                or any_color
+                or "treasure" in text
+                or is_zero_cost_mana
+                or is_untagged_mana_creature
+            )
+            and not is_land[i]
+            and not is_filter
+        )
         is_removal[i] = "removal" in tags
 
         # Calculate produced mana bitmask
@@ -314,7 +358,16 @@ def _run_fast_monte_carlo(
     pip_count,
     generic,
     iterations,
+    seed=-1,
 ):
+    # Common random numbers: a non-negative seed is consumed here, at kernel
+    # entry on the executing worker, seeding numba's per-thread RNG. Every
+    # trial consumes exactly one 40-element shuffle, so two candidates run
+    # under the same seed share the identical stream. seed=-1 keeps the
+    # legacy unseeded behavior.
+    if seed >= 0:
+        np.random.seed(seed)
+
     mulligans = 0
     screw_t3 = 0
     screw_t4 = 0
@@ -447,12 +500,14 @@ def _run_fast_monte_carlo(
     )
 
 
-def simulate_deck(deck_list, iterations=10000):
+def simulate_deck(deck_list, iterations=10000, seed=None):
     arrays = _parse_deck_to_arrays(deck_list)
     if not arrays:
         return None
 
-    results = _run_fast_monte_carlo(*arrays, iterations)
+    results = _run_fast_monte_carlo(
+        *arrays, iterations, -1 if seed is None else int(seed)
+    )
 
     return {
         "mulligans": (results[0] / iterations) * 100.0,
