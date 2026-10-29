@@ -217,6 +217,7 @@ class CompactOverlay(tb.Toplevel):
             on_click_callback=self.app_context.interactions.show_tooltip_from_advisor,
         )
         self.advisor_panel.pack(fill=BOTH, expand=True, anchor="n", side="top")
+        self.set_advisor_visible(self.configuration.settings.advisor_enabled)
 
         # 4. Stats Tab
         tb.Label(
@@ -313,6 +314,13 @@ class CompactOverlay(tb.Toplevel):
     def _trigger_refresh(self):
         if hasattr(self.orchestrator, "refresh_callback"):
             self.orchestrator.refresh_callback()
+
+    def set_advisor_visible(self, visible):
+        # A hidden tab keeps its slot; add() restores it between Pack and Stats.
+        if visible:
+            self.notebook.add(self.tab_advisor)
+        else:
+            self.notebook.hide(self.tab_advisor)
 
     def update_data(
         self,

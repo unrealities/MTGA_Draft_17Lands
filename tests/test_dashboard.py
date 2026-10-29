@@ -260,3 +260,18 @@ class TestDashboardFrame:
         dashboard._on_sash_drag_end(MagicMock())
 
         assert mock_config.settings.dashboard_sash == 500
+
+    def test_advisor_panel_follows_toggle(self, root, mock_config):
+        """The Advisor panel is hidden when off and restored above Open Lanes."""
+        mock_config.settings.advisor_enabled = False
+        dashboard = DashboardFrame(
+            root, mock_config, MagicMock(), MagicMock(), MagicMock()
+        )
+        assert dashboard.advisor_panel.winfo_manager() == ""
+
+        dashboard.set_advisor_visible(True)
+        assert dashboard.advisor_panel.winfo_manager() == "pack"
+        siblings = dashboard.sidebar_container.pack_slaves()
+        assert siblings.index(dashboard.advisor_panel) < siblings.index(
+            dashboard.signal_container
+        )

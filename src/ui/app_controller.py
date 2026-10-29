@@ -221,8 +221,11 @@ class AppController:
             for c, v in sig_calc.calculate_pack_signals(h_pack, entry["Pick"]).items():
                 scores[c] += v
 
-        advisor = DraftAdvisor(metrics, taken_cards)
-        recommendations = advisor.evaluate_pack(pack_cards, pi, current_pack=pk)
+        # Pass signals securely into Advisor
+        recommendations = []
+        if self.config.settings.advisor_enabled:
+            advisor = DraftAdvisor(metrics, taken_cards, signals=scores)
+            recommendations = advisor.evaluate_pack(pack_cards, pi, current_pack=pk)
 
         # UPDATE UI STATE
         if pk > 0:
