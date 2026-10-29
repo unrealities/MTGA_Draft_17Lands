@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "mtga-draft-tool"
-version = "4.26"
+version = "4.27"
 description = "Magic: The Gathering Arena draft tool that utilizes 17Lands data."
 authors = ["unrealities"]
 readme = "README.md"
@@ -17,7 +17,7 @@ pydantic = "2.14.1"
 pynput = "1.8.2"
 requests = "2.34.2"
 ttkbootstrap = "2.2.5"
-numba = "0.68.0"
+numba = "0.68.1"
 scipy = "1.18.1"
 pywin32 = {version = "312", markers = "sys_platform == 'win32'"}
 
@@ -25,7 +25,7 @@ pywin32 = {version = "312", markers = "sys_platform == 'win32'"}
 pytest = "9.1.1"
 pytest-cov = "^7.1.0"
 responses = "0.26.3"
-seleniumbase = "4.56.3"
+seleniumbase = "4.56.4"
 pyinstaller = "6.22.3"
 jaraco-text = "*"
 platformdirs = "*"
