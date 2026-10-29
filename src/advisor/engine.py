@@ -1,7 +1,7 @@
 """
 src/advisor/engine.py
 The "Compositional Brain" (v5.5 Pro-Tour Architecture)
-Updated: Bayesian Smoothing, Signal Tie-Breakers, Top-End/Synergy Tracking, and Premium Removal Splash.
+Updated: Bayesian Smoothing, Top-End/Synergy Tracking, and Premium Removal Splash.
 """
 
 import statistics
@@ -29,12 +29,9 @@ class DraftAdvisor:
     BOMB_Z_SCORE = 1.5
     IWD_PREMIUM_THRESHOLD = 4.5
 
-    def __init__(
-        self, set_metrics, taken_cards: List[Dict], signals: Dict[str, float] = None
-    ):
+    def __init__(self, set_metrics, taken_cards: List[Dict]):
         self.metrics = set_metrics
         self.pool = taken_cards or []
-        self.signals = signals or {}
 
         # 1. Base statistical baselines
         self.global_mean, self.global_std = self.metrics.get_metrics(
@@ -101,35 +98,19 @@ class DraftAdvisor:
             for i, c in enumerate(pack_cards_sorted)
         }
 
-        self.base_deck_score = 0.0
-        self.color_options = []
-        if pack_number >= 3 and len(self.pool) >= 23:
-            try:
-                from src.card_logic import identify_top_pairs
-
-                self.color_options = identify_top_pairs(self.pool, self.metrics)
-                self.base_deck_score = self._get_fast_best_deck_score(
-                    self.pool, self.color_options
-                )
-            except Exception as e:
-                logger.warning(f"Advisor base deck scoring error: {e}")
-                self.base_deck_score = 0.0
-                self.color_options = []
-
         recommendations = []
         for card in pack_cards:
             try:
                 name = str(card.get("name", "Unknown")).strip()
                 stats = card.get("deck_colors", {}).get("All Decks", {})
-                raw_gihwr, raw_iwd, alsa = (
+                raw_gihwr, raw_iwd = (
                     float(stats.get("gihwr", 0.0)),
                     float(stats.get("iwd", 0.0)),
-                    float(stats.get("alsa", 0.0)),
                 )
                 card_colors = card.get("colors", [])
                 reasons, synergy_bonus = [], 0.0
 
-                # --- STEP 1: Blended Base Score (With Bayesian Smoothing & Signals) ---
+                # --- STEP 1: Blended Base Score (With Bayesian Smoothing) ---
                 base_score = self._calculate_weighted_score(card, safe_pick)
 
                 # --- STEP 2: Bomb Detection ---
@@ -141,14 +122,7 @@ class DraftAdvisor:
                 )
                 power_bonus = max(0, z_score * 10 * iwd_mult) if z_score > 0.5 else 0
 
-                # --- STEP 3: Signal Capitalization ---
-                if pack_number == 1 and safe_pick >= 5 and alsa > 0:
-                    lateness = safe_pick - alsa
-                    if lateness >= 2.0 and z_score > 0.5:
-                        power_bonus += lateness * z_score * 3.0
-                        reasons.append(f"LATE SIGNAL")
-
-                # --- STEP 4: Archetype Synergy & 'Glue Cards' ---
+                # --- STEP 3: Archetype Synergy & 'Glue Cards' ---
                 is_on_lane = (
                     all(c in self.main_colors for c in card_colors)
                     if card_colors
@@ -177,77 +151,29 @@ class DraftAdvisor:
                     if is_on_lane:
                         base_score *= 1.3 if needs_playables else 1.1
 
-                # --- STEP 5: Value Over Replacement (VOR) ---
-                if pack_number == 1 and card_colors and len(card_colors) == 1:
-                    c = card_colors[0]
-                    texture = getattr(self.metrics, "format_texture", {}).get(c, {})
-                    if texture and raw_gihwr >= (self.global_mean - self.global_std):
-                        tags = card.get("tags", [])
-                        cmc = get_functional_cmc(card)
-
-                        roles_to_check = []
-                        if "Creature" in card.get("types", []) and cmc <= 2:
-                            roles_to_check.append(("2-drop", "2-Drops"))
-                        if "removal" in tags:
-                            roles_to_check.append(("removal", "Removal"))
-                        if "evasion" in tags:
-                            roles_to_check.append(("evasion", "Evasion"))
-
-                        for role_key, role_name in roles_to_check:
-                            count = texture.get(role_key, 99)
-                            if count <= 2:
-                                vor_bonus = 6.0
-                                power_bonus += vor_bonus
-                                reasons.append(
-                                    f"High VOR: Scarce {c} {role_name} (+{vor_bonus:.0f})"
-                                )
-                            elif count >= 7:
-                                power_bonus -= 2.0
-                                reasons.append(f"Highly Replaceable {role_name}")
-
-                # --- STEP 6: Castability (Pip-Sensitive Discipline & Premium Splashing) ---
+                # --- STEP 4: Castability (Pip-Sensitive Discipline & Premium Splashing) ---
                 cast_mult, cast_reason = self._calculate_castability_v5(
                     card, pack_number, safe_pick, z_score
                 )
                 if cast_reason:
                     reasons.append(cast_reason)
 
-                # --- STEP 7: Composition & Synergies ---
+                # --- STEP 5: Composition & Synergies ---
                 role_mult, role_reason = self._calculate_composition_bonus(
                     card, pack_number
                 )
                 if role_reason:
                     reasons.append(role_reason)
 
-                # --- STEP 7.5: Late Draft Deck Improvement ---
-                deck_improvement_bonus = 0.0
-                if pack_number >= 3 and len(self.pool) >= 23:
-                    try:
-                        test_pool = self.pool + [card]
-                        new_score = self._get_fast_best_deck_score(
-                            test_pool, self.color_options
-                        )
-                        improvement = new_score - self.base_deck_score
-                        if improvement > 0.1:
-                            deck_improvement_bonus = improvement * 3.0
-                            reasons.append(
-                                f"Improves Best Deck (+{deck_improvement_bonus:.1f})"
-                            )
-                    except Exception as e:
-                        logger.warning(f"Advisor deck improvement scoring error: {e}")
-
-                # --- STEP 8: Wheel logic ---
+                # --- STEP 6: Wheel chance (shown, not scored) ---
                 rank_in_pack = pack_ranks.get(name, 99)
-                wheel_mult, _, wheel_pct = self._check_relative_wheel(
+                wheel_pct = self._wheel_chance(
                     card, safe_pick, rank_in_pack, pack_size=len(pack_cards)
                 )
 
                 # === MASTER ALGORITHM ===
                 final_score = (
-                    (base_score + power_bonus + synergy_bonus + deck_improvement_bonus)
-                    * cast_mult
-                    * role_mult
-                    * wheel_mult
+                    (base_score + power_bonus + synergy_bonus) * cast_mult * role_mult
                 )
 
                 is_basic_land = name in constants.BASIC_LANDS or (
@@ -563,33 +489,28 @@ class DraftAdvisor:
             return 0.01 if pack == 3 else 0.05, "Off-Color"
         return 1.0, ""
 
-    def _check_relative_wheel(
+    def _wheel_chance(
         self, card: Dict, pick: int, rank_in_pack: int, pack_size: int = None
-    ) -> Tuple[float, str, float]:
+    ) -> float:
         # A pack comes back after 8 picks, so it needs 9+ cards now. Pick alone
         # isn't enough: 13- and 14-card packs can't wheel from picks 6 and 7.
         if pick >= 9 or (pack_size is not None and pack_size < 9):
-            return 1.0, "", 0.0
+            return 0.0
         try:
             alsa = float(
                 card.get("deck_colors", {}).get("All Decks", {}).get("alsa", 0.0)
             )
             if alsa <= pick:
-                return 1.0, "", 0.0
+                return 0.0
             coeffs = constants.WHEEL_COEFFICIENTS[min(pick - 1, 5)]
             context_prob = float(np.polyval(coeffs, alsa))
             if rank_in_pack == 0:
                 context_prob *= 0.10
             elif rank_in_pack <= 2:
                 context_prob *= 0.40
-            final_prob = max(0.0, min(100.0, context_prob))
-            return (
-                (0.8, f"Wheels ~{final_prob:.0f}%", final_prob)
-                if final_prob >= 75.0 and rank_in_pack >= 4
-                else (1.0, "", final_prob)
-            )
+            return max(0.0, min(100.0, context_prob))
         except:
-            return 1.0, "", 0.0
+            return 0.0
 
     def _calculate_weighted_score(self, card: Dict, pick_number: int) -> float:
         try:
@@ -610,61 +531,10 @@ class DraftAdvisor:
                 else global_wr
             )
 
-            base_score = max(
+            return max(
                 0.0,
                 50.0
                 + ((blended_wr - self.global_mean) / max(0.1, self.global_std)) * 15.0,
             )
-
-            # SIGNAL TIE-BREAKER
-            card_colors = card.get("colors", [])
-            if self.signals and card_colors:
-                signal_strength = sum(self.signals.get(c, 0.0) for c in card_colors)
-                if signal_strength > 10.0:
-                    base_score *= 1.05
-
-            return base_score
         except:
             return 0.0
-
-    def _get_fast_best_deck_score(
-        self, pool: List[Dict], color_options: List[List[str]]
-    ) -> float:
-        from src.card_logic import (
-            build_variant_consistency,
-            build_variant_greedy,
-            build_variant_curve,
-            build_variant_soup,
-            calculate_holistic_score,
-        )
-
-        best_score = 0.0
-        for main_colors in color_options:
-            for builder in [build_variant_consistency, build_variant_curve]:
-                deck = builder(pool, main_colors, self.metrics)
-                if deck:
-                    score, _ = calculate_holistic_score(
-                        deck, main_colors, len(pool), self.metrics
-                    )
-                    if score > best_score:
-                        best_score = score
-
-            deck, splash = build_variant_greedy(pool, main_colors, self.metrics)
-            if deck:
-                target_colors = main_colors + [splash] if splash else main_colors
-                score, _ = calculate_holistic_score(
-                    deck, target_colors, len(pool), self.metrics
-                )
-                if score > best_score:
-                    best_score = score
-
-        deck, soup_colors = build_variant_soup(pool, self.metrics)
-        if deck:
-            target_colors = soup_colors[:3] if soup_colors else ["All Decks"]
-            score, _ = calculate_holistic_score(
-                deck, target_colors, len(pool), self.metrics
-            )
-            if score > best_score:
-                best_score = score
-
-        return best_score
