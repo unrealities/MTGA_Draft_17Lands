@@ -28,12 +28,17 @@ from src.constants import (
 )
 
 
+_FALLBACK_SOURCE_KEY = "_fallback_source"
+_BASIC_LAND_NAMES = {"Plains", "Island", "Swamp", "Mountain", "Forest", "Wastes"}
+
+
 class Dataset:
     # Configuration flag to allow the UI to drop unresolved numeric IDs
     skip_unresolved_ids = True
 
     def __init__(self, retrieve_unknown: bool = False, db_path: str = None):
         self._dataset = None
+        self._dataset_source = None  # tracks which dataset the ratings came from
         self._retrieve_unknown = retrieve_unknown
         self.db_path = db_path
         self._name_index = {}

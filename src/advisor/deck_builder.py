@@ -416,28 +416,7 @@ def suggest_deck(
         pool_sig = tuple(
             sorted([f"{c.get('name', '')}:{c.get('count', 1)}" for c in taken_cards])
         )
-        def _tier_sig(tier_data):
-            """Tier content changes must invalidate the suggestion cache:
-            importing a new tier list while keeping the same pool used to
-            return stale suggestions computed with the old tiers."""
-            if not tier_data:
-                return None
-            import hashlib as _hashlib
-
-            parts = []
-            for name, obj in sorted(tier_data.items()):
-                ratings = getattr(obj, "ratings", {})
-                for card_name, r in sorted(ratings.items()):
-                    parts.append(f"{card_name}:{getattr(r, 'rating', '')}")
-            return _hashlib.md5(";".join(parts).encode("utf-8")).hexdigest()
-
-        cache_key = (
-            event_type,
-            dataset_name,
-            len(taken_cards),
-            pool_sig,
-            _tier_sig(tier_data),
-        )
+        cache_key = (event_type, dataset_name, len(taken_cards), pool_sig)
 
         if cache_key in GLOBAL_DECK_CACHE:
             if progress_callback:
