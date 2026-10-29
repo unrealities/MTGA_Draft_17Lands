@@ -1,3 +1,9 @@
+===================== RELEASE NOTES 4.27 =====================
+* JamesYouL2: [Bug] The Wheel column no longer shows a chance for cards in packs with fewer than 9 cards, which can't come back. In 13- and 14-card sets this affected picks 6–8, which could show up to about 38% (#221).
+* JamesYouL2: [Security] Export to Sealeddeck.tech now opens the returned link only if it is an https sealeddeck.tech address. Anything else falls back to copying the deck to the clipboard (#220).
+* unrealities: [Development] Updated numba to 0.68.1, SeleniumBase to 4.56.4, platformdirs to 4.14.0, and jest to 30.5.2. Release CI now fails only on moderate or higher JavaScript advisories, because jest's deepmerge dependency has an unpatched low advisory that blocked the 4.26 release. 4.26 was never published, so its fixes ship in this release.
+* unrealities: [Development] bump_version.py no longer overwrites OLD_APPLICATION_VERSION when bumping APPLICATION_VERSION.
+
 ===================== RELEASE NOTES 4.26 =====================
 * JamesYouL2: [Bug] Quick Draft picks are no longer counted twice after the tool restores your pool from the draft status (when pick lines were missing from the log). Previously the duplicate stayed in the pool for the rest of the draft (#217).
 * JamesYouL2: [Bug] Pick-Two drafts that MTGA logs under a standard event name now keep the first pack when the tool switches to Pick-Two, so the P1P5 wheel shows missing cards again (#218).
