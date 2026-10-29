@@ -66,6 +66,19 @@ class TestSettingsWindow:
         assert config.settings.always_on_top is True
         assert mock_write.called
 
+    @patch("src.ui.windows.settings.write_configuration")
+    def test_advisor_toggle_persists(self, mock_write, root, config):
+        """Verify the Advisor checkbox loads as on and turning it off is saved."""
+        callback = MagicMock()
+        window = SettingsWindow(root, config, callback)
+        assert window.vars["advisor_enabled"].get() == 1
+
+        window.vars["advisor_enabled"].set(0)
+
+        assert config.settings.advisor_enabled is False
+        assert mock_write.called
+        callback.assert_called_with("advisor_enabled")
+
     @patch("src.ui.windows.settings.reset_configuration")
     def test_reset_defaults_flow(self, mock_reset, root, config):
         """Verify the reset button triggers logic and reloads the UI correctly."""

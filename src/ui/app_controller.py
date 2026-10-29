@@ -222,8 +222,10 @@ class AppController:
                 scores[c] += v
 
         # Pass signals securely into Advisor
-        advisor = DraftAdvisor(metrics, taken_cards, signals=scores)
-        recommendations = advisor.evaluate_pack(pack_cards, pi, current_pack=pk)
+        recommendations = []
+        if self.config.settings.advisor_enabled:
+            advisor = DraftAdvisor(metrics, taken_cards, signals=scores)
+            recommendations = advisor.evaluate_pack(pack_cards, pi, current_pack=pk)
 
         # UPDATE UI STATE
         if pk > 0:

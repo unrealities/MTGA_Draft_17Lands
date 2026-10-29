@@ -96,6 +96,7 @@ class Settings(BaseModel):
     missing_notifications_enabled: bool = True
     auto_sync_datasets: bool = True
     show_splash_screen: bool = True
+    advisor_enabled: bool = True
 
     # System Paths (Restored)
     arena_log_location: str = ""
