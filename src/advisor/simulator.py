@@ -99,13 +99,22 @@ def _parse_deck_to_arrays(deck_list):
         any_color = re.search(r"\bany (?:one |combination of )?colors?\b", text) is not None
 
         is_land[i] = "Land" in types
-        # Mana FILTERS (Prophetic Prism, Chromatic Star) exchange or convert
-        # existing mana — they do not add an independent source. Treating
-        # them as ramp manufactured mana out of nothing (a two-land hand
-        # could cast a 3-drop through a Prism).
-        is_filter = re.search(
-            r"\b(?:exchange|convert)\b", text
-        ) is not None and "add" not in text
+        # Mana FILTERS (Prophetic Prism, Chromatic Star) cost mana to
+        # activate and produce the same amount — they CONVERT, not ADD.
+        # Detection: a non-land permanent whose activation text says
+        # "{N}, {T}: Add..." where N >= 1 is a filter, not ramp.
+        # Sol Ring ({T}: Add {C}{C}) is ramp because it produces MORE
+        # than its activation cost (zero). Llanowar Elves ({T}: Add {G})
+        # is ramp because it costs nothing to activate.
+        is_filter = False
+        if not is_land[i] and ("fixing_ramp" in tags or any_color or "treasure" in text):
+            # Check for activation cost in the text: "{N}, {T}: Add..."
+            act_cost = re.search(r"\{(\d+)\},?\s*\{T\}.*?\badd\b", text)
+            if act_cost:
+                cost_val = int(act_cost.group(1))
+                if cost_val >= 1:
+                    # Costs mana to activate: it's a filter, not ramp
+                    is_filter = True
         is_ramp[i] = (
             ("fixing_ramp" in tags or any_color or "treasure" in text)
             and not is_land[i]
@@ -470,11 +479,24 @@ def simulate_deck(deck_list, iterations=10000, seed=None):
         return None
 
     if seed is None:
-        # Derive from the deck identity so results are reproducible
-        sig = "|".join(
-            sorted(f"{c.get('name', '')}:{c.get('count', 1)}" for c in deck_list)
-        )
-        seed = zlib.crc32(sig.encode("utf-8")) % (2**31)
+        # Seed from the simulation profile (parsed arrays): decks the
+        # simulator cannot distinguish (same profile multiset) get the
+        # SAME seed — Common Random Numbers across comparisons. Card
+        # names and array ordering do not affect the result.
+        import hashlib
+        profile_bytes = b"".join([
+            arr.tobytes() for arr in [
+                arrays.is_land.astype(np.int8),
+                arrays.is_ramp.astype(np.int8),
+                arrays.is_removal.astype(np.int8),
+                arrays.costs.astype(np.int8),
+                arrays.mana_produced.astype(np.int32),
+                arrays.pips.astype(np.int8),
+                arrays.pip_count.astype(np.int8),
+                arrays.generic.astype(np.int8),
+            ]
+        ])
+        seed = int(hashlib.md5(profile_bytes).hexdigest()[:8], 16) % (2**31)
 
     results = _run_fast_monte_carlo(*arrays, iterations, seed)
 

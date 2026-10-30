@@ -39,6 +39,7 @@ class Dataset:
     def __init__(self, retrieve_unknown: bool = False, db_path: str = None):
         self._dataset = None
         self._dataset_source = None  # tracks which dataset the ratings came from
+        self._active_dataset_name = None
         self._retrieve_unknown = retrieve_unknown
         self.db_path = db_path
         self._name_index = {}
@@ -300,6 +301,8 @@ class Dataset:
             self._name_index = name_index
             self._id_index = id_index
             self._dataset = json_data
+        self._dataset_source = getattr(self, '_active_dataset_name', None) or 'loaded_dataset'
+    
         return result
 
     def get_data_by_id(self, id_list: List[str]) -> List[Dict]:
