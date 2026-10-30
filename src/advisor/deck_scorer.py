@@ -234,8 +234,8 @@ def estimate_record(power_level, is_bo3=False):
     """Expected wins for a deck of this score, as text.
 
     Premier Draft (Bo1) runs to 7 wins or 3 losses; Traditional Draft (Bo3)
-    to 3 match wins or 2 match losses. The game win rate is that of 17Lands
-    users' decks of this score.
+    is always three matches. The game win rate is that of 17Lands users' decks
+    of this score.
     """
     log_odds = WIN_LOG_ODDS_AT_BASE + WIN_LOG_ODDS_PER_POINT * (
         power_level - BASE_SCORE
@@ -243,5 +243,5 @@ def estimate_record(power_level, is_bo3=False):
     p = 1 / (1 + exp(-log_odds))
     if is_bo3:
         match = p * p * (3 - 2 * p)  # two games out of three
-        return f"{expected_wins(match, 3, 2):.1f} wins"
+        return f"{3 * match:.1f} wins"
     return f"{expected_wins(p, 7, 3):.1f} wins"

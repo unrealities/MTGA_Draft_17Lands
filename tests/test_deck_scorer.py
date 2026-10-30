@@ -266,8 +266,7 @@ def test_expected_wins_by_recursion():
         ) * by_recursion(p, max_wins, max_losses, wins, losses + 1)
 
     for p in (0.0, 0.3, 0.55, 1.0):
-        for caps in ((7, 3), (3, 2)):
-            assert expected_wins(p, *caps) == pytest.approx(by_recursion(p, *caps))
+        assert expected_wins(p, 7, 3) == pytest.approx(by_recursion(p, 7, 3))
 
 
 def test_estimate_record():
@@ -278,3 +277,5 @@ def test_estimate_record():
     assert 2.8 <= bo1[1] <= 3.2
     bo3 = [float(estimate_record(s, is_bo3=True).split()[0]) for s in (50, 75, 200)]
     assert bo3 == sorted(bo3) and bo3[-1] == 3.0
+    # Bo3 always plays three matches, so a coin-flip deck averages 1.5 wins.
+    assert 1.4 <= bo3[1] <= 1.6
