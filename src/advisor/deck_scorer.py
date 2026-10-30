@@ -158,17 +158,19 @@ def calculate_holistic_score(deck, colors, pool_size, metrics, tier_data=None):
         ),
     )
 
+    # The aggro, two-color and evasion weights are what each was worth in event
+    # wins per point of power, over 17Lands drafts from ten sets.
     mana_deficit = (avg_cmc * 5.5) - (land_count + ramp_count)
     if mana_deficit > 1.5:
         power_level -= mana_deficit * 3.0
         breakdown_notes.append(f"High Curve / Needs Lands (-{mana_deficit * 3.0:.1f})")
     elif mana_deficit < -1.0 and avg_cmc < 2.8:
-        power_level += 5.0
-        breakdown_notes.append("Excellent Aggro Curve (+5.0)")
+        power_level += 1.5
+        breakdown_notes.append("Excellent Aggro Curve (+1.5)")
 
     if len(colors) <= 2:
-        power_level += 2.5
-        breakdown_notes.append("Rock-Solid Mana (+2.5)")
+        power_level += 4.0
+        breakdown_notes.append("Rock-Solid Mana (+4.0)")
 
     supertypes = {
         "Creature",
@@ -247,8 +249,8 @@ def calculate_holistic_score(deck, colors, pool_size, metrics, tier_data=None):
         )
     )
     if evasion_count < 3 and avg_cmc > 2.5:
-        power_level -= 5.0
-        breakdown_notes.append("Lacks Evasion/Reach (-5.0)")
+        power_level -= 1.0
+        breakdown_notes.append("Lacks Evasion/Reach (-1.0)")
 
     expected_spells = int(23 * (min(42, pool_size) / 42.0))
     if spell_count < expected_spells - 1:
