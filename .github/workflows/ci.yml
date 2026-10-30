@@ -51,6 +51,8 @@ jobs:
       - name: Test on macOS and Windows
         if: runner.os != 'Linux'
         run: poetry run pytest tests/
+      - name: Test the advisor replay harness
+        run: poetry run pytest Tools/AdvisorReplay/tests
       - name: Audit Python dependencies
         if: >-
           (github.event_name == 'schedule' || inputs.full_matrix) &&

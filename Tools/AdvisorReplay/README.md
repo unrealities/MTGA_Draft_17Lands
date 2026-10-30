@@ -5,7 +5,8 @@ Measures a change to the draft advisor on real drafts. It replays picks from
 request and its base) and compares them on the same drafts.
 
 It is separate from the app: nothing in `src/` imports it, and the app's tests
-don't run it.
+don't run it. CI runs the harness's own tests on every pull request, so a change
+to the app that breaks the harness fails there.
 
 ## What it reports
 
