@@ -66,7 +66,7 @@ def test_command_line(tmp_path, names):
     drafts = tmp_path / "drafts.json.gz"
     with gzip.open(drafts, "wt") as f:
         json.dump([draft(names, 3)], f)
-    out = tmp_path / "head.json"
+    out = tmp_path / "results" / "head.json"  # as in the workflow
     replay.main(
         [
             "--src",

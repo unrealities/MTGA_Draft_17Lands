@@ -206,6 +206,7 @@ def main(argv=None):
     start, skipped = time.time(), Counter()
     results = [replay_draft(app, d, skipped) for d in drafts]
     seconds = time.time() - start
+    os.makedirs(os.path.dirname(args.out) or ".", exist_ok=True)
     with open(args.out, "w", encoding="utf-8") as f:
         json.dump(
             {
