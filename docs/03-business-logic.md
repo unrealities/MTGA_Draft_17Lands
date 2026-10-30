@@ -4,7 +4,7 @@
 
 ## 1. Introduction
 
-The v5.5 Engine abandons rigid heuristics in favor of a fluid, context-aware model. It simulates high-level drafting by shifting its focus from global card quality to specific archetype performance as the draft progresses, while enforcing a sliding commitment curve to prevent late-draft indecision.
+The v5.5 Engine abandons rigid heuristics in favor of a fluid, context-aware model. It simulates high-level drafting by judging cards by their performance in your leading archetype, while enforcing a sliding commitment curve to prevent late-draft indecision.
 
 ---
 
@@ -23,9 +23,7 @@ The engine does not "lock in" colors based on the first few picks. It uses recen
 Instead of evaluating a card globally (e.g., its win rate across all 17Lands users), the engine identifies your leading "Color Pair" (e.g., Blue-Black/UB) and prioritizes data for that specific pairing.
 
 - **Gravity Logic:** The engine scores all 10 possible color pairs based on the weighted power of cards in your pool and the presence of "Gold" cards that reward specific pairs.
-- **Progressive Weighting:**
-  - **Pack 1:** Evaluates cards primarily (90%) on their Global GIHWR.
-  - **Pack 3:** Evaluates cards primarily (80%) on their Archetype-specific win rate.
+- **Archetype Weighting:** From the first pick, a card's score is 90% its win rate in your leading pair and 10% its Global GIHWR (the pair's win rate is shrunk toward the global one when it has fewer than 1,000 games). Replaying 17Lands drafts, this matched drafters' picks more often than ramping up to the pair over the draft.
 - **Synergy Payoff:** If a card performs > 1.5% better in your specific color pair than its global average, it receives an **Archetype Synergy** bonus.
 
 ---
@@ -36,25 +34,14 @@ To prevent the engine from suggesting off-color cards too late in the draft, it 
 
 | Phase             | Picks         | Logic Name   | Behavior                                                                                                                  |
 | :---------------- | :------------ | :----------- | :------------------------------------------------------------------------------------------------------------------------ |
-| **P1 Picks 1-7**  | Stay Open     | Neutral      | No penalties for off-color cards. Encourages taking the best card regardless of color.                                    |
-| **P1 Picks 8-15** | Lane Pressure | Linear Decay | Applies a `-0.05` penalty multiplier per pick to off-color cards. By P1P15, off-color cards are significantly suppressed. |
+| **P1 Picks 1-4**  | Stay Open     | Neutral      | No penalties for off-color cards. Encourages taking the best card regardless of color.                                    |
+| **P1 Picks 5-15** | Lane Pressure | Linear Decay | Applies a `-0.05` penalty multiplier per pick to off-color cards. By P1P15, off-color cards are significantly suppressed. |
 | **Pack 2**        | Soft Lock     | Disciplined  | Severe penalties (up to 85% reduction) for cards outside your top 2-3 colors unless they are massive bombs.               |
 | **Pack 3**        | Hard Lock     | Committed    | Total exclusion of off-color cards (95% penalty) to ensure the final pool is playable.                                    |
 
 ---
 
-## 5. Compositional Math & Dynamic Needs
-
-Modern Limited is dictated by "Mana Velocity" and "Mana Stability."
-
-- **Velocity Target:** 7+ "Early Plays" (CMC <= 2 Creatures or cheap interaction).
-- **Velocity Hunger:** The engine projects your final 2-drop count based on your current pool relative to the remaining picks in the draft. If the projection is below 7 entering Pack 2, early plays receive a "Critical: Needs 2-Drops" multiplier (up to 1.5x).
-- **Top-Heavy Penalty:** If you have 4+ cards costing 5+ mana, expensive cards receive a `0.7x` dampening multiplier to prevent "clunky" hands.
-- **Dynamic Fixing Hunger:** The engine actively monitors whether you are drafting a highly synergistic 2-color deck, or moving towards a "Good Stuff" 3/4-color splash strategy. If the number of drafted off-color playables exceeds your dedicated fixing tools (dual lands, treasures, dorks) by Pack 2, fixing cards receive a massive `1.4x` "Critical: Needs Fixing" multiplier.
-
----
-
-## 6. Value Over Replacement (VOR) & "Glue Cards"
+## 5. Value Over Replacement (VOR) & "Glue Cards"
 
 The v5 engine moves beyond raw win rates by pre-calculating the **Format Texture** of a set when it loads.
 
@@ -64,23 +51,22 @@ The v5 engine moves beyond raw win rates by pre-calculating the **Format Texture
 
 ---
 
-## 7. Semantic Role Analysis (Interaction & Tricks)
+## 6. Semantic Role Analysis (Interaction & Tricks)
 
 The app parses Scryfall community tags to understand a card's functional role.
 
-- **Hard Removal Quota:** Targets 3+ removal spells. If the pool is lacking entering Pack 2, interaction cards receive a `1.3x` panic multiplier. Conversely, if you have 6+ removal spells, new ones are penalized (`0.8x`).
 - **Trick Diminishing Returns:** Combat tricks and Auras (Enhancements) are capped at 3. Beyond this, they receive a severe `0.5x` penalty.
 
 ---
 
-## 8. True Bomb Detection (IWD Injection)
+## 7. True Bomb Detection (IWD Injection)
 
 - **Logic:** A card is tagged as a **TRUE BOMB** only if its Z-Score is `> 1.0` AND its **Improvement When Drawn (IWD)** is `> 4.5%`.
 - **Effect:** Distinguishes between "Great Filler" and "Game-Warping Power." These cards receive a power bonus that overrides the Sliding Commitment Curve, allowing for late-draft splashes.
 
 ---
 
-## 9. Interactive Deck Building & AI Optimization
+## 8. Interactive Deck Building & AI Optimization
 
 ### A. Frank Karsten Mana Base Engine ("Auto-Lands")
 
@@ -108,7 +94,7 @@ Users can actively "brute-force" permutations of their current deck configuratio
 
 ---
 
-## 10. Post-Draft Analysis & Dashboard
+## 9. Post-Draft Analysis & Dashboard
 
 Transitions into a Post-Draft Recap tracking:
 
@@ -118,7 +104,7 @@ Transitions into a Post-Draft Recap tracking:
 
 ---
 
-## 11. Sealed Studio & Shell Generation
+## 10. Sealed Studio & Shell Generation
 
 Added in v4.15, the application includes a dedicated workspace for Sealed deckbuilding.
 

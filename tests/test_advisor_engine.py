@@ -45,7 +45,7 @@ def test_main_archetype_uses_wubrg_key(mock_metrics, first, second, expected):
     assert advisor.main_archetype == expected
 
 
-def test_analyze_pool(mock_metrics):
+def test_count_fixing_cards(mock_metrics):
     # Establish a definitive "White Lane" by padding the pool > 15 cards
     pool = [
         {
@@ -79,18 +79,13 @@ def test_analyze_pool(mock_metrics):
 
     advisor = DraftAdvisor(mock_metrics, pool)
 
-    assert advisor.pool_metrics["early_plays"] == 15
-    assert advisor.pool_metrics["hard_removal_count"] == 1
-    assert advisor.pool_metrics["fixing_count"] == 1
-
-    # 65.0 > 55.0 + (1.5 * 4.0) = 61.0, so 'G' triggers as a premium splash target
-    assert "G" in advisor.pool_metrics["splash_targets"]
+    assert advisor.fixing_count == 1
 
 
 def test_calculate_castability_v5(mock_metrics):
     advisor = DraftAdvisor(mock_metrics, [])
     advisor.main_colors = ["W", "U"]
-    advisor.pool_metrics = {"fixing_count": 0}
+    advisor.fixing_count = 0
 
     # On lane card
     mult, _ = advisor._calculate_castability_v5(
@@ -242,52 +237,31 @@ def test_evaluate_pack_elite_detection(mock_metrics):
     assert recs[0].is_elite is True
 
 
-def test_composition_bonus_heuristics(mock_metrics):
+@pytest.mark.parametrize("pick,expected", [(4, 1.0), (5, 0.95), (9, 0.75)])
+def test_pack_one_off_color_pressure_starts_at_pick_five(mock_metrics, pick, expected):
     advisor = DraftAdvisor(mock_metrics, [])
+    advisor.main_colors = ["W", "U"]
 
-    # Setup pool metrics to trigger specific heuristic thresholds
-    advisor.pool_metrics = {
-        "heavy_drops": 4,
-        "creature_count": 5,
-        "artifacts": 4,
-        "graveyard_enablers": 3,
-        "counters_enablers": 3,
-        "fixing_count": 0,
-        "off_color_playables": 2,
-        "splash_targets": ["U"],
-        "hard_removal_count": 1,
-        "early_plays": 2,
+    mult, reason = advisor._calculate_castability_v5(
+        {"colors": ["B"], "mana_cost": "{2}{B}"}, pack=1, pick=pick, z_score=0.0
+    )
+
+    assert mult == pytest.approx(expected)
+    assert reason == "Off-Color"
+
+
+def test_archetype_weight_is_flat(mock_metrics):
+    """The archetype win rate gets the same weight from the first pick on."""
+    advisor = DraftAdvisor(mock_metrics, [])
+    advisor.main_archetype = "WU"
+    card = {
+        "name": "Glue",
+        "colors": ["W"],
+        "deck_colors": {
+            "All Decks": {"gihwr": 55.0},
+            "WU": {"gihwr": 59.0, "samples": 1000},
+        },
     }
-    advisor.TOTAL_PICKS = 45
-    advisor.pool = [1] * 20  # Simulate mid-draft (Pick 20)
 
-    # 1. Heavy Drops Penalty
-    mult, reason = advisor._calculate_composition_bonus(
-        {"cmc": 6, "types": ["Creature"]}, pack=2
-    )
-    assert mult == 0.7
-    assert "Curve Too Heavy" in reason
-
-    # 2. Creature Quota Bonus
-    mult, reason = advisor._calculate_composition_bonus(
-        {"cmc": 3, "types": ["Creature"]}, pack=2
-    )
-    assert mult == 1.25
-    assert "Critical: Needs Creatures" in reason
-
-    # 3. Artifact Synergy
-    mult, reason = advisor._calculate_composition_bonus(
-        {"cmc": 3, "tags": ["synergy_artifacts"]}, pack=2
-    )
-    assert mult == 1.2
-    assert "Artifact Synergy" in reason
-
-    # 4. Fixing Hunger (Because off_color_playables > fixing_count)
-    mult, reason = advisor._calculate_composition_bonus({"types": ["Land"]}, pack=2)
-    assert mult == 1.4
-    assert "Critical: Needs Fixing" in reason
-
-    # 5. Removal Hunger
-    mult, reason = advisor._calculate_composition_bonus({"tags": ["removal"]}, pack=2)
-    assert mult == 1.3
-    assert "Critical: Needs Removal" in reason
+    # 0.1 * 55 + 0.9 * 59 = 58.6, which is 0.9 sigma above the mean
+    assert advisor._calculate_weighted_score(card) == pytest.approx(63.5)
