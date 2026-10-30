@@ -28,6 +28,12 @@ class DraftAdvisor:
     TARGET_EVASION = 3
     BOMB_Z_SCORE = 1.5
     IWD_PREMIUM_THRESHOLD = 4.5
+    # The weight of the card's win rate in the current archetype: it starts at
+    # ARCH_WEIGHT_START and rises by ARCH_WEIGHT_RAMP over TOTAL_PICKS picks,
+    # up to ARCH_WEIGHT_MAX.
+    ARCH_WEIGHT_START = 0.2
+    ARCH_WEIGHT_RAMP = 0.7
+    ARCH_WEIGHT_MAX = 0.9
 
     def __init__(self, set_metrics, taken_cards: List[Dict]):
         self.metrics = set_metrics
@@ -108,7 +114,7 @@ class DraftAdvisor:
                     float(stats.get("iwd", 0.0)),
                 )
                 card_colors = card.get("colors", [])
-                reasons, synergy_bonus = [], 0.0
+                reasons = []
 
                 # --- STEP 1: Blended Base Score (With Bayesian Smoothing) ---
                 base_score = self._calculate_weighted_score(card, safe_pick)
@@ -122,34 +128,16 @@ class DraftAdvisor:
                 )
                 power_bonus = max(0, z_score * 10 * iwd_mult) if z_score > 0.5 else 0
 
-                # --- STEP 3: Archetype Synergy & 'Glue Cards' ---
+                # --- STEP 3: Lane ---
+                # The card's win rate in the lane's pair is already blended into
+                # the base score; this only favors cards in the lane's colors.
                 is_on_lane = (
                     all(c in self.main_colors for c in card_colors)
                     if card_colors
                     else True
                 )
-                if len(self.main_colors) >= 2:
-                    arch_wr = float(
-                        card.get("deck_colors", {})
-                        .get(self.main_archetype, {})
-                        .get("gihwr", 0.0)
-                    )
-                    if arch_wr > 0.0:
-                        delta = arch_wr - raw_gihwr
-
-                        # GLUE CARD DETECTION:
-                        # If a Common/Uncommon heavily outperforms its global average in our specific lane,
-                        # it is an archetype "Glue Card" and gets a massive multiplier to push it over generic Rares.
-                        rarity = str(card.get("rarity", "common")).lower()
-                        if delta >= 1.0 and rarity in ["common", "uncommon"]:
-                            synergy_bonus = delta * 5.0
-                            reasons.append(f"Archetype Glue (+{synergy_bonus:.1f})")
-                        elif delta >= 1.5:
-                            synergy_bonus = delta * 3.0
-                            reasons.append(f"Archetype Synergy (+{synergy_bonus:.1f})")
-
-                    if is_on_lane:
-                        base_score *= 1.3 if needs_playables else 1.1
+                if len(self.main_colors) >= 2 and is_on_lane:
+                    base_score *= 1.3 if needs_playables else 1.1
 
                 # --- STEP 4: Castability (Pip-Sensitive Discipline & Premium Splashing) ---
                 cast_mult, cast_reason = self._calculate_castability_v5(
@@ -173,7 +161,7 @@ class DraftAdvisor:
 
                 # === MASTER ALGORITHM ===
                 final_score = (
-                    (base_score + power_bonus + synergy_bonus) * cast_mult * role_mult
+                    (base_score + power_bonus) * cast_mult * role_mult
                 )
 
                 is_basic_land = name in constants.BASIC_LANDS or (
@@ -516,7 +504,11 @@ class DraftAdvisor:
         try:
             stats = card.get("deck_colors", {})
             global_wr = float(stats.get("All Decks", {}).get("gihwr", 0.0))
-            arch_weight = min(0.9, 0.2 + (pick_number / self.TOTAL_PICKS) * 0.7)
+            arch_weight = min(
+                self.ARCH_WEIGHT_MAX,
+                self.ARCH_WEIGHT_START
+                + (pick_number / self.TOTAL_PICKS) * self.ARCH_WEIGHT_RAMP,
+            )
             arch_stats = stats.get(self.main_archetype, {})
             arch_wr = float(arch_stats.get("gihwr", global_wr))
 
