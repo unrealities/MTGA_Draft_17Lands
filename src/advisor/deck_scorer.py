@@ -3,8 +3,9 @@ src/advisor/deck_scorer.py
 Evaluates pool strength, calculates holistic power scores, and identifies top lanes.
 """
 
+from math import comb, exp
+
 from src import constants
-from src.card_utils import get_functional_cmc
 from src.advisor.mana_base import ManaSourceAnalyzer
 from src.utils import normalize_color_string
 from src.sealed_logic import HeuristicEvaluator
@@ -107,69 +108,36 @@ def identify_top_pairs(pool, metrics, tier_data=None):
 # The deck score is BASE_SCORE plus each feature times its weight. Twelve points
 # are one standard deviation of card quality, so the other weights are in the
 # same units: what the feature is worth, measured in card quality.
+#
+# The weights were fit to game results: about 480,000 17Lands Premier Draft
+# decks over ten sets, controlling for the player (Tools/DeckScoreFit). Curve,
+# evasion, fixing and tribal adjustments were fit at about zero once card
+# quality was counted, so the score leaves them out.
 BASE_SCORE = 75.0
 WEIGHTS = {
     # Mean rating of the deck's spells, in standard deviations from the format mean.
     "card_quality": 12.0,
-    # The mana deficit (5.5 lands per point of average mana value, less lands
-    # and ramp), when it is over 1.5.
-    "high_curve": -3.0,
-    # 1 if the mana deficit is under -1 and the average mana value under 2.8.
-    "aggro_curve": 5.0,
     # 1 if the deck has two colors or fewer.
-    "two_colors": 2.5,
-    # The tribal bonus: half a point per card of the main creature type, and 1.5
-    # per payoff, with 6+ cards of the type and 2+ payoffs.
-    "tribal_synergy": 1.0,
+    "two_colors": 3.5,
     # 1 if a deck of 3+ colors has 2+ domain payoffs and 4+ fixing cards.
-    "domain_supported": 6.0,
-    # Fixing cards short of one per color past the first, in a deck of 3+ colors
-    # that isn't a supported domain deck.
-    "missing_fixing": -6.0,
-    # 1 if the deck has fewer than three evasive spells and an average mana
-    # value over 2.5.
-    "lacks_evasion": -5.0,
-    # Spells short of a full deck for the pool size, less one.
+    "domain_supported": 3.2,
+    # Spells short of a full deck for the pool size, less one. Not fitted:
+    # finished decks are never short.
     "missing_spells": -10.0,
 }
 
 # How each feature's adjustment is named in the deck's notes. Card quality is
 # the base of the score, so it gets no note.
 NOTES = {
-    "high_curve": "High Curve / Needs Lands",
-    "aggro_curve": "Excellent Aggro Curve",
     "two_colors": "Rock-Solid Mana",
-    "tribal_synergy": "{tribe} Synergy",
     "domain_supported": "Supported Domain/Soup",
-    "missing_fixing": "Greedy Mana Strain",
-    "lacks_evasion": "Lacks Evasion/Reach",
     "missing_spells": "Incomplete Deck",
 }
 
-SUPERTYPES = {
-    "Creature",
-    "Instant",
-    "Sorcery",
-    "Enchantment",
-    "Artifact",
-    "Planeswalker",
-    "Land",
-    "Legendary",
-    "Basic",
-    "Snow",
-    "World",
-    "Tribal",
-    "Kindred",
-}
-
-EVASION_WORDS = [
-    "flying",
-    "trample",
-    "menace",
-    "can't be blocked",
-    "unblockable",
-    "deals damage to any target",
-]
+# The log-odds of winning a game, for a deck of BASE_SCORE and per point
+# above it, fit to the same games (Tools/DeckScoreFit).
+WIN_LOG_ODDS_AT_BASE = 0.0364
+WIN_LOG_ODDS_PER_POINT = 0.03871
 
 
 def _text(card):
@@ -177,10 +145,7 @@ def _text(card):
 
 
 def deck_features(deck, colors, pool_size, metrics, tier_data=None):
-    """The deck's value for each feature in WEIGHTS, and its main creature type.
-
-    Returns (None, None) for a deck with no spells.
-    """
+    """The deck's value for each feature in WEIGHTS, or None if it has no spells."""
     global_mean, global_std = metrics.get_metrics("All Decks", "gihwr")
     if global_mean == 0.0:
         global_mean = 54.0
@@ -190,7 +155,7 @@ def deck_features(deck, colors, pool_size, metrics, tier_data=None):
     spells = [c for c in deck if constants.CARD_TYPE_LAND not in c.get("types", [])]
     spell_count = sum(c.get("count", 1) for c in spells)
     if spell_count == 0:
-        return None, None
+        return None
     features = dict.fromkeys(WEIGHTS, 0.0)
 
     # Dataset deck_colors keys are WUBRG-ordered ("UB", not "BU").
@@ -210,57 +175,9 @@ def deck_features(deck, colors, pool_size, metrics, tier_data=None):
     )
     features["card_quality"] = (avg_gihwr - global_mean) / global_std
 
-    cmcs = [get_functional_cmc(c) for c in spells for _ in range(c.get("count", 1))]
-    avg_cmc = sum(cmcs) / spell_count
-
-    land_count = sum(c.get("count", 1) for c in deck if "Land" in c.get("types", []))
-    ramp_count = min(
-        3,
-        sum(
-            c.get("count", 1)
-            for c in deck
-            if (
-                "fixing_ramp" in c.get("tags", [])
-                or "treasure" in _text(c)
-                or "add {" in _text(c)
-                or "adds {" in _text(c)
-            )
-            and "Land" not in c.get("types", [])
-        ),
-    )
-
-    mana_deficit = (avg_cmc * 5.5) - (land_count + ramp_count)
-    if mana_deficit > 1.5:
-        features["high_curve"] = mana_deficit
-    elif mana_deficit < -1.0 and avg_cmc < 2.8:
-        features["aggro_curve"] = 1.0
-
     if len(colors) <= 2:
         features["two_colors"] = 1.0
-
-    subtypes, changeling_count, top_tribe = {}, 0, None
-    for c in spells:
-        count = c.get("count", 1)
-        if "changeling" in _text(c):
-            changeling_count += count
-        for t in c.get("types", []):
-            if t not in SUPERTYPES:
-                subtypes[t] = subtypes.get(t, 0) + count
-
-    if subtypes:
-        top_tribe, tribe_count = max(subtypes.items(), key=lambda x: x[1])
-        total_tribe_density = tribe_count + changeling_count
-        payoff_count = sum(
-            c.get("count", 1)
-            for c in spells
-            if "chosen type" in _text(c) or top_tribe.lower() in _text(c)
-        )
-        if total_tribe_density >= 6 and payoff_count >= 2:
-            features["tribal_synergy"] = (total_tribe_density * 0.5) + (
-                payoff_count * 1.5
-            )
-
-    if len(colors) >= 3:
+    else:
         domain_payoffs = sum(
             c.get("count", 1)
             for c in spells
@@ -270,28 +187,18 @@ def deck_features(deck, colors, pool_size, metrics, tier_data=None):
 
         if domain_payoffs >= 2 and fixing_count >= 4:
             features["domain_supported"] = 1.0
-        elif fixing_count < len(colors) - 1:
-            features["missing_fixing"] = len(colors) - 1 - fixing_count
-
-    evasion_count = sum(
-        c.get("count", 1)
-        for c in spells
-        if "evasion" in c.get("tags", []) or any(kw in _text(c) for kw in EVASION_WORDS)
-    )
-    if evasion_count < 3 and avg_cmc > 2.5:
-        features["lacks_evasion"] = 1.0
 
     expected_spells = int(23 * (min(42, pool_size) / 42.0))
     if spell_count < expected_spells - 1:
         features["missing_spells"] = (expected_spells - 1) - spell_count
 
-    return features, top_tribe
+    return features
 
 
 def calculate_holistic_score(deck, colors, pool_size, metrics, tier_data=None):
     if not deck:
         return 0.0, ""
-    features, tribe = deck_features(deck, colors, pool_size, metrics, tier_data)
+    features = deck_features(deck, colors, pool_size, metrics, tier_data)
     if features is None:
         return 0.0, ""
 
@@ -301,28 +208,40 @@ def calculate_holistic_score(deck, colors, pool_size, metrics, tier_data=None):
         points = weight * features[name]
         power_level += points
         if points and name in NOTES:
-            label = NOTES[name].format(tribe=tribe)
             breakdown_notes.append(
-                f"{label} ({'+' if points > 0 else '-'}{abs(points):.1f})"
+                f"{NOTES[name]} ({'+' if points > 0 else '-'}{abs(points):.1f})"
             )
 
     return max(0.0, power_level), ", ".join(breakdown_notes)
 
 
+def expected_wins(game_win_rate, max_wins, max_losses):
+    """Expected wins in an event that ends at max_wins wins or max_losses losses."""
+    p, q = game_win_rate, 1 - game_win_rate
+    # Ending on a loss after w wins, for each w short of the cap...
+    total = sum(
+        w * comb(w + max_losses - 1, w) * p**w * q**max_losses for w in range(max_wins)
+    )
+    # ...or reaching the cap with fewer than max_losses losses.
+    reach = sum(
+        comb(max_wins - 1 + losses, losses) * p**max_wins * q**losses
+        for losses in range(max_losses)
+    )
+    return total + max_wins * reach
+
+
 def estimate_record(power_level, is_bo3=False):
+    """Expected wins for a deck of this score, as text.
+
+    Premier Draft (Bo1) runs to 7 wins or 3 losses; Traditional Draft (Bo3)
+    to 3 match wins or 2 match losses. The game win rate is that of 17Lands
+    users' decks of this score.
+    """
+    log_odds = WIN_LOG_ODDS_AT_BASE + WIN_LOG_ODDS_PER_POINT * (
+        power_level - BASE_SCORE
+    )
+    p = 1 / (1 + exp(-log_odds))
     if is_bo3:
-        if power_level < 65:
-            return "0-2 / 1-2"
-        if power_level < 78:
-            return "2-1"
-        return "3-0"
-    else:
-        if power_level < 60:
-            return "0-3 / 1-3"
-        if power_level < 70:
-            return "2-3 / 3-3"
-        if power_level < 80:
-            return "4-3 / 5-3"
-        if power_level < 88:
-            return "6-3"
-        return "7-x"
+        match = p * p * (3 - 2 * p)  # two games out of three
+        return f"{expected_wins(match, 3, 2):.1f} wins"
+    return f"{expected_wins(p, 7, 3):.1f} wins"
