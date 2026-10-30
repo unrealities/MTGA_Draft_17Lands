@@ -1,39 +1,50 @@
 """
 src/advisor/engine.py
-The "Compositional Brain" (v5.5 Pro-Tour Architecture)
-Updated: Bayesian Smoothing, Top-End/Synergy Tracking, and Premium Removal Splash.
+Scores the cards in a pack for the cards already taken.
+
+A card's score is BASE_SCORE plus a weighted sum of a few named features
+(DraftAdvisor.pick_features). The weights come from a conditional logit fitted
+to strong 17Lands drafters' picks with Tools/PickFit. They are in points, where
+one standard deviation of GIH WR is worth 15, and a point is
+PICK_LOG_ODDS_PER_POINT of log-odds that a strong drafter takes the card.
 """
 
-import statistics
 import logging
-import math
+
 import numpy as np
-import re
-from typing import List, Dict, Any, Tuple
-from src.advisor.schema import Recommendation
+
 from src import constants
-from src.card_utils import get_functional_cmc
-from src.advisor.mana_base import count_fixing
+from src.advisor.schema import Recommendation
 from src.utils import normalize_color_string
 
 logger = logging.getLogger(__name__)
 
+BASE_SCORE = 50.0
+WEIGHTS = {
+    # GIH WR over all decks, in standard deviations of the set's GIH WR.
+    "quality": 15.0,
+    # GIH WR in the pool's two main colors minus over all decks, in standard
+    # deviations, shrunk toward 0 when the pair has few games.
+    "lane": 5.0,
+    # How far the card's colors are behind the pool's second color, in pool
+    # cards (see DraftAdvisor.color_strength).
+    "color_gap": -5.0,
+    # No GIH WR yet; quality is then 0.
+    "unrated": 0.0,
+}
+PICK_LOG_ODDS_PER_POINT = 0.07
+# A pair's GIH WR from n games counts n / (n + LANE_PRIOR_GAMES) of its
+# difference from the all-decks rate.
+LANE_PRIOR_GAMES = 2000.0
+
 
 class DraftAdvisor:
-    TOTAL_PICKS = 45
-    TARGET_EARLY_PLAYS = 7
-    TARGET_HARD_REMOVAL = 3
-    CAP_COMBAT_TRICKS = 3
-    TARGET_CARD_DRAW = 2
-    TARGET_EVASION = 3
     BOMB_Z_SCORE = 1.5
-    IWD_PREMIUM_THRESHOLD = 4.5
 
-    def __init__(self, set_metrics, taken_cards: List[Dict]):
+    def __init__(self, set_metrics, taken_cards: list[dict]):
         self.metrics = set_metrics
         self.pool = taken_cards or []
 
-        # 1. Base statistical baselines
         self.global_mean, self.global_std = self.metrics.get_metrics(
             "All Decks", "gihwr"
         )
@@ -42,171 +53,148 @@ class DraftAdvisor:
         if self.global_std <= 0:
             self.global_std = 4.0
 
-        # 2. Identify established lane
-        self.main_colors, self.color_counts = self._identify_main_colors()
+        self.color_strength = self._color_strength()
+        ranked = sorted(constants.CARD_COLORS, key=lambda c: -self.color_strength[c])
+        self.main_colors = [c for c in ranked[:2] if self.color_strength[c] > 0]
+        self.second_strength = self.color_strength[ranked[1]]
         self.main_archetype = (
-            normalize_color_string("".join(self.main_colors[:2]))
-            if len(self.main_colors) >= 2
+            normalize_color_string("".join(self.main_colors))
+            if len(self.main_colors) == 2
             else "All Decks"
         )
-        self.active_colors = self.main_colors
 
-        # 3. Analyze Pool Needs
-        self.fixing_map = count_fixing(self.pool)
-        self.pool_metrics = self._analyze_pool()
+    def _quality(self, card: dict) -> float | None:
+        """GIH WR over all decks in standard deviations, or None if unrated."""
+        stats = card.get("deck_colors", {}).get("All Decks", {})
+        wr = float(stats.get("gihwr") or 0.0)
+        if wr <= 0:
+            return None
+        return (wr - self.global_mean) / self.global_std
+
+    def _color_strength(self) -> dict[str, float]:
+        """For each color, the pool's nonland cards of that color, each counted
+        as 1 + its quality, so an average card is 1, a bomb more and a card
+        a standard deviation below average or worse 0."""
+        strength = {c: 0.0 for c in constants.CARD_COLORS}
+        for card in self.pool:
+            if "Land" in card.get("types", []):
+                continue
+            weight = max(0.0, 1.0 + (self._quality(card) or 0.0))
+            for color in card.get("colors", []):
+                if color in strength:
+                    strength[color] += weight
+        return strength
+
+    def pick_features(self, card: dict) -> dict[str, float] | None:
+        """The card's features for this pool, or None for a basic land."""
+        name = str(card.get("name", "")).strip()
+        types = card.get("types", [])
+        if name in constants.BASIC_LANDS or ("Basic" in types and "Land" in types):
+            return None
+
+        quality = self._quality(card)
+        lane = 0.0
+        if quality is not None and self.main_archetype != "All Decks":
+            stats = card.get("deck_colors", {})
+            pair = stats.get(self.main_archetype, {})
+            pair_wr = float(pair.get("gihwr") or 0.0)
+            if pair_wr > 0:
+                games = float(pair.get("samples") or 0.0)
+                overall = float(stats["All Decks"]["gihwr"])
+                lane = (
+                    (pair_wr - overall)
+                    / self.global_std
+                    * games
+                    / (games + LANE_PRIOR_GAMES)
+                )
+
+        color_gap = sum(
+            self.second_strength - self.color_strength[c]
+            for c in card.get("colors", [])
+            if c in self.color_strength and c not in self.main_colors
+        )
+        return {
+            "quality": quality or 0.0,
+            "lane": lane,
+            "color_gap": color_gap,
+            "unrated": 1.0 if quality is None else 0.0,
+        }
+
+    def _reasons(self, features: dict[str, float]) -> list[str]:
+        reasons = []
+        points = {k: WEIGHTS[k] * v for k, v in features.items()}
+        if abs(points["lane"]) >= 1.0:
+            better = "Better" if points["lane"] > 0 else "Worse"
+            reasons.append(f"{better} in {self.main_archetype} ({points['lane']:+.1f})")
+        if points["color_gap"] <= -1.0:
+            reasons.append(f"Off-Color ({points['color_gap']:+.1f})")
+        if features["unrated"]:
+            reasons.append("No Win Rate Yet")
+        return reasons
 
     def evaluate_pack(
-        self, pack_cards: List[Dict], current_pick: int, current_pack: int = 1
-    ) -> List[Recommendation]:
+        self, pack_cards: list[dict], current_pick: int, current_pack: int = 1
+    ) -> list[Recommendation]:
         if not pack_cards:
             return []
-        safe_pick = max(1, min(self.TOTAL_PICKS, current_pick))
-        pack_number = max(1, current_pack)
+        safe_pick = max(1, current_pick)
 
-        on_color_pool = [
-            c
-            for c in self.pool
-            if all(col in self.main_colors for col in c.get("colors", []))
-        ]
-        needs_playables = len(on_color_pool) < 20 and pack_number == 3
-
-        pack_wrs = []
-        for c in pack_cards:
-            try:
-                wr = float(
-                    c.get("deck_colors", {}).get("All Decks", {}).get("gihwr", 0.0)
-                )
-                if wr > 0:
-                    pack_wrs.append(wr)
-            except:
-                continue
-
-        pack_mean = statistics.mean(pack_wrs) if pack_wrs else self.global_mean
-        pack_std = statistics.pstdev(pack_wrs) if len(pack_wrs) > 1 else self.global_std
-        if pack_std <= 0:
-            pack_std = self.global_std
-
-        pack_cards_sorted = sorted(
-            pack_cards,
-            key=lambda c: float(
-                c.get("deck_colors", {}).get("All Decks", {}).get("gihwr", 0.0) or 0.0
-            ),
-            reverse=True,
-        )
         pack_ranks = {
             str(c.get("name", "Unknown")).strip(): i
-            for i, c in enumerate(pack_cards_sorted)
+            for i, c in enumerate(
+                sorted(
+                    pack_cards,
+                    key=lambda c: float(
+                        c.get("deck_colors", {}).get("All Decks", {}).get("gihwr")
+                        or 0.0
+                    ),
+                    reverse=True,
+                )
+            )
         }
 
         recommendations = []
         for card in pack_cards:
             try:
                 name = str(card.get("name", "Unknown")).strip()
-                stats = card.get("deck_colors", {}).get("All Decks", {})
-                raw_gihwr, raw_iwd = (
-                    float(stats.get("gihwr", 0.0)),
-                    float(stats.get("iwd", 0.0)),
-                )
-                card_colors = card.get("colors", [])
-                reasons, synergy_bonus = [], 0.0
-
-                # --- STEP 1: Blended Base Score (With Bayesian Smoothing) ---
-                base_score = self._calculate_weighted_score(card, safe_pick)
-
-                # --- STEP 2: Bomb Detection ---
-                z_score = (raw_gihwr - pack_mean) / pack_std
-                iwd_mult = (
-                    1.15
-                    if (raw_iwd > self.IWD_PREMIUM_THRESHOLD and z_score > 1.0)
-                    else 1.0
-                )
-                power_bonus = max(0, z_score * 10 * iwd_mult) if z_score > 0.5 else 0
-
-                # --- STEP 3: Archetype Synergy & 'Glue Cards' ---
-                is_on_lane = (
-                    all(c in self.main_colors for c in card_colors)
-                    if card_colors
-                    else True
-                )
-                if len(self.main_colors) >= 2:
-                    arch_wr = float(
-                        card.get("deck_colors", {})
-                        .get(self.main_archetype, {})
-                        .get("gihwr", 0.0)
+                features = self.pick_features(card)
+                if features is None:
+                    score, reasons = 0.0, (
+                        ["This is the only available option."]
+                        if len(pack_cards) == 1
+                        else ["Basic Land (Skip)"]
                     )
-                    if arch_wr > 0.0:
-                        delta = arch_wr - raw_gihwr
-
-                        # GLUE CARD DETECTION:
-                        # If a Common/Uncommon heavily outperforms its global average in our specific lane,
-                        # it is an archetype "Glue Card" and gets a massive multiplier to push it over generic Rares.
-                        rarity = str(card.get("rarity", "common")).lower()
-                        if delta >= 1.0 and rarity in ["common", "uncommon"]:
-                            synergy_bonus = delta * 5.0
-                            reasons.append(f"Archetype Glue (+{synergy_bonus:.1f})")
-                        elif delta >= 1.5:
-                            synergy_bonus = delta * 3.0
-                            reasons.append(f"Archetype Synergy (+{synergy_bonus:.1f})")
-
-                    if is_on_lane:
-                        base_score *= 1.3 if needs_playables else 1.1
-
-                # --- STEP 4: Castability (Pip-Sensitive Discipline & Premium Splashing) ---
-                cast_mult, cast_reason = self._calculate_castability_v5(
-                    card, pack_number, safe_pick, z_score
-                )
-                if cast_reason:
-                    reasons.append(cast_reason)
-
-                # --- STEP 5: Composition & Synergies ---
-                role_mult, role_reason = self._calculate_composition_bonus(
-                    card, pack_number
-                )
-                if role_reason:
-                    reasons.append(role_reason)
-
-                # --- STEP 6: Wheel chance (shown, not scored) ---
-                rank_in_pack = pack_ranks.get(name, 99)
-                wheel_pct = self._wheel_chance(
-                    card, safe_pick, rank_in_pack, pack_size=len(pack_cards)
-                )
-
-                # === MASTER ALGORITHM ===
-                final_score = (
-                    (base_score + power_bonus + synergy_bonus) * cast_mult * role_mult
-                )
-
-                is_basic_land = name in constants.BASIC_LANDS or (
-                    "Basic" in card.get("types", []) and "Land" in card.get("types", [])
-                )
-
-                if is_basic_land:
-                    final_score = 0.0
-                    if len(pack_cards) == 1:
-                        reasons = ["This is the only available option."]
-                    else:
-                        reasons = ["Basic Land (Skip)"]
-
-                if iwd_mult > 1.0 and final_score > 0:
-                    reasons.insert(0, "TRUE BOMB (High IWD)")
+                    quality, is_elite, on_lane = 0.0, False, True
+                else:
+                    score = BASE_SCORE + sum(
+                        WEIGHTS[k] * v for k, v in features.items()
+                    )
+                    reasons = self._reasons(features)
+                    quality = features["quality"]
+                    on_lane = features["color_gap"] == 0
+                    is_elite = quality >= self.BOMB_Z_SCORE and on_lane
 
                 recommendations.append(
                     Recommendation(
                         card_name=name,
-                        base_win_rate=raw_gihwr,
-                        contextual_score=round(max(0.0, final_score), 1),
-                        z_score=round(z_score, 2),
-                        cast_probability=cast_mult,
-                        wheel_chance=wheel_pct,
-                        functional_cmc=get_functional_cmc(card),
-                        reasoning=reasons,
-                        is_elite=(
-                            (z_score >= self.BOMB_Z_SCORE and cast_mult > 0.4)
-                            if not is_basic_land
-                            else False
+                        base_win_rate=float(
+                            card.get("deck_colors", {})
+                            .get("All Decks", {})
+                            .get("gihwr")
+                            or 0.0
                         ),
+                        contextual_score=round(score, 1),
+                        z_score=round(quality, 2),
+                        wheel_chance=self._wheel_chance(
+                            card,
+                            safe_pick,
+                            pack_ranks.get(name, 99),
+                            pack_size=len(pack_cards),
+                        ),
+                        reasoning=reasons,
+                        is_elite=is_elite,
                         archetype_fit=(
-                            self.main_archetype if is_on_lane else "Splash/Speculative"
+                            self.main_archetype if on_lane else "Splash/Speculative"
                         ),
                         tags=card.get("tags", []),
                     )
@@ -217,280 +205,8 @@ class DraftAdvisor:
 
         return sorted(recommendations, key=lambda x: x.contextual_score, reverse=True)
 
-    def _identify_main_colors(self) -> Tuple[List[str], Dict[str, float]]:
-        color_weights, color_counts = (
-            {c: 0.0 for c in constants.CARD_COLORS},
-            {c: 0 for c in constants.CARD_COLORS},
-        )
-        playable_threshold, total_pool_size = (
-            self.global_mean - self.global_std,
-            len(self.pool),
-        )
-        for idx, c in enumerate(self.pool):
-            try:
-                colors = c.get("colors", [])
-                wr = float(
-                    c.get("deck_colors", {}).get("All Decks", {}).get("gihwr", 0.0)
-                )
-                if "Land" not in c.get("types", []):
-                    for col in colors:
-                        color_counts[col] += 1
-                if wr < playable_threshold:
-                    continue
-                base_points = max(
-                    0.2, 1.0 + 2.0 * ((wr - self.global_mean) / self.global_std)
-                )
-                recency_mult = 1.0 + (2.0 * (idx / max(1, total_pool_size)))
-                for color in colors:
-                    if color in color_weights:
-                        color_weights[color] += base_points * recency_mult
-            except:
-                continue
-        sorted_w = sorted(color_weights.items(), key=lambda x: x[1], reverse=True)
-        main_colors = []
-        if total_pool_size >= 15 and sum(color_counts.values()) > 5:
-            threshold = sum(color_counts.values()) * 0.15
-            leader_set = [
-                v[0]
-                for v in sorted(color_counts.items(), key=lambda x: x[1], reverse=True)[
-                    :2
-                ]
-                if v[1] > 0
-            ]
-            for col, weight in sorted_w:
-                if col in leader_set or color_counts[col] >= threshold:
-                    main_colors.append(col)
-        else:
-            for col, weight in sorted_w:
-                if weight >= 2.5:
-                    main_colors.append(col)
-        return main_colors[:3], color_counts
-
-    def _analyze_pool(self) -> Dict[str, Any]:
-        early_plays, hard_removal_count, fixing_count, splash_targets = 0, 0, 0, set()
-        off_color_playables = 0
-        creature_count = 0
-        heavy_drops = 0
-        artifacts = 0
-        graveyard_enablers = 0
-        counters_enablers = 0
-
-        for c in self.pool:
-            try:
-                cmc, tags = get_functional_cmc(c), c.get("tags", [])
-                colors = c.get("colors", [])
-                types = c.get("types", [])
-
-                if "Creature" in types:
-                    creature_count += 1
-                    if cmc <= 2:
-                        early_plays += 1
-
-                if cmc >= 5 and "Land" not in types:
-                    heavy_drops += 1
-
-                if (
-                    "Artifact" in types
-                    or "synergy_artifacts" in tags
-                    or "token_maker" in tags
-                ):
-                    artifacts += 1
-                if "synergy_graveyard" in tags or "card_advantage" in tags:
-                    graveyard_enablers += 1
-                if "synergy_counters" in tags:
-                    counters_enablers += 1
-
-                if "removal" in tags:
-                    hard_removal_count += 1
-                    if cmc <= 2 and "Creature" not in types:
-                        early_plays += 1
-                if "fixing_ramp" in tags or ("Land" in types and len(colors) > 1):
-                    fixing_count += 1
-
-                wr = float(
-                    c.get("deck_colors", {}).get("All Decks", {}).get("gihwr", 0.0)
-                )
-
-                is_off_color = False
-                if self.main_colors and colors:
-                    is_off_color = not all(col in self.main_colors for col in colors)
-
-                if is_off_color and wr > (self.global_mean - self.global_std):
-                    off_color_playables += 1
-
-                if wr > (self.global_mean + (1.5 * self.global_std)):
-                    for col in colors:
-                        if self.main_colors and col not in self.main_colors:
-                            splash_targets.add(col)
-            except:
-                continue
-        return {
-            "early_plays": early_plays,
-            "hard_removal_count": hard_removal_count,
-            "fixing_count": fixing_count,
-            "splash_targets": splash_targets,
-            "off_color_playables": off_color_playables,
-            "creature_count": creature_count,
-            "heavy_drops": heavy_drops,
-            "artifacts": artifacts,
-            "graveyard_enablers": graveyard_enablers,
-            "counters_enablers": counters_enablers,
-        }
-
-    def _calculate_composition_bonus(self, card: Dict, pack: int) -> Tuple[float, str]:
-        tags, cmc = card.get("tags", []), get_functional_cmc(card)
-        types = card.get("types", [])
-
-        # 1. Curve and Heavy Drops Check
-        if cmc >= 5 and self.pool_metrics["heavy_drops"] >= 4 and "Land" not in types:
-            return 0.7, "Curve Too Heavy"
-
-        # 2. Creature Quota Check
-        if pack >= 2 and "Creature" in types:
-            projected_creatures = self.pool_metrics["creature_count"] * (
-                self.TOTAL_PICKS / max(1, len(self.pool))
-            )
-            if projected_creatures < 13:
-                return 1.25, "Critical: Needs Creatures"
-
-        # 3. Synergy (A+B) Checks
-        if "synergy_artifacts" in tags and self.pool_metrics["artifacts"] >= 4:
-            return 1.2, "Artifact Synergy"
-        if "synergy_graveyard" in tags and self.pool_metrics["graveyard_enablers"] >= 3:
-            return 1.2, "Graveyard Synergy"
-        if "synergy_counters" in tags and self.pool_metrics["counters_enablers"] >= 3:
-            return 1.2, "Counters Synergy"
-
-        # 4. Fixing Hunger
-        if "Land" in types or "fixing_ramp" in tags:
-            off_color_playables = self.pool_metrics.get("off_color_playables", 0)
-            fixing_count = self.pool_metrics.get("fixing_count", 0)
-
-            if (
-                pack >= 2
-                and off_color_playables > 0
-                and fixing_count <= off_color_playables
-            ):
-                return 1.4, "Critical: Needs Fixing"
-
-            if any(
-                c in self.pool_metrics["splash_targets"] for c in card.get("colors", [])
-            ):
-                return 1.3, "Enables Bomb Splash"
-
-            return (
-                (1.15, "Premium Fixing")
-                if pack == 1 and len(card.get("colors", [])) > 1
-                else (1.0, "")
-            )
-
-        # 5. Removal Check
-        if "removal" in tags:
-            if (
-                pack >= 2
-                and self.pool_metrics["hard_removal_count"] < self.TARGET_HARD_REMOVAL
-            ):
-                return 1.3, "Critical: Needs Removal"
-            elif self.pool_metrics["hard_removal_count"] > 6:
-                return 0.8, "Removal Saturated"
-
-        # 6. Early Interaction
-        if cmc <= 2 and ("Creature" in types or "removal" in tags):
-            projected = self.pool_metrics["early_plays"] * (
-                self.TOTAL_PICKS / max(1, len(self.pool))
-            )
-            if projected < self.TARGET_EARLY_PLAYS:
-                return (
-                    (
-                        1.0 + min(0.5, (self.TARGET_EARLY_PLAYS - projected) * 0.15),
-                        "Critical: Needs 2-Drops",
-                    )
-                    if pack >= 2
-                    else (1.1, "Curve Foundation")
-                )
-        return 1.0, ""
-
-    def _calculate_castability_v5(
-        self, card: Dict, pack: int, pick: int, z_score: float
-    ) -> Tuple[float, str]:
-        mana_cost = card.get("mana_cost", "")
-        card_colors = card.get("colors", [])
-        top_2_lane = self.main_colors[:2]
-
-        if mana_cost:
-            off_color_pips = 0
-            is_on_lane = True
-            pips = re.findall(r"\{(.*?)\}", mana_cost)
-            for pip in pips:
-                options = [c for c in pip.split("/") if c in "WUBRG"]
-                if not options:
-                    continue
-                if any(opt in top_2_lane for opt in options):
-                    continue
-                else:
-                    off_color_pips += 1
-                    is_on_lane = False
-        else:
-            is_on_lane = (
-                all(c in top_2_lane for c in card_colors) if card_colors else True
-            )
-            off_color_pips = 0 if is_on_lane else 1
-
-        if pack == 1:
-            if is_on_lane:
-                return 1.0, ""
-            pressure = 1.0 - (max(0, ((pack - 1) * 15 + (pick - 1)) - 7) * 0.05)
-            return (
-                (max(0.2, pressure - 0.2), "Off-Color Gold")
-                if len(card_colors) > 1 and off_color_pips > 0
-                else (max(0.4, pressure), "Off-Color")
-            )
-
-        if not is_on_lane:
-            if (
-                pack >= 2
-                and off_color_pips >= 2
-                and self.pool_metrics["fixing_count"] < 2
-            ):
-                return 0.01, "Uncastable (Double Pip)"
-
-            splash_colors = [c for c in card_colors if c not in top_2_lane]
-            has_specific_fixing = (
-                all(self.fixing_map.get(c, 0) > 0 for c in splash_colors)
-                if splash_colors
-                else False
-            )
-
-            is_premium_removal = "removal" in card.get("tags", []) and z_score >= 1.0
-
-            # Allow premium 1-for-1s to be splashed just like game-winning bombs
-            if z_score >= self.BOMB_Z_SCORE or is_premium_removal:
-                if off_color_pips == 1:
-                    if has_specific_fixing or self.pool_metrics["fixing_count"] >= (
-                        4 if pack == 3 else 3
-                    ):
-                        reason = (
-                            "Bomb Splash"
-                            if z_score >= self.BOMB_Z_SCORE
-                            else "Premium Removal Splash"
-                        )
-                        return (0.35 if pack == 3 else 0.45), reason
-                elif (
-                    off_color_pips == 2
-                    and get_functional_cmc(card) >= 5
-                    and z_score >= self.BOMB_Z_SCORE
-                ):
-                    if self.pool_metrics["fixing_count"] >= 4:
-                        return 0.30, "Greedy Bomb Splash"
-
-            if off_color_pips == 1 and has_specific_fixing:
-                return 0.3, "Splashable"
-
-            return 0.01 if pack == 3 else 0.05, "Off-Color"
-        return 1.0, ""
-
     def _wheel_chance(
-        self, card: Dict, pick: int, rank_in_pack: int, pack_size: int = None
+        self, card: dict, pick: int, rank_in_pack: int, pack_size: int = None
     ) -> float:
         # A pack comes back after 8 picks, so it needs 9+ cards now. Pick alone
         # isn't enough: 13- and 14-card packs can't wheel from picks 6 and 7.
@@ -509,32 +225,5 @@ class DraftAdvisor:
             elif rank_in_pack <= 2:
                 context_prob *= 0.40
             return max(0.0, min(100.0, context_prob))
-        except:
-            return 0.0
-
-    def _calculate_weighted_score(self, card: Dict, pick_number: int) -> float:
-        try:
-            stats = card.get("deck_colors", {})
-            global_wr = float(stats.get("All Decks", {}).get("gihwr", 0.0))
-            arch_weight = min(0.9, 0.2 + (pick_number / self.TOTAL_PICKS) * 0.7)
-            arch_stats = stats.get(self.main_archetype, {})
-            arch_wr = float(arch_stats.get("gihwr", global_wr))
-
-            # BAYESIAN SMOOTHING: Confidently blend global & archetype win rates based on sample size
-            samples = int(arch_stats.get("samples", 0))
-            confidence = min(1.0, samples / 1000.0)
-            trusted_arch_wr = (arch_wr * confidence) + (global_wr * (1.0 - confidence))
-
-            blended_wr = (
-                (global_wr * (1.0 - arch_weight)) + (trusted_arch_wr * arch_weight)
-                if (arch_wr > 0 and samples >= 10)
-                else global_wr
-            )
-
-            return max(
-                0.0,
-                50.0
-                + ((blended_wr - self.global_mean) / max(0.1, self.global_std)) * 15.0,
-            )
         except:
             return 0.0

@@ -1,7 +1,8 @@
-import pytest
 from unittest.mock import MagicMock
-from src.advisor.engine import DraftAdvisor
-from src.advisor.schema import Recommendation
+
+import pytest
+
+from src.advisor.engine import BASE_SCORE, LANE_PRIOR_GAMES, WEIGHTS, DraftAdvisor
 
 
 @pytest.fixture
@@ -43,74 +44,6 @@ def test_main_archetype_uses_wubrg_key(mock_metrics, first, second, expected):
 
     assert set(advisor.main_colors[:2]) == {first, second}
     assert advisor.main_archetype == expected
-
-
-def test_analyze_pool(mock_metrics):
-    # Establish a definitive "White Lane" by padding the pool > 15 cards
-    pool = [
-        {
-            "colors": ["W"],
-            "types": ["Creature"],
-            "cmc": 2,
-            "deck_colors": {"All Decks": {"gihwr": 60.0}},
-        }
-        for _ in range(15)
-    ]
-
-    # Add a black removal spell (not a bomb, just utility)
-    pool.append(
-        {
-            "colors": ["B"],
-            "tags": ["removal"],
-            "cmc": 4,
-            "deck_colors": {"All Decks": {"gihwr": 55.0}},
-        }
-    )
-
-    # Add a green fixing bomb. Because we are definitively in White, this will trigger the splash logic.
-    pool.append(
-        {
-            "colors": ["G"],
-            "tags": ["fixing_ramp"],
-            "cmc": 1,
-            "deck_colors": {"All Decks": {"gihwr": 65.0}},
-        }
-    )
-
-    advisor = DraftAdvisor(mock_metrics, pool)
-
-    assert advisor.pool_metrics["early_plays"] == 15
-    assert advisor.pool_metrics["hard_removal_count"] == 1
-    assert advisor.pool_metrics["fixing_count"] == 1
-
-    # 65.0 > 55.0 + (1.5 * 4.0) = 61.0, so 'G' triggers as a premium splash target
-    assert "G" in advisor.pool_metrics["splash_targets"]
-
-
-def test_calculate_castability_v5(mock_metrics):
-    advisor = DraftAdvisor(mock_metrics, [])
-    advisor.main_colors = ["W", "U"]
-    advisor.pool_metrics = {"fixing_count": 0}
-
-    # On lane card
-    mult, _ = advisor._calculate_castability_v5(
-        {"colors": ["W"]}, pack=2, pick=1, z_score=0.0
-    )
-    assert mult == 1.0
-
-    # Off lane card, double pip (uncastable)
-    mult, _ = advisor._calculate_castability_v5(
-        {"colors": ["B"], "mana_cost": "{B}{B}"}, pack=2, pick=1, z_score=0.0
-    )
-    assert mult == 0.01
-
-    # Splashable bomb
-    mult, _ = advisor._calculate_castability_v5(
-        {"colors": ["R"], "mana_cost": "{R}"}, pack=2, pick=1, z_score=2.0
-    )
-
-    # Without fixing in the pool, it's heavily penalized even if it's a bomb
-    assert mult == 0.05
 
 
 def test_wheel_chance(mock_metrics):
@@ -242,52 +175,109 @@ def test_evaluate_pack_elite_detection(mock_metrics):
     assert recs[0].is_elite is True
 
 
-def test_composition_bonus_heuristics(mock_metrics):
-    advisor = DraftAdvisor(mock_metrics, [])
-
-    # Setup pool metrics to trigger specific heuristic thresholds
-    advisor.pool_metrics = {
-        "heavy_drops": 4,
-        "creature_count": 5,
-        "artifacts": 4,
-        "graveyard_enablers": 3,
-        "counters_enablers": 3,
-        "fixing_count": 0,
-        "off_color_playables": 2,
-        "splash_targets": ["U"],
-        "hard_removal_count": 1,
-        "early_plays": 2,
+def card(name, colors, gihwr, types=("Creature",), **pairs):
+    """A card with an all-decks GIH WR and optional pair stats as (gihwr, samples)."""
+    deck_colors = {"All Decks": {"gihwr": gihwr}}
+    for pair, (wr, samples) in pairs.items():
+        deck_colors[pair] = {"gihwr": wr, "samples": samples}
+    return {
+        "name": name,
+        "colors": list(colors),
+        "types": list(types),
+        "deck_colors": deck_colors,
     }
-    advisor.TOTAL_PICKS = 45
-    advisor.pool = [1] * 20  # Simulate mid-draft (Pick 20)
 
-    # 1. Heavy Drops Penalty
-    mult, reason = advisor._calculate_composition_bonus(
-        {"cmc": 6, "types": ["Creature"]}, pack=2
-    )
-    assert mult == 0.7
-    assert "Curve Too Heavy" in reason
 
-    # 2. Creature Quota Bonus
-    mult, reason = advisor._calculate_composition_bonus(
-        {"cmc": 3, "types": ["Creature"]}, pack=2
-    )
-    assert mult == 1.25
-    assert "Critical: Needs Creatures" in reason
+def test_color_strength_counts_card_quality(mock_metrics):
+    """An average card counts 1, a card one SD better 2, a bad card 0, a land 0."""
+    pool = [
+        card("Average", "W", 55.0),
+        card("Good", "W", 59.0),
+        card("Bad", "U", 47.0),
+        card("Dual", "UB", 55.0, types=("Land",)),
+    ]
+    strength = DraftAdvisor(mock_metrics, pool).color_strength
 
-    # 3. Artifact Synergy
-    mult, reason = advisor._calculate_composition_bonus(
-        {"cmc": 3, "tags": ["synergy_artifacts"]}, pack=2
-    )
-    assert mult == 1.2
-    assert "Artifact Synergy" in reason
+    assert strength["W"] == pytest.approx(3.0)
+    assert strength["U"] == 0.0
+    assert strength["B"] == 0.0
 
-    # 4. Fixing Hunger (Because off_color_playables > fixing_count)
-    mult, reason = advisor._calculate_composition_bonus({"types": ["Land"]}, pack=2)
-    assert mult == 1.4
-    assert "Critical: Needs Fixing" in reason
 
-    # 5. Removal Hunger
-    mult, reason = advisor._calculate_composition_bonus({"tags": ["removal"]}, pack=2)
-    assert mult == 1.3
-    assert "Critical: Needs Removal" in reason
+def test_color_gap(mock_metrics):
+    """How far a card's colors are behind the pool's second color."""
+    pool = [card(f"W{i}", "W", 55.0) for i in range(5)]
+    pool += [card(f"U{i}", "U", 55.0) for i in range(3)]
+    pool += [card("B0", "B", 55.0)]
+    advisor = DraftAdvisor(mock_metrics, pool)
+
+    def gap(colors):
+        return advisor.pick_features(card("X", colors, 55.0))["color_gap"]
+
+    assert advisor.main_colors == ["W", "U"]
+    assert gap("W") == gap("U") == gap("WU") == gap("") == 0.0
+    assert gap("B") == pytest.approx(2.0)
+    assert gap("R") == pytest.approx(3.0)
+    assert gap("BR") == pytest.approx(5.0)
+
+
+def test_one_color_pool_has_no_gap(mock_metrics):
+    """With one color in the pool, any second color is still open."""
+    advisor = DraftAdvisor(mock_metrics, [card("W0", "W", 60.0)])
+
+    assert advisor.main_archetype == "All Decks"
+    assert advisor.pick_features(card("X", "R", 55.0))["color_gap"] == 0.0
+
+
+def test_lane_shrinks_with_few_games(mock_metrics):
+    pool = [card(f"W{i}", "W", 55.0) for i in range(3)]
+    pool += [card(f"U{i}", "U", 55.0) for i in range(2)]
+    advisor = DraftAdvisor(mock_metrics, pool)
+
+    many = advisor.pick_features(card("X", "W", 55.0, WU=(59.0, 1_000_000)))
+    some = advisor.pick_features(card("X", "W", 55.0, WU=(59.0, LANE_PRIOR_GAMES)))
+    other_pair = advisor.pick_features(card("X", "W", 55.0, WB=(59.0, 1_000_000)))
+
+    assert many["lane"] == pytest.approx(1.0, abs=0.01)
+    assert some["lane"] == pytest.approx(0.5)
+    assert other_pair["lane"] == 0.0
+
+
+def test_unrated_card(mock_metrics):
+    features = DraftAdvisor(mock_metrics, []).pick_features(card("New", "G", 0.0))
+
+    assert features["quality"] == 0.0
+    assert features["unrated"] == 1.0
+
+
+def test_score_is_the_weighted_sum(mock_metrics):
+    pool = [card(f"W{i}", "W", 55.0) for i in range(5)]
+    pool += [card(f"U{i}", "U", 55.0) for i in range(3)]
+    advisor = DraftAdvisor(mock_metrics, pool)
+    pack = [
+        card("On", "W", 59.0, WU=(60.0, 1_000_000)),
+        card("Off", "B", 63.0),
+    ]
+
+    recs = {r.card_name: r for r in advisor.evaluate_pack(pack, current_pick=3)}
+
+    for c in pack:
+        features = advisor.pick_features(c)
+        expected = BASE_SCORE + sum(WEIGHTS[k] * v for k, v in features.items())
+        assert recs[c["name"]].contextual_score == pytest.approx(expected, abs=0.05)
+    assert any(r.startswith("Off-Color") for r in recs["Off"].reasoning)
+    assert recs["Off"].archetype_fit == "Splash/Speculative"
+    assert recs["On"].archetype_fit == "WU"
+
+
+def test_basic_land_scores_zero(mock_metrics):
+    advisor = DraftAdvisor(mock_metrics, [])
+    pack = [
+        {"name": "Forest", "types": ["Basic", "Land"], "colors": []},
+        card("Bear", "G", 55.0),
+    ]
+
+    recs = advisor.evaluate_pack(pack, current_pick=14)
+
+    assert [r.card_name for r in recs] == ["Bear", "Forest"]
+    assert recs[1].contextual_score == 0.0
+    assert recs[1].reasoning == ["Basic Land (Skip)"]

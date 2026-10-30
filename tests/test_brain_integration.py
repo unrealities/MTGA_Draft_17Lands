@@ -16,6 +16,7 @@ from src.log_scanner import ArenaScanner
 from src.configuration import Configuration
 from src.limited_sets import SetDictionary, SetInfo
 from src import constants
+from src.advisor.engine import DraftAdvisor
 from src.utils import Result
 from src.constants import BASE_DIR
 
@@ -152,20 +153,21 @@ class TestBrainIntegration:
     def test_pro_logic_scenarios(self, env):
         app, log, root = env["app"], env["log"], env["root"]
 
-        # 1. Establish Green Lane with a Black splash option
-        # 3 Green Hulks + 1 BG Dual Land
-        app.orchestrator.scanner.taken_cards = ["101", "101", "101", "105"]
-
-        # 2. Simulate Late Pack 2 (Pick 20)
+        # 1. Simulate Late Pack 2 (Pick 20)
         p2p5 = (
             '[UnityCrossThreadLogger]Draft.Notify {"draftId":"1","SelfPick":20,"SelfPack":2,'
-            '"PackCards":"101,102,103,104"}\n'
+            '"PackCards":"102,103,104,106"}\n'
         )
         with open(log, "a") as f:
             f.write(p2p5)
 
         # Force update manually
         app._update_loop()
+
+        # 2. Establish a Green-Black lane: 3 Green Hulks, 2 Black removal
+        # spells. Set after the log is read, as a new draft clears the pool.
+        app.orchestrator.scanner.taken_cards = ["101", "101", "101", "103", "103"]
+        app._refresh_ui_data()
 
         # Pump events
         for _ in range(5):
@@ -183,19 +185,27 @@ class TestBrainIntegration:
                 score = float(vals[1])
                 scores[name] = score
 
-        # --- VERIFICATION 1: Double Pip Penalty ---
-        # "Red Bomb Double Pip" has 68% GIHWR (Highest in pack).
-        # But we are Green/Black, and it costs {2}{R}{R}.
-        # Score should be strictly penalized by the Pack 2 Discipline logic.
-        assert "Red Bomb Double Pip" in scores
-        assert scores["Red Bomb Double Pip"] < 20.0
+        # --- VERIFICATION 1: The dashboard shows the advisor's scores ---
+        scanner = app.orchestrator.scanner
+        metrics = scanner.retrieve_set_metrics()
+        pack = scanner.retrieve_current_pack_cards()
+        recs = DraftAdvisor(metrics, scanner.retrieve_taken_cards()).evaluate_pack(
+            pack, 5, current_pack=2
+        )
+        assert len(scanner.retrieve_taken_cards()) == 5
+        assert scores == {r.card_name: round(r.contextual_score) for r in recs}
 
-        # --- VERIFICATION 2: Single Pip Splash ---
-        # "Black Removal Single Pip" is {1}{B}. 58% WR.
-        # Because we drafted a Golgari Guildgate, the engine recognizes we have fixing
-        # It bypasses the uncastable penalty and scores ~39.0.
-        assert "Black Removal Single Pip" in scores
-        assert scores["Black Removal Single Pip"] > scores["Red Bomb Double Pip"]
+        # --- VERIFICATION 2: Off-color penalty ---
+        # "Red Bomb Double Pip" has 68% GIHWR (Highest in pack), but we are
+        # Green/Black, so it scores less than it would for an empty pool.
+        red = next(r for r in recs if r.card_name == "Red Bomb Double Pip")
+        fresh = next(
+            r
+            for r in DraftAdvisor(metrics, []).evaluate_pack(pack, 5, current_pack=2)
+            if r.card_name == "Red Bomb Double Pip"
+        )
+        assert red.contextual_score < fresh.contextual_score
+        assert any(reason.startswith("Off-Color") for reason in red.reasoning)
 
     def test_wheel_greed_logic(self, env):
         app, log, root = env["app"], env["log"], env["root"]
