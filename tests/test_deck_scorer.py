@@ -14,6 +14,7 @@ from src.advisor.deck_scorer import (
     calculate_holistic_score,
     estimate_record,
     TIER_TO_GIHWR,
+    AGGRO_CURVE_BONUS,
 )
 
 # --- FIXTURES & HELPERS ---
@@ -180,19 +181,27 @@ def test_identify_top_pairs(mock_metrics):
 
 
 def test_holistic_score_aggro_bonus(mock_metrics):
-    """Verify a deck with a perfectly low curve gets the Aggro Curve bonus (+1.5)."""
-    deck = [
+    """A low-curve deck scores exactly the Aggro Curve bonus above an otherwise equal midrange deck."""
+    aggro = [
         make_card("Mountain", count=16, types=["Land"]),
         make_card("Goblin 1", count=14, cmc=1, gihwr=55.0),  # Super low curve
         make_card("Goblin 2", count=10, cmc=2, gihwr=55.0),
     ]
+    midrange = [
+        make_card("Mountain", count=17, types=["Land"]),
+        make_card("Ogre", count=23, cmc=3, gihwr=55.0),
+    ]
 
-    score, notes = calculate_holistic_score(
-        deck, colors=["R"], pool_size=45, metrics=mock_metrics
+    aggro_score, notes = calculate_holistic_score(
+        aggro, colors=["R"], pool_size=45, metrics=mock_metrics
+    )
+    midrange_score, midrange_notes = calculate_holistic_score(
+        midrange, colors=["R"], pool_size=45, metrics=mock_metrics
     )
 
-    assert "Excellent Aggro Curve (+1.5)" in notes
-    assert score > 75.0  # Average deck is 75, this should be boosted
+    assert f"Excellent Aggro Curve (+{AGGRO_CURVE_BONUS:.1f})" in notes
+    assert "Aggro Curve" not in midrange_notes
+    assert aggro_score - midrange_score == pytest.approx(AGGRO_CURVE_BONUS)
 
 
 def test_holistic_score_clunky_penalty(mock_metrics):

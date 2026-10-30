@@ -27,6 +27,13 @@ TIER_TO_GIHWR = {
     "NA": 0.0,
 }
 
+# Deck score adjustments, in power points. Each is about what the adjustment was
+# worth in event wins, measured against a point of power from card ratings, over
+# 17Lands Premier Draft pools from ten sets. Evasion measured about zero, so it
+# has no adjustment.
+AGGRO_CURVE_BONUS = 1.5
+TWO_COLOR_BONUS = 4.0
+
 
 def get_card_rating(card, colors, metrics=None, tier_data=None):
     global_mean = 54.0
@@ -158,19 +165,17 @@ def calculate_holistic_score(deck, colors, pool_size, metrics, tier_data=None):
         ),
     )
 
-    # The aggro, two-color and evasion weights are what each was worth in event
-    # wins per point of power, over 17Lands drafts from ten sets.
     mana_deficit = (avg_cmc * 5.5) - (land_count + ramp_count)
     if mana_deficit > 1.5:
         power_level -= mana_deficit * 3.0
         breakdown_notes.append(f"High Curve / Needs Lands (-{mana_deficit * 3.0:.1f})")
     elif mana_deficit < -1.0 and avg_cmc < 2.8:
-        power_level += 1.5
-        breakdown_notes.append("Excellent Aggro Curve (+1.5)")
+        power_level += AGGRO_CURVE_BONUS
+        breakdown_notes.append(f"Excellent Aggro Curve (+{AGGRO_CURVE_BONUS:.1f})")
 
     if len(colors) <= 2:
-        power_level += 4.0
-        breakdown_notes.append("Rock-Solid Mana (+4.0)")
+        power_level += TWO_COLOR_BONUS
+        breakdown_notes.append(f"Rock-Solid Mana (+{TWO_COLOR_BONUS:.1f})")
 
     supertypes = {
         "Creature",
@@ -231,26 +236,6 @@ def calculate_holistic_score(deck, colors, pool_size, metrics, tier_data=None):
             penalty = (len(colors) - 1 - fixing_count) * 6.0
             power_level -= penalty
             breakdown_notes.append(f"Greedy Mana Strain (-{penalty:.1f})")
-
-    evasion_count = sum(
-        c.get("count", 1)
-        for c in spells
-        if "evasion" in c.get("tags", [])
-        or any(
-            kw in str(c.get("oracle_text", c.get("text", ""))).lower()
-            for kw in [
-                "flying",
-                "trample",
-                "menace",
-                "can't be blocked",
-                "unblockable",
-                "deals damage to any target",
-            ]
-        )
-    )
-    if evasion_count < 3 and avg_cmc > 2.5:
-        power_level -= 1.0
-        breakdown_notes.append("Lacks Evasion/Reach (-1.0)")
 
     expected_spells = int(23 * (min(42, pool_size) / 42.0))
     if spell_count < expected_spells - 1:
