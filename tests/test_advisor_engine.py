@@ -220,6 +220,20 @@ def test_color_gap(mock_metrics):
     assert gap("BR") == pytest.approx(5.0)
 
 
+def test_color_support(mock_metrics):
+    """The pool's strength in the card's colors, both colors for a gold card."""
+    pool = [card(f"W{i}", "W", 55.0) for i in range(5)]
+    pool += [card(f"U{i}", "U", 55.0) for i in range(3)]
+    advisor = DraftAdvisor(mock_metrics, pool)
+
+    def support(colors):
+        return advisor.pick_features(card("X", colors, 55.0))["color_support"]
+
+    assert support("W") == pytest.approx(5.0)
+    assert support("WU") == pytest.approx(8.0)
+    assert support("B") == support("") == 0.0
+
+
 def test_one_color_pool_has_no_gap(mock_metrics):
     """With one color in the pool, any second color is still open."""
     advisor = DraftAdvisor(mock_metrics, [card("W0", "W", 60.0)])

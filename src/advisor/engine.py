@@ -26,8 +26,11 @@ WEIGHTS = {
     # GIH WR in the pool's two main colors minus over all decks, in standard
     # deviations, shrunk toward 0 when the pair has few games.
     "lane": 5.0,
+    # The pool's strength in the card's colors, in pool cards (see
+    # DraftAdvisor.color_strength); a two-color card counts both colors.
+    "color_support": 1.0,
     # How far the card's colors are behind the pool's second color, in pool
-    # cards (see DraftAdvisor.color_strength).
+    # cards.
     "color_gap": -5.0,
     # No GIH WR yet; quality is then 0.
     "unrated": 0.0,
@@ -108,14 +111,17 @@ class DraftAdvisor:
                     / (games + LANE_PRIOR_GAMES)
                 )
 
+        colors = [c for c in card.get("colors", []) if c in self.color_strength]
+        color_support = sum(self.color_strength[c] for c in colors)
         color_gap = sum(
             self.second_strength - self.color_strength[c]
-            for c in card.get("colors", [])
-            if c in self.color_strength and c not in self.main_colors
+            for c in colors
+            if c not in self.main_colors
         )
         return {
             "quality": quality or 0.0,
             "lane": lane,
+            "color_support": color_support,
             "color_gap": color_gap,
             "unrated": 1.0 if quality is None else 0.0,
         }
@@ -126,6 +132,8 @@ class DraftAdvisor:
         if abs(points["lane"]) >= 1.0:
             better = "Better" if points["lane"] > 0 else "Worse"
             reasons.append(f"{better} in {self.main_archetype} ({points['lane']:+.1f})")
+        if points["color_support"] >= 1.0:
+            reasons.append(f"Your Colors ({points['color_support']:+.1f})")
         if points["color_gap"] <= -1.0:
             reasons.append(f"Off-Color ({points['color_gap']:+.1f})")
         if features["unrated"]:
