@@ -25,17 +25,17 @@ WEIGHTS = {
     "quality": 15.0,
     # GIH WR in the pool's two main colors minus over all decks, in standard
     # deviations, shrunk toward 0 when the pair has few games.
-    "lane": 5.0,
+    "lane": 11.1,
     # The pool's strength in the card's colors, in pool cards (see
     # DraftAdvisor.color_strength); a two-color card counts both colors.
-    "color_support": 1.0,
+    "color_support": 0.9,
     # How far the card's colors are behind the pool's second color, in pool
     # cards.
-    "color_gap": -5.0,
+    "color_gap": -2.0,
     # No GIH WR yet; quality is then 0.
-    "unrated": 0.0,
+    "unrated": -10.9,
 }
-PICK_LOG_ODDS_PER_POINT = 0.07
+PICK_LOG_ODDS_PER_POINT = 0.1023
 # A pair's GIH WR from n games counts n / (n + LANE_PRIOR_GAMES) of its
 # difference from the all-decks rate.
 LANE_PRIOR_GAMES = 2000.0
