@@ -28,18 +28,12 @@ from src.constants import (
 )
 
 
-_FALLBACK_SOURCE_KEY = "_fallback_source"
-_BASIC_LAND_NAMES = {"Plains", "Island", "Swamp", "Mountain", "Forest", "Wastes"}
-
-
 class Dataset:
     # Configuration flag to allow the UI to drop unresolved numeric IDs
     skip_unresolved_ids = True
 
     def __init__(self, retrieve_unknown: bool = False, db_path: str = None):
         self._dataset = None
-        self._dataset_source = None  # tracks which dataset the ratings came from
-        self._active_dataset_name = None
         self._retrieve_unknown = retrieve_unknown
         self.db_path = db_path
         self._name_index = {}
@@ -301,8 +295,6 @@ class Dataset:
             self._name_index = name_index
             self._id_index = id_index
             self._dataset = json_data
-        self._dataset_source = getattr(self, '_active_dataset_name', None) or 'loaded_dataset'
-    
         return result
 
     def get_data_by_id(self, id_list: List[str]) -> List[Dict]:
@@ -311,31 +303,12 @@ class Dataset:
             return []
         with self._resolution_lock:
             ratings = self._dataset["card_ratings"] if self._dataset else self._fallback_ratings
-
-            def _stale_fallback(card):
-                """Cross-set (or legacy unstamped) fallback entry: a previous
-                set's ratings must not resolve as current. Basic lands keep
-                resolving — they carry set-specific arena IDs the active
-                dataset may lack on day one."""
-                if card is None:
-                    return True
-                fallback_name = str(card.get(DATA_FIELD_NAME, "")).removeprefix(
-                    "Snow-Covered "
-                )
-                return card.get(_FALLBACK_SOURCE_KEY) != self._dataset_source and (
-                    fallback_name not in _BASIC_LAND_NAMES
-                )
-
             result = []
             for arena_id in id_list:
                 aid = str(arena_id)
                 card = ratings.get(aid)
-                if self._dataset is None and card is not None and _stale_fallback(card):
-                    card = None
                 if not card:
                     card = self._fallback_ratings.get(aid)
-                    if _stale_fallback(card):
-                        card = None
                 unresolved = not card or str(card.get(DATA_FIELD_NAME, "")).isdigit()
                 if unresolved and self._retrieve_unknown:
                     self._pending_ids.add(aid)
