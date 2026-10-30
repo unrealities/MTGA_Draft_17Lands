@@ -23,10 +23,8 @@ The engine does not "lock in" colors based on the first few picks. It uses recen
 Instead of evaluating a card globally (e.g., its win rate across all 17Lands users), the engine identifies your leading "Color Pair" (e.g., Blue-Black/UB) and prioritizes data for that specific pairing.
 
 - **Gravity Logic:** The engine scores all 10 possible color pairs based on the weighted power of cards in your pool and the presence of "Gold" cards that reward specific pairs.
-- **Progressive Weighting:**
-  - **Pack 1:** Evaluates cards primarily (90%) on their Global GIHWR.
-  - **Pack 3:** Evaluates cards primarily (80%) on their Archetype-specific win rate.
-- **Synergy Payoff:** If a card performs > 1.5% better in your specific color pair than its global average, it receives an **Archetype Synergy** bonus.
+- **Progressive Weighting:** Once your pool has a leading pair, a card's score is its Global GIHWR plus a weight times how much better (or worse) it does in that pair. The weight rises through each pack, from 0.65 at the first pick to 1.3 at the 15th. The pair's win rate is shrunk toward the global one when it has fewer than 1,000 games.
+- **Counted once:** The pair's win rate enters the score only through this weighting; there is no separate bonus for cards that do better in the pair than overall.
 
 ---
 
@@ -54,13 +52,12 @@ Modern Limited is dictated by "Mana Velocity" and "Mana Stability."
 
 ---
 
-## 6. Value Over Replacement (VOR) & "Glue Cards"
+## 6. Value Over Replacement (VOR)
 
 The v5 engine moves beyond raw win rates by pre-calculating the **Format Texture** of a set when it loads.
 
 - **Role Scarcity (VOR):** The engine analyzes the dataset to count how many "Playable" (WR > Baseline) Commons and Uncommons exist for critical roles (e.g., Removal, 2-Drops) in each color.
   - If a user sees a Playable Red 2-Drop, and the engine knows there are only two viable Red 2-drops in the entire set, it applies a `High VOR (+6.0)` bonus.
-- **Archetype Glue:** If a Common/Uncommon has a win rate in the user's specific color pair that is `> 1.0%` higher than its global average, it is classified as "Archetype Glue." It receives an aggressive point multiplier to force it to outscore generic Rares.
 
 ---
 

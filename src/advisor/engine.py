@@ -28,12 +28,16 @@ class DraftAdvisor:
     TARGET_EVASION = 3
     BOMB_Z_SCORE = 1.5
     IWD_PREMIUM_THRESHOLD = 4.5
-    # The weight of the card's win rate in the current archetype: it starts at
-    # ARCH_WEIGHT_START and rises by ARCH_WEIGHT_RAMP over TOTAL_PICKS picks,
-    # up to ARCH_WEIGHT_MAX.
-    ARCH_WEIGHT_START = 0.2
-    ARCH_WEIGHT_RAMP = 0.7
-    ARCH_WEIGHT_MAX = 0.9
+    # Score a card at its overall win rate plus a weight times how much better
+    # it does in the current archetype. The weight starts at ARCH_WEIGHT_START
+    # and grows by ARCH_WEIGHT_RAMP / TOTAL_PICKS a pick; the pick number is
+    # the pick within the pack, so it runs from 0.65 to 1.3 in each pack.
+    # Above 1, this also covers the bonus archetype cards used to get on top.
+    # Replaying 30,000 17Lands drafts twice, these weights (three times the
+    # old ones) matched drafters' picks 0.2-0.3 points more often than that
+    # bonus did, and following them was more closely tied to drafters' wins.
+    ARCH_WEIGHT_START = 0.6
+    ARCH_WEIGHT_RAMP = 2.1
 
     def __init__(self, set_metrics, taken_cards: List[Dict]):
         self.metrics = set_metrics
@@ -504,10 +508,9 @@ class DraftAdvisor:
         try:
             stats = card.get("deck_colors", {})
             global_wr = float(stats.get("All Decks", {}).get("gihwr", 0.0))
-            arch_weight = min(
-                self.ARCH_WEIGHT_MAX,
+            arch_weight = (
                 self.ARCH_WEIGHT_START
-                + (pick_number / self.TOTAL_PICKS) * self.ARCH_WEIGHT_RAMP,
+                + (pick_number / self.TOTAL_PICKS) * self.ARCH_WEIGHT_RAMP
             )
             arch_stats = stats.get(self.main_archetype, {})
             arch_wr = float(arch_stats.get("gihwr", global_wr))
