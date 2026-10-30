@@ -242,6 +242,26 @@ def test_evaluate_pack_elite_detection(mock_metrics):
     assert recs[0].is_elite is True
 
 
+@pytest.mark.parametrize("pick,expected", [(1, 59.7), (15, 69.5)])
+def test_archetype_weight_ramps_within_the_pack(mock_metrics, pick, expected):
+    """The archetype's edge is weighted 0.65 at a pack's first pick, 1.3 at its 15th."""
+    advisor = DraftAdvisor(mock_metrics, [])
+    advisor.main_archetype = "WU"
+    card = {
+        "name": "Glue",
+        "colors": ["W"],
+        "deck_colors": {
+            "All Decks": {"gihwr": 55.0},
+            "WU": {"gihwr": 59.0, "samples": 1000},
+        },
+    }
+
+    # Pick 1: 55 + 0.647 * (59 - 55) = 57.6, which is 0.65 sigma above the mean
+    assert advisor._calculate_weighted_score(card, pick) == pytest.approx(
+        expected, abs=0.05
+    )
+
+
 def test_composition_bonus_heuristics(mock_metrics):
     advisor = DraftAdvisor(mock_metrics, [])
 
