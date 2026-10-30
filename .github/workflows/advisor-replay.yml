@@ -1,0 +1,111 @@
+name: Advisor replay
+
+# Replays 17Lands Premier Draft picks through the advisor before and after a
+# change, and reports how often each agrees with drafters and how that relates
+# to their wins. See Tools/AdvisorReplay/README.md.
+#
+# Runs on pull requests that change the advisor or this harness, and by hand
+# (Actions > Advisor replay > Run workflow) to compare a branch with any ref.
+
+on:
+  pull_request:
+    paths:
+      - "src/advisor/**"
+      - "Tools/AdvisorReplay/**"
+      - ".github/workflows/advisor-replay.yml"
+  workflow_dispatch:
+    inputs:
+      base:
+        description: Branch, tag or commit to compare the selected branch with
+        default: main
+      sets:
+        description: 'JSON list of set codes, e.g. ["FRA", "TDM"] (empty: all ten)'
+        default: ""
+      drafts:
+        description: Drafts per set
+        default: "3000"
+      salt:
+        description: Any text; changes which drafts are sampled
+        default: ""
+
+permissions:
+  contents: read
+
+concurrency:
+  group: advisor-replay-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  BASE: ${{ github.event.pull_request.base.sha || inputs.base }}
+  HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
+  DRAFTS: ${{ inputs.drafts || '3000' }}
+  SALT: ${{ inputs.salt }}
+
+jobs:
+  replay:
+    name: Replay ${{ matrix.set }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        set: ${{ fromJSON(inputs.sets || '["DFT", "FDN", "FIN", "FRA", "HOB", "MSH", "SOS", "TDM", "TLA", "TMT"]') }}
+    env:
+      SET: ${{ matrix.set }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check out the base to compare with
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.BASE }}
+          path: base
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install poetry==2.4.1
+      - run: poetry install --no-interaction
+      - name: Download the draft dump and the app's dataset
+        run: |
+          curl -fsSL --retry 3 -o dump.csv.gz \
+            "https://17lands-public.s3.amazonaws.com/analysis_data/draft_data/draft_data_public.$SET.PremierDraft.csv.gz"
+          curl -fsSL --retry 3 -o dataset.json.gz \
+            "https://unrealities.github.io/MTGA_Draft_17Lands/${SET}_PremierDraft_All_Data.json.gz"
+      - name: Sample drafts
+        run: poetry run python Tools/AdvisorReplay/sample.py --dump dump.csv.gz --drafts "$DRAFTS" --salt "$SALT" --out drafts.json.gz
+      - name: Replay the base
+        run: poetry run python Tools/AdvisorReplay/replay.py --src base --drafts drafts.json.gz --dataset dataset.json.gz --set "$SET" --label base --out "results/$SET.base.json"
+      - name: Replay this branch
+        run: poetry run python Tools/AdvisorReplay/replay.py --src . --drafts drafts.json.gz --dataset dataset.json.gz --set "$SET" --label head --out "results/$SET.head.json"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: replay-${{ matrix.set }}
+          path: results/
+
+  report:
+    needs: replay
+    if: ${{ !cancelled() }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install poetry==2.4.1
+      - run: poetry install --no-interaction
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: replay-*
+          path: results
+          merge-multiple: true
+      - name: Report
+        run: |
+          {
+            echo "# Advisor replay: base \`${BASE::7}\`, head \`${HEAD::7}\`"
+            echo
+            poetry run python Tools/AdvisorReplay/report.py results/*.json
+          } | tee report.md >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: replay-report
+          path: report.md
