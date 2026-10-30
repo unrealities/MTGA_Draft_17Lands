@@ -14,6 +14,9 @@ from src.advisor.deck_scorer import (
     calculate_holistic_score,
     estimate_record,
     TIER_TO_GIHWR,
+    BASE_SCORE,
+    WEIGHTS,
+    deck_features,
 )
 
 # --- FIXTURES & HELPERS ---
@@ -284,6 +287,29 @@ def test_holistic_score_incomplete_deck(mock_metrics):
     assert "Incomplete Deck" in notes
     # Score should be completely ruined (probably 0.0)
     assert score < 50.0
+
+
+def test_holistic_score_is_the_weighted_sum_of_deck_features(mock_metrics):
+    """The score is BASE_SCORE plus each feature times its weight."""
+    deck = [
+        make_card("Swamp", count=15, types=["Land"]),
+        make_card("Good Spell", count=13, cmc=4, gihwr=59.0),
+        make_card("Big Spell", count=10, cmc=6, gihwr=55.0),
+    ]
+
+    score, notes = calculate_holistic_score(
+        deck, colors=["B"], pool_size=45, metrics=mock_metrics
+    )
+    features, _ = deck_features(deck, ["B"], 45, mock_metrics)
+
+    assert features["card_quality"] == pytest.approx(
+        (59.0 * 13 + 55.0 * 10) / 23 / 4.0 - 55.0 / 4.0
+    )
+    assert features["high_curve"] > 0 and features["lacks_evasion"] == 1.0
+    assert score == pytest.approx(
+        BASE_SCORE + sum(WEIGHTS[k] * v for k, v in features.items())
+    )
+    assert "High Curve / Needs Lands" in notes
 
 
 def test_estimate_record():
