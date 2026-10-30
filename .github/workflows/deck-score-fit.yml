@@ -1,0 +1,92 @@
+name: Deck score fit
+
+# Fits the deck score's weights to 17Lands Premier Draft game results and
+# reports how well the fitted and current weights predict wins on sets the fit
+# didn't see. See Tools/DeckScoreFit/README.md.
+#
+# Run by hand: Actions > Deck score fit > Run workflow.
+
+on:
+  workflow_dispatch:
+    inputs:
+      sets:
+        description: 'JSON list of set codes, e.g. ["FRA", "TDM"] (empty: all ten)'
+        default: ""
+      decks:
+        description: Decks per set
+        default: "50000"
+      salt:
+        description: Any text; changes which decks are sampled
+        default: ""
+
+permissions:
+  contents: read
+
+env:
+  DECKS: ${{ inputs.decks || '50000' }}
+  SALT: ${{ inputs.salt }}
+
+jobs:
+  features:
+    name: Features ${{ matrix.set }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        set: ${{ fromJSON(inputs.sets || '["DFT", "FDN", "FIN", "FRA", "HOB", "MSH", "SOS", "TDM", "TLA", "TMT"]') }}
+    env:
+      SET: ${{ matrix.set }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install poetry==2.4.1
+      - run: poetry install --no-interaction
+      - name: Download the game data and the app's dataset
+        run: |
+          curl -fsSL --retry 3 -o games.csv.gz \
+            "https://17lands-public.s3.amazonaws.com/analysis_data/game_data/game_data_public.$SET.PremierDraft.csv.gz"
+          curl -fsSL --retry 3 -o dataset.json.gz \
+            "https://unrealities.github.io/MTGA_Draft_17Lands/${SET}_PremierDraft_All_Data.json.gz"
+      - name: Sample decks
+        run: poetry run python Tools/DeckScoreFit/decks.py --games games.csv.gz --decks "$DECKS" --salt "$SALT" --out decks.json.gz
+      - name: Compute features
+        run: poetry run python Tools/DeckScoreFit/features.py --src . --decks decks.json.gz --dataset dataset.json.gz --set "$SET" --out "results/$SET.json"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: features-${{ matrix.set }}
+          path: results/
+
+  fit:
+    needs: features
+    if: ${{ !cancelled() }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install poetry==2.4.1
+      - run: poetry install --no-interaction
+      - name: Install LightGBM, for the yardstick only
+        run: poetry run pip install lightgbm
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: features-*
+          path: results
+          merge-multiple: true
+      - name: Fit
+        shell: bash  # with pipefail, so a failed fit fails the step
+        run: |
+          {
+            echo "# Deck score fit at \`${GITHUB_SHA::7}\`"
+            echo
+            poetry run python Tools/DeckScoreFit/fit.py results/*.json
+          } | tee report.md >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: fit-report
+          path: report.md
