@@ -99,9 +99,22 @@ def _parse_deck_to_arrays(deck_list):
         any_color = re.search(r"\bany (?:one |combination of )?colors?\b", text) is not None
 
         is_land[i] = "Land" in types
+        # Mana FILTERS (Prophetic Prism: "{1}, {T}: Add one mana of any
+        # color") cost mana to activate and produce the same amount — they
+        # convert, not add. Detection: a non-land permanent whose text
+        # matches "{N}, {t}: Add" (N >= 1) in the same sentence is a
+        # filter, not ramp. Sol Ring ("{T}: Add {C}{C}") and Llanowar
+        # Elves ("{T}: Add {G}") have no mana activation cost and remain
+        # ramp. Text is already lowercased at this point.
+        is_filter = bool(
+            not is_land[i]
+            and re.search(r"\{\d+\},?\s*\{t\}[^.]*\badd\b", text)
+        )
         is_ramp[i] = (
-            "fixing_ramp" in tags or any_color or "treasure" in text
-        ) and not is_land[i]
+            ("fixing_ramp" in tags or any_color or "treasure" in text)
+            and not is_land[i]
+            and not is_filter
+        )
         is_removal[i] = "removal" in tags
 
         # Calculate produced mana bitmask
@@ -314,7 +327,9 @@ def _run_fast_monte_carlo(
     pip_count,
     generic,
     iterations,
+    seed=0,
 ):
+    np.random.seed(seed)
     mulligans = 0
     screw_t3 = 0
     screw_t4 = 0
@@ -447,12 +462,23 @@ def _run_fast_monte_carlo(
     )
 
 
-def simulate_deck(deck_list, iterations=10000):
+def simulate_deck(deck_list, iterations=10000, seed=None):
+    """Deterministic when seed is provided; derived from the deck's identity
+    (CRC32 of names+counts) when not — the same deck always produces the
+    same simulation results, run to run, making deck comparisons
+    reproducible (Common Random Numbers)."""
+    
     arrays = _parse_deck_to_arrays(deck_list)
     if not arrays:
         return None
 
-    results = _run_fast_monte_carlo(*arrays, iterations)
+    if seed is None:
+        # Fixed seed: all decks share the same random stream (Common
+        # Random Numbers), making deck-to-deck comparisons fair and the
+        # entire suggestion pipeline deterministic.
+        seed = 0
+
+    results = _run_fast_monte_carlo(*arrays, iterations, seed)
 
     return {
         "mulligans": (results[0] / iterations) * 100.0,
