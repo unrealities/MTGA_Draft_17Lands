@@ -111,8 +111,8 @@ def identify_top_pairs(pool, metrics, tier_data=None):
 #
 # The weights were fit to game results: about 480,000 17Lands Premier Draft
 # decks over ten sets, controlling for the player (Tools/DeckScoreFit). Curve,
-# evasion, fixing and tribal adjustments were fit at about zero once card
-# quality was counted, so the score leaves them out.
+# evasion and tribal adjustments were fit at about zero once card quality was
+# counted, so the score leaves them out.
 BASE_SCORE = 75.0
 WEIGHTS = {
     # Mean rating of the deck's spells, in standard deviations from the format mean.
@@ -121,6 +121,12 @@ WEIGHTS = {
     "two_colors": 3.5,
     # 1 if a deck of 3+ colors has 2+ domain payoffs and 4+ fixing cards.
     "domain_supported": 3.2,
+    # For a deck of 3+ colors that isn't a supported domain deck, fixing cards
+    # short of one per color beyond the first. Players rarely build such decks,
+    # so game results can't fit it; this is fit instead to which of the deck
+    # builder's candidate builds drafters chose (see
+    # docs/logs/deck-builder-before-after.md).
+    "missing_fixing": -2.5,
     # Spells short of a full deck for the pool size, less one. Not fitted:
     # finished decks are never short.
     "missing_spells": -10.0,
@@ -131,6 +137,7 @@ WEIGHTS = {
 NOTES = {
     "two_colors": "Rock-Solid Mana",
     "domain_supported": "Supported Domain/Soup",
+    "missing_fixing": "Greedy Mana Strain",
     "missing_spells": "Incomplete Deck",
 }
 
@@ -187,6 +194,8 @@ def deck_features(deck, colors, pool_size, metrics, tier_data=None):
 
         if domain_payoffs >= 2 and fixing_count >= 4:
             features["domain_supported"] = 1.0
+        else:
+            features["missing_fixing"] = max(0, len(colors) - 1 - fixing_count)
 
     expected_spells = int(23 * (min(42, pool_size) / 42.0))
     if spell_count < expected_spells - 1:
@@ -234,8 +243,8 @@ def estimate_record(power_level, is_bo3=False):
     """Expected wins for a deck of this score, as text.
 
     Premier Draft (Bo1) runs to 7 wins or 3 losses; Traditional Draft (Bo3)
-    to 3 match wins or 2 match losses. The game win rate is that of 17Lands
-    users' decks of this score.
+    is always three matches. The game win rate is that of 17Lands users' decks
+    of this score.
     """
     log_odds = WIN_LOG_ODDS_AT_BASE + WIN_LOG_ODDS_PER_POINT * (
         power_level - BASE_SCORE
@@ -243,5 +252,5 @@ def estimate_record(power_level, is_bo3=False):
     p = 1 / (1 + exp(-log_odds))
     if is_bo3:
         match = p * p * (3 - 2 * p)  # two games out of three
-        return f"{expected_wins(match, 3, 2):.1f} wins"
+        return f"{3 * match:.1f} wins"
     return f"{expected_wins(p, 7, 3):.1f} wins"

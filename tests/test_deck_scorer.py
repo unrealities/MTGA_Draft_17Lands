@@ -184,7 +184,7 @@ def test_identify_top_pairs(mock_metrics):
 
 
 def test_holistic_score_domain_bonus(mock_metrics):
-    """3+ color decks with domain payoffs get a bonus only with the fixing for them."""
+    """3+ color decks get the domain bonus with enough fixing, or a penalty without."""
 
     # Scenario A: Greedy 4-color soup (No fixing)
     greedy_deck = [
@@ -197,6 +197,8 @@ def test_holistic_score_domain_bonus(mock_metrics):
         greedy_deck, colors=["W", "U", "B", "R"], pool_size=45, metrics=mock_metrics
     )
     assert "Domain" not in notes_greedy
+    # ...and is penalized for each fixing card short of one per extra color.
+    assert f"Greedy Mana Strain (-{3 * -WEIGHTS['missing_fixing']:.1f})" in notes_greedy
 
     # Scenario B: Supported 4-color soup (Lots of fixing)
     supported_deck = [
@@ -219,6 +221,7 @@ def test_holistic_score_domain_bonus(mock_metrics):
     assert (
         f"Supported Domain/Soup (+{WEIGHTS['domain_supported']:.1f})" in notes_supported
     )
+    assert "Greedy" not in notes_supported
 
 
 def test_holistic_score_incomplete_deck(mock_metrics):
@@ -266,8 +269,7 @@ def test_expected_wins_by_recursion():
         ) * by_recursion(p, max_wins, max_losses, wins, losses + 1)
 
     for p in (0.0, 0.3, 0.55, 1.0):
-        for caps in ((7, 3), (3, 2)):
-            assert expected_wins(p, *caps) == pytest.approx(by_recursion(p, *caps))
+        assert expected_wins(p, 7, 3) == pytest.approx(by_recursion(p, 7, 3))
 
 
 def test_estimate_record():
@@ -278,3 +280,5 @@ def test_estimate_record():
     assert 2.8 <= bo1[1] <= 3.2
     bo3 = [float(estimate_record(s, is_bo3=True).split()[0]) for s in (50, 75, 200)]
     assert bo3 == sorted(bo3) and bo3[-1] == 3.0
+    # Bo3 always plays three matches, so a coin-flip deck averages 1.5 wins.
+    assert 1.4 <= bo3[1] <= 1.6
