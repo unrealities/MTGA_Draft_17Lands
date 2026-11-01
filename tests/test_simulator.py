@@ -70,7 +70,8 @@ def _cast_with_fixed_order(deck, seen, turn):
     arrays = _parse_deck_to_arrays(deck)
     return _castable_on_turn(
         np.arange(40), 0, seen, turn,
-        arrays.is_land, arrays.is_ramp, arrays.costs, arrays.mana_produced,
+        arrays.is_land, arrays.is_ramp, arrays.is_filter, arrays.costs,
+        arrays.mana_produced,
         arrays.pips, arrays.pip_count, arrays.generic,
         np.zeros(MAX_SOURCES, dtype=np.int32),
         np.zeros(MAX_SOURCES, dtype=np.int32),
