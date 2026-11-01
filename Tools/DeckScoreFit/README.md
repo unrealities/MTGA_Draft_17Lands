@@ -48,7 +48,9 @@ quality itself is worth more or less than the ratings imply.
   model could gain over a weighted sum.
 - **Records:** the game win rate and expected Premier Draft wins at each score.
 - **For deck_scorer.py:** the fitted `WEIGHTS`, ready to paste, and the two
-  numbers that turn a score into a win rate.
+  numbers that turn a score into a win rate. `missing_fixing` keeps the app's
+  weight: game results can't fit it, so it is fit to drafters' builds instead
+  (`NOT_FROM_GAMES` in `fit.py`).
 
 ## On GitHub
 

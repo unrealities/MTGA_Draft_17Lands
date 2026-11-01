@@ -24,6 +24,12 @@ QUALITY = "card_quality"
 # Guards for unfinished decks. Finished decks never set them off, so the data
 # can't fit them; the few decks that do are left out.
 FIXED = ("missing_spells",)
+# Weights set from something other than game results. They are still fit, so
+# the other weights are measured with them in the model, but the report keeps
+# the app's weight for them. missing_fixing: players rarely build 3+ color
+# decks short of fixing, so it is fit to drafters' builds instead (see
+# docs/logs/deck-builder-before-after.md).
+NOT_FROM_GAMES = ("missing_fixing",)
 # A Premier Draft event ends at 7 wins or 3 losses.
 MAX_WINS, MAX_LOSSES = 7, 3
 
@@ -235,6 +241,8 @@ def report(data, out=sys.stdout):
         share = (data.X[:, i] != 0).mean()
         pts, se = fitted[k]
         flag = " ~0" if abs(pts) < 2 * se and k != QUALITY else ""
+        if k in NOT_FROM_GAMES:
+            flag += " (not used: the app's weight is kept)"
         shown = f"{pts:+.1f} ± {se:.1f}{flag}" if k != QUALITY else f"{pts:+.1f}"
         w(f"| {k} | {share:.1%} | {data.weights[k]:+.1f} | {shown} |")
     w()
@@ -260,7 +268,9 @@ def report(data, out=sys.stdout):
         held_out_report(data, w)
 
     weights = {k: round(fitted[k][0], 1) for k in data.names}
-    weights[QUALITY] = data.weights[QUALITY]
+    for k in (QUALITY, *NOT_FROM_GAMES):
+        if k in weights:
+            weights[k] = data.weights[k]
     a, b, score = record_curve(data, weights)
     w("## Records")
     w()

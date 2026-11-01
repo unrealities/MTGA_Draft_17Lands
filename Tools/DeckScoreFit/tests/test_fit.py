@@ -127,6 +127,26 @@ def test_report(tmp_path):
     assert weights["WIN_LOG_ODDS_PER_POINT"] > 0
 
 
+def test_report_keeps_the_apps_weight_for_features_not_fit_to_games():
+    out_files = files(n=3000)
+    rng = np.random.default_rng(1)
+    for f in out_files:
+        f["weights"] = dict(WEIGHTS, missing_fixing=-2.5)
+        for r in f["rows"]:
+            r["features"]["missing_fixing"] = float(rng.random() < 0.1)
+    data = fit.Data(out_files)
+    # Still fit, so the other weights are measured with it in the model...
+    assert "missing_fixing" in data.names
+    out = io.StringIO()
+    fit.report(data, out)
+    text = out.getvalue()
+    assert "the app's weight is kept" in text
+    # ...but the weights to paste keep the app's value, not the fitted ~0.
+    block = text.split("```python\n")[1].split("```")[0]
+    weights = ast.literal_eval(block.split("WEIGHTS = ")[1].split("\nWIN_")[0])
+    assert weights["missing_fixing"] == -2.5
+
+
 def test_one_set_skips_the_held_out_check():
     out = io.StringIO()
     fit.report(fit.Data(files(n=1000, sets=("AAA",))), out)
