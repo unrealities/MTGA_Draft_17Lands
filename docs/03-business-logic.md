@@ -23,8 +23,8 @@ The engine does not "lock in" colors based on the first few picks. It uses recen
 Instead of evaluating a card globally (e.g., its win rate across all 17Lands users), the engine identifies your leading "Color Pair" (e.g., Blue-Black/UB) and prioritizes data for that specific pairing.
 
 - **Gravity Logic:** The engine scores all 10 possible color pairs based on the weighted power of cards in your pool and the presence of "Gold" cards that reward specific pairs.
-- **Progressive Weighting:** Once your pool has a leading pair, a card's score is its Global GIHWR plus a weight times how much better (or worse) it does in that pair. The weight rises through each pack, from 0.65 at the first pick to 1.3 at the 15th. The pair's win rate is shrunk toward the global one when it has fewer than 1,000 games.
-- **Counted once:** The pair's win rate enters the score only through this weighting; there is no separate bonus for cards that do better in the pair than overall.
+- **Progressive Weighting:** Once your pool has a leading pair, a card's score is its Global GIHWR plus a weight times how much better (or worse) it does in that pair. The weight rises through each pack, from 0.65 at the first pick to 1.21 at the 13th, the last choice in a 14-card pack; it stops growing at the 15th, at 1.3. In Pick-Two drafts, where each pick takes two cards, pick N weighs like pick 2N − 1, when as many cards have left the pack. The pair's win rate is shrunk toward the global one when it has fewer than 1,000 games.
+- **Counted once:** The pair's win rate enters the score only through this weighting; there is no separate bonus for cards that do better in the pair than overall. When the weighting moves a card's score by 5 points or more (a third of a standard deviation), its reasons say so, for example **Better in UB (+6.2)** or **Worse in UB (-5.4)**.
 
 ---
 

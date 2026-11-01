@@ -30,14 +30,21 @@ class DraftAdvisor:
     IWD_PREMIUM_THRESHOLD = 4.5
     # Score a card at its overall win rate plus a weight times how much better
     # it does in the current archetype. The weight starts at ARCH_WEIGHT_START
-    # and grows by ARCH_WEIGHT_RAMP / TOTAL_PICKS a pick; the pick number is
-    # the pick within the pack, so it runs from 0.65 to 1.3 in each pack.
+    # and grows by ARCH_WEIGHT_RAMP / ARCH_RAMP_PICKS a pick within the pack:
+    # 0.65 at pick 1 and 1.21 at pick 13, the last choice in a 14-card pack.
+    # It stops growing at pick ARCH_RAMP_PICKS, at 1.3. Pick-Two drafts take
+    # two cards a pick, so their pick N counts as pick 2N - 1, when as many
+    # cards have left the pack.
     # Above 1, this also covers the bonus archetype cards used to get on top.
     # Replaying 30,000 17Lands drafts twice, these weights (three times the
     # old ones) matched drafters' picks 0.2-0.3 points more often than that
     # bonus did, and following them was more closely tied to drafters' wins.
+    ARCH_RAMP_PICKS = 15
     ARCH_WEIGHT_START = 0.6
-    ARCH_WEIGHT_RAMP = 2.1
+    ARCH_WEIGHT_RAMP = 0.7
+    # Name the archetype in a card's reasons once it moves the card's score by
+    # this many points (15 points is one standard deviation of win rate).
+    ARCH_REASON_POINTS = 5.0
 
     def __init__(self, set_metrics, taken_cards: List[Dict]):
         self.metrics = set_metrics
@@ -66,12 +73,17 @@ class DraftAdvisor:
         self.pool_metrics = self._analyze_pool()
 
     def evaluate_pack(
-        self, pack_cards: List[Dict], current_pick: int, current_pack: int = 1
+        self,
+        pack_cards: List[Dict],
+        current_pick: int,
+        current_pack: int = 1,
+        cards_per_pick: int = 1,
     ) -> List[Recommendation]:
         if not pack_cards:
             return []
         safe_pick = max(1, min(self.TOTAL_PICKS, current_pick))
         pack_number = max(1, current_pack)
+        arch_pick = (safe_pick - 1) * max(1, cards_per_pick) + 1
 
         on_color_pool = [
             c
@@ -121,7 +133,7 @@ class DraftAdvisor:
                 reasons = []
 
                 # --- STEP 1: Blended Base Score (With Bayesian Smoothing) ---
-                base_score = self._calculate_weighted_score(card, safe_pick)
+                base_score = self._calculate_weighted_score(card, arch_pick)
 
                 # --- STEP 2: Bomb Detection ---
                 z_score = (raw_gihwr - pack_mean) / pack_std
@@ -134,7 +146,14 @@ class DraftAdvisor:
 
                 # --- STEP 3: Lane ---
                 # The card's win rate in the lane's pair is already blended into
-                # the base score; this only favors cards in the lane's colors.
+                # the base score; say so when it moved the card noticeably, then
+                # favor cards in the lane's colors.
+                arch_points = base_score - self._score_from_wr(raw_gihwr)
+                if abs(arch_points) >= self.ARCH_REASON_POINTS:
+                    word = "Better" if arch_points > 0 else "Worse"
+                    reasons.append(
+                        f"{word} in {self.main_archetype} ({arch_points:+.1f})"
+                    )
                 is_on_lane = (
                     all(c in self.main_colors for c in card_colors)
                     if card_colors
@@ -508,9 +527,10 @@ class DraftAdvisor:
         try:
             stats = card.get("deck_colors", {})
             global_wr = float(stats.get("All Decks", {}).get("gihwr", 0.0))
+            ramp_pick = min(pick_number, self.ARCH_RAMP_PICKS)
             arch_weight = (
                 self.ARCH_WEIGHT_START
-                + (pick_number / self.TOTAL_PICKS) * self.ARCH_WEIGHT_RAMP
+                + (ramp_pick / self.ARCH_RAMP_PICKS) * self.ARCH_WEIGHT_RAMP
             )
             arch_stats = stats.get(self.main_archetype, {})
             arch_wr = float(arch_stats.get("gihwr", global_wr))
@@ -526,10 +546,13 @@ class DraftAdvisor:
                 else global_wr
             )
 
-            return max(
-                0.0,
-                50.0
-                + ((blended_wr - self.global_mean) / max(0.1, self.global_std)) * 15.0,
-            )
+            return self._score_from_wr(blended_wr)
         except:
             return 0.0
+
+    def _score_from_wr(self, wr: float) -> float:
+        """A win rate on the score scale: 50 at the format's mean, 15 points per SD."""
+        return max(
+            0.0,
+            50.0 + ((wr - self.global_mean) / max(0.1, self.global_std)) * 15.0,
+        )
