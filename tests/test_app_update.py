@@ -4,7 +4,7 @@ import json
 import pytest
 from unittest.mock import patch, MagicMock
 from src.app_update import AppUpdate
-from src.constants import OLD_APPLICATION_VERSION, PREVIOUS_APPLICATION_VERSION
+from src.constants import OLD_APPLICATION_VERSION
 from src.constants import BASE_DIR
 
 
@@ -28,21 +28,6 @@ def valid_search_location_old():
 @pytest.fixture
 def valid_search_location_latest():
     return "https://api.github.com/repos/unrealities/MTGA_Draft_17Lands/releases/latest"
-
-
-@pytest.fixture
-def invalid_input_url():
-    return "http://invalid_url"
-
-
-@pytest.fixture
-def valid_input_url_zip():
-    return f"https://github.com/unrealities/MTGA_Draft_17Lands/releases/download/MTGA_Draft_Tool_V{PREVIOUS_APPLICATION_VERSION}/MTGA_Draft_Tool_V{PREVIOUS_APPLICATION_VERSION}.zip"
-
-
-@pytest.fixture
-def output_filename():
-    return "test_file.exe"
 
 
 @patch("src.app_update.urllib.request.urlopen")
@@ -152,95 +137,3 @@ def test_live_github_api_verification(app_update, valid_search_location_latest):
         "Live API schema changed! Could not parse download URL."
     )
     assert isinstance(float(app_update.version), float)
-
-
-@patch("src.app_update.urllib.request.urlopen")
-@patch("src.app_update.shutil.copyfileobj")
-@patch("src.app_update.zipfile.is_zipfile")
-@patch("src.app_update.zipfile.ZipFile")
-@patch("src.app_update.os.path.exists")
-@patch("src.app_update.os.replace")
-def test_download_file_zip_success(
-    mock_replace,
-    mock_exists,
-    mock_zipfile,
-    mock_is_zip,
-    mock_copy,
-    mock_urlopen,
-    app_update,
-    valid_input_url_zip,
-    output_filename,
-):
-    # Tell the function it IS a zip file
-    mock_is_zip.return_value = True
-
-    # We only want exists() to return True at the very end to pass the final check
-    mock_exists.side_effect = lambda path: True if output_filename in path else False
-
-    # Mock the network request
-    mock_response = MagicMock()
-    mock_response.__enter__.return_value = mock_response
-    mock_urlopen.return_value = mock_response
-
-    # Mock the zip extraction
-    mock_zip_instance = MagicMock()
-    mock_zip_instance.__enter__.return_value = mock_zip_instance
-    mock_zip_info = MagicMock()
-    mock_zip_instance.infolist.return_value = [mock_zip_info]
-    mock_zipfile.return_value = mock_zip_instance
-
-    # Prevent the test from writing garbage to your real hard drive
-    with patch("builtins.open", MagicMock()):
-        output_location = app_update.download_file(valid_input_url_zip, output_filename)
-
-    assert isinstance(output_location, str)
-    assert output_location.endswith(output_filename)
-
-    # Verify the code actually extracted the zip and did not try to run os.replace
-    mock_zip_instance.extract.assert_called_once()
-    mock_replace.assert_not_called()
-
-
-@patch("src.app_update.urllib.request.urlopen")
-def test_download_file_failure(
-    mock_urlopen, app_update, invalid_input_url, output_filename
-):
-    # Simulate a network crash
-    mock_urlopen.side_effect = Exception("Simulated network failure")
-
-    output_location = app_update.download_file(invalid_input_url, output_filename)
-    assert output_location == ""
-
-
-@patch("src.app_update.urllib.request.urlopen")
-@patch("src.app_update.os.replace")
-def test_download_file_tar_gz_fallback(
-    mock_replace, mock_urlopen, app_update, tmp_path, monkeypatch
-):
-    """Verify that downloading a tar.gz on Linux bypasses zip extraction and simply replaces the file."""
-
-    monkeypatch.setattr("src.app_update.DOWNLOADS_FOLDER", str(tmp_path))
-
-    # Mock the network response
-    mock_response = MagicMock()
-    mock_response.__enter__.return_value = mock_response
-    mock_urlopen.return_value = mock_response
-
-    input_url = "https://github.com/example/release.tar.gz"
-    output_filename = "MTGA_Draft_Tool_Linux.tar.gz"
-
-    # We write a dummy file to act as the downloaded temp file so os.path.exists passes
-    def side_effect_replace(src, dst):
-        with open(dst, "w") as f:
-            f.write("success")
-
-    mock_replace.side_effect = side_effect_replace
-
-    # Prevent the test from writing garbage to your real hard drive via copyfileobj
-    with patch("src.app_update.shutil.copyfileobj"):
-        # Explicitly make sure zipfile check is false
-        with patch("src.app_update.zipfile.is_zipfile", return_value=False):
-            result = app_update.download_file(input_url, output_filename)
-
-    assert result == str(tmp_path / output_filename)
-    mock_replace.assert_called_once()

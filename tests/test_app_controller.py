@@ -138,3 +138,20 @@ class TestAppController:
 
         # It SHOULD have rescheduled itself to try again in 100ms
         mock_app.root.after.assert_called_once_with(100, controller.refresh_ui_data)
+
+    @pytest.mark.parametrize("enabled", [True, False])
+    def test_refresh_ui_data_respects_advisor_toggle(self, mock_app, enabled):
+        """With the Advisor turned off, no recommendations are computed or shown."""
+        mock_app.configuration.settings.advisor_enabled = enabled
+        mock_app.overlay_window = None
+        controller = AppController(mock_app)
+
+        with patch("src.ui.app_controller.DraftAdvisor") as mock_advisor, patch(
+            "src.ui.app_controller.filter_options", return_value=["All Decks"]
+        ), patch("src.ui.app_controller.get_deck_metrics"):
+            mock_advisor.return_value.evaluate_pack.return_value = ["rec"]
+            controller.refresh_ui_data()
+
+        assert mock_advisor.called is enabled
+        expected = ["rec"] if enabled else []
+        mock_app.dashboard.update_recommendations.assert_called_once_with(expected)

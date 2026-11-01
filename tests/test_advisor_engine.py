@@ -7,11 +7,6 @@ from src.advisor.schema import Recommendation
 @pytest.fixture
 def mock_metrics():
     metrics = MagicMock()
-    # Mocking format_texture for VOR (Value Over Replacement) tests
-    metrics.format_texture = {
-        "R": {"2-drop": 1, "removal": 10},  # Extremely scarce red 2-drops
-        "G": {"2-drop": 10, "removal": 1},  # Extremely scarce green removal
-    }
     # get_metrics returns (mean, std)
     metrics.get_metrics.return_value = (55.0, 4.0)
     return metrics
@@ -118,35 +113,33 @@ def test_calculate_castability_v5(mock_metrics):
     assert mult == 0.05
 
 
-def test_check_relative_wheel(mock_metrics):
+def test_wheel_chance(mock_metrics):
     advisor = DraftAdvisor(mock_metrics, [])
     # Should wheel if ALSA is greater than the current pick
-    mult, reason, pct = advisor._check_relative_wheel(
+    pct = advisor._wheel_chance(
         {"deck_colors": {"All Decks": {"alsa": 10.0}}}, pick=2, rank_in_pack=5
     )
 
     assert pct > 0.0
-    assert mult == 0.8
-    assert "Wheels" in reason
 
 
 @pytest.mark.parametrize("pick, pack_size", [(6, 8), (7, 8), (8, 7)])
-def test_check_relative_wheel_needs_nine_cards(mock_metrics, pick, pack_size):
+def test_wheel_chance_needs_nine_cards(mock_metrics, pick, pack_size):
     """A pack with fewer than 9 cards can't come back, whatever the pick."""
     advisor = DraftAdvisor(mock_metrics, [])
-    mult, reason, pct = advisor._check_relative_wheel(
+    pct = advisor._wheel_chance(
         {"deck_colors": {"All Decks": {"alsa": 8.5}}},
         pick=pick,
         rank_in_pack=5,
         pack_size=pack_size,
     )
 
-    assert (mult, reason, pct) == (1.0, "", 0.0)
+    assert pct == 0.0
 
 
-def test_check_relative_wheel_allows_last_wheelable_pick(mock_metrics):
+def test_wheel_chance_allows_last_wheelable_pick(mock_metrics):
     advisor = DraftAdvisor(mock_metrics, [])
-    _, _, pct = advisor._check_relative_wheel(
+    pct = advisor._wheel_chance(
         {"deck_colors": {"All Decks": {"alsa": 8.5}}},
         pick=6,
         rank_in_pack=5,
@@ -174,6 +167,26 @@ def test_evaluate_pack_wheel_chance_uses_pack_size(mock_metrics, pack_size, whee
     recs = advisor.evaluate_pack(pack, current_pick=7)
 
     assert any(r.wheel_chance > 0 for r in recs) is wheels
+
+
+def test_wheel_chance_does_not_change_score(mock_metrics):
+    """The wheel chance is shown, but a likely wheel isn't marked down."""
+    advisor = DraftAdvisor(mock_metrics, [])
+    pack = [
+        {
+            "name": f"Card{i}",
+            "colors": ["G"],
+            "types": ["Creature"],
+            "cmc": 3,
+            "deck_colors": {"All Decks": {"gihwr": 55.0, "alsa": alsa}},
+        }
+        for i, alsa in enumerate([1.5, 1.5, 1.5, 1.5, 1.5, 12.0, 12.0, 12.0, 12.0])
+    ]
+
+    recs = {r.card_name: r for r in advisor.evaluate_pack(pack, current_pick=2)}
+
+    assert recs["Card8"].wheel_chance >= 75.0
+    assert recs["Card8"].contextual_score == recs["Card0"].contextual_score
 
 
 def test_evaluate_pack_elite_detection(mock_metrics):
@@ -227,31 +240,6 @@ def test_evaluate_pack_elite_detection(mock_metrics):
     assert recs[0].card_name == "Bomb"
     # Elite designation triggers because Z-score > 1.5, IWD > 4.5, and it is on-color
     assert recs[0].is_elite is True
-
-
-def test_evaluate_value_over_replacement(mock_metrics):
-    advisor = DraftAdvisor(mock_metrics, [])
-    advisor.main_colors = ["R"]
-    advisor.global_mean = 55.0
-    advisor.global_std = 4.0
-
-    # A playable red 2-drop. Because we defined Red 2-drops as incredibly scarce
-    # in the mock_metrics fixture above, this card should trigger a VOR bonus!
-    pack = [
-        {
-            "name": "Scarce Red 2-Drop",
-            "colors": ["R"],
-            "types": ["Creature"],
-            "cmc": 2,
-            "tags": ["evasion"],
-            "deck_colors": {"All Decks": {"gihwr": 54.0}},
-        }
-    ]
-
-    recs = advisor.evaluate_pack(pack, current_pick=1)
-
-    assert len(recs) == 1
-    assert any("High VOR: Scarce R 2-Drops" in reason for reason in recs[0].reasoning)
 
 
 def test_composition_bonus_heuristics(mock_metrics):

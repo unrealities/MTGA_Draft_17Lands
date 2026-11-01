@@ -20,7 +20,6 @@ def example_configuration():
     # Create an example Configuration object for testing
     config = Configuration()
     config.features.override_scale_factor = 1.5
-    config.features.hotkey_enabled = True
     config.features.images_enabled = False
     return config
 
@@ -41,6 +40,23 @@ def test_read_configuration_existing_file(tmp_path, example_configuration):
 
     # Assert that the returned configuration matches the example configuration
     assert config == example_configuration
+
+
+def test_read_configuration_ignores_removed_hotkey_setting(
+    tmp_path, example_configuration
+):
+    # Configs saved by older versions still carry the removed hotkey flag.
+    data = example_configuration.model_dump()
+    data["features"]["hotkey_enabled"] = True
+    file_location = tmp_path / "config.json"
+    with open(file_location, "w") as f:
+        json.dump(data, f)
+
+    config, success = read_configuration(file_location)
+
+    assert success is True
+    assert config == example_configuration
+    assert "hotkey_enabled" not in config.features.model_dump()
 
 
 def test_read_configuration_nonexistent_file(tmp_path):

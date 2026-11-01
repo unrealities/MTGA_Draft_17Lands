@@ -301,3 +301,20 @@ def test_compact_overlay_close_triggers_callback(
         overlay._close_overlay()
         mock_write.assert_called_once()
         callback_mock.assert_called_once()
+
+
+@patch("tkinter.Toplevel.overrideredirect")
+@patch("tkinter.Toplevel.wm_overrideredirect")
+def test_compact_overlay_hides_advisor_tab_when_disabled(
+    mock_wm, mock_ov, root, mock_app_context
+):
+    """The Advisor tab is hidden when the Advisor is off and restored in place."""
+    config = Configuration()
+    config.settings.advisor_enabled = False
+    overlay = CompactOverlay(root, mock_app_context, config, lambda: None)
+
+    assert overlay.notebook.tab(overlay.tab_advisor, "state") == "hidden"
+
+    overlay.set_advisor_visible(True)
+    assert overlay.notebook.tab(overlay.tab_advisor, "state") == "normal"
+    assert overlay.notebook.index(overlay.tab_advisor) == 1
