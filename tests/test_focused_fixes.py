@@ -38,6 +38,15 @@ class TestManaFilterClassification:
                       types=("Creature",))
         assert _classify(elves) == (True, False, 16)
 
+    def test_servant_of_the_conduit_energy_cost_is_not_mana(self):
+        servant = _card(
+            "Servant of the Conduit",
+            "When this creature enters, you get {E}{E}.\n"
+            "{T}, Pay {E}: Add one mana of any color.",
+            mana_cost="{1}{G}", cmc=2, types=("Creature",),
+        )
+        assert _classify(servant) == (True, False, 31)
+
     def test_signet_makes_more_than_it_costs(self):
         signet = _card("Azorius Signet", "{1}, {T}: Add {W}{U}.", cmc=2,
                        mana_cost="{2}")

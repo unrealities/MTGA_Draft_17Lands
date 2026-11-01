@@ -97,7 +97,8 @@ def _mana_ability_balance(text):
         for sym in PIP_PATTERN.findall(cost):
             if sym.isdigit():
                 paid += int(sym)
-            elif sym not in ("t", "q", "x"):
+            # Energy is a counter cost, not mana spent on activation.
+            elif sym not in ("t", "q", "x", "e"):
                 paid += 1
 
         # "Add {R} or {G}" makes one mana; take the largest alternative
