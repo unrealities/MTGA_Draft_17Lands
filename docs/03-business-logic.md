@@ -52,12 +52,11 @@ Modern Limited is dictated by "Mana Velocity" and "Mana Stability."
 
 ---
 
-## 6. Value Over Replacement (VOR)
+## 6. Wheel Chance (Shown, Not Scored)
 
-The v5 engine moves beyond raw win rates by pre-calculating the **Format Texture** of a set when it loads.
+The engine estimates each card's chance of coming back from its ALSA and its rank in the pack, and shows it in the Wheel column. It doesn't change the card's score. Packs with fewer than 9 cards, and picks 9 and later, show no chance.
 
-- **Role Scarcity (VOR):** The engine analyzes the dataset to count how many "Playable" (WR > Baseline) Commons and Uncommons exist for critical roles (e.g., Removal, 2-Drops) in each color.
-  - If a user sees a Playable Red 2-Drop, and the engine knows there are only two viable Red 2-drops in the entire set, it applies a `High VOR (+6.0)` bonus.
+Replays of 15,000 17Lands drafts showed that value over replacement, the late-signal bonus, the wheel multiplier, the signal tie-breaker and the pack 3 deck-improvement bonus didn't change the advisor's picks or how following it related to winning, so the engine no longer uses them (v4.28). The Open Lanes panel still shows lane signals.
 
 ---
 
@@ -94,8 +93,25 @@ Evaluates the user's custom deck by running a **10,000-game Monte Carlo simulati
 
 - Applies pro-level London mulligan heuristics.
 - Calculates probabilities for `cast_t2/t3/t4`, Mana Screw, Mana Flood, and Color Screw.
+- **Mana filters** (Prophetic Prism, Chromatic Star), whose mana abilities cost as much mana as they make, count toward the colors a deck can cast but not toward its mana. Signets, Sol Ring, mana dorks and Treasure makers stay ramp.
+- **Repeatable results:** Every deck uses the same fixed random seed, and cards are put in a canonical order first, so a deck always gets the same results and card order or names don't change them.
 
-### C. On-Demand AI Auto-Optimizer
+### C. Deck Score & Estimated Record
+
+The deck builder ranks its candidate builds by a deck score:
+
+`75 + 12 × card quality + 3.5 if two colors or fewer + 3.2 for a supported domain deck − 2.5 per missing fixing card − 10 per missing spell`
+
+- **Card quality** is the mean win rate of the deck's spells, in standard deviations from the format mean.
+- **Supported domain:** a deck of 3+ colors with 2+ domain payoffs and 4+ fixing cards.
+- **Missing fixing:** for other decks of 3+ colors, fixing cards short of one per color beyond the first.
+- **Missing spells:** spells short of a full deck for the pool size, less one.
+
+The weights were fit to about 480,000 17Lands Premier Draft decks over ten sets, comparing players of similar skill (`Tools/DeckScoreFit`). Curve, evasion and tribal adjustments were worth about zero once card quality was counted, so the score leaves them out. The missing-fixing weight is fit instead to which candidate builds drafters chose; see [the deck builder's suggestions before and after](logs/deck-builder-before-after.md).
+
+The **estimated record** (`[Est: 3.5 wins]`) is the expected number of wins for a deck of that score: in Premier Draft, an event that ends at 7 wins or 3 losses; in Traditional Draft, three best-of-three matches.
+
+### D. On-Demand AI Auto-Optimizer
 
 Users can actively "brute-force" permutations of their current deck configuration via a dedicated background task.
 

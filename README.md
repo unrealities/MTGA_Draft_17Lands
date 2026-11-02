@@ -2,7 +2,7 @@
 
 Magic: The Gathering Arena draft tool that utilizes 17Lands data.
 
-**Version 4.27:** The Wheel column no longer shows a chance for packs that can't come back, and the Sealeddeck.tech export only opens sealeddeck.tech links. Also includes the 4.26 Quick Draft and Pick-Two fixes, which were never published separately. See the [release notes](release_notes.txt) for details.
+**Version 4.28:** The Draft Advisor counts your color pair's win rates once and drops scoring pieces that didn't change its picks, the deck builder's scores are fit to 17Lands game results and estimate expected wins, mana filters count as fixing rather than ramp, and a new Preferences setting turns the advisor off. See the [release notes](release_notes.txt) for details.
 
 **This application will automatically support new sets as soon as the sets are released on Arena _and_ the data is available on the [17Lands card ratings](https://www.17lands.com/card_ratings) page.**
 
@@ -78,7 +78,7 @@ macOS actively quarantines unsigned apps downloaded from the internet. To run th
 
 ## Marquee Features
 
-- **Compositional Brain (v5.5):** A custom tactical engine that calculates a 0-100 `VALUE` score for cards in your pack. It dynamically weights raw Z-Score power, color lane commitment, curve needs, and relative wheel probability to suggest optimal picks. Look for the ⭐ symbol for elite "Bomb" picks.
+- **Compositional Brain (v5.5):** A custom tactical engine that calculates a 0-100 `VALUE` score for cards in your pack. It dynamically weights raw Z-Score power, archetype win rates, color lane commitment, castability, and curve needs to suggest optimal picks. Look for the ⭐ symbol for elite "Bomb" picks. You can turn it off under `File -> Preferences...`.
 - **AI Monte Carlo Auto-Optimizer:** Click the "Auto-Optimize Deck" button to unleash a background simulation engine that mathematically tests different deck permutations (16 lands vs 17 lands, swapping out clunky 5-drops for efficient 2-drops) across 10,000 simulated games to find the perfect 40-card configuration.
 - **Sealed Studio:** A fully interactive drag-and-drop workspace specifically tailored for Sealed deckbuilding. Features an AI Shell Generator that automatically builds the top 3 mathematically optimal deck variants for your specific pool (e.g., Best 2-Color, Greedy Splash, Aggro). Saved sessions are isolated by Arena entry, restored decks respect the current pool, and clipboard imports keep sideboard cards out of the main deck.
 - **Mana Base Tools:** Auto Lands counts every card copy when filling a 40-card deck and allocating colors. Mana simulation uses the colors a source actually produces, one land drop per turn, and a shared mana budget for deploying ramp cards.
@@ -120,6 +120,7 @@ Access Settings via `File -> Preferences...`
 - **Highlight Row by Mana Cost:** Colors the background of table rows based on the card's color identity.
 - **Auto-Switch Deck Filter to Best Colors:** When the filter is set to "Auto", the app tracks your picks and will automatically switch to displaying data for your confirmed color pair once your lane is identified.
 - **Enable Draft Log Creation:** Records the draft step-by-step in a readable log file within the `./Logs` folder.
+- **Show Draft Advisor:** Turn off to hide the Advisor panel and the Mini Mode Advisor tab and skip the advisor's work on each pick. The Value column and the ⭐ pack markers come from the advisor, so they go blank too.
 
 ---
 
