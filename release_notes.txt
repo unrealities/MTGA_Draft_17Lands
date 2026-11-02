@@ -8,6 +8,7 @@
 * JamesYouL2: [Development] Removed the [+] pack marker, which could never appear, and four advisor result fields nothing read (#235).
 * JamesYouL2: [Development] Removed leftovers from the old hotkey listener: the pynput dependency, the unused hotkey_enabled setting, and an unused update downloader that also created a Downloads folder on every launch. Old config files still load (#225).
 * JamesYouL2: [Development] Added Tools/AdvisorReplay, which replays 17Lands drafts through a pull request's advisor and its base's and reports the difference, and Tools/DeckScoreFit, which fits the deck score's weights to game results. Both run as optional GitHub workflows, and CI runs their tests (#229, #231).
+* unrealities: [Development] The release's JavaScript audit now fails only on advisories in runtime dependencies. The tier scraper has none; jest and jsdom are test tooling, and their new moderate glob, minimatch and deepmerge advisories, which have no fix short of jest 25, blocked every release run since 4.27. Dev advisories are still reported.
 
 ===================== RELEASE NOTES 4.27 =====================
 * JamesYouL2: [Bug] The Wheel column no longer shows a chance for cards in packs with fewer than 9 cards, which can't come back. In 13- and 14-card sets this affected picks 6–8, which could show up to about 38% (#221).
