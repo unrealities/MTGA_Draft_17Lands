@@ -44,7 +44,7 @@ graph TD
 | :----------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :--------------- | :------------------------------ |
 | **Log Scanner**    | Tails `Player.log` on a background thread, executes normalized matching, manages state machine (Idle -> Drafting -> Sealed -> Game).                                       | OS File System   | **High** (App fails without it) |
 | **Data Manager**   | Downloads/Caches cloud datasets. Handles 17Lands/Scryfall fallback (if data is missing/incomplete).                                                                        | 17Lands API      | **High**                        |
-| **Advisor Engine** | The "Compositional Brain" (v5.5). Normalizes win-rates, calculates Z-Scores, applies Lane Commitment, tracks VOR (Value Over Replacement), and measures pip-density.       | None (Pure Math) | **High**                        |
+| **Advisor Engine** | The "Compositional Brain" (v5.5). Normalizes win-rates, calculates Z-Scores, weighs archetype win rates, applies Lane Commitment, and measures pip-density.                | None (Pure Math) | **High**                        |
 | **Deck Builder**   | Interactive drag-and-drop deck construction environment. Generates base archetypes, applies 1-click "Auto-Lands" math, and features an on-demand AI Monte Carlo optimizer. | Card Logic       | Medium                          |
 | **Sealed Studio**  | A dedicated workspace for 90+ card pools featuring AI Shell Generation and a 1-to-1 MTGA-style visual CMC-stacked interface.                                               | Card Logic       | Medium                          |
 
