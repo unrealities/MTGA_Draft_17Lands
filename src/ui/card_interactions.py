@@ -47,7 +47,6 @@ class CardInteractionManager:
                 raw_name = str(item_vals[name_idx])
                 card_name = (
                     raw_name.replace("⭐ ", "")
-                    .replace("[+] ", "")
                     .replace("*", "")
                     .strip()
                 )
@@ -109,7 +108,6 @@ class CardInteractionManager:
                 raw_name = str(item_vals[name_idx])
                 card_name = (
                     raw_name.replace("⭐ ", "")
-                    .replace("[+] ", "")
                     .replace("*", "")
                     .strip()
                 )
