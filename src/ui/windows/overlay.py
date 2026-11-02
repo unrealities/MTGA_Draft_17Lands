@@ -473,10 +473,6 @@ class CompactOverlay(tb.Toplevel):
                         display_name = f"⭐ {name}"
                         if not self.configuration.settings.card_colors_enabled:
                             row_tag = "elite_bomb"
-                    elif rec.archetype_fit == "High":
-                        display_name = f"[+] {name}"
-                        if not self.configuration.settings.card_colors_enabled:
-                            row_tag = "high_fit"
 
                 if is_picked:
                     row_tag = "picked"
@@ -639,7 +635,6 @@ class CompactOverlay(tb.Toplevel):
                 card_name = (
                     str(item_vals[name_idx])
                     .replace("⭐ ", "")
-                    .replace("[+] ", "")
                     .replace("..", "")
                     .strip()
                 )

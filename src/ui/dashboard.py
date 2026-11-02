@@ -678,13 +678,6 @@ class DashboardFrame(ttk.Frame):
                         if not self.configuration.settings.card_colors_enabled
                         else row_tag
                     )
-                elif rec.archetype_fit == "High":
-                    display_name = f"[+] {name}"
-                    row_tag = (
-                        "high_fit"
-                        if not self.configuration.settings.card_colors_enabled
-                        else row_tag
-                    )
 
             if is_picked:
                 row_tag = "picked"

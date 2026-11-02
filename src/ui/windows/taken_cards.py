@@ -407,7 +407,6 @@ class TakenCardsPanel(ttk.Frame):
                 card_name = (
                     str(item_vals[name_idx])
                     .replace("⭐ ", "")
-                    .replace("[+] ", "")
                     .replace("*", "")
                     .strip()
                 )

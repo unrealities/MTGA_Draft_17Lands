@@ -875,13 +875,12 @@ class ModernTreeview(ttk.Treeview):
             ("gold", "#fef3c7", "#92400e"),
             ("colorless", "#e2e8f0", "#1e293b"),
             ("elite_bomb", "#78350f", "#fde047"),
-            ("high_fit", "#0c4a6e", "#e0f2fe"),
             ("picked", "#15803d", "#ffffff"),
         ]:
             self.tag_configure(
                 (
                     f"{t}_card"
-                    if "elite" not in t and "high" not in t and "picked" not in t
+                    if "elite" not in t and "picked" not in t
                     else t
                 ),
                 background=b,

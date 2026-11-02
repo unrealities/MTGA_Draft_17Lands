@@ -193,20 +193,14 @@ class DraftAdvisor:
                 recommendations.append(
                     Recommendation(
                         card_name=name,
-                        base_win_rate=raw_gihwr,
                         contextual_score=round(max(0.0, final_score), 1),
                         z_score=round(z_score, 2),
-                        cast_probability=cast_mult,
                         wheel_chance=wheel_pct,
-                        functional_cmc=get_functional_cmc(card),
                         reasoning=reasons,
                         is_elite=(
                             (z_score >= self.BOMB_Z_SCORE and cast_mult > 0.4)
                             if not is_basic_land
                             else False
-                        ),
-                        archetype_fit=(
-                            self.main_archetype if is_on_lane else "Splash/Speculative"
                         ),
                         tags=card.get("tags", []),
                     )

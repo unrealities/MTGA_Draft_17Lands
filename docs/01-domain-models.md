@@ -75,15 +75,11 @@ The output of the logic engine sent to the UI, defined by `src/advisor/schema.py
 ```typescript
 interface Recommendation {
   card_name: string
-  base_win_rate: number
   contextual_score: number // Primary sort key (0-100)
   z_score: number // Statistical advantage vs pack average
-  cast_probability: number // 0.0 to 1.0 (Frank Karsten pip math)
   wheel_chance: number // 0.0 to 100.0 (Polynomial probability)
-  functional_cmc: number // Adjusted CMC for cost-reduction/alternate casting
   reasoning: string[] // Array of human-readable factors (e.g. ["Critical: Needs Removal"])
   is_elite: boolean // True if card is a game-warping Bomb
-  archetype_fit: string // "Neutral", "High", or "Splash/Speculative"
   tags: string[] // Scryfall semantic tags
 }
 ```
