@@ -208,6 +208,7 @@ class AppController:
             draft_id = self.orchestrator.scanner.current_draft_id
             start_time = self.orchestrator.scanner.draft_start_time
             event_string = self.orchestrator.scanner.event_string
+            cards_per_pick = self.orchestrator.scanner.cards_per_pick
         finally:
             self.orchestrator.scanner.lock.release()
 
@@ -224,7 +225,9 @@ class AppController:
         recommendations = []
         if self.config.settings.advisor_enabled:
             advisor = DraftAdvisor(metrics, taken_cards)
-            recommendations = advisor.evaluate_pack(pack_cards, pi, current_pack=pk)
+            recommendations = advisor.evaluate_pack(
+                pack_cards, pi, current_pack=pk, cards_per_pick=cards_per_pick
+            )
 
         # UPDATE UI STATE
         if pk > 0:

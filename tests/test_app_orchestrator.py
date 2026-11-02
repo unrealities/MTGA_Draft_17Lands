@@ -43,6 +43,7 @@ class TestAppOrchestrator:
         scanner.retrieve_color_win_rate.return_value = {"Auto": "Auto", "WG": "WG"}
         scanner.retrieve_current_limited_event.return_value = ("ECL", "PremierDraft")
         scanner.retrieve_current_pack_and_pick.return_value = (1, 1)
+        scanner.cards_per_pick = 1
         scanner.retrieve_taken_cards.return_value = []
         scanner.retrieve_draft_history.return_value = [
             {"Pack": 1, "Pick": 1, "Cards": ["1"]}

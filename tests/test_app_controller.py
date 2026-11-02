@@ -155,3 +155,23 @@ class TestAppController:
         assert mock_advisor.called is enabled
         expected = ["rec"] if enabled else []
         mock_app.dashboard.update_recommendations.assert_called_once_with(expected)
+
+    @pytest.mark.parametrize("cards_per_pick", [1, 2])
+    def test_refresh_ui_data_tells_the_advisor_cards_per_pick(
+        self, mock_app, cards_per_pick
+    ):
+        """Pick-Two drafts take two cards a pick, and the advisor is told so."""
+        mock_app.configuration.settings.advisor_enabled = True
+        mock_app.overlay_window = None
+        mock_app.orchestrator.scanner.cards_per_pick = cards_per_pick
+        controller = AppController(mock_app)
+
+        with patch("src.ui.app_controller.DraftAdvisor") as mock_advisor, patch(
+            "src.ui.app_controller.filter_options", return_value=["All Decks"]
+        ), patch("src.ui.app_controller.get_deck_metrics"):
+            mock_advisor.return_value.evaluate_pack.return_value = []
+            controller.refresh_ui_data()
+
+        mock_advisor.return_value.evaluate_pack.assert_called_once_with(
+            [], 1, current_pack=1, cards_per_pick=cards_per_pick
+        )
