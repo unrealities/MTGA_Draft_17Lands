@@ -1,3 +1,8 @@
+===================== RELEASE NOTES 4.29 =====================
+* unrealities: [Bug] The post-draft recap no longer crops its content on high-DPI Windows displays. The mana curve, card-type chart and signal meter size themselves from their label fonts so labels stay inside the chart and clear of each other, and each recap tab now scrolls when the pane is too short to show it all (#238).
+* unrealities: [Bug] The pool-balance donut stays inside narrow panels: it shrinks to the room the legend leaves, and is hidden if it can't fit.
+* unrealities: [Development] The test suite no longer hangs on Windows when a previous test's window is still open, and a per-test watchdog (PYTEST_HANG_TIMEOUT, default 60 s) names any test that does hang. The display-scaling chart test is skipped on macOS, where Tk ignores tk scaling for fonts.
+
 ===================== RELEASE NOTES 4.28 =====================
 * JamesYouL2: [Feature] Preferences has a new Show Draft Advisor setting (on by default). Turning it off hides the Advisor panel and the Mini Mode Advisor tab and skips the advisor's work on each pick; the Value column and the ⭐ pack markers go blank with it (#224).
 * JamesYouL2: [Advisor] A card's win rate in your color pair is now counted once. The separate Archetype Glue and Synergy bonuses are gone, and the pair's weight in the base score is three times larger, rising from 0.65 at a pack's first pick to 1.3 by its 15th. Every card now gets the same weight, including cards that do worse in your pair, and a card's reasons say so when the pair moves its score by 5 points or more (e.g. "Better in UB (+6.2)"). Pick-Two drafts weigh pick N like pick 2N − 1. In replays of 30,000 17Lands drafts this matched drafters' picks slightly more often (#234).
