@@ -127,3 +127,108 @@ class TestDraftRecapScreen:
 
         # UI should not have updated
         assert "Pool Power Grade: --" in recap.lbl_recovery_grade.cget("text")
+
+
+def _long_pool():
+    """A 50-card pool whose stat boxes all fill to six long lines."""
+    pool = []
+    for i in range(40):
+        pool.append(
+            {
+                "name": f"Blossom-Blessed Archangel of Dawn {i}",
+                "cmc": 1 + i % 6,
+                "types": ["Creature"] if i % 2 else ["Sorcery"],
+                "subtypes": ["Human", "Soldier", "Angel"],
+                "tags": ["removal", "card_advantage", "evasion"],
+                "rarity": "rare" if i % 3 == 0 else "uncommon",
+                "deck_colors": {
+                    "All Decks": {"gihwr": 52.0 + i % 9, "alsa": 1.5, "ata": 9.0}
+                },
+            }
+        )
+    pool.append(
+        {"name": "Gilded Gate", "types": ["Land"], "deck_colors": {"All Decks": {}}}
+    )
+    pool += [{"name": "Plains", "types": ["Land", "Basic"]} for _ in range(9)]
+    return pool
+
+
+class TestDraftRecapLayout:
+    """Issue #238: the recap must never silently crop its stat boxes."""
+
+    @pytest.fixture
+    def root(self):
+        root = tkinter.Tk()
+        Theme.apply(root, "Dark")
+        yield root
+        root.destroy()
+
+    def _render(self, root, tk_scaling, width, height):
+        root.tk.call("tk", "scaling", tk_scaling)
+        host = tkinter.Toplevel(root)
+        host.geometry(f"{width}x{height}+0+0")
+        recap = DraftRecapScreen(host)
+        recap.pack(fill="both", expand=True)
+        metrics = MagicMock()
+        metrics.get_metrics.return_value = (55.0, 3.5)
+        with patch("src.ui.dashboard_recap.threading.Thread"):
+            recap.update_summary(_long_pool(), metrics, "", "PremierDraft")
+        for tab in range(3):
+            recap.recap_notebook.select(tab)
+            for _ in range(3):
+                host.update()
+        return recap
+
+    def _stat_boxes(self, recap):
+        return [
+            getattr(recap, name).master
+            for name in (
+                "lbl_recap_archetypes",
+                "lbl_recap_best",
+                "lbl_recap_steals",
+                "lbl_recap_reaches",
+                "lbl_synergy_tribes",
+                "lbl_synergy_roles",
+                "lbl_synergy_staples",
+                "lbl_synergy_lands",
+                "lbl_recap_rares",
+            )
+        ]
+
+    def _boxes_by_tab(self, recap):
+        """Yield (tab index, stat box) with that tab selected and laid out."""
+        tabs = recap.recap_notebook.tabs()
+        for box in self._stat_boxes(recap):
+            tab = next(i for i, t in enumerate(tabs) if str(box).startswith(t + "."))
+            recap.recap_notebook.select(tab)
+            recap.update()
+            yield tab, box
+
+    def test_short_pane_scrolls_instead_of_cropping(self, root):
+        recap = self._render(root, 192 / 72, 900, 320)
+
+        for tab, box in self._boxes_by_tab(recap):
+            assert box.winfo_ismapped(), (tab, box.cget("text"))
+            assert box.winfo_height() >= box.winfo_reqheight(), box.cget("text")
+
+        for tab, scroller in enumerate(recap.tab_scrollers):
+            recap.recap_notebook.select(tab)
+            recap.update()
+            assert scroller.canvas.yview() != (0.0, 1.0), tab
+
+    def test_tall_pane_fills_without_scrolling(self, root):
+        recap = self._render(root, 96 / 72, 1400, 1100)
+
+        for tab, scroller in enumerate(recap.tab_scrollers):
+            recap.recap_notebook.select(tab)
+            recap.update()
+            assert scroller.canvas.yview() == (0.0, 1.0), tab
+            # The content stretches to the visible area so the grid rows expand.
+            assert scroller.content.winfo_height() >= scroller.canvas.winfo_height()
+
+    def test_stat_text_wraps_to_its_own_box(self, root):
+        recap = self._render(root, 192 / 72, 900, 320)
+        for _, box in self._boxes_by_tab(recap):
+            label = box.winfo_children()[0]
+            wrap = int(str(label.cget("wraplength")) or 0)
+            assert 0 < wrap <= label.winfo_width()
