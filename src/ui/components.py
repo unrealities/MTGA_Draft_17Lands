@@ -1493,12 +1493,15 @@ class TypePieChart(tb.Frame):
         legend_w = text_x + max(
             measure_text(self, self.label_font, t)[0] for t in labels.values()
         )
+        # Shrink the donut, never the legend, when the canvas is narrow or short:
+        # tighten the gap first, then the donut, and drop it if it can't fit.
+        room = w - legend_w - 2 * self.pad
         gap = Theme.scaled_val(20)
-        # Shrink the donut, never the legend, when the canvas is narrow or short.
-        pie_size = max(
-            self.min_pie_size,
-            min(self.pie_size, w - legend_w - gap - 2 * self.pad, h - 2 * self.pad),
-        )
+        if room - gap < self.min_pie_size:
+            gap = Theme.scaled_val(8)
+        pie_size = min(self.pie_size, room - gap, h - 2 * self.pad)
+        if pie_size < Theme.scaled_val(16):
+            pie_size = gap = 0
         pie_r = pie_size / 2
         total_w = legend_w + gap + pie_size
         sx = max(self.pad, (w - total_w) / 2)
@@ -1519,6 +1522,9 @@ class TypePieChart(tb.Frame):
                 anchor="w",
             )
             ly += self.row_h
+
+        if not pie_size:
+            return
 
         # 2. Draw Pie Chart on the Right
         cx = sx + legend_w + gap + pie_r
@@ -1553,14 +1559,16 @@ class TypePieChart(tb.Frame):
             outline="",
         )
 
-        # Total text in center
-        self.canvas.create_text(
-            cx,
-            cy,
-            text=str(tl),
-            fill=Theme.TEXT_MAIN,
-            font=self.total_font,
-        )
+        # Total text in center, when the hole is big enough to hold it
+        text_w, text_h = measure_text(self, self.total_font, str(tl))
+        if max(text_w, text_h) <= 2 * inner_r:
+            self.canvas.create_text(
+                cx,
+                cy,
+                text=str(tl),
+                fill=Theme.TEXT_MAIN,
+                font=self.total_font,
+            )
 
 
 class ScrolledFrame(tb.Frame):

@@ -136,6 +136,25 @@ def test_type_pie_fits_narrow_sidebar(root):
 
 
 @pytest.mark.parametrize("tk_scaling", [SCALE_100, SCALE_200])
+@pytest.mark.parametrize("spare", [0, 30, 80])
+def test_type_pie_never_overflows_beside_wide_legend(root, tk_scaling, spare):
+    """Widths are taken from the measured legend, so this holds whatever font
+    the OS substitutes (CI's Linux runner lacks the Ubuntu font)."""
+    from src.ui.components import measure_text
+
+    host = _host(root, tk_scaling, 100)
+    pie = TypePieChart(host)
+    counts = {"Creature": 24, "Enchantment": 1, "Planeswalker": 2}
+    legend_w = pie.dot_w + max(
+        measure_text(pie, pie.label_font, f"{k}: {v}")[0] for k, v in counts.items()
+    )
+    host.chart_width = legend_w + 2 * pie.pad + spare
+    pie.update_counts(counts)
+    _show(pie)
+    _assert_inside(pie.canvas)
+
+
+@pytest.mark.parametrize("tk_scaling", [SCALE_100, SCALE_200])
 def test_signal_meter_labels_fit(root, tk_scaling):
     host = _host(root, tk_scaling, 300)
     meter = SignalMeter(host)
