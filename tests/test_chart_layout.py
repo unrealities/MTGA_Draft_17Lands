@@ -75,6 +75,9 @@ def test_mana_curve_labels_fit(root, tk_scaling):
 
 
 def test_mana_curve_grows_with_display_scaling(root):
+    # Aqua Tk draws point-sized fonts at a fixed 72 DPI and ignores tk scaling.
+    if root.tk.call("tk", "windowingsystem") == "aqua":
+        pytest.skip("tk scaling does not enlarge fonts on macOS")
     host = _host(root, SCALE_100, 600)
     small = ManaCurvePlot(host, ideal_distribution=[])
     root.tk.call("tk", "scaling", SCALE_200)

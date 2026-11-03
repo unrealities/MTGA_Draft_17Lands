@@ -2,7 +2,7 @@
 
 Magic: The Gathering Arena draft tool that utilizes 17Lands data.
 
-**Version 4.28:** The Draft Advisor counts your color pair's win rates once and drops scoring pieces that didn't change its picks, the deck builder's scores are fit to 17Lands game results and estimate expected wins, mana filters count as fixing rather than ramp, and a new Preferences setting turns the advisor off. See the [release notes](release_notes.txt) for details.
+**Version 4.29:** The post-draft recap no longer crops its charts and stat boxes on high-DPI Windows displays, and its tabs scroll when the pane is short. See the [release notes](release_notes.txt) for details.
 
 **This application will automatically support new sets as soon as the sets are released on Arena _and_ the data is available on the [17Lands card ratings](https://www.17lands.com/card_ratings) page.**
 
