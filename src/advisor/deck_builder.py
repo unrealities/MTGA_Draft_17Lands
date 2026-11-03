@@ -5,11 +5,11 @@ AI Deck Suggester and Auto-Optimizer. Generates distinct archetype variants.
 
 import copy
 import logging
-import re
 import itertools
 from src import constants
 from src.card_utils import get_functional_cmc, stack_cards
 from src.utils import normalize_color_string
+from src.mana_cost import mana_color_demand, off_color_requirements
 from src.advisor.mana_base import (
     is_castable,
     select_useful_lands,
@@ -321,13 +321,7 @@ def optimize_deck(base_deck, base_sb, archetype_key, colors):
         permutations.append((f"Play 16 Lands (+{best_sb_spell['name']})", d, s))
 
     if worst_colorless_land:
-        pip_counts = {c: 0 for c in constants.CARD_COLORS}
-        for c in spells:
-            cost = c.get("mana_cost", "")
-            for pip in re.findall(r"\{(.*?)\}", cost):
-                for opt in pip.split("/"):
-                    if opt in pip_counts:
-                        pip_counts[opt] += c.get("count", 1)
+        pip_counts = mana_color_demand(spells, colors)
 
         best_basic_color = (
             max(pip_counts, key=pip_counts.get)
@@ -436,19 +430,7 @@ def suggest_deck(
             if spell_count < 15:
                 return
 
-            pips = {c: 0 for c in constants.CARD_COLORS}
-            for card in spells:
-                cost = card.get("mana_cost", "")
-                if not cost:
-                    for c in card.get("colors", []):
-                        if c in pips:
-                            pips[c] += card.get("count", 1)
-                    continue
-                for pip in re.findall(r"\{(.*?)\}", cost):
-                    for opt in [
-                        c for c in pip.split("/") if c in constants.CARD_COLORS
-                    ]:
-                        pips[opt] += card.get("count", 1)
+            pips = mana_color_demand(spells, colors)
 
             active_colors = sorted(
                 [c for c, count in pips.items() if count > 0],
@@ -772,34 +754,23 @@ def build_variant_greedy(pool, colors, metrics, tier_data=None):
     splash_candidates, best_rating = [], global_mean - (global_std * 0.5)
 
     for card in pool:
-        card_colors, mana_cost = card.get("colors", []), card.get("mana_cost", "")
-        if (
-            is_castable(card, colors, strict=True)
-            or not card_colors
-            or len(card_colors) > 1
-        ):
+        off_color = off_color_requirements(card, colors)
+        if not off_color or "Land" in card.get("types", []):
             continue
-
-        splash_col, off_color_pips = card_colors[0], 0
-        for pip in re.findall(r"\{(.*?)\}", mana_cost):
-            options = [c for c in pip.split("/") if c in constants.CARD_COLORS]
-            if options and not any(opt in colors for opt in options):
-                off_color_pips += 1
-
-        if off_color_pips > 1:
-            total_fixing = fixing_sources.get(splash_col, 0) + count_fixing(pool).get(
-                splash_col, 0
-            )
-            if not (
-                off_color_pips == 2
-                and get_functional_cmc(card) >= 5
+        rating = get_card_rating(card, ["All Decks"], metrics)
+        # A one-color splash must satisfy every remaining symbol. A hybrid
+        # can supply either route; genuine {U}{R} gold has no one-color route.
+        for splash_col in constants.CARD_COLORS:
+            if not all(splash_col in options for options in off_color):
+                continue
+            total_fixing = fixing_sources.get(splash_col, 0)
+            if len(off_color) > 1 and not (
+                len(off_color) == 2 and get_functional_cmc(card) >= 5
                 and total_fixing >= 3
             ):
                 continue
-
-        rating = get_card_rating(card, ["All Decks"], metrics)
-        if rating > best_rating and fixing_sources.get(splash_col, 0) >= 1:
-            splash_candidates.append((card, splash_col, rating))
+            if rating > best_rating and total_fixing >= 1:
+                splash_candidates.append((card, splash_col, rating))
 
     if not splash_candidates:
         return None, ""
