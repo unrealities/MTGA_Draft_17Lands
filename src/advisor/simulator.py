@@ -9,12 +9,10 @@ from typing import NamedTuple
 
 import numpy as np
 from numba import njit
-from src.mana_cost import mana_symbols
 
 # Mana Bitmask Mapping
 COLOR_BITS = {"W": 1, "U": 2, "B": 4, "R": 8, "G": 16}
 ANY_COLOR = 31  # W|U|B|R|G
-TWO_GENERIC = 32  # A pip may instead be paid with two generic mana ({2/U}).
 
 # Fixed widths so the arrays can be consumed by the numba kernel.
 DECK_SIZE = 40
@@ -41,13 +39,14 @@ def parse_mana_cost(mana_cost, fallback_cmc=0):
     Splits a printed mana cost into (colored_pips, generic).
 
     colored_pips is a list of bitmasks; each pip may be paid by any color in
-    its mask ({G/U} -> G|U, {G/P} -> G). TWO_GENERIC marks the alternative
-    two-generic payment of {2/W}; it is not a mana color. {C} and {S} remain
-    approximated as generic; life payments are not modeled. Only the front face of
+    its mask ({G/U} -> G|U, {G/P} -> G). Numbers add to generic, {2/W}
+    counts as 2 generic, {C} and {S} count as generic and {X} counts as 0, so
+    the total always matches the printed mana value. Only the front face of
     split / modal costs is used. A card without a mana_cost string falls back
     to `fallback_cmc` generic mana.
     """
-    symbols = mana_symbols(mana_cost)
+    cost = str(mana_cost or "").split("//")[0]
+    symbols = PIP_PATTERN.findall(cost)
     if not symbols:
         try:
             return [], max(0, int(fallback_cmc or 0))
@@ -55,18 +54,22 @@ def parse_mana_cost(mana_cost, fallback_cmc=0):
             return [], 0
 
     colored, generic = [], 0
-    for options in symbols:
-        if len(options) == 1 and next(iter(options)).isdigit():
-            generic += int(next(iter(options)))
+    for sym in symbols:
+        sym = sym.upper()
+        if sym.isdigit():
+            generic += int(sym)
+            continue
+        # Monocolored hybrid {2/W}: count it at its mana value (2 generic)
+        digits = [opt for opt in sym.split("/") if opt.isdigit()]
+        if digits:
+            generic += int(digits[0])
             continue
         mask = 0
-        for opt in options:
+        for opt in sym.split("/"):
             mask |= COLOR_BITS.get(opt, 0)
         if mask:
-            if "2" in options:
-                mask |= TWO_GENERIC
             colored.append(mask)
-        elif options.intersection(("C", "S")):
+        elif sym in ("C", "S"):
             generic += 1
         # X, Y, Z and unknown symbols contribute nothing to the mana value
     return colored, generic
@@ -176,14 +179,13 @@ def _parse_deck_to_arrays(deck_list):
         # Printed cost (castability deliberately ignores cycling / alt costs)
         if not is_land[i]:
             colored, gen = parse_mana_cost(c.get("mana_cost", ""), c.get("cmc", 0))
-            total = sum(2 if p & TWO_GENERIC else 1 for p in colored) + gen
+            total = len(colored) + gen
             # Pips beyond MAX_PIPS (8+ colored pips) are treated as generic
-            gen += sum(2 if p & TWO_GENERIC else 1 for p in colored[MAX_PIPS:])
             colored = colored[:MAX_PIPS]
             for p, mask in enumerate(colored):
                 pips[i, p] = mask
             pip_count[i] = len(colored)
-            generic[i] = min(gen, 100)
+            generic[i] = min(total - len(colored), 100)
             costs[i] = min(total, 100)
 
     return DeckArrays(
@@ -212,9 +214,9 @@ def _fill_cover(src_masks, n_src, cover):
 
 
 @njit(cache=True)
-def _payment_size(card, pips, pip_count, generic, n_src, cover):
+def _can_pay(card, pips, pip_count, generic, n_src, cover):
     """
-    Minimum payable mana total, or -1, using distinct mana sources.
+    True if the card's cost can be paid by n_src distinct mana sources.
 
     Every pip needs its own source. The colored pips must be matched to
     distinct sources that can make one of their colors; by Hall's theorem that
@@ -224,60 +226,17 @@ def _payment_size(card, pips, pip_count, generic, n_src, cover):
     """
     k = pip_count[card]
     if k + generic[card] > n_src:
-        return -1
-    optional = 0
-    for p in range(k):
-        if pips[card, p] & TWO_GENERIC:
-            optional |= 1 << p
-    # Enumerate generic-vs-colored payments only for two-brid pips. With no
-    # two-brid (the normal case), run Hall's matching once as before.
-    generic_choice = optional
-    best = 1000
-    while True:
-        extra = 0
+        return False
+    for subset in range(1, 1 << k):
+        union = 0
+        size = 0
         for p in range(k):
-            if generic_choice & (1 << p):
-                extra += 1  # two generic instead of one colored
-        total = k + generic[card] + extra
-        if total <= n_src and total < best:
-            valid = True
-            colored = ((1 << k) - 1) ^ generic_choice
-            subset = colored
-            while subset:
-                union = 0
-                size = 0
-                for p in range(k):
-                    if subset & (1 << p):
-                        union |= pips[card, p] & ANY_COLOR
-                        size += 1
-                if cover[union] < size:
-                    valid = False
-                    break
-                subset = (subset - 1) & colored
-            if valid:
-                best = total
-        if generic_choice == 0:
-            break
-        generic_choice = (generic_choice - 1) & optional
-    return best if best < 1000 else -1
-
-
-@njit(cache=True)
-def _can_pay(card, pips, pip_count, generic, n_src, cover):
-    return _payment_size(card, pips, pip_count, generic, n_src, cover) >= 0
-
-
-@njit(cache=True)
-def _is_drop(card, turn, costs, pips, pip_count, generic):
-    # Ordinary spells keep the existing exact-mana-value curve semantics.
-    # A two-brid spell may also have a cheaper on-curve payment mode.
-    if costs[card] == turn:
-        return True
-    if costs[card] > turn and pip_count[card] + generic[card] <= turn:
-        for p in range(pip_count[card]):
-            if pips[card, p] & TWO_GENERIC:
-                return True
-    return False
+            if subset & (1 << p):
+                union |= pips[card, p]
+                size += 1
+        if cover[union] < size:
+            return False
+    return True
 
 
 @njit(cache=True)
@@ -339,20 +298,16 @@ def _collect_sources(
     has_cover = False
     for j in range(start, start + prev_seen):
         idx = deck_indices[j]
-        if (
-            (is_ramp[idx] or is_filter[idx])
-            and pip_count[idx] + generic[idx] < turn and n < MAX_SOURCES
-        ):
+        if (is_ramp[idx] or is_filter[idx]) and costs[idx] < turn and n < MAX_SOURCES:
             if not has_cover:
                 _fill_cover(land_masks, n_prev, cover)
                 has_cover = True
-            paid = _payment_size(idx, pips, pip_count, generic, remaining, cover)
-            if paid >= 0:
+            if _can_pay(idx, pips, pip_count, generic, remaining, cover):
                 src_masks[n] = mana_produced[idx]
                 n += 1
                 if is_ramp[idx]:
                     usable += 1
-                remaining -= paid
+                remaining -= costs[idx]
     return n, usable
 
 
@@ -376,13 +331,13 @@ def _castable_on_turn(
 ):
     """
     Returns (has_drop, castable): whether a non-land card with mana value
-    `turn` (or a cheaper two-brid mode on that curve slot) is in hand, and
-    whether one can be cast from the mana sources available then.
+    `turn` is in hand, and whether at least one such card can be cast on
+    `turn` from the mana sources available then.
     """
     has_drop = False
     for j in range(start, start + seen):
         idx = deck_indices[j]
-        if not is_land[idx] and _is_drop(idx, turn, costs, pips, pip_count, generic):
+        if not is_land[idx] and costs[idx] == turn:
             has_drop = True
             break
     if not has_drop:
@@ -405,10 +360,13 @@ def _castable_on_turn(
         land_masks,
         cover,
     )
+    if n_src < turn:
+        return True, False
+
     _fill_cover(src_masks, n_masks, cover)
     for j in range(start, start + seen):
         idx = deck_indices[j]
-        if not is_land[idx] and _is_drop(idx, turn, costs, pips, pip_count, generic):
+        if not is_land[idx] and costs[idx] == turn:
             if _can_pay(idx, pips, pip_count, generic, n_src, cover):
                 return True, True
     return True, False
