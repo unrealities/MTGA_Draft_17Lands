@@ -52,6 +52,18 @@ class Dataset:
     # dataset switch to be re-queued instead of hitting Scryfall forever.
     MAX_RESOLVE_ATTEMPTS = 10
 
+    @staticmethod
+    def _card_metadata(card):
+        """Reusable ID metadata; statistics belong only to the active dataset.
+
+        Also migrates legacy custom_cards.json entries, which could contain a
+        complete card copied from another set, event, user group or time range.
+        Never mutate that card: a view may still hold the old dataset snapshot.
+        """
+        metadata = dict(card)
+        metadata.pop(DATA_FIELD_DECK_COLORS, None)
+        return metadata
+
     def _load_custom_cache(self):
         import os
         import json
@@ -63,7 +75,7 @@ class Dataset:
                 with open(cache_path, "r", encoding="utf-8") as f:
                     cached = json.load(f)
                 self._fallback_ratings = {
-                    k: v for k, v in cached.items()
+                    k: self._card_metadata(v) for k, v in cached.items()
                     if isinstance(v, dict) and not str(v.get("name", "")).isdigit()
                 }
             except Exception:
@@ -78,7 +90,11 @@ class Dataset:
         tmp_path = None
         try:
             with self._resolution_lock:
-                snapshot = self._fallback_ratings.copy()
+                snapshot = {
+                    aid: self._card_metadata(card)
+                    for aid, card in self._fallback_ratings.items()
+                    if not str(card.get(DATA_FIELD_NAME, "")).isdigit()
+                }
             fd, tmp_path = tempfile.mkstemp(dir=constants.SETS_FOLDER, suffix=".tmp")
             with os.fdopen(fd, "w", encoding="utf-8") as f:
                 json.dump(snapshot, f, indent=4)
@@ -143,8 +159,11 @@ class Dataset:
                     for aid in ids:
                         card = resolver._fallback_ratings.get(aid)
                         if card and not str(card.get("name", "")).isdigit():
-                            ratings[aid] = card
-                            fallback[aid] = card
+                            metadata = self._card_metadata(card)
+                            ratings[aid] = self._name_index.get(
+                                metadata.get(DATA_FIELD_NAME), metadata
+                            )
+                            fallback[aid] = metadata
                             self._pending_ids.discard(aid)
                             self._retry_after.pop(aid, None)
                             self._retry_counts.pop(aid, None)
@@ -307,8 +326,11 @@ class Dataset:
             for arena_id in id_list:
                 aid = str(arena_id)
                 card = ratings.get(aid)
+                if card and self._dataset is None:
+                    card = self._card_metadata(card)
                 if not card:
-                    card = self._fallback_ratings.get(aid)
+                    cached = self._fallback_ratings.get(aid)
+                    card = self._card_metadata(cached) if cached else None
                 unresolved = not card or str(card.get(DATA_FIELD_NAME, "")).isdigit()
                 if unresolved and self._retrieve_unknown:
                     self._pending_ids.add(aid)
@@ -352,8 +374,16 @@ class Dataset:
 
         for arena_id in id_list:
             string_id = str(arena_id)
-            if string_id in ratings and not str(ratings[string_id].get("name", "")).isdigit():
-                result_map[string_id] = ratings[string_id]
+            card = ratings.get(string_id)
+            if card is None:
+                cached = self._fallback_ratings.get(string_id)
+                card = self._card_metadata(cached) if cached else None
+            elif self._dataset is None:
+                card = self._card_metadata(card)
+            if card and not str(card.get(DATA_FIELD_NAME, "")).isdigit():
+                result_map[string_id] = self._name_index.get(
+                    card.get(DATA_FIELD_NAME), card
+                )
             elif self._retrieve_unknown:
                 display_name = self._resolve_unknown_id(string_id)
 
@@ -363,7 +393,9 @@ class Dataset:
                     and display_name in self._name_index
                 ):
                     matched_card = dict(self._name_index[display_name])
-                    ratings[string_id] = matched_card
+                    metadata = self._card_metadata(matched_card)
+                    ratings[string_id] = matched_card if self._dataset else metadata
+                    self._fallback_ratings[string_id] = metadata
                     result_map[string_id] = matched_card
                 elif display_name == string_id and string_id.isdigit():
                     # The DB lookup failed completely. Mark it for Scryfall bulk fetch.
@@ -410,6 +442,7 @@ class Dataset:
 
                     initialize_card_data(empty_dict)
                     ratings[string_id] = empty_dict
+                    self._fallback_ratings[string_id] = self._card_metadata(empty_dict)
                     result_map[string_id] = empty_dict
 
         # Bulk Scryfall Fallback for any IDs that the local database couldn't find
@@ -444,10 +477,13 @@ class Dataset:
 
                             if name in self._name_index:
                                 matched_card = dict(self._name_index[name])
-                                ratings[aid] = matched_card
+                                ratings[aid] = (
+                                    matched_card if self._dataset
+                                    else self._card_metadata(matched_card)
+                                )
                                 result_map[aid] = matched_card
                                 # Store it in the fallback cache so we don't have to look it up next launch
-                                self._fallback_ratings[aid] = matched_card
+                                self._fallback_ratings[aid] = self._card_metadata(matched_card)
                                 made_new_cache_entries = True
                             else:
                                 from src.file_extractor import extract_types
@@ -468,7 +504,7 @@ class Dataset:
                                 ratings[aid] = empty_dict
                                 result_map[aid] = empty_dict
 
-                                self._fallback_ratings[aid] = empty_dict
+                                self._fallback_ratings[aid] = self._card_metadata(empty_dict)
                                 made_new_cache_entries = True
 
                             if aid in unknown_ids_to_fetch:

@@ -78,12 +78,15 @@ class DraftAdvisor:
         current_pick: int,
         current_pack: int = 1,
         cards_per_pick: int = 1,
+        number_of_players: int = 8,
     ) -> List[Recommendation]:
         if not pack_cards:
             return []
         safe_pick = max(1, min(self.TOTAL_PICKS, current_pick))
         pack_number = max(1, current_pack)
-        arch_pick = (safe_pick - 1) * max(1, cards_per_pick) + 1
+        # Express progress as cards removed, not passing rounds. In Pick-Two,
+        # pick 5 has removed eight cards, just like pick 9 in a normal draft.
+        effective_pick = (safe_pick - 1) * max(1, cards_per_pick) + 1
 
         on_color_pool = [
             c
@@ -133,7 +136,7 @@ class DraftAdvisor:
                 reasons = []
 
                 # --- STEP 1: Blended Base Score (With Bayesian Smoothing) ---
-                base_score = self._calculate_weighted_score(card, arch_pick)
+                base_score = self._calculate_weighted_score(card, effective_pick)
 
                 # --- STEP 2: Bomb Detection ---
                 z_score = (raw_gihwr - pack_mean) / pack_std
@@ -164,7 +167,7 @@ class DraftAdvisor:
 
                 # --- STEP 4: Castability (Pip-Sensitive Discipline & Premium Splashing) ---
                 cast_mult, cast_reason = self._calculate_castability_v5(
-                    card, pack_number, safe_pick, z_score
+                    card, pack_number, effective_pick, z_score
                 )
                 if cast_reason:
                     reasons.append(cast_reason)
@@ -179,7 +182,10 @@ class DraftAdvisor:
                 # --- STEP 6: Wheel chance (shown, not scored) ---
                 rank_in_pack = pack_ranks.get(name, 99)
                 wheel_pct = self._wheel_chance(
-                    card, safe_pick, rank_in_pack, pack_size=len(pack_cards)
+                    card, safe_pick, rank_in_pack,
+                    pack_size=len(pack_cards),
+                    cards_per_pick=cards_per_pick,
+                    number_of_players=number_of_players,
                 )
 
                 # === MASTER ALGORITHM ===
@@ -495,8 +501,19 @@ class DraftAdvisor:
         return 1.0, ""
 
     def _wheel_chance(
-        self, card: Dict, pick: int, rank_in_pack: int, pack_size: int = None
+        self,
+        card: Dict,
+        pick: int,
+        rank_in_pack: int,
+        pack_size: int = None,
+        cards_per_pick: int = 1,
+        number_of_players: int = 8,
     ) -> float:
+        # These ALSA curves assume eight-player, one-card picks.
+        # Pick-Two/custom pods need a separately calibrated model; pack-return
+        # tracking still works, but don't display a misleading percentage.
+        if cards_per_pick != 1 or number_of_players != 8:
+            return 0.0
         # A pack comes back after 8 picks, so it needs 9+ cards now. Pick alone
         # isn't enough: 13- and 14-card packs can't wheel from picks 6 and 7.
         if pick >= 9 or (pack_size is not None and pack_size < 9):
