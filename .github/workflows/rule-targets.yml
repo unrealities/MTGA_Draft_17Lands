@@ -1,7 +1,7 @@
 name: Rule targets
 
-# Tests whether what three of the advisor's pick rules protect against
-# (removal saturation, heavy curves, missing fixing) changed how often
+# Tests whether what six of the advisor's pick rules steer by (removal,
+# heavy curves, fixing, creatures, 2-drops) changed how often
 # registered decks won, on 17Lands Premier Draft game data.
 # See Tools/DeckScoreFit/README.md.
 #

@@ -80,7 +80,7 @@ the check on unseen sets.
 
 ## Testing pick rules on game results
 
-`rules.py` uses the same decks to test three of the advisor's pick rules (in
+`rules.py` uses the same decks to test six of the advisor's pick rules (in
 `_calculate_composition_bonus()` in `src/advisor/engine.py`). Each rule
 reweights a card by what the pool already has. If the rule is right, that
 condition should show up in registered decks: decks where it holds should win
@@ -91,10 +91,20 @@ more or less often than the average rating of their spells predicts.
 | Removal Saturated | 0.8x for removal once the pool has 7+ | each removal spell past the sixth, against a spell of the same rating | it's worth less |
 | Curve Too Heavy | 0.7x for 5+ mana spells once the pool has 4+ | each 5+ mana spell past the fourth, against a spell of the same rating | it's worth less |
 | Critical: Needs Fixing | 1.4x for fixing from pack 2 while fixing ≤ off-color playables | in decks with off-color spells, a fixing card while fixing ≤ off-color spells, against one once fixing is more | it's worth more |
+| Critical: Needs Creatures | 1.25x for creatures from pack 2 while the pool is on course for fewer than 13 | each creature while the deck has fewer than 13, against a spell of the same rating | it's worth more |
+| Critical: Needs Removal | 1.3x for removal from pack 2 while the pool has fewer than 3 | each removal spell while the deck has fewer than 3, against a spell of the same rating | it's worth more |
+| Critical: Needs 2-Drops | up to 1.5x (0.15x per one short) for creatures and removal of mana value ≤ 2, from pack 2, while the pool is on course for fewer than 7 | each such card while the deck has fewer than 7, against a spell of the same rating | it's worth more |
+
+The first three were run first (results in
+`experiments/2026-11-03-rule-targets/`). The last three, the keep-or-drop
+reading and the deck score terms below were added afterwards. They were
+written down before their first run, and every interval is now 95%
+familywise across all six rules.
 
 Cards are counted the way the engine counts them: removal and fixing by the
-app's Scryfall tags, plus multicolored lands for fixing, and heavy drops by
-`get_functional_cmc()`. Off-color spells are the ones whose cost the deck's two
+app's Scryfall tags, plus multicolored lands for fixing, and heavy drops and
+2-drops by `get_functional_cmc()`. The engine's thresholds are for pools of up
+to 45 cards; they are applied to decks unchanged. Off-color spells are the ones whose cost the deck's two
 main colors can't pay. In a deck with 3+ main colors, the two with the most
 pips count as main.
 
@@ -104,11 +114,14 @@ the fixing model, because it measures the same shortfall. Removal and heavy
 drops each get a slope and a change of slope at the rule's threshold. Fixing
 gets a slope overall, a slope in decks with off-color spells, the off-color
 count, and the shortfall `off-color + 1 - fixing` while it's positive.
+Creatures and 2-drops each get a slope and a change of slope below the rule's
+threshold; removal for Needs Removal gets both of its thresholds (below 3 and
+past 6).
 
 Decided before the first run:
 
 - **Primary result:** the effect per card, in game win rate points, with a
-  98.33% interval (95% familywise across the three rules). The SE is the
+  99.17% interval (95% familywise across the six rules). The SE is the
   larger of the model's, widened for overdispersion, and the set-clustered
   sandwich.
 - **Verdict:** *supported* if the interval excludes zero in the rule's
@@ -117,8 +130,19 @@ Decided before the first run:
 - **Size:** the effect is also shown in rating SDs: the change in the card's
   GIH WR, in the format's SDs, that would move card quality as much. That
   makes it comparable with the rule's own size, its multiplier on the
-  engine's score scale (removal and heavy drops taken at +1 SD, fixing at the
-  mean).
+  engine's score scale (removal and heavy drops taken at +1 SD, cards a rule
+  boosts at the mean; Needs 2-Drops at the average multiplier of the decks
+  short of 2-drops).
+- **Keep or drop:** with the rule a card is valued at the rule's size off its
+  rating, without it at zero. *Drop* if the whole interval in rating SDs is
+  on zero's side of half the rule's size, so the card is valued better
+  without the rule. *Keep* if it is all on the rule's side. Otherwise *can't
+  tell*. This is the answer to "does the rule cost strength". It weighs how
+  wrong a card's value is, not how often the rule changes a pick.
+- **Deck score terms:** the deck score's other terms (`two_colors`,
+  `domain_supported`, `missing_fixing`) from one fit of every set without any
+  rule terms, in score points with the same interval, read the same way
+  against the app's weights.
 - **Also reported** but not used for the verdict: per-set fits, added counts
   as controls (lands, creatures, colors), strong drafters only, and win rate
   by count against decks at the threshold.
@@ -133,6 +157,18 @@ Limits:
   big spells may differ in ways that skill buckets don't capture.
 - It measures what a card is worth relative to its rating, not the effect of
   switching the advisor's policy. Only a randomized trial can measure that.
+
+Not covered: the rest of the one-factor ablations in the fork's
+`exp/ablation-results-20261103`.
+
+- The three synergy rules: no snapshot has `synergy_*` tags.
+- Enables Bomb Splash and Premium Fixing: they value a fixing card against
+  its own rating, and lands' ratings aren't in card quality.
+- Relative power, the IWD premium, the lane boost, archetype weighting,
+  shrinkage and castability: these shape the order of picks, not something
+  a finished deck has.
+- The deck builder's Monte Carlo penalties: they would need every registered
+  deck simulated.
 
 Actions → Rule targets → Run workflow runs it on every set with Premier Draft
 game data and Premier Draft ratings: 20 sets. MID, STX and VOW are left out

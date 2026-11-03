@@ -94,7 +94,8 @@ class App:
     def rule_counts(self, deck, main_colors, splash_colors):
         """Deck counts for the pick rules in src/advisor/engine.py.
 
-        removal, heavy and fixing count cards as _analyze_pool() does. The
+        removal, heavy, fixing, creatures and early (creatures and non-creature
+        removal of mana value 2 or less) count cards as _analyze_pool() does. The
         primary colors are the main colors, or the two main colors with the
         most pips in a deck of 3+ main colors. off_color counts the spells
         with no face whose cost the primary colors can pay: the cards the
@@ -122,6 +123,18 @@ class App:
         primary_mask = sum(self.color_bits[col] for col in primary)
         return {
             "removal": sum(c["count"] for c in spells if "removal" in c.get("tags", [])),
+            "creatures": sum(
+                c["count"] for c in spells if "Creature" in c.get("types", [])
+            ),
+            "early": sum(
+                c["count"]
+                for c in spells
+                if self.get_functional_cmc(c) <= 2
+                and (
+                    "Creature" in c.get("types", [])
+                    or "removal" in c.get("tags", [])
+                )
+            ),
             "heavy": sum(
                 c["count"] for c in spells if self.get_functional_cmc(c) >= 5
             ),

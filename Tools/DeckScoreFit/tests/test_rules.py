@@ -25,6 +25,8 @@ def files(n=24000, sets=("AAA", "BBB", "CCC", "DDD"), seed=0, tags=True):
             heavy = int(rng.integers(0, 9))
             off = int(rng.integers(0, 6)) * int(rng.random() < 0.5)
             fixing = int(rng.integers(0, 7))
+            creatures = int(rng.integers(9, 19))
+            early = int(rng.integers(2, 12))
             short = max(0, off + 1 - fixing) if off else 0
             f = {
                 "card_quality": rng.normal(),
@@ -46,7 +48,8 @@ def files(n=24000, sets=("AAA", "BBB", "CCC", "DDD"), seed=0, tags=True):
                 "features": f,
                 "extra": {"lands": 17.0, "creatures": 15.0, "colors": 2.0 + (off > 0)},
                 "rules": {"removal": removal, "heavy": heavy, "fixing": fixing,
-                          "off_color": off, "splash": int(off > 0)},
+                          "off_color": off, "splash": int(off > 0),
+                          "creatures": creatures, "early": early},
             })
         out.append({"set": s, "base_score": 75.0, "weights": WEIGHTS, "rows": rows,
                     "tags": {"removal": 40 if tags else 0, "fixing_ramp": 10}})
@@ -89,6 +92,29 @@ def test_verdicts():
     assert rules.verdict(by_name("fixing_hunger"), {"pp": 1.0, "se": 0.1}) == "supported"
 
 
+def test_keep_or_drop():
+    z = rules.Z
+    # A penalty of -1: drop if the value is surely above -0.5, keep if below.
+    assert rules.keep_or_drop(-1.0, 0.0, 0.1) == "drop"
+    assert rules.keep_or_drop(-1.0, -1.0, 0.1) == "keep"
+    assert rules.keep_or_drop(-1.0, -0.5, 0.1) == "can't tell"
+    assert rules.keep_or_drop(-1.0, -0.5 + 1.01 * z * 0.1, 0.1) == "drop"
+    # A boost of +1.
+    assert rules.keep_or_drop(1.0, 0.1, 0.1) == "drop"
+    assert rules.keep_or_drop(1.0, 1.2, 0.1) == "keep"
+
+
+def test_early_plays_size_follows_the_shortfall(rd):
+    rule = by_name("early_plays")
+    everything = np.ones(len(rd.base.set), dtype=bool)
+    short = 7 - rd.counts["early"][rd.counts["early"] < 7]
+    expected = np.mean(np.minimum(0.5, 0.15 * short)) * 50 / 15
+    assert rules.implied(rule, rd, everything) == pytest.approx(expected)
+    assert rules.implied(by_name("creature_quota"), rd, everything) == pytest.approx(
+        0.25 * 50 / 15
+    )
+
+
 def test_fixing_terms_follow_the_engine():
     r = {"off_color": np.array([0.0, 2, 2, 2]), "fixing": np.array([0.0, 1, 2, 3])}
     terms = rules.fixing_terms(r)
@@ -102,6 +128,8 @@ def test_sets_without_tags_are_left_out_of_that_rule():
     rd = rules.RuleData(data)
     assert rules.usable_sets(rd, by_name("removal_saturation")) == ["AAA", "BBB"]
     assert rules.usable_sets(rd, by_name("curve_heavy")) == ["AAA", "BBB", "CCC"]
+    # Every deck in CCC has fewer than 3 removal spells, but CCC has no tags.
+    assert rules.usable_sets(rd, by_name("removal_need")) == ["AAA", "BBB"]
 
 
 def test_dose_puts_the_reference_in_order(rd):
@@ -121,12 +149,17 @@ def test_report(tmp_path, rd):
     results = rules.report(rd, out)
     text = out.getvalue()
     for heading in ("## Primary results", "## By set", "## By count",
-                    "## Uncertainty and sensitivity"):
+                    "## Uncertainty and sensitivity", "## Deck score terms"):
         assert heading in text
     assert results["removal_saturation"]["verdict"] in (
         "supported", "not established"
     )
     assert set(results["curve_heavy"]["per_set"]) == {"AAA", "BBB", "CCC", "DDD"}
+    # Simulated removal past the sixth costs 23 * -0.06 / 0.4 = -3.45 rating
+    # SDs, beyond the rule's -0.87.
+    assert results["removal_saturation"]["keep_or_drop"] == "keep"
+    # missing_fixing is never set in the simulated decks, so it drops out.
+    assert set(results["deck_terms"]) == {"two_colors"}
     paths = []
     for f in files(n=4000, sets=("AAA", "BBB")):
         path = tmp_path / f"{f['set']}.json"
@@ -134,4 +167,4 @@ def test_report(tmp_path, rd):
         paths.append(str(path))
     rules.main(paths + ["--json", str(tmp_path / "rules.json")])
     saved = json.loads((tmp_path / "rules.json").read_text())
-    assert set(saved) == {r.name for r in rules.RULES}
+    assert set(saved) == {r.name for r in rules.RULES} | {"deck_terms"}
