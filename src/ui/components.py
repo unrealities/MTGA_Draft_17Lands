@@ -36,6 +36,18 @@ def identify_safe_coordinates(root, window_width, window_height, offset_x, offse
         return offset_x, offset_y
 
 
+def measure_text(widget, font, text="0"):
+    """Return the (width, line height) in pixels of ``text`` drawn in ``font``.
+
+    Fonts are sized in points, so Windows display scaling enlarges them while
+    Theme.scaled_val() pixel sizes stay put. Canvas drawings measure their text
+    instead of assuming fixed pixel offsets (issue #238).
+    """
+    width = int(widget.tk.call("font", "measure", font, text))
+    height = int(widget.tk.call("font", "metrics", font, "-linespace"))
+    return width, height
+
+
 class AutoScrollbar(ttk.Scrollbar):
     """A scrollbar that hides itself if it's not needed. Only works within the grid geometry manager."""
 
@@ -1233,22 +1245,29 @@ class SignalMeter(tb.Frame):
 
     def __init__(self, parent, **kwargs):
         super().__init__(parent, **kwargs)
-        self.canvas_height, self.bar_width, self.gap, self.scores = (
-            Theme.scaled_val(80),
-            Theme.scaled_val(20),
-            Theme.scaled_val(4),
-            {},
-        )
-        self.canvas = tb.Canvas(
-            self, height=self.canvas_height, bg=Theme.BG_PRIMARY, highlightthickness=0
-        )
+        self.scores = {}
+        self.canvas = tb.Canvas(self, bg=Theme.BG_PRIMARY, highlightthickness=0)
+        self._measure()
         self.canvas.pack(fill=BOTH, expand=True)
         self.canvas.bind("<Configure>", lambda e: self.redraw())
         Theme.bind_theme_change(self, self._on_theme_change)
 
+    def _measure(self):
+        self.label_font = Theme.scaled_font(9, "bold")
+        label_w, label_h = measure_text(self, self.label_font, "W")
+        self.label_h = label_h + Theme.scaled_val(2)
+        self.bar_width = max(Theme.scaled_val(20), label_w + Theme.scaled_val(4))
+        self.gap = Theme.scaled_val(4)
+        # Bars keep at least the 62px (at 100%) they had before labels were measured.
+        self.canvas_height = max(
+            Theme.scaled_val(80), self.label_h + max(Theme.scaled_val(68), 3 * label_h)
+        )
+        self.canvas.configure(height=self.canvas_height)
+
     def _on_theme_change(self, event=None):
         if self.winfo_exists():
             self.canvas.configure(bg=Theme.BG_PRIMARY)
+            self._measure()
             self.redraw()
 
     def update_values(self, scores):
@@ -1260,6 +1279,10 @@ class SignalMeter(tb.Frame):
         w = self.canvas.winfo_width()
         if w < 10:
             return
+        h = self.canvas.winfo_height()
+        if h < 10:
+            h = self.canvas_height
+        base = h - self.label_h
         cl, cm = (
             ["W", "U", "B", "R", "G"],
             {
@@ -1272,8 +1295,8 @@ class SignalMeter(tb.Frame):
         )
         tw = (len(cl) * self.bar_width) + ((len(cl) - 1) * self.gap)
         sx, sc = (
-            (w - tw) / 2,
-            (self.canvas_height - 18)
+            max(0, (w - tw) / 2),
+            max(0, base - Theme.scaled_val(6))
             / max(max(self.scores.values(), default=1), self.SCALE_FLOOR),
         )
         for i, c in enumerate(cl):
@@ -1281,39 +1304,55 @@ class SignalMeter(tb.Frame):
             x, bh = sx + (i * (self.bar_width + self.gap)), v * sc
             self.canvas.create_rectangle(
                 x,
-                self.canvas_height - bh - Theme.scaled_val(12),
+                base - bh,
                 x + self.bar_width,
-                self.canvas_height - Theme.scaled_val(12),
+                base,
                 fill=cm[c],
                 outline="",
             )
             self.canvas.create_text(
                 x + self.bar_width / 2,
-                self.canvas_height - Theme.scaled_val(5),
+                h - self.label_h / 2,
                 text=c,
                 fill=Theme.TEXT_MAIN,
-                font=Theme.scaled_font(9, "bold"),
+                font=self.label_font,
             )
 
 
 class ManaCurvePlot(tb.Frame):
     def __init__(self, parent, ideal_distribution, **kwargs):
         super().__init__(parent, **kwargs)
-        self.ideal, self.current, self.canvas_height = (
-            ideal_distribution,
-            [0] * 7,
-            Theme.scaled_val(80),
-        )
-        self.canvas = tb.Canvas(
-            self, height=self.canvas_height, bg=Theme.BG_PRIMARY, highlightthickness=0
-        )
+        self.ideal, self.current = ideal_distribution, [0] * 7
+        self.canvas = tb.Canvas(self, bg=Theme.BG_PRIMARY, highlightthickness=0)
+        self._measure()
         self.canvas.pack(fill=BOTH, expand=True)
         self.canvas.bind("<Configure>", lambda e: self.redraw())
         Theme.bind_theme_change(self, self._on_theme_change)
 
+    def _measure(self):
+        """Size bars and margins from the label fonts at the current DPI."""
+        self.count_font = Theme.scaled_font(9, "bold")
+        self.axis_font = Theme.scaled_font(8)
+        count_w, self.count_h = measure_text(self, self.count_font, "88")
+        axis_w, axis_h = measure_text(self, self.axis_font, "6+")
+        self.axis_h = axis_h + Theme.scaled_val(2)
+        # Each bar is at least as wide as its widest label so neighbours never collide.
+        self.bar_width = max(
+            Theme.scaled_val(14),
+            count_w + Theme.scaled_val(2),
+            axis_w + Theme.scaled_val(2),
+        )
+        self.gap = Theme.scaled_val(2)
+        self.canvas_height = max(
+            Theme.scaled_val(80),
+            self.axis_h + self.count_h + max(Theme.scaled_val(40), 2 * self.count_h),
+        )
+        self.canvas.configure(height=self.canvas_height)
+
     def _on_theme_change(self, event=None):
         if self.winfo_exists():
             self.canvas.configure(bg=Theme.BG_PRIMARY)
+            self._measure()
             self.redraw()
 
     def update_curve(self, counts):
@@ -1325,11 +1364,16 @@ class ManaCurvePlot(tb.Frame):
         w = self.canvas.winfo_width()
         if w < 10:
             return
-        bw, gp = Theme.scaled_val(14), Theme.scaled_val(2)
+        # Draw into the height actually granted, which a crowded parent can shrink.
+        h = self.canvas.winfo_height()
+        if h < 10:
+            h = self.canvas_height
+        bw, gp = self.bar_width, self.gap
+        base = h - self.axis_h
         tw = (len(self.current) * bw) + ((len(self.current) - 1) * gp)
         sx, sc = (
-            (w - tw) / 2,
-            (self.canvas_height - Theme.scaled_val(25))
+            max(0, (w - tw) / 2),
+            max(0, base - self.count_h - Theme.scaled_val(2))
             / max(max(self.current, default=0), max(self.ideal, default=0), 5),
         )
         for i, c in enumerate(self.current):
@@ -1337,9 +1381,9 @@ class ManaCurvePlot(tb.Frame):
             if t > 0:
                 self.canvas.create_rectangle(
                     x,
-                    self.canvas_height - (t * sc) - Theme.scaled_val(10),
+                    base - (t * sc),
                     x + bw,
-                    self.canvas_height - Theme.scaled_val(10),
+                    base,
                     outline=Theme.TEXT_MAIN,
                     width=1,
                     dash=(2, 2),
@@ -1357,26 +1401,26 @@ class ManaCurvePlot(tb.Frame):
             )
             self.canvas.create_rectangle(
                 x,
-                self.canvas_height - (c * sc) - Theme.scaled_val(10),
+                base - (c * sc),
                 x + bw,
-                self.canvas_height - Theme.scaled_val(10),
+                base,
                 fill=cl,
                 outline="",
             )
             if c > 0:
                 self.canvas.create_text(
                     x + bw / 2,
-                    self.canvas_height - (c * sc) - Theme.scaled_val(17),
+                    base - (c * sc) - self.count_h / 2 - 1,
                     text=str(c),
                     fill=Theme.TEXT_MAIN,
-                    font=Theme.scaled_font(9, "bold"),
+                    font=self.count_font,
                 )
             self.canvas.create_text(
                 x + bw / 2,
-                self.canvas_height - Theme.scaled_val(4),
+                h - self.axis_h / 2,
                 text=str(i) if i < 6 else "6+",
                 fill=Theme.TEXT_MAIN,
-                font=Theme.scaled_font(8),
+                font=self.axis_font,
             )
 
 
@@ -1384,23 +1428,44 @@ class TypePieChart(tb.Frame):
     def __init__(self, parent, **kwargs):
         super().__init__(parent, **kwargs)
         self.counts = {}
-        self.canvas_height = Theme.scaled_val(130)
-        self.pie_size = Theme.scaled_val(80)
-
-        self.canvas = tb.Canvas(
-            self, height=self.canvas_height, bg=Theme.BG_PRIMARY, highlightthickness=0
-        )
+        self.canvas = tb.Canvas(self, bg=Theme.BG_PRIMARY, highlightthickness=0)
+        self._measure()
         self.canvas.pack(fill=BOTH, expand=True)
         self.canvas.bind("<Configure>", lambda e: self.redraw())
         Theme.bind_theme_change(self, self._on_theme_change)
 
+    def _measure(self):
+        """Size the legend rows and donut from the label font at the current DPI."""
+        self.label_font = Theme.scaled_font(9)
+        self.dot_font = Theme.scaled_font(10)
+        self.total_font = Theme.scaled_font(9, "bold")
+        _, line_h = measure_text(self, self.label_font)
+        self.dot_w = measure_text(self, self.dot_font, "●")[0]
+        self.row_h = max(Theme.scaled_val(16), line_h + 1)
+        self.pad = Theme.scaled_val(5)
+        self.pie_size = max(Theme.scaled_val(80), 5 * line_h)
+        self.min_pie_size = max(Theme.scaled_val(40), 3 * line_h)
+        self.ring_w = max(Theme.scaled_val(12), int(line_h * 0.8))
+        self._resize_canvas()
+
+    def _resize_canvas(self):
+        rows = max(len(self.counts), 1)
+        self.canvas_height = max(
+            Theme.scaled_val(130),
+            self.pie_size + 2 * self.pad,
+            rows * self.row_h + 2 * self.pad,
+        )
+        self.canvas.configure(height=self.canvas_height)
+
     def _on_theme_change(self, event=None):
         if self.winfo_exists():
             self.canvas.configure(bg=Theme.BG_PRIMARY)
+            self._measure()
             self.redraw()
 
     def update_counts(self, counts_dict):
         self.counts = {k: v for k, v in counts_dict.items() if v > 0}
+        self._resize_canvas()
         self.redraw()
 
     def redraw(self):
@@ -1408,6 +1473,9 @@ class TypePieChart(tb.Frame):
         w = self.canvas.winfo_width()
         if w < 10 or not self.counts:
             return
+        h = self.canvas.winfo_height()
+        if h < 10:
+            h = self.canvas_height
 
         color_map = {
             "Creature": Theme.SUCCESS,
@@ -1420,35 +1488,41 @@ class TypePieChart(tb.Frame):
             "Land": Theme.BG_TERTIARY,
         }
 
-        legend_w = Theme.scaled_val(85)
+        labels = {lb: f"{lb}: {count}" for lb, count in self.counts.items()}
+        text_x = self.dot_w + Theme.scaled_val(4)
+        legend_w = text_x + max(
+            measure_text(self, self.label_font, t)[0] for t in labels.values()
+        )
         gap = Theme.scaled_val(20)
-        pie_r = self.pie_size / 2
-        total_w = legend_w + gap + self.pie_size
-        sx = max(0, (w - total_w) / 2)
+        # Shrink the donut, never the legend, when the canvas is narrow or short.
+        pie_size = max(
+            self.min_pie_size,
+            min(self.pie_size, w - legend_w - gap - 2 * self.pad, h - 2 * self.pad),
+        )
+        pie_r = pie_size / 2
+        total_w = legend_w + gap + pie_size
+        sx = max(self.pad, (w - total_w) / 2)
 
         # 1. Draw Legend on the Left
-        ly = max(
-            Theme.scaled_val(5),
-            (self.canvas_height - (len(self.counts) * Theme.scaled_val(16))) / 2,
-        )
-        for lb, count in self.counts.items():
+        ly = max(self.pad, (h - len(labels) * self.row_h) / 2) + self.row_h / 2
+        for lb, text in labels.items():
             cl = color_map.get(lb, Theme.TEXT_MUTED)
             self.canvas.create_text(
-                sx, ly, text="●", fill=cl, font=(None, Theme.scaled_val(10)), anchor="w"
+                sx, ly, text="●", fill=cl, font=self.dot_font, anchor="w"
             )
             self.canvas.create_text(
-                sx + Theme.scaled_val(12),
+                sx + text_x,
                 ly,
-                text=f"{lb}: {count}",
+                text=text,
                 fill=Theme.TEXT_MAIN,
-                font=Theme.scaled_font(9),
+                font=self.label_font,
                 anchor="w",
             )
-            ly += Theme.scaled_val(16)
+            ly += self.row_h
 
         # 2. Draw Pie Chart on the Right
         cx = sx + legend_w + gap + pie_r
-        cy = self.canvas_height / 2
+        cy = h / 2
         tl = sum(self.counts.values())
 
         a = 90
@@ -1469,7 +1543,7 @@ class TypePieChart(tb.Frame):
             a -= ex
 
         # Donut Hole
-        inner_r = pie_r - Theme.scaled_val(12)
+        inner_r = pie_r - min(self.ring_w, pie_r / 3)
         self.canvas.create_oval(
             cx - inner_r,
             cy - inner_r,
@@ -1485,7 +1559,7 @@ class TypePieChart(tb.Frame):
             cy,
             text=str(tl),
             fill=Theme.TEXT_MAIN,
-            font=Theme.scaled_font(9, "bold"),
+            font=self.total_font,
         )
 
 
@@ -1517,6 +1591,69 @@ class ScrolledFrame(tb.Frame):
             "<Configure>",
             lambda e: self.canvas.itemconfig(self.window_id, height=e.height),
         )
+
+
+class VerticalScrolledFrame(tb.Frame):
+    """Vertically scrolling container for ``content``.
+
+    ``content`` always matches the visible width. It stretches to fill the
+    visible height while it fits, and scrolls once its requested height grows
+    past it, so nothing inside is ever squeezed out of view.
+    """
+
+    def __init__(self, parent, padding=0, **kwargs):
+        super().__init__(parent, **kwargs)
+        self.rowconfigure(0, weight=1)
+        self.columnconfigure(0, weight=1)
+
+        self.canvas = tb.Canvas(
+            self,
+            bg=Theme.BG_PRIMARY,
+            highlightthickness=0,
+            width=Theme.scaled_val(300),
+            height=Theme.scaled_val(150),
+        )
+        self.scrollbar = AutoScrollbar(
+            self, orient="vertical", command=self.canvas.yview
+        )
+        self.canvas.grid(row=0, column=0, sticky="nsew")
+        self.scrollbar.grid(row=0, column=1, sticky="ns")
+        self.canvas.configure(yscrollcommand=self.scrollbar.set)
+
+        # The canvas window tracks _inner's requested height; the row minsize
+        # keeps that at least the visible height so content can stretch.
+        self._inner = tb.Frame(self.canvas)
+        self._inner.columnconfigure(0, weight=1)
+        self._inner.rowconfigure(0, weight=1)
+        self.content = tb.Frame(self._inner, padding=padding)
+        self.content.grid(row=0, column=0, sticky="nsew")
+        self._window = self.canvas.create_window(
+            (0, 0), window=self._inner, anchor="nw"
+        )
+
+        self.canvas.bind("<Configure>", self._on_canvas_configure)
+        self._inner.bind(
+            "<Configure>",
+            lambda e: self.canvas.configure(scrollregion=(0, 0, e.width, e.height)),
+        )
+        Theme.bind_theme_change(self, self._on_theme_change)
+
+    def _on_canvas_configure(self, event):
+        self.canvas.itemconfig(self._window, width=event.width)
+        self._inner.rowconfigure(0, minsize=event.height)
+
+    def _on_theme_change(self, event=None):
+        if self.winfo_exists():
+            self.canvas.configure(bg=Theme.BG_PRIMARY)
+
+    def bind_mousewheel(self, widget=None):
+        """Scroll on the wheel anywhere over ``widget`` and its descendants."""
+        from src.utils import bind_scroll
+
+        widget = widget or self
+        bind_scroll(widget, self.canvas.yview_scroll)
+        for child in widget.winfo_children():
+            self.bind_mousewheel(child)
 
 
 class CardPile(tb.Frame):

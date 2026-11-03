@@ -606,7 +606,9 @@ class TestSignalMeterScaling:
             if meter.canvas.type(i) == "rectangle"
         ]
         heights = sorted((r[3] - r[1] for r in rects), reverse=True)
-        usable = meter.canvas_height - 18
+        # Bar area: below a small top margin, above the measured color labels.
+        usable = meter.canvas_height - meter.label_h - Theme.scaled_val(6)
+        assert usable >= Theme.scaled_val(62)
         assert heights[0] >= usable * 0.75
         assert heights[1] == pytest.approx(heights[0] / 4, abs=1.0)
 

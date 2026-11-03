@@ -100,7 +100,10 @@ class TestDraftApp:
 
                 # Update config and trigger the callback manually (as the settings window would)
                 config.settings.always_on_top = True
-                with patch("src.ui.windows.settings.SettingsWindow"):
+                # Patch the name app.py calls; patching src.ui.windows.settings
+                # leaves a real modal, grab-holding window behind that hangs
+                # later tests' Tk updates.
+                with patch("src.ui.app.SettingsWindow"):
                     app._open_settings()
 
                     # To test the closure, we simulate the exact logic it runs:

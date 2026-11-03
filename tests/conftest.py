@@ -3,6 +3,10 @@ tests/conftest.py
 Global pytest configuration and fixtures.
 """
 
+import faulthandler
+import os
+import sys
+import threading
 import pytest
 import tkinter
 from src.ui.styles import Theme
@@ -12,6 +16,45 @@ from ttkbootstrap.style import StyleBuilderTTK
 
 # Global singleton for Tkinter root
 _shared_root = None
+
+# A test (setup + call + teardown) running longer than this is treated as hung:
+# the run names it, dumps every thread's stack and exits instead of stalling
+# until someone notices. Override with PYTEST_HANG_TIMEOUT=<seconds>; 0 disables.
+HANG_TIMEOUT = float(os.environ.get("PYTEST_HANG_TIMEOUT", "60"))
+
+
+def _terminal_stderr_fd(config):
+    """The real stderr: pytest's output capture swaps fd 2 for a temp file."""
+    capman = config.pluginmanager.getplugin("capturemanager")
+    try:
+        return capman._global_capturing.err.targetfd_save
+    except AttributeError:
+        return sys.__stderr__.fileno()
+
+
+@pytest.hookimpl(hookwrapper=True)
+def pytest_runtest_protocol(item, nextitem):
+    if HANG_TIMEOUT <= 0:
+        yield
+        return
+
+    err_fd = _terminal_stderr_fd(item.config)
+
+    def name_the_hang():
+        msg = f"\n\nHANG: {item.nodeid} exceeded {HANG_TIMEOUT:g}s; dumping stacks\n"
+        os.write(err_fd, msg.encode())
+
+    # The Python timer names the test; faulthandler's C watchdog dumps and
+    # exits even if the main thread is stuck inside Tcl holding the GIL.
+    namer = threading.Timer(HANG_TIMEOUT, name_the_hang)
+    namer.daemon = True
+    namer.start()
+    faulthandler.dump_traceback_later(HANG_TIMEOUT + 1, exit=True, file=err_fd)
+    try:
+        yield
+    finally:
+        faulthandler.cancel_dump_traceback_later()
+        namer.cancel()
 
 
 @pytest.fixture(autouse=True)
@@ -97,15 +140,32 @@ def patch_tk_lifecycle(monkeypatch, session_tk_root):
     monkeypatch.setattr(mb, "showwarning", lambda *args, **kwargs: None)
     monkeypatch.setattr(mb, "showerror", lambda *args, **kwargs: None)
 
-    # Clean up any leftover widgets from previous tests to ensure test isolation
+    # Clean up any leftover widgets from previous tests to ensure test isolation.
+    # Hide and destroy everything *before* flushing events: on Windows, an
+    # update() while a previous test's app or Toplevel is still on screen can
+    # stall indefinitely repainting it (seen with the root left mapped after
+    # leaving Mini Mode, and with leftover Sealed Studio windows).
+    session_tk_root.withdraw()
     for widget in session_tk_root.winfo_children():
         try:
-            # Force completion of all background idle tasks before starting a new test
-            session_tk_root.update_idletasks()
-            session_tk_root.update()
             widget.destroy()
         except tkinter.TclError:
             pass
+    # Force completion of all background idle tasks before starting a new test
+    try:
+        session_tk_root.update_idletasks()
+        session_tk_root.update()
+    except tkinter.TclError:
+        pass
+
+
+@pytest.fixture(autouse=True)
+def restore_tk_scaling(session_tk_root):
+    """Tests may set `tk scaling` to emulate high-DPI displays; the shared root
+    would otherwise carry that into every later test's font measurements."""
+    scaling = session_tk_root.tk.call("tk", "scaling")
+    yield
+    session_tk_root.tk.call("tk", "scaling", scaling)
 
 
 @pytest.fixture(autouse=True)
