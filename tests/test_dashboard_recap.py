@@ -1,4 +1,5 @@
 import pytest
+import time
 import tkinter
 from unittest.mock import MagicMock, patch
 from src.ui.dashboard_recap import DraftRecapScreen
@@ -201,7 +202,13 @@ class TestDraftRecapLayout:
         for box in self._stat_boxes(recap):
             tab = next(i for i, t in enumerate(tabs) if str(box).startswith(t + "."))
             recap.recap_notebook.select(tab)
+            # Aqua Tk can map a newly selected tab's widgets a few event-loop
+            # rounds later, so flush until the box is up (bounded).
+            deadline = time.monotonic() + 2
             recap.update()
+            while not box.winfo_ismapped() and time.monotonic() < deadline:
+                time.sleep(0.01)
+                recap.update()
             yield tab, box
 
     def test_short_pane_scrolls_instead_of_cropping(self, root):
