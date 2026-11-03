@@ -8,12 +8,12 @@ import statistics
 import logging
 import math
 import numpy as np
-import re
 from typing import List, Dict, Any, Tuple
 from src.advisor.schema import Recommendation
 from src import constants
 from src.card_utils import get_functional_cmc
-from src.advisor.mana_base import count_fixing
+from src.advisor.mana_base import count_fixing, is_castable
+from src.mana_cost import assign_mana_colors, off_color_requirements
 from src.utils import normalize_color_string
 
 logger = logging.getLogger(__name__)
@@ -88,7 +88,7 @@ class DraftAdvisor:
         on_color_pool = [
             c
             for c in self.pool
-            if all(col in self.main_colors for col in c.get("colors", []))
+            if is_castable(c, self.main_colors)
         ]
         needs_playables = len(on_color_pool) < 20 and pack_number == 3
 
@@ -129,7 +129,6 @@ class DraftAdvisor:
                     float(stats.get("gihwr", 0.0)),
                     float(stats.get("iwd", 0.0)),
                 )
-                card_colors = card.get("colors", [])
                 reasons = []
 
                 # --- STEP 1: Blended Base Score (With Bayesian Smoothing) ---
@@ -154,11 +153,7 @@ class DraftAdvisor:
                     reasons.append(
                         f"{word} in {self.main_archetype} ({arch_points:+.1f})"
                     )
-                is_on_lane = (
-                    all(c in self.main_colors for c in card_colors)
-                    if card_colors
-                    else True
-                )
+                is_on_lane = is_castable(card, self.main_colors)
                 if len(self.main_colors) >= 2 and is_on_lane:
                     base_score *= 1.3 if needs_playables else 1.1
 
@@ -318,15 +313,15 @@ class DraftAdvisor:
 
                 is_off_color = False
                 if self.main_colors and colors:
-                    is_off_color = not all(col in self.main_colors for col in colors)
+                    is_off_color = not is_castable(c, self.main_colors)
 
                 if is_off_color and wr > (self.global_mean - self.global_std):
                     off_color_playables += 1
 
                 if wr > (self.global_mean + (1.5 * self.global_std)):
-                    for col in colors:
-                        if self.main_colors and col not in self.main_colors:
-                            splash_targets.add(col)
+                    if self.main_colors:
+                        for options in off_color_requirements(c, self.main_colors):
+                            splash_targets.update(options)
             except:
                 continue
         return {
@@ -418,28 +413,12 @@ class DraftAdvisor:
     def _calculate_castability_v5(
         self, card: Dict, pack: int, pick: int, z_score: float
     ) -> Tuple[float, str]:
-        mana_cost = card.get("mana_cost", "")
-        card_colors = card.get("colors", [])
         top_2_lane = self.main_colors[:2]
 
-        if mana_cost:
-            off_color_pips = 0
-            is_on_lane = True
-            pips = re.findall(r"\{(.*?)\}", mana_cost)
-            for pip in pips:
-                options = [c for c in pip.split("/") if c in "WUBRG"]
-                if not options:
-                    continue
-                if any(opt in top_2_lane for opt in options):
-                    continue
-                else:
-                    off_color_pips += 1
-                    is_on_lane = False
-        else:
-            is_on_lane = (
-                all(c in top_2_lane for c in card_colors) if card_colors else True
-            )
-            off_color_pips = 0 if is_on_lane else 1
+        off_color = off_color_requirements(card, top_2_lane)
+        is_on_lane = not off_color
+        # Without a printed cost the pip count is unknown; keep the one-pip guess.
+        off_color_pips = len(off_color) if card.get("mana_cost") else min(1, len(off_color))
 
         if pack == 1:
             if is_on_lane:
@@ -447,7 +426,7 @@ class DraftAdvisor:
             pressure = 1.0 - (max(0, ((pack - 1) * 15 + (pick - 1)) - 7) * 0.05)
             return (
                 (max(0.2, pressure - 0.2), "Off-Color Gold")
-                if len(card_colors) > 1 and off_color_pips > 0
+                if len(set(assign_mana_colors([card])[0])) > 1 and off_color_pips > 0
                 else (max(0.4, pressure), "Off-Color")
             )
 
@@ -459,11 +438,11 @@ class DraftAdvisor:
             ):
                 return 0.01, "Uncastable (Double Pip)"
 
-            splash_colors = [c for c in card_colors if c not in top_2_lane]
-            has_specific_fixing = (
-                all(self.fixing_map.get(c, 0) > 0 for c in splash_colors)
-                if splash_colors
-                else False
+            # AND across symbols, OR within each hybrid symbol. A payable
+            # hybrid elsewhere cannot excuse an unrelated solid off-color pip.
+            has_specific_fixing = all(
+                any(self.fixing_map.get(c, 0) > 0 for c in options)
+                for options in off_color
             )
 
             is_premium_removal = "removal" in card.get("tags", []) and z_score >= 1.0

@@ -84,7 +84,7 @@ Users can click a single button to perfectly balance their lands using Pro-Tour 
 
 - **Pip Volume Calculation:** Counts the exact number of specific colored mana symbols.
 - **Universal Fixer Detection:** Explicitly identifies Treasure-makers, Fetchlands, and "Any Color" dorks.
-- **Hybrid Mana Resolution:** Correctly categorizes hybrid mana (e.g., `{W/U}`) towards whichever core color the deck favors.
+- **Hybrid Mana Resolution:** Pays hybrid mana (e.g., `{W/U}`) with a color the deck already plays; `{2/U}` and `{U/P}` never force a color. Castability, splash checks, mana allocation and deck labels share these rules; see [hybrid-mana.md](hybrid-mana.md).
 - **Splash Starvation Protection:** Strictly caps basic land allocations for splash colors to prevent main-color starvation.
 
 ### B. Monte Carlo Simulation

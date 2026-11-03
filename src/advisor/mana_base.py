@@ -4,8 +4,8 @@ Frank Karsten mathematically-optimized mana base generation and source analysis.
 """
 
 import itertools
-import re
 from src import constants
+from src.mana_cost import assign_mana_colors, mana_color_demand, off_color_requirements
 
 
 def calculate_dynamic_mana_base(spells, non_basic_lands, colors, forced_count=17):
@@ -17,7 +17,6 @@ def calculate_dynamic_mana_base(spells, non_basic_lands, colors, forced_count=17
         {c: 0 for c in constants.CARD_COLORS},
     )
     lowest_cmc = {c: 99 for c in constants.CARD_COLORS}
-    hybrid_pips = []
 
     analyzer = ManaSourceAnalyzer(spells + non_basic_lands)
     existing_sources = analyzer.sources
@@ -25,33 +24,14 @@ def calculate_dynamic_mana_base(spells, non_basic_lands, colors, forced_count=17
     any_color_spells = analyzer.any_color_spell_sources
     any_color_enabler_pips = analyzer.any_color_enabler_pips
 
-    for card in spells:
+    for card, assigned in zip(spells, assign_mana_colors(spells, colors)):
         copies = card.get("count", 1)
         cost, cmc = card.get("mana_cost", ""), int(card.get("cmc", 99) or 99)
 
         if cost:
-            pips = re.findall(r"\{(.*?)\}", cost)
             card_color_pips = {c: 0 for c in constants.CARD_COLORS}
-            card_hybrid_pips = []
-            for pip in pips:
-                opts = pip.split("/")
-                if all(opt.isdigit() or opt in ["X", "C"] for opt in opts):
-                    continue
-
-                valid_opts = [
-                    opt
-                    for opt in opts
-                    if opt in constants.CARD_COLORS and opt in colors
-                ]
-                if not valid_opts:
-                    valid_opts = [opt for opt in opts if opt in constants.CARD_COLORS]
-
-                if len(valid_opts) == 1:
-                    card_color_pips[valid_opts[0]] += 1
-                elif len(valid_opts) > 1:
-                    card_hybrid_pips.append((valid_opts, cmc))
-
-            hybrid_pips.extend(card_hybrid_pips * copies)
+            for color in assigned:
+                card_color_pips[color] += 1
             for c, count in card_color_pips.items():
                 if count > 0:
                     strict_pips[c] += count * copies
@@ -65,15 +45,6 @@ def calculate_dynamic_mana_base(spells, non_basic_lands, colors, forced_count=17
                     strict_pips[c] += copies
                     max_pip_in_single_card[c] = max(1, max_pip_in_single_card[c])
                     lowest_cmc[c] = min(cmc, lowest_cmc[c])
-
-    for opts, cmc in hybrid_pips:
-        valid_opts = [opt for opt in opts if opt in colors]
-        if not valid_opts:
-            valid_opts = opts
-        best_opt = max(valid_opts, key=lambda o: strict_pips[o])
-        strict_pips[best_opt] += 1
-        max_pip_in_single_card[best_opt] = max(1, max_pip_in_single_card[best_opt])
-        lowest_cmc[best_opt] = min(cmc, lowest_cmc[best_opt])
 
     # Cover every color the deck actually pips, not just the declared ones —
     # splash/hybrid spells outside the declared colors still need sources.
@@ -205,23 +176,12 @@ def create_basic_lands(color, count):
 
 
 def is_castable(card, colors, strict=True):
+    """Color feasibility, not proof of sufficient sources or mana this turn."""
     card_colors, mana_cost = card.get("colors", []), card.get("mana_cost", "")
-    if not card_colors:
+    if not card_colors and not mana_cost:
         return True
     if strict:
-        if mana_cost:
-            for pip in re.findall(r"\{(.*?)\}", mana_cost):
-                options = pip.split("/")
-                if any(opt.isdigit() or opt in ["X", "C"] for opt in options):
-                    continue
-                valid_mana_options = [opt for opt in options if opt in "WUBRGP"]
-                if not valid_mana_options:
-                    continue
-                if not any(opt in colors or opt == "P" for opt in valid_mana_options):
-                    return False
-            return True
-        else:
-            return all(c in colors for c in card_colors)
+        return not off_color_requirements(card, colors)
     else:
         return any(c in colors for c in card_colors)
 
@@ -331,31 +291,8 @@ def count_fixing(pool):
 
 
 def get_strict_colors(spells):
-    pips, hybrid_pips_list = {c: 0 for c in constants.CARD_COLORS}, []
-    for card in spells:
-        cost = card.get("mana_cost", "")
-        if not cost:
-            for c in card.get("colors", []):
-                if c in pips:
-                    pips[c] += 1
-            continue
-        for pip in re.findall(r"\{(.*?)\}", cost):
-            if any(ch.isdigit() or ch in ["X", "C"] for ch in pip.split("/")):
-                continue
-            options = [c for c in pip.split("/") if c in constants.CARD_COLORS]
-            if not options:
-                continue
-            if len(options) == 1:
-                pips[options[0]] += 1
-            else:
-                hybrid_pips_list.append(options)
-
-    strict_colors = {c for c, p in pips.items() if p > 0}
-    for options in hybrid_pips_list:
-        if not any(opt in strict_colors for opt in options):
-            strict_colors.add(options[0])
-
-    return [c for c in constants.CARD_COLORS if c in strict_colors]
+    pips = mana_color_demand(spells)
+    return [c for c in constants.CARD_COLORS if pips[c] > 0]
 
 
 def select_useful_lands(pool, target_colors, metrics=None):
