@@ -74,6 +74,11 @@ def test_parses_quoted_fields():
     assert decks.read_decks(lines, 1)[0]["main_colors"] == "WU"
 
 
+def test_parses_counts_written_as_floats():
+    lines = dump([game("a", plains="9.0", bonder="0.0")])
+    assert decks.read_decks(lines, 1)[0]["cards"] == {"Plains": 9}
+
+
 def test_command_line(tmp_path):
     games = tmp_path / "games.csv.gz"
     with gzip.open(games, "wt") as f:
