@@ -43,6 +43,7 @@ class Data:
         rows = [dict(r, set=f["set"]) for f in files for r in f["rows"]]
         kept = [r for r in rows if not any(r["features"][k] for k in FIXED)]
         self.unfinished = len(rows) - len(kept)
+        self.rows = kept
         names = [k for k in self.weights if k not in FIXED]
         self.never = [k for k in names if not any(r["features"][k] for r in kept)]
         self.names = [k for k in names if k not in self.never]
