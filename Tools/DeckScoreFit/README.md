@@ -166,9 +166,9 @@ Not covered: the rest of the one-factor ablations in the fork's
   its own rating, and lands' ratings aren't in card quality.
 - Relative power, the IWD premium, the lane boost, archetype weighting,
   shrinkage and castability: these shape the order of picks, not something
-  a finished deck has.
-- The deck builder's Monte Carlo penalties: they would need every registered
-  deck simulated.
+  a finished deck has. Archetype weighting, shrinkage and the IWD premium
+  are tested as ratings below.
+- The deck builder's Monte Carlo penalties: tested below on draw luck.
 
 Actions → Rule targets → Run workflow runs it on every set with Premier Draft
 game data and Premier Draft ratings: 20 sets. MID, STX and VOW are left out
@@ -182,3 +182,130 @@ poetry run python Tools/DeckScoreFit/rules.py results/*.json --json rules.json
 ```
 
 Tests: `poetry run pytest Tools/DeckScoreFit/tests`.
+
+## Mana luck and the deck builder's penalties
+
+`mana.py` tests the deck builder's three Monte Carlo penalties
+(`suggest_deck()` in `src/advisor/deck_builder.py`). The builder simulates
+each candidate deck 10,000 times with `simulate_deck()` and takes points off
+its score for each point of a rate above a threshold:
+
+| penalty | rate (`simulate_deck()`) | threshold | points per rate point | ablation |
+|---|---|---|---|---|
+| Color Screw | `color_screw_t3`: 3+ lands and a 3-drop by turn 3, but no 3-drop castable | 10% | 2.5 | `no-mc-color` |
+| Mana Screw | `screw_t3`: fewer than 3 lands by turn 3 | 22% | 1.5 | `no-mc-screw` |
+| Flood Risk | `flood_t5`: 6+ lands by turn 5 | 27% | 1.5 | `no-mc-flood` |
+
+(`no-mc-all` drops all three.) The simulator draws a random 7, mulligans 0-1
+or 6-7 land hands, and counts turns on the play: by turn 3 it has seen 9
+cards, by turn 5 11.
+
+17Lands records each game's opening hand. For a 7-card keep, the rest of
+the library is in random order, so given the hand, the chance of each event
+is known: exactly for screw and flood (from the lands left in the library),
+and from 1,000 shuffles of the library through the simulator's own castability
+code for color screw. Two hands of the same deck differ only by luck, so
+within a deck, win rate against these chances measures what each event
+costs. Draws during the game aren't used: how many cards a player draws
+depends on how long the game lasts, so on whether it was won.
+
+`hands.py` computes, per sampled deck, `simulate_deck()`'s rates and, per
+game, the kept hand's lands and the three chances. Decks that aren't exactly
+40 cards are skipped (the simulator takes the first 40).
+
+Decided before the first run:
+
+- **Cost of each event:** a linear probability model of each 7-card keep's
+  result on its three chances and being on the play, with a deck fixed
+  effect, in win rate points. The SE is the larger of the deck-clustered
+  and the set-clustered sandwich.
+- **Calibration:** the slope, across decks, of the real chance of each event
+  in the deck's 7-card keeps on `simulate_deck()`'s rate for the deck (with
+  set effects, weighted by keeps). Arena smooths Bo1 opening hands and
+  players choose what to keep, so real keeps needn't match the simulator's.
+  Also reported: kept hands' land counts against random hands, the mulligan
+  rate against the simulator's, and each event's real rate in keeps against
+  the simulator's rate in its own 7-card keeps.
+- **Primary result:** what a point of `simulate_deck()`'s rate costs, in deck
+  score points: the event's cost times the calibration slope times the share
+  of games that are 7-card keeps, turned into log-odds at the average win
+  rate and divided by card quality's log-odds per score point (from fit.py's
+  deck-level model on the same decks). SEs by the delta method, taking the
+  three parts as independent.
+- **Keep or drop:** as for the pick rules, against the penalty's points per
+  rate point above its threshold, with 98.75% intervals (95% familywise
+  across the three penalties and all three together). For all three
+  together (`no-mc-all`), the size is the average penalty of the decks with
+  any penalty, and the value is what their rates above the thresholds cost
+  by the primary result.
+- **Also reported** but not used for the verdict: win rate by lands in a
+  7-card keep against 3 lands, within decks; and a deck-level fit, like the
+  rule tests', of games won on the three rates past their thresholds, in
+  score points.
+
+Limits:
+
+- Keeps are chosen. A 2-land hand that a player kept probably had cheap
+  spells; hands they mulliganed aren't seen. That likely makes screw look
+  cheaper than it is in a hand the simulator keeps.
+- The cost per point of rate is assumed the same at every rate; the penalty
+  only starts past its threshold. If the data say rates below the threshold
+  cost wins too, that is reported, not used for the verdict.
+
+## Which rating predicts results
+
+`horse.py` tests three things the engine does to a card's rating before
+anything else in a pick (`_calculate_weighted_score()` and STEP 2 of
+`evaluate_pack()` in `src/advisor/engine.py`):
+
+- **Archetype weighting** (`no-archetype`): the card's win rate in the lane's
+  pair is blended in with weight 0.6 + 0.7 x pick / 15.
+- **Shrinkage** (`no-shrinkage`): the pair's win rate is first shrunk toward
+  the overall one by `min(1, samples / 1000)`.
+- **The IWD premium** (`no-iwd`): the bonus for a card well above the pack
+  (`power_bonus`, 10 points per SD above the pack's mean, from 0.5 SD) is
+  1.15x for a card more than 1 SD above with IWD over 4.5.
+
+Each version of the rating gives a deck a quality: the average, over its
+spells, of the card's value on the engine's scale (50 at the format mean,
+15 points per SD) plus its power bonus, taking the format's mean and SD for
+the pack's. The archetype is the deck's main colors, and the blend weight is
+0.95, its average over a pack's 14 picks. A version is better if its deck
+quality predicts held-out decks' results better.
+
+17Lands' ratings come from the same games, which would favor whatever
+fits them most closely: pair win rates from few games most of all. So
+`games.py` computes the win rates again from the dump's other games, every
+game not played by a sampled deck: GIH WR (opening hand or drawn), IWD (GIH
+WR less the win rate when not drawn), overall and per main colors. A card's
+overall rating needs 200 such games, a pair rating 10 (the engine's own
+minimum); shrinkage counts the sample's games too, which needs no results.
+`quality.py` computes each version's deck quality.
+
+Decided before the first run:
+
+- **Model:** fit.py's logistic regression with card quality replaced by each
+  version, fit on four fifths of the decks (by a hash of the ID) and
+  scored on the other fifth, five times.
+- **Primary result:** the engine's version against each ablation, in
+  held-out log loss per game, with 98.33% intervals (95% familywise across
+  the three) from the per-deck differences. Also given as a share of what
+  card quality is worth: the log loss without any card quality less the
+  engine's version.
+- **Verdict:** *keep* if the engine's version predicts better (the interval
+  excludes zero), *drop* if the ablation does. *No difference* if the whole
+  interval is within 2% of what card quality is worth. Otherwise *can't
+  tell*.
+- **Also reported:** blend weights 0.65 and 1.3, no power bonus, overall GIH
+  WR alone, the deck score's own blend (0.7 pair, 0.3 overall, no
+  shrinkage), and each comparison per set.
+
+Limits:
+
+- It tests what a rating says about a finished deck, not the pick it makes:
+  a better predictor of results is better information to pick by, but how
+  much that changes picks isn't measured.
+- The blend weight changes during the draft; one average weight stands for
+  it.
+
+Actions → Mana and ratings → Run workflow runs both on the 20 sets.

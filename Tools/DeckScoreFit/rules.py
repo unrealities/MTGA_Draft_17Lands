@@ -342,14 +342,15 @@ def implied(rule, rd, mask):
     return float(np.mean(rule.implied(counts)[rule.region(counts)]))
 
 
-def keep_or_drop(size, value, se):
+def keep_or_drop(size, value, se, z=None):
     """Whether a card's value is closer to zero or to what the rule makes it.
 
     With the rule, a card is valued `size` off its rating; without it, not at
     all. Dropping it is better if the value is closer to zero than to `size`,
     i.e. on zero's side of size / 2, for the whole interval.
     """
-    low, high = value - Z * se, value + Z * se
+    z = Z if z is None else z
+    low, high = value - z * se, value + z * se
     half = size / 2
     if (low > half) if size < 0 else (high < half):
         return "drop"
