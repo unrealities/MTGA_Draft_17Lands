@@ -54,7 +54,10 @@ Modern Limited is dictated by "Mana Velocity" and "Mana Stability."
 
 ## 6. Wheel Chance (Shown, Not Scored)
 
-The engine estimates each card's chance of coming back from its ALSA and its rank in the pack, and shows it in the Wheel column. It doesn't change the card's score. Packs with fewer than 9 cards, and picks 9 and later, show no chance.
+The engine estimates each card's chance of coming back from its ALSA and its rank in the pack, and shows it in the Wheel column. It doesn't change the card's score. Packs with fewer than 9 cards, and picks 9 and later, show no chance. The existing curves assume eight-player, one-card picks: Pick-Two and other pod sizes show no percentage until a suitable model exists. This does not disable the scanner's pack-return tracker.
+
+In Pick-Two, archetype weighting and first-pack off-color pressure both use
+pick `2N - 1` for passing round `N`, so commitment advances with cards removed.
 
 Replays of 15,000 17Lands drafts showed that value over replacement, the late-signal bonus, the wheel multiplier, the signal tie-breaker and the pack 3 deck-improvement bonus didn't change the advisor's picks or how following it related to winning, so the engine no longer uses them (v4.28). The Open Lanes panel still shows lane signals.
 
