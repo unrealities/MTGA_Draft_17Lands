@@ -1,3 +1,10 @@
+===================== RELEASE NOTES 4.30 =====================
+* JamesYouL2: [Bug] Resolved card IDs now cache metadata without win rates. Alternate printings use the active dataset's ratings by name, so switching sets, event formats, user groups or time periods no longer carries old statistics into the new dataset. Cards without matching ratings remain visible but unrated (#242).
+* JamesYouL2: [Bug] Pick-Two Traditional/Quick Draft and Traditional Sealed are recognized before their shorter event names, and specific special-event rules take precedence over generic ones. Dataset selection now follows the correct format. Pick-Two's first-pack off-color pressure advances with cards removed, matching its archetype weighting (#242).
+* JamesYouL2: [Advisor] Wheel percentages are hidden for Pick-Two and pods other than eight players because the current model assumes eight-player, one-card picks. Returned-pack tracking remains available (#242).
+* JamesYouL2: [Bug] The advisor, deck builder, Auto-Lands and deck labels now share hybrid mana payment rules. A {G/U} spell can use either color without being treated as requiring both; {2/U} and {U/P} do not force blue into a deck. Hybrid-only color choices are independent of card order, and splashes require fixing for every off-color symbol. The Monte Carlo simulator is unchanged (#243).
+* unrealities: [Development] Recap layout tests wait briefly for newly selected tabs to become visible on macOS before checking their stat boxes, avoiding timing-related failures (#241).
+
 ===================== RELEASE NOTES 4.29 =====================
 * unrealities: [Bug] The post-draft recap no longer crops its content on high-DPI Windows displays. The mana curve, card-type chart and signal meter size themselves from their label fonts so labels stay inside the chart and clear of each other, and each recap tab now scrolls when the pane is too short to show it all (#238).
 * unrealities: [Bug] The pool-balance donut stays inside narrow panels: it shrinks to the room the legend leaves, and is hidden if it can't fit.
