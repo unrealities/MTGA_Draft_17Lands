@@ -82,6 +82,57 @@ def test_fit_logit_matches_a_known_answer():
     assert cov[0, 0] == pytest.approx(1 / (10 * 0.7 * 0.3))
 
 
+
+def test_fit_clustered_agrees_with_fit_logit():
+    rng = np.random.default_rng(1)
+    n = 400
+    A = np.column_stack([np.ones(n), rng.normal(size=n)])
+    games = rng.integers(3, 10, size=n).astype(float)
+    wins = rng.binomial(games.astype(int), fit.expit(0.2 + 0.5 * A[:, 1])).astype(float)
+    beta, model, cluster = fit.fit_clustered(A, wins, games)
+    ref, ref_cov = fit.fit_logit(A, wins, games)
+    assert beta == pytest.approx(ref, abs=1e-8)
+    assert model == pytest.approx(ref_cov, rel=1e-6)
+    assert cluster is None
+
+
+def test_fit_clustered_cluster_covariance():
+    rng = np.random.default_rng(2)
+    n = 600
+    groups = np.repeat(np.array(["a", "b", "c", "d", "e", "f"]), n // 6)
+    # Each group has its own shift that the model doesn't know about, so the
+    # cluster sandwich should be wider than the model's errors.
+    shift = {g: s for g, s in zip("abcdef", rng.normal(scale=0.5, size=6))}
+    x = rng.normal(size=n) + np.array([shift[g] for g in groups])
+    A = np.column_stack([np.ones(n), x])
+    games = np.full(n, 8.0)
+    eta = 0.3 * x + np.array([shift[g] for g in groups])
+    wins = rng.binomial(8, fit.expit(eta)).astype(float)
+    beta, model, cluster = fit.fit_clustered(A, wins, games, groups)
+    assert cluster.shape == model.shape
+    assert cluster[1, 1] > model[1, 1]
+    # One group: no cluster covariance.
+    assert fit.fit_clustered(A, wins, games, np.full(n, "a"))[2] is None
+
+
+def test_varying_drops_constant_columns():
+    C = np.array([[1.0, 0.0, 2.0], [1.0, 1.0, 2.0]])
+    assert fit.varying(C).tolist() == [[0.0], [1.0]]
+    assert fit.varying(np.zeros((0, 3))).shape == (0, 3)
+
+
+def test_keep_or_drop():
+    z = 2.0
+    # A penalty of -1: drop if the value is surely above -0.5, keep if below.
+    assert fit.keep_or_drop(-1.0, 0.0, 0.1, z) == "drop"
+    assert fit.keep_or_drop(-1.0, -1.0, 0.1, z) == "keep"
+    assert fit.keep_or_drop(-1.0, -0.5, 0.1, z) == "can't tell"
+    assert fit.keep_or_drop(-1.0, -0.5 + 1.01 * z * 0.1, 0.1, z) == "drop"
+    # A boost of +1.
+    assert fit.keep_or_drop(1.0, 0.1, 0.1, z) == "drop"
+    assert fit.keep_or_drop(1.0, 1.2, 0.1, z) == "keep"
+
+
 def test_expected_wins():
     def by_recursion(p, wins=0, losses=0):
         if wins == 7 or losses == 3:
