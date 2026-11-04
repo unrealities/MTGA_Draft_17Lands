@@ -28,6 +28,7 @@ class TestAppController:
         scanner.retrieve_current_missing_cards.return_value = []
         scanner.retrieve_current_picked_cards.return_value = []
         scanner.retrieve_draft_history.return_value = []
+        scanner.number_of_players = 8
 
         orchestrator = MagicMock()
         orchestrator.scanner = scanner
@@ -156,14 +157,15 @@ class TestAppController:
         expected = ["rec"] if enabled else []
         mock_app.dashboard.update_recommendations.assert_called_once_with(expected)
 
-    @pytest.mark.parametrize("cards_per_pick", [1, 2])
+    @pytest.mark.parametrize("cards_per_pick,number_of_players", [(1, 8), (2, 4), (1, 6)])
     def test_refresh_ui_data_tells_the_advisor_cards_per_pick(
-        self, mock_app, cards_per_pick
+        self, mock_app, cards_per_pick, number_of_players
     ):
         """Pick-Two drafts take two cards a pick, and the advisor is told so."""
         mock_app.configuration.settings.advisor_enabled = True
         mock_app.overlay_window = None
         mock_app.orchestrator.scanner.cards_per_pick = cards_per_pick
+        mock_app.orchestrator.scanner.number_of_players = number_of_players
         controller = AppController(mock_app)
 
         with patch("src.ui.app_controller.DraftAdvisor") as mock_advisor, patch(
@@ -173,5 +175,6 @@ class TestAppController:
             controller.refresh_ui_data()
 
         mock_advisor.return_value.evaluate_pack.assert_called_once_with(
-            [], 1, current_pack=1, cards_per_pick=cards_per_pick
+            [], 1, current_pack=1, cards_per_pick=cards_per_pick,
+            number_of_players=number_of_players,
         )

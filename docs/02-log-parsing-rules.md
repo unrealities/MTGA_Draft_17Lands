@@ -36,6 +36,17 @@ The application does **not** use strict string equality for detection. It uses a
 
 ## 3. Event Catalog (Premier & Traditional Draft)
 
+Event names are matched most-specific first: `PickTwoTradDraft`,
+`PickTwoQuickDraft` and `TradSealed` take precedence over their embedded
+ordinary-format names. Special-event rules with more matching keywords take
+precedence over generic rules (for example, Qualifier + Draft before Qualifier).
+
+`tests/test_format_consistency.py` checks every registered event format against
+its expected scanner type, cards per pick, pod size and dataset selection. It
+also covers Cube and special-event aliases. Real-log replay tests in
+`tests/test_log_scanner.py` retain coverage of both Premier protocols, bot and
+human picks, Sealed pools and dynamic Pick-Two detection.
+
 These are the signals for Human drafts (Premier/Traditional/Cube).
 
 ### A. Draft Start

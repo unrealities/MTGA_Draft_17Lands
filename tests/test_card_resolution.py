@@ -172,3 +172,36 @@ def test_resolver_gives_up_after_max_attempts(dataset, monkeypatch):
     dataset.clear()
     dataset.get_data_by_id([999])
     assert dataset.start_resolution(Mock()) is not None
+
+
+@pytest.mark.parametrize("source", ["local-db", "scryfall"])
+def test_resolved_alias_persists_metadata_but_not_ratings(tmp_path, monkeypatch, source):
+    import json
+
+    monkeypatch.setattr("src.constants.SETS_FOLDER", str(tmp_path))
+    data = Dataset(retrieve_unknown=True)
+    current = {"name": "Recovered Card", "colors": ["G"], "types": ["Creature"],
+               "cmc": 2, "mana_cost": "{1}{G}",
+               "deck_colors": {"All Decks": {"gihwr": 63.0, "samples": 1000}}}
+    data._dataset = {"card_ratings": {"123": current}}
+    data._name_index = {current["name"]: current}
+    monkeypatch.setattr(data, "_resolve_unknown_id",
+                        lambda aid: "Recovered Card" if source == "local-db" else aid)
+    post = Mock(return_value=response(cards=[CARD]))
+    monkeypatch.setattr("requests.post", post)
+
+    data.get_data_by_id([999])
+    finish(data.start_resolution(Mock()))
+    assert data.get_data_by_id([999]) == [current]
+    assert (post.call_count == 1) is (source == "scryfall")
+    assert "deck_colors" not in data._fallback_ratings["999"]
+    saved = json.loads((tmp_path / "custom_cards.json").read_text())
+    assert saved["999"]["mana_cost"] == "{1}{G}"
+    assert "deck_colors" not in saved["999"]
+    assert current["deck_colors"]["All Decks"]["gihwr"] == 63.0
+
+    data.clear()
+    assert not data.get_data_by_id([999])[0].get("deck_colors")
+    assert data.start_resolution(Mock()) is None
+    reopened = Dataset()
+    assert reopened.get_data_by_id([999]) == data.get_data_by_id([999])
