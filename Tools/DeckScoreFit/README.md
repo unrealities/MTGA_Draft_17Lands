@@ -211,7 +211,9 @@ depends on how long the game lasts, so on whether it was won.
 
 `hands.py` computes, per sampled deck, `simulate_deck()`'s rates and, per
 game, the kept hand's lands and the three chances. Decks that aren't exactly
-40 cards are skipped (the simulator takes the first 40).
+40 cards are skipped (the simulator takes the first 40). A set whose dump records
+mulligans in under 2% of games is left out: DMU's records them in 0.15%,
+with 6-card hands, so its mulligans pass as 7-card keeps.
 
 Decided before the first run:
 
@@ -275,11 +277,14 @@ quality predicts held-out decks' results better.
 
 17Lands' ratings come from the same games, which would favor whatever
 fits them most closely: pair win rates from few games most of all. So
-`games.py` computes the win rates again from the dump's other games, every
-game not played by a sampled deck: GIH WR (opening hand or drawn), IWD (GIH
-WR less the win rate when not drawn), overall and per main colors. A card's
-overall rating needs 200 such games, a pair rating 10 (the engine's own
-minimum); shrinkage counts the sample's games too, which needs no results.
+`games.py` computes the win rates again, cross-fitted: every deck in the
+dump falls in one of five folds by a hash of its ID, and a sampled deck is
+rated from the games of the other four: GIH WR (opening hand or drawn), IWD
+(GIH WR less the win rate when not drawn), overall and per main colors. So
+no deck's results are in its own ratings, and every set's ratings come from
+four fifths of its dump, however much of it the sample is. A card's overall
+rating needs 200 such games, a pair rating 10 (the engine's own minimum);
+shrinkage counts games in hand in every fold, which needs no results.
 `quality.py` computes each version's deck quality.
 
 Decided before the first run:

@@ -4,8 +4,10 @@
         --games games.json.gz --dataset FRA_PremierDraft_All_Data.json.gz \
         --set FRA --out FRA.json
 
-The win rates are games.py's, from the dump's games not played by a sampled
-deck, so no deck's results are in the ratings it is scored with. The app's
+The win rates are games.py's: a deck is rated from the counts of the folds
+other than its own, so no deck's results are in the ratings it is scored
+with, and shrinkage reads games in hand over every fold, which needs no
+results. The app's
 dataset only says which cards are spells. Each version follows
 _calculate_weighted_score() and the power bonus in evaluate_pack() in
 src/advisor/engine.py, with the archetype the deck's main colors and the
@@ -21,6 +23,7 @@ import statistics
 import sys
 
 from features import App
+from games import FOLDS, fold_of
 
 ALL = "All Decks"
 # Games in hand a rating needs: overall, and in a pair (the engine's minimum).
@@ -47,6 +50,24 @@ VERSIONS = {
 }
 # The deck score's own blend (get_card_rating() in deck_scorer.py).
 DECK_SCORE = "deck-score-blend"
+
+
+def training(folds, f):
+    """Counts for rating fold f's decks: [in hand, won, in hand in every fold,
+    not drawn, won], from the other folds except the third."""
+    out = {}
+    for i, ratings in enumerate(folds):
+        for colors, cards in ratings.items():
+            group = out.setdefault(colors, {})
+            for name, (seen, won, unseen, unseen_won) in cards.items():
+                s = group.setdefault(name, [0, 0, 0, 0, 0])
+                s[2] += seen
+                if i != f:
+                    s[0] += seen
+                    s[1] += won
+                    s[3] += unseen
+                    s[4] += unseen_won
+    return out
 
 
 class Ratings:
@@ -103,7 +124,10 @@ class Ratings:
 
 
 def deck_quality(app, ratings, decks):
-    """{deck id: {version: quality}} for decks with a rated spell."""
+    """{deck id: {version: quality}} for decks with a rated spell.
+
+    ratings: one Ratings, or one per fold to rate each deck by its fold's.
+    """
     out = {}
     names = list(VERSIONS) + [DECK_SCORE]
     for d in decks:
@@ -115,12 +139,13 @@ def deck_quality(app, ratings, decks):
             for (name, count), card in zip(d["cards"].items(), deck)
             if "Land" not in card.get("types", [])
         ]
+        r = ratings[fold_of(d["id"])] if isinstance(ratings, list) else ratings
         values = {}
         for version in names:
             got = [
                 (v, count)
                 for name, count in spells
-                if (v := ratings.value(name, d["main_colors"], version)) is not None
+                if (v := r.value(name, d["main_colors"], version)) is not None
             ]
             n = sum(c for _, c in got)
             if n:
@@ -145,14 +170,15 @@ def main(argv=None):
     with gzip.open(args.decks, "rt", encoding="utf-8") as f:
         decks = json.load(f)
     with gzip.open(args.games, "rt", encoding="utf-8") as f:
-        ratings = Ratings(json.load(f)["ratings"])
+        folds = json.load(f)["folds"]
+    ratings = [Ratings(training(folds, i)) for i in range(FOLDS)]
     quality = deck_quality(app, ratings, decks)
+    mean = statistics.mean(r.mean for r in ratings)
+    std = statistics.mean(r.std for r in ratings)
     os.makedirs(os.path.dirname(args.out) or ".", exist_ok=True)
     with open(args.out, "w", encoding="utf-8") as f:
-        json.dump({"set": args.set, "mean": ratings.mean, "std": ratings.std,
-                   "decks": quality}, f)
-    print(f"{args.set}: {len(quality)} decks; format mean {ratings.mean:.2f}, "
-          f"SD {ratings.std:.2f}")
+        json.dump({"set": args.set, "mean": mean, "std": std, "decks": quality}, f)
+    print(f"{args.set}: {len(quality)} decks; format mean {mean:.2f}, SD {std:.2f}")
 
 
 if __name__ == "__main__":

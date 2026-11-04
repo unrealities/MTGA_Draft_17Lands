@@ -87,6 +87,15 @@ def test_calibration_slope(md):
     assert slope == pytest.approx(1.0, abs=0.15)
 
 
+def test_leaves_out_dumps_without_mulligans():
+    features, hand_files = simulated(n=900)
+    for deck in hand_files[0]["decks"]:
+        for g in deck["games"]:
+            g[1] = 0
+    md = mana.ManaData(features, hand_files)
+    assert set(md.left_out) == {"AAA"} and md.sets == ["BBB", "CCC"]
+
+
 def test_hand_shares_add_up(md):
     obs, rand, simk = mana.hand_shares(md)
     assert obs.sum() == pytest.approx(1) and rand.sum() == pytest.approx(1)

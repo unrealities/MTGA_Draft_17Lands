@@ -64,3 +64,25 @@ def test_deck_quality_averages_rated_spells():
     expected = (2 * r.value("Filler", "WU", "engine") + r.value("Chaff", "WU", "engine")) / 3
     assert out["a"]["engine"] == pytest.approx(expected)
     assert set(out["a"]) == set(quality.VERSIONS) | {quality.DECK_SCORE}
+
+
+def test_training_leaves_out_the_deck_s_fold():
+    # [in hand, won, not drawn, won] for each fold.
+    folds = [{"All Decks": {"Bolt": [10, 6, 4, 2]}}, {"All Decks": {"Bolt": [20, 10, 5, 1]}},
+             {"All Decks": {"Bolt": [30, 12, 6, 3]}}]
+    assert quality.training(folds, 1) == {"All Decks": {"Bolt": [40, 18, 60, 10, 5]}}
+
+
+def test_each_deck_is_rated_by_its_fold():
+    from games import fold_of
+    good = quality.Ratings({"All Decks": {"Card": [1000, 600, 1000, 0, 0],
+                                          "Other": [1000, 500, 1000, 0, 0]}})
+    bad = quality.Ratings({"All Decks": {"Card": [1000, 500, 1000, 0, 0],
+                                         "Other": [1000, 600, 1000, 0, 0]}})
+    decks = [{"id": f"d{i}:0", "main_colors": "WU", "cards": {"Plains": 17, "Card": 23}}
+             for i in range(20)]
+    by_fold = [good if f % 2 else bad for f in range(quality.FOLDS)]
+    out = quality.deck_quality(FakeApp(), by_fold, decks)
+    for d in decks:
+        high = out[d["id"]]["no-power-bonus"] > 50
+        assert high == bool(fold_of(d["id"]) % 2)

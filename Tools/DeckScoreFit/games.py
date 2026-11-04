@@ -4,12 +4,13 @@
         --decks decks.json.gz --out games.json.gz
 
 For each game of a deck from decks.py, it keeps whether the player was on the
-play, their mulligans, the result and the opening hand. From every other game
-it counts, for each card and for the deck's main colors and all decks, the
-games it was in hand (opening hand or drawn) and won, and the games it was in
-the deck but not drawn and won: the card win rates the sampled decks didn't
-make. Games in hand are counted over every game too, for shrinkage, which
-needs no results. Standard library only.
+play, their mulligans, the result and the opening hand. Every deck in the dump
+falls in one of FOLDS folds by its ID; for each fold it counts, for each card
+and for the deck's main colors and all decks, the games it was in hand
+(opening hand or drawn) and won, and the games it was in the deck but not
+drawn and won. quality.py rates a deck from the other folds' counts, so no
+deck's results are in its own ratings and every set's ratings come from most
+of its dump. Standard library only.
 """
 
 import argparse
@@ -17,7 +18,15 @@ import csv
 import gzip
 import json
 
+from decks import deck_hash
+
 ALL = "All Decks"
+FOLDS = 5
+
+
+def fold_of(key):
+    """The fold a deck's games are counted in."""
+    return deck_hash(key, "ratings") % FOLDS
 
 
 def _count(text):
@@ -26,12 +35,11 @@ def _count(text):
 
 
 def read_games(lines, ids):
-    """(hands, ratings) from the dump's lines, header first.
+    """(hands, folds) from the dump's lines, header first.
 
     hands: [deck id, on play, mulligans, won, {card: count in opening hand}]
-    for each game of a deck in ids. ratings: {colors: {card: [games in hand,
-    won, games in hand in every game, games not drawn, won]}}, counting the
-    games of decks not in ids, except the third.
+    for each game of a deck in ids. folds: for each fold, {colors: {card:
+    [games in hand, won, games not drawn, won]}} over its decks' games.
     """
     lines = iter(lines)
     header = next(csv.reader([next(lines)]))
@@ -43,7 +51,8 @@ def read_games(lines, ids):
         if name.startswith("deck_")
     ]
     hand_cols = [(c, oh) for c, _, oh, _ in cards if oh is not None]
-    ratings = {}
+    folds = [{} for _ in range(FOLDS)]
+    fold = {}
     hands = []
     for line in lines:
         if '"' in line:
@@ -53,6 +62,10 @@ def read_games(lines, ids):
         key = f"{fields[col['draft_id']]}:{fields[col['build_index']]}"
         won = fields[col["won"]] == "True"
         sampled = key in ids
+        f = fold.get(key)
+        if f is None:
+            f = fold[key] = fold_of(key)
+        ratings = folds[f]
         groups = [ratings.setdefault(ALL, {})]
         colors = fields[col["main_colors"]]
         if colors:
@@ -66,17 +79,13 @@ def read_games(lines, ids):
             for group in groups:
                 s = group.get(name)
                 if s is None:
-                    s = group[name] = [0, 0, 0, 0, 0]
-                if seen:
-                    s[2] += 1
-                if sampled:
-                    continue
+                    s = group[name] = [0, 0, 0, 0]
                 if seen:
                     s[0] += 1
                     s[1] += won
                 else:
-                    s[3] += 1
-                    s[4] += won
+                    s[2] += 1
+                    s[3] += won
         if sampled:
             hands.append([
                 key,
@@ -85,7 +94,7 @@ def read_games(lines, ids):
                 won,
                 {c: n for c, oh in hand_cols if (n := _count(fields[oh]))},
             ])
-    return hands, ratings
+    return hands, folds
 
 
 def main(argv=None):
@@ -98,11 +107,11 @@ def main(argv=None):
     with gzip.open(args.decks, "rt", encoding="utf-8") as f:
         ids = {d["id"] for d in json.load(f)}
     with gzip.open(args.games, "rt", encoding="utf-8", newline="") as f:
-        hands, ratings = read_games(f, ids)
+        hands, folds = read_games(f, ids)
     with gzip.open(args.out, "wt", encoding="utf-8") as f:
-        json.dump({"hands": hands, "ratings": ratings}, f)
-    others = sum(s[0] + s[3] for s in ratings.get(ALL, {}).values())
-    print(f"Kept {len(hands)} games of sampled decks; {others} card-games from the rest")
+        json.dump({"hands": hands, "folds": folds}, f)
+    sizes = [sum(s[0] + s[2] for s in r.get(ALL, {}).values()) for r in folds]
+    print(f"Kept {len(hands)} games of sampled decks; card-games by fold: {sizes}")
 
 
 if __name__ == "__main__":

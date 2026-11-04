@@ -40,6 +40,14 @@ RATES = [p[0] for p in PENALTIES]
 # then the chance of each event.
 CHANCE = {"screw_t3": 4, "flood_t5": 5, "color_screw_t3": 6}
 HAND_BINS = ["0-1", "2", "3", "4", "5", "6-7"]
+# A dump that records mulligans in fewer games than this (percent) logs most
+# of them as 7-card keeps (DMU's: 0.15%, with 6-card hands), so it is left out.
+MIN_MULLIGANS = 2.0
+
+
+def mulligan_rate(hand_file):
+    games = [g for deck in hand_file["decks"] for g in deck["games"]]
+    return 100.0 * sum(g[1] > 0 for g in games) / max(1, len(games))
 
 
 class ManaData:
@@ -47,6 +55,9 @@ class ManaData:
 
     def __init__(self, feature_files, hand_files):
         self.base = d = Data(feature_files)
+        self.left_out = {f["set"]: mulligan_rate(f) for f in hand_files
+                         if mulligan_rate(f) < MIN_MULLIGANS}
+        hand_files = [f for f in hand_files if f["set"] not in self.left_out]
         index = {(r["set"], r["id"]): i for i, r in enumerate(d.rows)}
         decks = [
             (index[(f["set"], deck["id"])], deck)
@@ -312,6 +323,10 @@ def report(md, out=sys.stdout):
       f"{md.kept.sum()} games ({100 * md.kept.mean():.1f}%) are 7-card keeps "
       f"with the hand in the deck. Intervals are {100 * (1 - 2 * (1 - _phi(Z))):.2f}%.")
     w()
+    for s, rate in md.left_out.items():
+        w(f"Left out: {s}, whose dump records mulligans in {rate:.2f}% of games "
+          f"(under {MIN_MULLIGANS:g}%), so its mulligans pass as 7-card keeps.")
+        w()
     res = primary(md)
     w("## Primary results")
     w()

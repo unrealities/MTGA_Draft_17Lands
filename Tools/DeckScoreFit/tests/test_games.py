@@ -31,17 +31,29 @@ def test_hands_and_ratings():
         game("o", False, bolt=("1", "1", "0"), colors="UR"),
         game("p", True, bear=("0", "0", "0")),  # Bolt not drawn, no Bear
     ])
-    hands, ratings = games.read_games(lines, {"s:0"})
+    hands, folds = games.read_games(lines, {"s:0"})
     assert hands == [
         ["s:0", True, 0, True, {"Bolt": 1}],
         ["s:0", False, 1, False, {"Bear": 2}],
     ]
-    # [in hand, won, in hand in every game, not drawn, won], from o and p only,
-    # except the third.
-    assert ratings["All Decks"]["Bolt"] == [2, 1, 3, 1, 1]
-    assert ratings["All Decks"]["Bear"] == [0, 0, 2, 2, 1]
-    assert ratings["WR"]["Bolt"] == [1, 1, 2, 1, 1]
-    assert ratings["UR"]["Bolt"] == [1, 0, 1, 0, 0]
+    assert len(folds) == games.FOLDS
+
+    def counts(colors, card):
+        # [in hand, won, not drawn, won], summed over every deck's fold.
+        out = [0, 0, 0, 0]
+        for f in folds:
+            for i, n in enumerate(f.get(colors, {}).get(card, [0] * 4)):
+                out[i] += n
+        return out
+
+    assert counts("All Decks", "Bolt") == [3, 2, 2, 1]
+    assert counts("All Decks", "Bear") == [2, 1, 2, 1]
+    assert counts("WR", "Bolt") == [2, 2, 2, 1]
+    assert counts("UR", "Bolt") == [1, 0, 0, 0]
+    # Each deck's games are in its own fold only.
+    f = games.fold_of("o:0")
+    assert folds[f]["UR"]["Bolt"] == [1, 0, 0, 0]
+    assert all("UR" not in r for i, r in enumerate(folds) if i != f)
 
 
 def test_command_line(tmp_path):
@@ -55,4 +67,5 @@ def test_command_line(tmp_path):
     games.main(["--games", str(dump_path), "--decks", str(decks), "--out", str(out)])
     with gzip.open(out, "rt") as f:
         saved = json.load(f)
-    assert len(saved["hands"]) == 1 and saved["ratings"]["All Decks"]["Bolt"][3] == 1
+    assert len(saved["hands"]) == 1
+    assert sum(r.get("All Decks", {}).get("Bolt", [0, 0, 0, 0])[2] for r in saved["folds"]) == 2
