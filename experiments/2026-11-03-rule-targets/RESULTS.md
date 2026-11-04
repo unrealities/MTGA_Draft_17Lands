@@ -6,11 +6,12 @@ with Premier Draft game data and Premier Draft ratings, up to 50,000 decks
 a set. The protocol is in [PROTOCOL.md](PROTOCOL.md),
 written before the first run. The full report is [rules.md](rules.md) and the numbers are in [rules.json](rules.json).
 
-This is a rerun after review. Folds are now assigned by draft, and the
-rating-SD intervals take the larger of their own two SEs. Neither changed a
-verdict: the set-clustered SE was the larger for both the raw and the
-rating-SD estimates of every rule, and no number below moved by more than
-0.01. The first run was [41734489663](https://github.com/JamesYouL2/MTGA_Draft_17Lands/actions/runs/41734489663).
+This is a rerun after review, now that the rating-SD intervals take the
+larger of their own two SEs. The fix changes no number here, because the
+set-clustered SE was the larger for both the raw and the rating-SD estimate
+of every rule. The decks sampled are the same as in the first run, and no
+number below moved by more than 0.01. The likely cause is the card ratings,
+which the workflow downloads fresh on each run. The first run was [41734489663](https://github.com/JamesYouL2/MTGA_Draft_17Lands/actions/runs/41734489663).
 
 ## Verdicts
 
