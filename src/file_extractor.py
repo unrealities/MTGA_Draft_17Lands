@@ -1,0 +1,1329 @@
+"""This module contains the functions and classes that are used for building the set files and communicating with platforms"""
+
+import sys
+import os
+import time
+import json
+import datetime
+import itertools
+import re
+import sqlite3
+from typing import Dict
+from src import constants
+from src.logger import create_logger
+from src.utils import Result, check_file_integrity, clean_string
+from src.ui_progress import UIProgress
+from src.seventeenlands import Seventeenlands
+from src.scryfall_tagger import ScryfallTagger
+from src.constants import COLOR_WIN_RATE_GAME_COUNT_THRESHOLD_DEFAULT
+
+logger = create_logger()
+
+if not os.path.exists(constants.SETS_FOLDER):
+    os.makedirs(constants.SETS_FOLDER)
+
+if not os.path.exists(constants.TEMP_FOLDER):
+    os.makedirs(constants.TEMP_FOLDER)
+
+
+def initialize_card_data(card_data):
+    """Initializes a card object with default values to prevent KeyErrors in UI logic."""
+    card_data[constants.DATA_FIELD_DECK_COLORS] = {}
+    for color in constants.DECK_COLORS:
+        card_data[constants.DATA_FIELD_DECK_COLORS][color] = {
+            x: 0.0
+            for x in constants.DATA_FIELD_17LANDS_DICT
+            if x != constants.DATA_SECTION_IMAGES
+        }
+    if constants.DATA_FIELD_CMC not in card_data:
+        card_data[constants.DATA_FIELD_CMC] = 0
+    if constants.DATA_FIELD_TYPES not in card_data:
+        card_data[constants.DATA_FIELD_TYPES] = []
+    if constants.DATA_FIELD_NAME not in card_data:
+        card_data[constants.DATA_FIELD_NAME] = "Unknown Card"
+
+
+def check_set_data(set_data, ratings_data):
+    """Run through 17Lands card list and determine if there are any cards missing from the assembled set file"""
+    try:
+        local_names = {
+            v[constants.DATA_FIELD_NAME].replace("///", "//") for v in set_data.values()
+        }
+
+        for rated_card in ratings_data:
+            if rated_card not in local_names:
+                logger.error("Card %s Missing", rated_card)
+    except Exception as error:
+        logger.error(error)
+
+
+def decode_mana_cost(encoded_cost):
+    """Parse the raw card mana_cost field and return the cards cmc and color identity list"""
+    decoded_cost = ""
+    cmc = 0
+    if encoded_cost:
+        cost_string = re.sub(r"\(|\)", "", encoded_cost)
+
+        sections = cost_string[1:].split("o")
+        for section in sections:
+            cmc += int(section) if section.isnumeric() else 1
+
+        decoded_cost = "".join(f"{{{x}}}" for x in sections)
+
+    return decoded_cost, cmc
+
+
+def search_arena_log_locations(arg_location=None, config_location=None):
+    """
+    Top 1% Robustness: Prioritizes system paths over stored paths to avoid
+    test-pollution issues (e.g. stale pytest paths in config).
+    """
+    # 1. Highest Priority: Manual command line argument
+    if arg_location and os.path.exists(arg_location):
+        return arg_location
+
+    # 2. Second Priority: System Default Paths (The "Real" Game logs)
+    system_paths = []
+    if sys.platform == constants.PLATFORM_ID_LINUX:
+        system_paths.append(
+            os.path.join(os.path.expanduser("~"), constants.LOG_LOCATION_LINUX)
+        )
+    elif sys.platform == constants.PLATFORM_ID_OSX:
+        system_paths.append(
+            os.path.join(os.path.expanduser("~"), constants.LOG_LOCATION_OSX)
+        )
+    else:
+        # Windows drives check
+        path_list = [constants.WINDOWS_DRIVES, [constants.LOG_LOCATION_WINDOWS]]
+        system_paths.extend([os.path.join(*x) for x in itertools.product(*path_list)])
+
+    for path in system_paths:
+        if path and os.path.exists(path):
+            return path
+
+    # 3. Lowest Priority: The path stored in config (might be stale/temp)
+    if config_location and os.path.exists(config_location):
+        # Additional check: Does the path look like a temp folder?
+        if "/private/var/" not in config_location and "/tmp/" not in config_location:
+            return config_location
+
+    return ""
+
+
+def retrieve_arena_directory(log_location):
+    """Searches the Player.log file for the Arena install location"""
+    arena_directory = ""
+    try:
+        # Retrieve the arena directory
+        with open(log_location, "r", encoding="utf-8", errors="replace") as log_file:
+            line = log_file.readline()
+            if sys.platform == constants.PLATFORM_ID_WINDOWS:
+                # Windows: original regex
+                location = re.findall(r"'(.*?)/Managed'", line, re.DOTALL)
+            else:
+                # Other platforms: exclude 'X:/...'
+                location = re.findall(r"'.*?([/][^']+)/Managed'", line)
+            if location:
+                path = location[0]
+                if os.path.exists(path):
+                    arena_directory = path
+
+    except Exception as error:
+        logger.error(error)
+    return arena_directory
+
+
+def search_local_files(paths, file_prefixes):
+    """Generic function that's used for searching local directories for a file"""
+    file_locations = []
+    for file_path in paths:
+        try:
+            if os.path.exists(file_path):
+                for prefix in file_prefixes:
+                    files = [
+                        filename
+                        for filename in os.listdir(file_path)
+                        if filename.startswith(prefix)
+                    ]
+
+                    for file in files:
+                        file_location = os.path.join(file_path, file)
+                        file_locations.append(file_location)
+
+        except Exception as error:
+            logger.error(error)
+
+    try:
+        file_locations.sort(key=lambda x: os.path.getmtime(x), reverse=True)
+    except Exception as e:
+        logger.error(f"Error sorting local files: {e}")
+
+    return file_locations
+
+
+def extract_types(type_line):
+    """Parses a type string and returns a list of card types"""
+    types = []
+    if constants.CARD_TYPE_CREATURE in type_line:
+        types.append(constants.CARD_TYPE_CREATURE)
+
+    if constants.CARD_TYPE_PLANESWALKER in type_line:
+        types.append(constants.CARD_TYPE_PLANESWALKER)
+
+    if constants.CARD_TYPE_LAND in type_line:
+        types.append(constants.CARD_TYPE_LAND)
+
+    if constants.CARD_TYPE_INSTANT in type_line:
+        types.append(constants.CARD_TYPE_INSTANT)
+
+    if constants.CARD_TYPE_SORCERY in type_line:
+        types.append(constants.CARD_TYPE_SORCERY)
+
+    if constants.CARD_TYPE_ENCHANTMENT in type_line:
+        types.append(constants.CARD_TYPE_ENCHANTMENT)
+
+    if constants.CARD_TYPE_ARTIFACT in type_line:
+        types.append(constants.CARD_TYPE_ARTIFACT)
+
+    return types
+
+
+def check_date(date):
+    """Checks a date string and returns false if the date is in the future"""
+    result = True
+    try:
+        parts = date.split("-")
+        year = int(parts[0])
+        month = int(parts[1])
+        day = int(parts[2])
+        hour = 0
+
+        if (
+            datetime.datetime(year=year, month=month, day=day, hour=hour)
+            > datetime.datetime.now()
+        ):
+            result = False
+
+    except Exception:
+        result = False
+    return result
+
+
+class FileExtractor(UIProgress):
+    """Class that handles the creation of set files and the retrieval of platform information"""
+
+    def __init__(
+        self,
+        directory,
+        progress,
+        status,
+        ui,
+        threshold=COLOR_WIN_RATE_GAME_COUNT_THRESHOLD_DEFAULT,
+    ):
+        super().__init__(progress, status, ui)
+        self.selected_sets = []
+        self.set_list = []
+        self.draft = ""
+        self.session = ""
+        self.start_date = ""
+        self.end_date = ""
+        self.user_group = ""
+        self.directory = directory
+        self.card_ratings = {}
+        self.combined_data = {"meta": {"collection_date": str(datetime.datetime.now())}}
+        self.card_dict = {}
+        self.deck_colors = constants.DECK_COLORS
+        self.sets_17lands = []
+        self.threshold = threshold
+
+    def clear_data(self):
+        """Clear stored set information"""
+        self.combined_data = {"meta": {"collection_date": str(datetime.datetime.now())}}
+        self.card_dict = {}
+        self.card_ratings = {}
+
+    def select_sets(self, sets):
+        """Public function that's used for setting class variables"""
+        self.selected_sets = sets
+
+    def set_draft_type(self, draft_type):
+        """Public function that's used for setting class variables"""
+        self.draft = draft_type
+
+    def set_start_date(self, start_date):
+        """Sets the start data in a set file"""
+        result = False
+        if check_date(start_date):
+            result = True
+            self.start_date = start_date
+            self.combined_data["meta"]["start_date"] = self.start_date
+        return result
+
+    def set_end_date(self, end_date):
+        """Sets the end date in a set file"""
+        result = False
+        if check_date(end_date):
+            result = True
+            self.end_date = end_date
+            self.combined_data["meta"]["end_date"] = self.end_date
+        return result
+
+    def set_user_group(self, user_group):
+        """Sets the user_group filter in a set file (all/bottom/middle/top)"""
+        if user_group in constants.LIMITED_GROUPS_LIST:
+            self.user_group = user_group
+        else:
+            self.user_group = constants.LIMITED_USER_GROUP_ALL
+
+    def set_version(self, version):
+        """Sets the version in a set file"""
+        self.combined_data["meta"]["version"] = version
+
+    def set_game_count(self, game_count):
+        """Sets the game count in a dataset"""
+        self.combined_data["meta"]["game_count"] = game_count
+
+    def set_color_ratings(self, color_ratings):
+        """Sets the color ratings in a dataset"""
+        self.combined_data["color_ratings"] = color_ratings
+
+    def _get_linux_steam_library_paths(self):
+        """Parses Steam config to find library folders on Linux"""
+        library_paths = []
+        config_paths = [
+            os.path.expanduser("~/.local/share/Steam/config/libraryfolders.vdf"),
+            os.path.expanduser("~/.steam/steam/config/libraryfolders.vdf"),
+            os.path.expanduser(
+                "~/.steam/debian-installation/config/libraryfolders.vdf"
+            ),
+        ]
+
+        for config_path in config_paths:
+            if os.path.exists(config_path):
+                try:
+                    with open(
+                        config_path, "r", encoding="utf-8", errors="replace"
+                    ) as f:
+                        content = f.read()
+                        # Extract paths using regex to avoid external dependency
+                        # Format is usually: "path" "/path/to/library"
+                        matches = re.findall(r'"path"\s+"([^"]+)"', content)
+                        library_paths.extend(matches)
+                except Exception as error:
+                    logger.error(
+                        f"Error reading Steam library folders from {config_path}: {error}"
+                    )
+
+        return library_paths
+
+    def download_card_data(self, database_size):
+        """
+        Modified download logic to support multi-archetype data for 'The Brain'.
+        Fixed to return proper tuple (success, msg, size) and load local data first.
+        """
+        self._update_status("Searching Local Files")
+        # 1. Load the local card database (Name, ID, Colors)
+        result, result_string, temp_size = self._retrieve_local_arena_data(
+            database_size
+        )
+
+        if not result:
+            return False, result_string, 0
+
+        self._update_status("Starting Deep Data Retrieval...")
+
+        sl = Seventeenlands()
+
+        # Define a wrapper to update the UI progress bar
+        def update_ui(msg, val):
+            self._update_status(msg)
+            self._update_progress(val, increment=False)
+
+        # 2. Dynamic Archetype Fetching
+        # We use the color_ratings keys (which are already filtered by threshold)
+        # to determine which card data files to download.
+        target_colors = list(self.combined_data.get("color_ratings", {}).keys())
+
+        # Ensure 'All Decks' is always fetched even if it wasn't in color_ratings for some reason
+        if "All Decks" not in target_colors:
+            target_colors.insert(0, "All Decks")
+
+        logger.info(
+            f"Fetching card data for {len(target_colors)} archetypes: {target_colors}"
+        )
+
+        set_code = self.selected_sets.seventeenlands[0]
+        try:
+            deep_ratings = sl.download_set_data(
+                set_code,
+                self.draft,
+                colors=target_colors,
+                user_group=self.user_group,
+                progress_callback=update_ui,
+            )
+        except Exception as e:
+            if "404" in str(e) or "400" in str(e):
+                logger.warning(
+                    f"17Lands API returned {e}. Proceeding with local card data only."
+                )
+                deep_ratings = {}
+            else:
+                return False, f"Network Error: {str(e)}", 0
+
+        # 3. Assemble the final dataset
+        matched_count, total_17lands_count = self._assemble_deep_set(deep_ratings)
+
+        # Backfill game_count if needed
+        if self.combined_data["meta"].get("game_count", 0) == 0:
+            max_samples = 0
+            for card in self.combined_data["card_ratings"].values():
+                try:
+                    samples = (
+                        card.get("deck_colors", {})
+                        .get("All Decks", {})
+                        .get("samples", 0)
+                    )
+                    if samples > max_samples:
+                        max_samples = samples
+                except:
+                    pass
+
+            if max_samples > 0:
+                self.combined_data["meta"]["game_count"] = max_samples
+                logger.info(f"Backfilled game_count to {max_samples} from card data")
+
+        self._inject_community_tags(update_ui)
+
+        tag_errors = self._inject_community_tags(update_ui)
+
+        # 4. Export
+        filename = self.export_card_data()
+
+        # Analyze dataset quality for user feedback
+        total_cards = len(self.combined_data.get("card_ratings", {}))
+        cards_with_tags = sum(
+            1
+            for c in self.combined_data.get("card_ratings", {}).values()
+            if c.get("tags")
+        )
+        archetypes_found = len(target_colors)
+
+        coverage_pct = (
+            (matched_count / total_17lands_count * 100)
+            if total_17lands_count > 0
+            else 0.0
+        )
+
+        tag_status = str(cards_with_tags)
+        if cards_with_tags == 0:
+            if tag_errors:
+                tag_status += " (Network/API Error)"
+            else:
+                tag_status += " (Not yet tagged by Scryfall community)"
+
+        stats_msg = (
+            f"17Lands Coverage: {matched_count} / {total_17lands_count} cards ({coverage_pct:.1f}%)\n"
+            f"Archetypes Downloaded: {archetypes_found}\n"
+            f"Cards with Scryfall Tags: {tag_status}\n\n"
+        )
+
+        if matched_count == 0:
+            stats_msg += "\n\n⚠️ WARNING: 0 cards matched! Please launch Magic Arena to ensure the latest game files are downloaded, then try again."
+
+        if total_cards < 50:
+            stats_msg += "\n\n⚠️ WARNING: Very few MTGA cards were found! Please launch Magic Arena to ensure the latest game files are downloaded, then try again."
+
+        if filename:
+            if not self.combined_data.get("color_ratings"):
+                if self.combined_data["meta"].get("game_count", 0) == 0:
+                    return (
+                        True,
+                        f"Local Cards Downloaded. 17Lands data not yet available for this set.\n\n{stats_msg}",
+                        temp_size,
+                    )
+                else:
+                    return (
+                        True,
+                        f"Cards Downloaded, but no color archetypes met your 'Min Games' threshold.\n\n{stats_msg}",
+                        temp_size,
+                    )
+            return True, f"Download Successful!\n\n{stats_msg}", temp_size
+        else:
+            return False, "Dataset Validation Failed", 0
+
+    def _assemble_deep_set(self, deep_ratings: Dict):
+        """Combines 17Lands intelligence with local Arena IDs."""
+        self.combined_data["card_ratings"] = {}
+        matched_names = set()
+
+        matching_only = constants.SET_SELECTION_ALL in self.selected_sets.arena
+        target_set = (
+            self.selected_sets.set_code.upper()
+            if hasattr(self.selected_sets, "set_code")
+            else ""
+        )
+
+        # Basic lands that Arena frequently injects into packs from random historical sets
+        safelist_names = {
+            "Plains",
+            "Island",
+            "Swamp",
+            "Mountain",
+            "Forest",
+            "Wastes",
+            "Snow-Covered Plains",
+            "Snow-Covered Island",
+            "Snow-Covered Swamp",
+            "Snow-Covered Mountain",
+            "Snow-Covered Forest",
+        }
+
+        for arena_id, local_card in self.card_dict.items():
+            name = local_card.get("name", "").replace("///", "//")
+            card_set = local_card.get("set", "").upper()
+
+            if name in deep_ratings:
+                matched_names.add(name)
+                # Inject the deep performance data into the card object
+                local_card["deck_colors"] = deep_ratings[name]["deck_colors"]
+                local_card["image"] = deep_ratings[name]["image"]
+                self.combined_data["card_ratings"][arena_id] = local_card
+
+            elif target_set and target_set in card_set:
+                # Day 1 Fallback OR set-specific unrated cards
+                initialize_card_data(local_card)
+                self.combined_data["card_ratings"][arena_id] = local_card
+
+            elif name in safelist_names:
+                # Always include fundamental basic lands. Prevents ID numbers showing in the UI
+                # because Arena often uses old basic land IDs in new drafts.
+                initialize_card_data(local_card)
+                self.combined_data["card_ratings"][arena_id] = local_card
+
+            elif not matching_only:
+                # We specifically asked for a narrow Arena set (no "ALL" flag) -> include it
+                initialize_card_data(local_card)
+                self.combined_data["card_ratings"][arena_id] = local_card
+
+        return len(matched_names), len(deep_ratings)
+
+    def _download_expansion(self, database_size):
+        """Function that performs the following steps:
+        1. Build a card data file from local Arena files (stored as temp_card_data.json in the Temp folder)
+           - The card sets contains the Arena IDs, card name, mana cost, colors, etc.
+        1A. Collect the card data from Scryfall if it's unavailable locally (fallback)
+        2. Collect the card_ratings data from scryfall
+        3. Build a set file by combining the card data and the card ratings
+        """
+        result = False
+        result_string = ""
+        temp_size = 0
+        try:
+            while True:
+                self._update_progress(5, True)
+                result, result_string, temp_size = self._retrieve_local_arena_data(
+                    database_size
+                )
+                if not result:
+                    break
+
+                self._update_progress(10, True)
+                self._update_status("Collecting 17Lands Data")
+
+                if not self.retrieve_17lands_data(
+                    self.selected_sets.seventeenlands, self.deck_colors
+                ):
+                    result = False
+                    result_string = "Couldn't Collect 17Lands Data"
+                    break
+
+                matching_only = (
+                    True
+                    if constants.SET_SELECTION_ALL in self.selected_sets.arena
+                    else False
+                )
+
+                if not matching_only:
+                    self._initialize_17lands_data()
+
+                self._update_status("Building Data Set File")
+                self._assemble_set(matching_only)
+                check_set_data(self.combined_data["card_ratings"], self.card_ratings)
+                break
+
+        except Exception as error:
+            logger.error(error)
+            result_string = error
+
+        return result, result_string, temp_size
+
+    def _retrieve_local_arena_data(self, previous_database_size):
+        """Builds a card data file from raw Arena files"""
+        result_string = (
+            "Unable to access local Arena data. Log in to MTGA and try again."
+        )
+        result = False
+        self.card_dict = {}
+        database_size = 0
+        self._update_status("Searching Local Files")
+        if sys.platform == constants.PLATFORM_ID_OSX:
+            if not self.directory:
+                # Standard MTGA installation path
+                standard_path = os.path.join(
+                    os.path.expanduser("~"),
+                    constants.LOCAL_DATA_FOLDER_PATH_OSX,
+                    constants.LOCAL_DOWNLOADS_DATA,
+                )
+                # Steam installation path
+                steam_path = os.path.join(
+                    os.path.expanduser("~"),
+                    constants.LOCAL_DATA_FOLDER_PATH_OSX_STEAM,
+                    constants.LOCAL_DOWNLOADS_DATA,
+                )
+                paths = [standard_path, steam_path]
+            else:
+                paths = [os.path.join(self.directory, constants.LOCAL_DOWNLOADS_DATA)]
+        elif sys.platform == constants.PLATFORM_ID_LINUX:
+            candidate_directories = []
+
+            # 1. Use manually provided directory if available
+            if self.directory:
+                candidate_directories.append(self.directory)
+
+            # 2. Use default path from constants if available
+            if constants.LOCAL_DATA_FOLDER_PATH_LINUX:
+                candidate_directories.append(constants.LOCAL_DATA_FOLDER_PATH_LINUX)
+
+            # 3. Search Steam libraries
+            try:
+                steam_libraries = self._get_linux_steam_library_paths()
+                for lib_path in steam_libraries:
+                    # Construct potential MTGA_Data path
+                    mtga_data_path = os.path.join(
+                        lib_path, "steamapps", "common", "MTGA", "MTGA_Data"
+                    )
+                    if os.path.exists(mtga_data_path):
+                        candidate_directories.append(mtga_data_path)
+            except Exception as error:
+                logger.error(f"Error searching Steam libraries: {error}")
+
+            # Remove duplicates while preserving order
+            candidate_directories = list(dict.fromkeys(candidate_directories))
+
+            paths = [
+                os.path.join(d, constants.LOCAL_DOWNLOADS_DATA)
+                for d in candidate_directories
+            ]
+        else:
+            if not self.directory:
+                # Standard MTGA installation paths
+                standard_path_list = [
+                    constants.WINDOWS_DRIVES,
+                    constants.WINDOWS_PROGRAM_FILES,
+                    [constants.LOCAL_DATA_FOLDER_PATH_WINDOWS],
+                ]
+                standard_paths = [
+                    os.path.join(*x, constants.LOCAL_DOWNLOADS_DATA)
+                    for x in itertools.product(*standard_path_list)
+                ]
+
+                # Steam installation paths
+                steam_path_list = [
+                    constants.WINDOWS_DRIVES,
+                    constants.WINDOWS_PROGRAM_FILES,
+                    [constants.LOCAL_DATA_FOLDER_PATH_WINDOWS_STEAM],
+                ]
+                steam_paths = [
+                    os.path.join(*x, constants.LOCAL_DOWNLOADS_DATA)
+                    for x in itertools.product(*steam_path_list)
+                ]
+
+                # Combine both path sets
+                paths = standard_paths + steam_paths
+            else:
+                paths = [os.path.join(self.directory, constants.LOCAL_DOWNLOADS_DATA)]
+
+        arena_database_locations = search_local_files(
+            paths, [constants.LOCAL_DATA_FILE_PREFIX_DATABASE]
+        )
+
+        while True:
+            try:
+                if not arena_database_locations:
+                    logger.error("Can't Locate Local Files")
+                    break
+
+                current_database_size = os.path.getsize(arena_database_locations[0])
+
+                if current_database_size != previous_database_size:
+                    logger.info(
+                        "Local File Change Detected %d, %d",
+                        current_database_size,
+                        previous_database_size,
+                    )
+                    logger.info(
+                        "Local Database Data: Searching File Path %s",
+                        arena_database_locations[0],
+                    )
+                    self._update_status("Retrieving Localization Data")
+                    result, card_text, card_enumerators, raw_card_data = (
+                        self._retrieve_local_database(arena_database_locations[0])
+                    )
+
+                    if not result:
+                        break
+
+                    self._update_status("Building Temporary Card Data File")
+                    result = self._assemble_stored_data(
+                        card_text, card_enumerators, raw_card_data
+                    )
+
+                    if not result:
+                        break
+
+                self._update_status("Retrieving Temporary Card Data")
+                result = self._retrieve_stored_data(self.selected_sets.arena)
+
+                database_size = current_database_size
+
+            except Exception as error:
+                logger.error(error)
+            break
+
+        if not result:
+            logger.error(result_string)
+
+        return result, result_string, database_size
+
+    def _retrieve_local_cards(self, data):
+        """Function that retrieves pertinent card data from raw Arena files"""
+        result = False
+        card_data = {}
+        try:
+            for card in data:
+                # Making all of the keys lowercase
+                card = {k.lower(): v for k, v in card.items()}
+                try:
+                    card_set = card[constants.LOCAL_CARDS_KEY_SET]
+                    if (card[constants.LOCAL_CARDS_KEY_DIGITAL_RELEASE_SET]) and (
+                        re.findall(r"^[yY]\d{2}$", card_set, re.DOTALL)
+                    ):
+                        card_set = card[constants.LOCAL_CARDS_KEY_DIGITAL_RELEASE_SET]
+                    if card_set not in card_data:
+                        card_data[card_set] = {}
+                    if card[constants.LOCAL_CARDS_KEY_TOKEN]:
+                        # Skip tokens
+                        continue
+                    if not card[constants.LOCAL_CARDS_KEY_TITLE_ID]:
+                        # Skip cards that don't have titles
+                        continue
+                    group_id = card[constants.LOCAL_CARDS_KEY_GROUP_ID]
+
+                    card_data[card_set][group_id] = {
+                        constants.DATA_FIELD_NAME: [
+                            card[constants.LOCAL_CARDS_KEY_TITLE_ID]
+                        ],
+                        constants.DATA_FIELD_CMC: 0,
+                        constants.DATA_FIELD_MANA_COST: "",
+                        constants.LOCAL_CARDS_KEY_PRIMARY: 1,
+                        constants.LOCAL_CARDS_KEY_LINKED_FACE_TYPE: 0,
+                        constants.DATA_FIELD_TYPES: [],
+                        constants.DATA_FIELD_RARITY: "",
+                        constants.DATA_SECTION_IMAGES: [],
+                    }
+
+                    mana_cost, cmc = (
+                        decode_mana_cost(card[constants.LOCAL_CARDS_KEY_CASTING_COST])
+                        if card[constants.LOCAL_CARDS_KEY_CASTING_COST]
+                        else ("", 0)
+                    )
+                    card_data[card_set][group_id][constants.DATA_FIELD_CMC] = cmc
+                    card_data[card_set][group_id][
+                        constants.DATA_FIELD_MANA_COST
+                    ] = mana_cost
+                    card_data[card_set][group_id][constants.DATA_FIELD_TYPES].extend(
+                        [
+                            int(x)
+                            for x in str(card[constants.LOCAL_CARDS_KEY_TYPES]).split(
+                                ","
+                            )
+                        ]
+                        if card.get(constants.LOCAL_CARDS_KEY_TYPES)
+                        else []
+                    )
+
+                    sub_val = card.get("subtypes", "")
+                    card_data[card_set][group_id]["subtypes"] = (
+                        [int(x) for x in str(sub_val).split(",")] if sub_val else []
+                    )
+
+                    card_data[card_set][group_id][constants.DATA_FIELD_COLORS] = (
+                        [
+                            int(x)
+                            for x in card[constants.LOCAL_CARDS_KEY_COLOR_ID].split(",")
+                        ]
+                        if card[constants.LOCAL_CARDS_KEY_COLOR_ID]
+                        else []
+                    )
+
+                    card_data[card_set][group_id][constants.DATA_FIELD_RARITY] = (
+                        constants.CARD_RARITY_DICT[
+                            card[constants.LOCAL_CARDS_KEY_RARITY]
+                        ]
+                        if card[constants.LOCAL_CARDS_KEY_RARITY]
+                        in constants.CARD_RARITY_DICT
+                        else constants.CARD_RARITY_COMMON
+                    )
+                    card_data[card_set][group_id][constants.LOCAL_CARDS_KEY_PRIMARY] = (
+                        card[constants.LOCAL_CARDS_KEY_PRIMARY]
+                    )
+                    card_data[card_set][group_id][
+                        constants.LOCAL_CARDS_KEY_LINKED_FACE_TYPE
+                    ] = card[constants.LOCAL_CARDS_KEY_LINKED_FACE_TYPE]
+
+                    self._process_linked_faces(card, card_data, card_set, group_id)
+
+                    result = True
+                except Exception as error:
+                    logger.error(f"Card Read Error: {error}, {card}")
+                    break
+        except Exception as error:
+            logger.error(error)
+
+        return result, card_data
+
+    def _process_linked_faces(self, card, card_data, card_set, group_id):
+        """"""
+        try:
+
+            if card[constants.LOCAL_CARDS_KEY_LINKED_FACES]:
+                linked_ids = [
+                    int(x)
+                    for x in card[constants.LOCAL_CARDS_KEY_LINKED_FACES].split(",")
+                ]
+                for linked_id in linked_ids:
+                    if linked_id < group_id:
+                        if (
+                            not card[constants.LOCAL_CARDS_KEY_PRIMARY]
+                            and card_data[card_set][linked_id][
+                                constants.LOCAL_CARDS_KEY_PRIMARY
+                            ]
+                        ):
+                            # Add types to previously seen linked cards
+                            types = (
+                                [
+                                    int(x)
+                                    for x in card[
+                                        constants.LOCAL_CARDS_KEY_TYPES
+                                    ].split(",")
+                                ]
+                                if card[constants.LOCAL_CARDS_KEY_TYPES]
+                                else []
+                            )
+                            card_data[card_set][linked_id][
+                                constants.LOCAL_CARDS_KEY_TYPES
+                            ].extend(types)
+
+                            # Use the lowest mana cost/CMC for dual-faced cards (e.g., 4 for Dusk /// Dawn)
+                            if (
+                                card[constants.LOCAL_CARDS_KEY_CASTING_COST]
+                                and card_data[card_set][linked_id][
+                                    constants.LOCAL_CARDS_KEY_LINKED_FACE_TYPE
+                                ]
+                                and card_data[card_set][linked_id][
+                                    constants.LOCAL_CARDS_KEY_LINKED_FACE_TYPE
+                                ]
+                                == 6
+                            ):
+
+                                mana_cost, cmc = decode_mana_cost(
+                                    card[constants.LOCAL_CARDS_KEY_CASTING_COST]
+                                )
+                                if (
+                                    cmc
+                                    < card_data[card_set][linked_id][
+                                        constants.DATA_FIELD_CMC
+                                    ]
+                                ):
+                                    card_data[card_set][linked_id][
+                                        constants.DATA_FIELD_CMC
+                                    ] = cmc
+                                    card_data[card_set][linked_id][
+                                        constants.DATA_FIELD_MANA_COST
+                                    ] = mana_cost
+
+                        elif card[constants.LOCAL_CARDS_KEY_PRIMARY]:
+                            # Retrieve types from previously seen linked cards
+                            card_data[card_set][group_id][
+                                constants.LOCAL_CARDS_KEY_TYPES
+                            ].extend(
+                                card_data[card_set][linked_id][
+                                    constants.LOCAL_CARDS_KEY_TYPES
+                                ]
+                            )
+
+                            # Use the lowest cmc for dual-faced cards (e.g., 4 for Dusk /// Dawn)
+                            if (
+                                card[constants.LOCAL_CARDS_KEY_LINKED_FACE_TYPE]
+                                and card[constants.LOCAL_CARDS_KEY_LINKED_FACE_TYPE]
+                                == 6
+                            ):
+
+                                if (
+                                    card_data[card_set][linked_id][
+                                        constants.DATA_FIELD_CMC
+                                    ]
+                                    < card_data[card_set][group_id][
+                                        constants.DATA_FIELD_CMC
+                                    ]
+                                ):
+                                    card_data[card_set][group_id][
+                                        constants.DATA_FIELD_CMC
+                                    ] = card_data[card_set][group_id][
+                                        constants.DATA_FIELD_CMC
+                                    ]
+                                    card_data[card_set][group_id][
+                                        constants.DATA_FIELD_MANA_COST
+                                    ] = card_data[card_set][group_id][
+                                        constants.DATA_FIELD_MANA_COST
+                                    ]
+
+        except Exception as error:
+            logger.error(error)
+
+    def _retrieve_local_database(self, file_location):
+        """Retrieves localization and enumeration data from an Arena database"""
+        result = False
+        card_text = {}
+        card_enumerators = {}
+        card_data = {}
+        try:
+            # Open Sqlite3 database
+            while True:
+                connection = sqlite3.connect(file_location)
+                connection.row_factory = sqlite3.Row
+                cursor = connection.cursor()
+
+                rows = [
+                    dict(row)
+                    for row in cursor.execute(
+                        constants.LOCAL_DATABASE_LOCALIZATION_QUERY
+                    )
+                ]
+
+                if not rows:
+                    break
+
+                result, card_text = self._retrieve_local_card_text(rows)
+
+                if not result:
+                    break
+
+                rows = [
+                    dict(row)
+                    for row in cursor.execute(
+                        "SELECT LocId, Type, Value FROM Enums WHERE Type IN ('Color', 'CardType', 'SubType')"
+                    )
+                ]
+
+                if not rows:
+                    break
+
+                result, card_enumerators = self._retrieve_local_card_enumerators(rows)
+
+                if not result:
+                    break
+
+                rows = [
+                    dict(row)
+                    for row in cursor.execute(constants.LOCAL_DATABASE_CARDS_QUERY)
+                ]
+
+                result, card_data = self._retrieve_local_cards(rows)
+                break
+
+        except Exception as error:
+            result = False
+            logger.error(error)
+
+        return result, card_text, card_enumerators, card_data
+
+    def _retrieve_local_card_text(self, data):
+        """Returns a dict containing localization data"""
+        result = True
+        card_text = {}
+        try:
+            # Retrieve the title (card name) for each of the collected arena IDs
+            card_text = {
+                x[constants.LOCAL_DATABASE_LOCALIZATION_COLUMN_ID]: x[
+                    constants.LOCAL_DATABASE_LOCALIZATION_COLUMN_TEXT
+                ]
+                for x in data
+            }
+
+        except Exception as error:
+            result = False
+            logger.error(error)
+
+        return result, card_text
+
+    def _retrieve_local_card_enumerators(self, data):
+        """Returns a dict containing card enumeration data"""
+        result = True
+        card_enumerators = {
+            constants.DATA_FIELD_COLORS: {},
+            constants.DATA_FIELD_TYPES: {},
+            "subtypes": {},
+        }
+        try:
+            for row in data:
+                col_type = str(row.get("Type", row.get("type", ""))).lower()
+                val = row.get("Value", row.get("value"))
+                loc_id = row.get("LocId", row.get("locid"))
+
+                if col_type == "cardtype":
+                    card_enumerators[constants.DATA_FIELD_TYPES][val] = loc_id
+                elif col_type == "subtype":
+                    card_enumerators["subtypes"][val] = loc_id
+                elif col_type == "color":
+                    card_enumerators[constants.DATA_FIELD_COLORS][val] = loc_id
+
+        except Exception as error:
+            result = False
+            logger.error(error)
+
+        return result, card_enumerators
+
+    def _assemble_stored_data(self, card_text, card_enumerators, card_data):
+        """Creates a temporary card data file from data collected from local Arena files"""
+        result = False
+        try:
+            for card_set in card_data:
+                for card in card_data[card_set]:
+                    try:
+                        # 1. MAP NAMES (Converts the ID list into a readable string)
+                        card_data[card_set][card][constants.DATA_FIELD_NAME] = (
+                            " // ".join(
+                                card_text[x]
+                                for x in card_data[card_set][card][
+                                    constants.DATA_FIELD_NAME
+                                ]
+                                if x in card_text
+                            )
+                        )
+
+                        # 2. MAP CARD TYPES
+                        mapped_types = []
+                        type_enum = card_enumerators.get(constants.DATA_FIELD_TYPES, {})
+                        type_enum_str = {str(k): v for k, v in type_enum.items()}
+
+                        for x in card_data[card_set][card].get(
+                            constants.DATA_FIELD_TYPES, []
+                        ):
+                            x_str = str(x)
+                            if x_str in type_enum_str:
+                                loc_id = type_enum_str[x_str]
+                                if loc_id in card_text:
+                                    mapped_types.append(card_text[loc_id])
+
+                        mapped_types = list(set(mapped_types))
+
+                        if constants.CARD_TYPE_CREATURE in mapped_types:
+                            mapped_types.remove(constants.CARD_TYPE_CREATURE)
+                            mapped_types.insert(0, constants.CARD_TYPE_CREATURE)
+
+                        card_data[card_set][card][
+                            constants.DATA_FIELD_TYPES
+                        ] = mapped_types
+
+                        # 3. MAP SUBTYPES (Tribes like Ninja, Turtle, Human)
+                        mapped_subs = []
+                        sub_enum = card_enumerators.get("subtypes", {})
+                        sub_enum_str = {str(k): v for k, v in sub_enum.items()}
+
+                        for x in card_data[card_set][card].get("subtypes", []):
+                            x_str = str(x)
+                            if x_str in sub_enum_str:
+                                loc_id = sub_enum_str[x_str]
+                                if loc_id in card_text:
+                                    mapped_subs.append(card_text[loc_id])
+
+                        card_data[card_set][card]["subtypes"] = list(set(mapped_subs))
+
+                        # 4. MAP COLORS
+                        card_data[card_set][card][constants.DATA_FIELD_COLORS] = [
+                            constants.CARD_COLORS_DICT[
+                                card_text[
+                                    card_enumerators[constants.DATA_FIELD_COLORS][x]
+                                ]
+                            ]
+                            for x in card_data[card_set][card][
+                                constants.DATA_FIELD_COLORS
+                            ]
+                            if x in card_enumerators[constants.DATA_FIELD_COLORS]
+                            and card_enumerators[constants.DATA_FIELD_COLORS][x]
+                            in card_text
+                        ]
+
+                        result = True
+                    except Exception as e:
+                        logger.error(f"Error mapping data for {card}: {e}")
+                        pass
+
+            if result:
+                # Store all of the processed card data
+                with open(
+                    constants.TEMP_CARD_DATA_FILE,
+                    "w",
+                    encoding="utf-8",
+                    errors="replace",
+                ) as json_file:
+                    json.dump(card_data, json_file)
+
+        except Exception as error:
+            result = False
+            logger.error(error)
+
+        return result
+
+    def _retrieve_stored_data(self, set_list):
+        """Retrieves card data from the temp_card_data.json file stored in the Temp folder"""
+        result = False
+        self.card_dict = {}
+        try:
+            with open(
+                constants.TEMP_CARD_DATA_FILE, "r", encoding="utf-8", errors="replace"
+            ) as data:
+                json_file = data.read()
+                json_data = json.loads(json_file)
+
+            if constants.SET_SELECTION_ALL in set_list:
+                for card_set_name, card_data in json_data.items():
+                    for card_id, card_info in card_data.items():
+                        card_info["set"] = card_set_name
+                        self.card_dict[card_id] = card_info
+            else:
+                for search_set in set_list:
+                    matching_sets = list(
+                        filter(lambda x, ss=search_set: ss in x, json_data)
+                    )
+                    for match in matching_sets:
+                        for card_id, card_info in json_data[match].items():
+                            card_info["set"] = match
+                            self.card_dict[card_id] = card_info
+
+            if self.card_dict:
+                result = True
+
+        except Exception as error:
+            result = False
+            logger.error(error)
+
+        return result
+
+    def _initialize_17lands_data(self):
+        """Initialize the 17Lands data by setting the fields to 0 in case there are gaps in the downloaded card data"""
+        for data in self.card_dict.values():
+            initialize_card_data(data)
+
+    def retrieve_17lands_data(self, sets, deck_colors):
+        """Use the 17Lands endpoint to download the card ratings data for all of the deck filter options"""
+        self.card_ratings = {}
+        current_progress = 0
+        result = False
+        seventeenlands = Seventeenlands()
+        for set_code in sets:
+            for color in deck_colors:
+                retry = constants.CARD_RATINGS_ATTEMPT_MAX
+                result = False
+                while retry:
+                    try:
+                        # safe_set_code = quote(set_code, safe='')
+                        # url = f"https://www.17lands.com/card_ratings/data?expansion={safe_set_code}&format={self.draft}&start_date={self.start_date}&end_date={self.end_date}{user_group}"
+                        self._update_status(f"Collecting {color} 17Lands Data")
+                        seventeenlands.download_card_ratings(
+                            set_code,
+                            color,
+                            self.draft,
+                            self.start_date,
+                            self.end_date,
+                            self.user_group,
+                            self.card_ratings,
+                        )
+                        result = True
+                        break
+                    except Exception as error:
+                        logger.error(error)
+                        retry -= 1
+
+                        if retry:
+                            attempt_count = constants.CARD_RATINGS_ATTEMPT_MAX - retry
+                            self._update_status(
+                                f"""Collecting {color} 17Lands Data - Request Failed ({attempt_count}/{constants.CARD_RATINGS_ATTEMPT_MAX}) - Retry in {constants.CARD_RATINGS_BACKOFF_DELAY_SECONDS} seconds"""
+                            )
+                            time.sleep(constants.CARD_RATINGS_BACKOFF_DELAY_SECONDS)
+
+                if result:
+                    current_progress = 3 / len(self.selected_sets.seventeenlands)
+                    self._update_progress(current_progress, True)
+                else:
+                    break
+                time.sleep(constants.CARD_RATINGS_INTER_DELAY_SECONDS)
+
+        return result
+
+    def _inject_community_tags(self, progress_callback=None):
+        """Fetches Scryfall otags and injects them into the card dictionary."""
+        set_code = (
+            self.selected_sets.scryfall[0]
+            if self.selected_sets.scryfall
+            else self.selected_sets.seventeenlands[0]
+        )
+
+        tagger = ScryfallTagger()
+        harvested_tags, errors = tagger.harvest_set_tags(set_code, progress_callback)
+
+        # Inject into the combined data
+        if "card_ratings" in self.combined_data:
+            for arena_id, card in self.combined_data["card_ratings"].items():
+                card_name = card.get("name", "")
+                card["tags"] = harvested_tags.get(card_name, [])
+
+        return errors
+
+    def _assemble_set(self, matching_only):
+        """Combine the 17Lands ratings and the card data to form the complete set data"""
+        self.combined_data["card_ratings"] = {}
+        for card, card_data in self.card_dict.items():
+            if self._process_card_data(card_data):
+                self.combined_data["card_ratings"][card] = card_data
+            elif not matching_only:
+                self.combined_data["card_ratings"][card] = card_data
+
+    def retrieve_17lands_color_ratings(self):
+        """Use 17Lands endpoint to collect the data from the color_ratings page"""
+        result = True
+        game_count = 0
+        seventeenlands = Seventeenlands()
+        retry = constants.CARD_RATINGS_ATTEMPT_MAX
+
+        while retry:
+            try:
+                self.combined_data["color_ratings"], game_count = (
+                    seventeenlands.download_color_ratings(
+                        self.selected_sets.seventeenlands[0],
+                        self.draft,
+                        self.start_date,
+                        self.end_date,
+                        self.user_group,
+                        threshold=self.threshold,
+                    )
+                )
+                self.set_game_count(game_count)
+                result = True
+                break
+
+            except Exception as error:
+                logger.error(f"Color Ratings Error: {error}")
+                result = False
+
+                # If we are hard-blocked by 17Lands, do not hammer the server with retries
+                if "429" in str(error) or "403" in str(error):
+                    break
+
+                # If 17Lands returns a 404 or 400, it means the set data doesn't exist yet (e.g. Day 1 release)
+                # We should NOT fail. We should proceed to build the local MTGA card data so the App
+                # can still function with Tier Lists and card tooltips!
+                if "404" in str(error) or "400" in str(error):
+                    self.combined_data["color_ratings"] = {}
+                    self.set_game_count(0)
+                    result = True
+                    break
+
+                retry -= 1
+
+                if retry:
+                    attempt_count = constants.CARD_RATINGS_ATTEMPT_MAX - retry
+                    self._update_status(
+                        f"Retrying Color Ratings ({attempt_count}/{constants.CARD_RATINGS_ATTEMPT_MAX})..."
+                    )
+                    time.sleep(2)
+
+        # Log success/failure status
+        if result:
+            logger.info(
+                f"Color Ratings Downloaded Successfully. Game Count: {game_count}, Ratings Found: {len(self.combined_data.get('color_ratings', {}))}"
+            )
+        else:
+            logger.error("Failed to download Color Ratings after multiple attempts.")
+
+        return result, game_count
+
+    def _process_card_data(self, card):
+        """Link the 17Lands card ratings with the card data"""
+        result = False
+        try:
+            card_name = card[constants.DATA_FIELD_NAME].replace("///", "//")
+            matching_cards = [x for x in self.card_ratings if x == card_name]
+            if matching_cards:
+                ratings_card_name = matching_cards[0]
+                deck_colors = self.card_ratings[ratings_card_name][
+                    constants.DATA_SECTION_RATINGS
+                ]
+
+                card[constants.DATA_SECTION_IMAGES] = self.card_ratings[
+                    ratings_card_name
+                ][constants.DATA_SECTION_IMAGES]
+                card[constants.DATA_FIELD_DECK_COLORS] = {}
+                for color in self.deck_colors:
+                    card[constants.DATA_FIELD_DECK_COLORS][color] = {
+                        x: 0.0
+                        for x in constants.DATA_FIELD_17LANDS_DICT
+                        if x != constants.DATA_SECTION_IMAGES
+                    }
+                result = True
+                for deck_color in deck_colors:
+                    for key, value in deck_color.items():
+                        for field in value:
+                            card[constants.DATA_FIELD_DECK_COLORS][key][field] = value[
+                                field
+                            ]
+
+        except Exception as error:
+            logger.error(error)
+
+        return result
+
+    def export_card_data(self):
+        """Build the file for the set data"""
+        try:
+            output_file = "_".join(
+                (
+                    clean_string(self.selected_sets.seventeenlands[0]),
+                    self.draft,
+                    self.user_group,
+                    constants.SET_FILE_SUFFIX,
+                )
+            )
+            location = os.path.join(constants.SETS_FOLDER, output_file)
+
+            with open(location, "w", encoding="utf-8", errors="replace") as file:
+                json.dump(self.combined_data, file)
+
+            # Verify that the file was written
+            write_data = check_file_integrity(location)
+
+            if write_data[0] != Result.VALID:
+                if os.path.exists(location):
+                    os.remove(location)
+                output_file = ""
+            else:
+                from src.utils import invalidate_local_set_cache
+
+                invalidate_local_set_cache()
+
+        except Exception as error:
+            logger.error(error)
+            output_file = ""
+
+        return output_file
