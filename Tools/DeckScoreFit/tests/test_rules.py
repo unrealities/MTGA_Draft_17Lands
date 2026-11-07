@@ -135,6 +135,11 @@ def test_report(tmp_path, rd):
     rules.main(paths + ["--json", str(tmp_path / "rules.json")])
     saved = json.loads((tmp_path / "rules.json").read_text())
     assert set(saved) == {r.name for r in rules.RULES}
+    # Every rule's results have the same shape, whatever the data allowed.
+    keys = [set(v) for v in saved.values()]
+    assert all(k == keys[0] for k in keys)
+    assert saved["fixing_hunger"]["by_count"] is None  # no dose table for it
+    assert saved["removal_saturation"]["by_count"]
 
 
 def test_a_rule_no_set_can_test_is_insufficient_data():
@@ -144,8 +149,41 @@ def test_a_rule_no_set_can_test_is_insufficient_data():
     results = rules.report(rd, out)
     removal = results["removal_saturation"]
     assert removal["sets"] == [] and removal["verdict"] == rules.INSUFFICIENT
+    assert set(removal) == set(results["curve_heavy"])
+    assert removal["estimate"] is None and removal["per_set"] == {}
     assert "Removal Saturated" not in out.getvalue().split("## By count")[1]
     assert results["curve_heavy"]["sets"] == ["Cube_-_Powered"]
+
+
+def test_strong_drafters_need_decks_in_the_region():
+    # No strong drafter's deck has removal past the sixth: rather than a zero
+    # the ridge props up, the strong-drafter cell is left empty.
+    data = files(n=8000, sets=("AAA", "BBB"))
+    for f in data:
+        for r in f["rows"]:
+            if float(r["skill"]) >= rules.STRONG:
+                r["rules"]["removal"] = min(r["rules"]["removal"], 6)
+    rd = rules.RuleData(data)
+    out = io.StringIO()
+    results = rules.report(rd, out)
+    assert results["removal_saturation"]["strong"] is None
+    assert results["curve_heavy"]["strong"] is not None
+    row = next(l for l in out.getvalue().splitlines() if l.startswith("| Removal Saturated")
+               and l.count("|") == 7)
+    assert row.rstrip("| ").endswith("–")
+
+
+def test_design_takes_other_terms_in_place_of_the_rules(rd):
+    # dose() swaps the rule's terms for one indicator per count and keeps the
+    # same controls: the app's features, the set dummies, the player buckets.
+    everything = np.ones(len(rd.base.set), dtype=bool)
+    rule = by_name("curve_heavy")
+    A, index = rules.design(rd, rule, everything)
+    own = rule.terms(rd.counts)
+    B, other = rules.design(rd, rule, everything, terms={"seven": rd.counts["heavy"] >= 7})
+    assert B.shape == (A.shape[0], A.shape[1] - len(own) + 1)
+    assert "seven" in other and not set(own) & set(other)
+    assert other[rules.QUALITY] == index[rules.QUALITY]
 
 
 def test_rating_sds_use_the_larger_se_of_their_own_transform():

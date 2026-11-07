@@ -1,0 +1,64 @@
+name: Deck score features
+
+# Samples decks from 17Lands Premier Draft game data and computes the app's
+# deck score features for them, one job per set, as features-<set> artifacts.
+# Called by deck-score-fit.yml and rule-targets.yml, which fit or test on
+# those features; it is not run on its own.
+
+on:
+  workflow_call:
+    inputs:
+      sets:
+        description: 'JSON list of 17Lands set codes (empty: every set with game data and ratings)'
+        type: string
+        default: ""
+      decks:
+        description: Decks per set
+        type: string
+        default: "50000"
+      salt:
+        description: Any text; changes which decks are sampled
+        type: string
+        default: ""
+
+permissions:
+  contents: read
+
+jobs:
+  features:
+    name: Features ${{ matrix.set }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        # Every set with Premier Draft game data that groups games into decks
+        # (MID, STX and VOW dumps don't) and Premier Draft ratings in the app.
+        set: ${{ fromJSON(inputs.sets || '["BLB", "Cube_-_Powered", "DFT", "DMU", "DSK", "EOE", "FDN", "FIN", "FRA", "HOB", "LTR", "MH3", "MSH", "NEO", "OTJ", "PIO", "SOS", "TDM", "TLA", "TMT"]') }}
+    env:
+      SET: ${{ matrix.set }}
+      DECKS: ${{ inputs.decks || '50000' }}
+      SALT: ${{ inputs.salt }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install poetry==2.4.1
+      - run: poetry install --no-interaction
+      - name: Download the game data and the app's dataset
+        run: |
+          # 17Lands names the cube Cube_-_Powered; the app, "Cube - Powered".
+          NAME="${SET//_-_/%20-%20}"
+          curl -fsSL --retry 3 -o games.csv.gz \
+            "https://17lands-public.s3.amazonaws.com/analysis_data/game_data/game_data_public.$SET.PremierDraft.csv.gz"
+          curl -fsSL --retry 3 -o dataset.json.gz \
+            "https://unrealities.github.io/MTGA_Draft_17Lands/${NAME}_PremierDraft_All_Data.json.gz"
+      - name: Sample decks
+        run: poetry run python Tools/DeckScoreFit/decks.py --games games.csv.gz --decks "$DECKS" --salt "$SALT" --out decks.json.gz
+      - name: Compute features
+        run: poetry run python Tools/DeckScoreFit/features.py --src . --decks decks.json.gz --dataset dataset.json.gz --set "$SET" --out "results/$SET.json"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: features-${{ matrix.set }}
+          path: results/

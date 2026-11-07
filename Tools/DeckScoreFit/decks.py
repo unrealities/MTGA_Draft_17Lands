@@ -58,9 +58,9 @@ def read_decks(lines, n, salt=""):
                 "experience": fields[col["user_n_games_bucket"]],
                 # Some dumps (DMU, EOE, LTR, PIO) write counts as "1.0".
                 "cards": {
-                    name: int(float(fields[i]))
+                    name: copies
                     for i, name in deck_cols
-                    if fields[i] and float(fields[i])
+                    if fields[i] and (copies := int(float(fields[i])))
                 },
                 "games": 0,
                 "wins": 0,
