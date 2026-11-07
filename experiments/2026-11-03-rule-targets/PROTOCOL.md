@@ -18,7 +18,7 @@ Cards are counted the way the engine counts them: removal and fixing by the
 app's Scryfall tags, plus multicolored lands for fixing, and heavy drops by
 `get_functional_cmc()`. Off-color spells are the ones whose cost the deck's two
 main colors can't pay. In a deck with 3+ main colors, the two with the most
-pips count as main.
+pips count as main. (Amended on 2026-11-07; see Amendments.)
 
 The model is fit.py's logistic regression: card quality, the app's other deck
 features, the set, and the player's buckets. `missing_fixing` is left out of
@@ -68,3 +68,28 @@ poetry run python Tools/DeckScoreFit/rules.py results/*.json --json rules.json
 ```
 
 Tests: `poetry run pytest Tools/DeckScoreFit/tests`.
+
+## Amendments
+
+Made on 2026-11-07, after the first two runs and before the third, on review
+of whether the fixing-hunger test measured the condition the engine fires on.
+
+- **Off-color playables are counted as the engine counts them.** The first
+  runs counted every spell with no face the deck's two main colors could pay.
+  The engine's `off_color_playables` counts the cards with colors that
+  `is_castable()` says its lane of up to three main colors can't cast (by the
+  front face's cost), and only those rated above the format's mean less one
+  SD. The count now uses `is_castable()`, the deck's registered main colors
+  (the three with the most pips in a deck of 4+) and the same rating bar, so
+  the shortfall term is the one the 1.4x rule fires on. Two parts of the rule
+  still have no counterpart. The pack gate: every registered deck is past
+  pack 2. And the boost's reach: once hungry, the engine scores every land at
+  1.4x, basics included, while its hunger test and this analysis count only
+  tagged fixing and multicolor lands as fixing.
+- **The strong-drafter sensitivity needs decks in the region.** It is now
+  reported only when the strong drafters' decks include at least `MIN_REGION`
+  (100) in the rule's region, as the per-set fits already required. With
+  none, the ridge alone fixed the term at zero with a meaningless SE.
+
+Neither changes the removal or curve tests, whose counts already matched the
+engine's.

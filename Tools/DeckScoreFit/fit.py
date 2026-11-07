@@ -73,8 +73,9 @@ def expit(x):
     return 1.0 / (1.0 + np.exp(-x))
 
 
-def fit_logit(A, wins, games, offset=0.0):
-    """Coefficients and their covariance for a binomial logistic regression."""
+def newton(A, wins, games, offset=0.0):
+    """Maximum-likelihood coefficients of a binomial logistic regression, the
+    (ridge-stabilized) Hessian at them, and the fitted win rates."""
     beta = np.zeros(A.shape[1])
     ridge = 1e-8 * np.eye(A.shape[1])
     for _ in range(100):
@@ -85,12 +86,22 @@ def fit_logit(A, wins, games, offset=0.0):
         if np.abs(step).max() < 1e-9:
             break
     p = expit(A @ beta + offset)
-    # Players differ by more than their buckets say, so the games of one deck
-    # vary more than a binomial: widen the errors by the Pearson dispersion.
-    dispersion = ((wins - games * p) ** 2 / (games * p * (1 - p))).sum() / max(
+    H = A.T @ (A * (games * p * (1 - p))[:, None]) + ridge
+    return beta, H, p
+
+
+def dispersion(A, wins, games, p):
+    """Players differ by more than their buckets say, so the games of one deck
+    vary more than a binomial: the Pearson dispersion widens the errors."""
+    return ((wins - games * p) ** 2 / (games * p * (1 - p))).sum() / max(
         1, len(wins) - A.shape[1]
     )
-    return beta, np.linalg.inv(H) * max(1.0, dispersion)
+
+
+def fit_logit(A, wins, games, offset=0.0):
+    """Coefficients and their covariance for a binomial logistic regression."""
+    beta, H, p = newton(A, wins, games, offset)
+    return beta, np.linalg.inv(H) * max(1.0, dispersion(A, wins, games, p))
 
 
 def fit_clustered(A, wins, games, clusters=None):
@@ -99,26 +110,15 @@ def fit_clustered(A, wins, games, clusters=None):
     The cluster covariance is the sandwich over the groups in clusters (one
     label per row), or None without clusters or with only one group.
     """
-    beta = np.zeros(A.shape[1])
-    ridge = 1e-8 * np.eye(A.shape[1])
-    for _ in range(100):
-        p = expit(A @ beta)
-        H = A.T @ (A * (games * p * (1 - p))[:, None]) + ridge
-        step = np.linalg.solve(H, A.T @ (wins - games * p) - ridge @ beta)
-        beta += step
-        if np.abs(step).max() < 1e-9:
-            break
-    p = expit(A @ beta)
-    H = A.T @ (A * (games * p * (1 - p))[:, None]) + ridge
+    beta, H, p = newton(A, wins, games)
     Hinv = np.linalg.inv(H)
-    resid = wins - games * p
-    dispersion = (resid**2 / (games * p * (1 - p))).sum() / max(1, len(wins) - A.shape[1])
-    model = Hinv * max(1.0, dispersion)
+    model = Hinv * max(1.0, dispersion(A, wins, games, p))
     cluster = None
     if clusters is not None:
-        groups = sorted(set(clusters))
+        clusters = np.asarray(clusters)
+        groups = np.unique(clusters)
         if len(groups) > 1:
-            S = A * resid[:, None]
+            S = A * (wins - games * p)[:, None]
             G = np.array([S[clusters == g].sum(axis=0) for g in groups])
             cluster = Hinv @ (G.T @ G) @ Hinv * len(groups) / (len(groups) - 1)
     return beta, model, cluster
@@ -128,23 +128,6 @@ def varying(C):
     """The columns of C that vary in these rows (constant ones are collinear
     with an intercept)."""
     return C[:, C.min(axis=0) != C.max(axis=0)] if len(C) else C
-
-
-def keep_or_drop(size, value, se, z):
-    """Whether a value is closer to zero or to the size the app gives it.
-
-    With the app's rule or penalty, a card or deck is valued `size` off what
-    it would be; without it, not at all. Dropping it is better if the value
-    measured from games is closer to zero than to `size`, i.e. on zero's side
-    of size / 2, for the whole interval of z standard errors.
-    """
-    low, high = value - z * se, value + z * se
-    half = size / 2
-    if (low > half) if size < 0 else (high < half):
-        return "drop"
-    if (high < half) if size < 0 else (low > half):
-        return "keep"
-    return "can't tell"
 
 
 def to_points(beta, cov, k, q, scale):

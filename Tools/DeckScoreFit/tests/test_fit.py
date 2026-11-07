@@ -111,6 +111,8 @@ def test_fit_clustered_cluster_covariance():
     beta, model, cluster = fit.fit_clustered(A, wins, games, groups)
     assert cluster.shape == model.shape
     assert cluster[1, 1] > model[1, 1]
+    # The labels may come as a plain list.
+    assert fit.fit_clustered(A, wins, games, list(groups))[2] == pytest.approx(cluster)
     # One group: no cluster covariance.
     assert fit.fit_clustered(A, wins, games, np.full(n, "a"))[2] is None
 
@@ -119,18 +121,6 @@ def test_varying_drops_constant_columns():
     C = np.array([[1.0, 0.0, 2.0], [1.0, 1.0, 2.0]])
     assert fit.varying(C).tolist() == [[0.0], [1.0]]
     assert fit.varying(np.zeros((0, 3))).shape == (0, 3)
-
-
-def test_keep_or_drop():
-    z = 2.0
-    # A penalty of -1: drop if the value is surely above -0.5, keep if below.
-    assert fit.keep_or_drop(-1.0, 0.0, 0.1, z) == "drop"
-    assert fit.keep_or_drop(-1.0, -1.0, 0.1, z) == "keep"
-    assert fit.keep_or_drop(-1.0, -0.5, 0.1, z) == "can't tell"
-    assert fit.keep_or_drop(-1.0, -0.5 + 1.01 * z * 0.1, 0.1, z) == "drop"
-    # A boost of +1.
-    assert fit.keep_or_drop(1.0, 0.1, 0.1, z) == "drop"
-    assert fit.keep_or_drop(1.0, 1.2, 0.1, z) == "keep"
 
 
 def test_expected_wins():
