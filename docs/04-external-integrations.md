@@ -106,7 +106,7 @@ To ensure the app works seamlessly on Day 1 of a new set release without waiting
 
 - **Endpoint:** `https://api.github.com/repos/unrealities/MTGA_Draft_17Lands/releases/latest`
 - **Logic:**
-  1. Fetch `tag_name` (e.g., `v4.15`).
+  1. Fetch `tag_name` (e.g., `MTGA_Draft_Tool_V0430` for 4.30).
   2. Compare with internal constant `APPLICATION_VERSION`.
   3. If `Remote > Local`: Prompt user to open the release URL.
 

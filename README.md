@@ -2,11 +2,11 @@
 
 Magic: The Gathering Arena draft tool that utilizes 17Lands data.
 
-**Version 4.30:** Cached card ratings stay tied to the selected dataset, event detection distinguishes Pick-Two and Traditional formats, and the advisor and deck builder share hybrid mana payment rules. See the [release notes](release_notes.txt) for details.
+**Version 4.31:** The daily dataset pipeline follows 17Lands' host change and refreshes its API cache daily, and the deck score tooling gains a pre-registered test of three advisor pick rules on game results. See the [release notes](release_notes.txt) for details.
 
 **This application will automatically support new sets as soon as the sets are released on Arena _and_ the data is available on the [17Lands card ratings](https://www.17lands.com/card_ratings) page.**
 
-**Supported Events:** Premier Draft, Traditional Draft, Quick Draft, Sealed, Traditional Sealed, and Cube.
+**Supported Events:** Premier Draft, Traditional Draft, Quick Draft, Pick-Two Draft, Contender Draft, Sealed, Traditional Sealed, Arena Direct, and Cube.
 
 ## Table of Contents
 
@@ -203,6 +203,11 @@ For developers looking to contribute, fork, or understand the architecture of th
 - `04-external-integrations.md`
 - `05-server-etl-pipeline.md`
 - [Hybrid mana payment rules and simulator limitations](docs/hybrid-mana.md)
+
+The deck score's weights are fit to 17Lands game results with the scripts in
+[`Tools/DeckScoreFit`](Tools/DeckScoreFit/README.md), which also test the
+advisor's pick rules against those results
+([protocol and results](experiments/2026-11-03-rule-targets/RESULTS.md)).
 
 ### Environment Setup
 

@@ -29,11 +29,11 @@ graph TD
 
 | Module | Function |
 | :--- | :--- |
-| `config.py` | Centralizes all configuration: API delays, retry logic, WAF cooldowns, and definition of the 26 tracked color archetypes. |
+| `config.py` | Centralizes all configuration: API delays, retry logic, WAF cooldowns, and definition of the 32 tracked color archetypes (All Decks and every one- to five-color combination). |
 | `utils.py` | Houses the `APIClient`. Wraps `requests` with robust exponential backoff, automated HTTP 429/403 (Cloudflare WAF) cooldowns, random anti-bot jitter, and a local `.api_cache` system. |
 | `events.py` | Fetches MTGpile's schedule, resolves set names through Scryfall and supported 17Lands codes, and selects active event windows. |
 | `extract.py` | Handles all network requests. Responsible for downloading base card definitions, Scryfall community tags (`otags`), and 17Lands archetype-specific win rates. |
-| `transform.py` | The "Data Sanitizer." Merges Scryfall IDs with 17Lands `arena_id`s, guarantees all 26 archetypes are pre-initialized (even if data is missing), and formats the payload exactly to the desktop client's expectations. |
+| `transform.py` | The "Data Sanitizer." Merges Scryfall IDs with 17Lands `arena_id`s, guarantees all 32 archetypes are pre-initialized (even if data is missing), and formats the payload exactly to the desktop client's expectations. |
 | `load.py` | Writes the final `.json.gz` files using **Atomic Writes** (writing to a `.tmp` file, then utilizing OS-level replacement) to prevent dataset corruption. |
 | `report.py` | Generates a highly detailed, professional execution summary detailing pipeline intent, data sizes, network errors, and warehouse state. |
 
@@ -42,14 +42,15 @@ graph TD
 The pipeline is designed to be highly respectful of community APIs:
 - **Scryfall Base Cards:** Cached locally for **7 Days**. (Base set data rarely changes).
 - **Scryfall Tags:** Cached locally for **7 Days**.
-- **17Lands/Scryfall/MTGpile GET Requests:** Cached transparently by `APIClient` for **12 Hours** using MD5 hashing of the full URL. If the pipeline crashes, rerunning it will instantly bypass previously successful network requests.
-- **Throttling:** 17Lands is rate-limited to 1 request per ~5 seconds. Scryfall is rate-limited to 1 request per 200ms. MTGpile requests are separated by at least 1 second.
+- **17Lands/Scryfall/MTGpile GET Requests:** Cached transparently by `APIClient` for **12 Hours** using MD5 hashing of the full URL. If the pipeline crashes, rerunning it will instantly bypass previously successful network requests. The GitHub Actions workflow saves both cache folders under a key that includes the run's date, so each day starts from the previous day's cache and entries expire by age.
+- **Throttling:** 17Lands is rate-limited to 1 request per 6 seconds. Scryfall is rate-limited to 1 request per 200ms. MTGpile requests are separated by at least 1 second.
+- **Hosts:** Every 17Lands request goes to `www.17lands.com`. The `api.17lands.com` host stopped answering (404 on every path) on 2026-11-07; a request to it is a bug.
 
 ## 5. Event Management (MTGpile)
 
 The scheduling source is [MTGpile's Arena JSON feed](https://mtgpile.com/api/v1/events/arena/all.json), compiled from Wizards of the Coast's published event schedules. There is no manually maintained calendar input.
 
-`server/events.py` translates event titles to 17Lands format identifiers and resolves set names using Scryfall's set catalog. Only codes present in 17Lands' `/data/filters` catalog are scheduled. Alchemy codes are matched against that catalog rather than inferred from a year. Unknown titles, ambiguous multi-stage events, missing source links, and incomplete or reversed date windows are logged and skipped.
+`server/events.py` translates event titles to 17Lands format identifiers and resolves set names using Scryfall's set catalog. Only codes present in 17Lands' `/data/filters` catalog (fetched from `www.17lands.com`) are scheduled. Alchemy codes are matched against that catalog rather than inferred from a year. Unknown titles, ambiguous multi-stage events, missing source links, and incomplete or reversed date windows are logged and skipped.
 
 Events run between their announced start and end dates, inclusive, using UTC. A missing, future-dated, or more than seven days old `as_of` stamp fails the run, as do unavailable catalogs or a feed with no resolvable Limited events. Fetch failures use the shared client's retry behavior and then fail the run; there is no fallback to a manual calendar.
 
@@ -60,7 +61,7 @@ The normalized schedule is written atomically to `build/calendar.json`, includin
 Because 17Lands does not immediately have data for every color pair on Day 1 of a new format, the `transform.py` module strictly enforces a data contract for the Desktop UI:
 
 1. Every card must have an `"All Decks"` archetype.
-2. Every card must possess keys for all 26 possible archetypes (e.g., `UB`, `WUBRG`). 
+2. Every card must possess keys for all 32 archetypes (e.g., `UB`, `WUBRG`). 
 3. If 17Lands did not return data for an archetype, `transform.py` injects a placeholder object with `0.0` values. This prevents the Desktop App from throwing fatal `KeyError` exceptions when a user changes their deck filter in the UI. 
 4. The pipeline combines mtga_id (from 17Lands) and arena_ids (from Scryfall) into a single array to ensure Showcase, Retro, and Alternate Art card styles are successfully matched by the local MTG Arena log scanner.
 

@@ -64,14 +64,19 @@ jobs:
           ref: gh-pages
           path: build
 
+      - name: Today's Date
+        id: date
+        run: echo "date=$(date -u +%F)" >> "$GITHUB_OUTPUT"
+
       - name: Restore API Caches
         uses: actions/cache@v4
         with:
-          # Tell GitHub to save/restore the two folders we moved in Fix 1
+          # The APIClient's 12-hour response cache and the 7-day Scryfall cache.
           path: |
             .api_cache
             .scryfall_cache
-          # Cache key based on the date so it refreshes naturally
+          # Keyed by date so a new cache is saved once a day; older days' caches
+          # are restored as a starting point, and stale entries expire by age.
           key: etl-cache-${{ runner.os }}-${{ steps.date.outputs.date }}
           restore-keys: |
             etl-cache-${{ runner.os }}-
