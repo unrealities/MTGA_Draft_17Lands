@@ -69,7 +69,7 @@ def test_extract_17lands_data_uses_api_card_data_endpoint(mock_client):
     """Regression: card ratings must hit www.17lands.com/api/card_data with the
     event_type param. The old /card_ratings/data route still answers 200 but
     ignores colors/time_period, collapsing every archetype into an identical
-    stale snapshot (and api.17lands.com remains a different, unsuitable host)."""
+    stale snapshot, and api.17lands.com no longer answers at all (404 since 2026-11-07)."""
 
     mock_response = MagicMock()
     mock_response.json.return_value = {"data": [{"name": "Some Card", "mtga_id": 1}]}

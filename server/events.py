@@ -116,7 +116,7 @@ def build_event_calendar(feed, filters, scryfall_sets, today=None):
 def fetch_event_calendar(client, today=None):
     """Use the shared HTTP client's retries, headers, throttling and 12h cache."""
     feed = client.respectful_get(SOURCE_URL).json()
-    filters = client.respectful_get("https://api.17lands.com/data/filters").json()
+    filters = client.respectful_get("https://www.17lands.com/data/filters").json()
     sets = client.respectful_get("https://api.scryfall.com/sets").json()
     return build_event_calendar(feed, filters, sets, today=today)
 
