@@ -27,12 +27,14 @@ class App:
     def __init__(self, dataset_path):
         from src.advisor import deck_scorer
         from src.advisor.mana_base import create_basic_lands
+        from src.advisor.simulator import COLOR_BITS, parse_mana_cost
         from src.card_utils import get_functional_cmc
         from src.dataset import Dataset
         from src.set_metrics import SetMetrics
 
         self.scorer, self.create_basic_lands = deck_scorer, create_basic_lands
         self.get_functional_cmc = get_functional_cmc
+        self.parse_mana_cost, self.color_bits = parse_mana_cost, COLOR_BITS
         self.dataset = Dataset()
         with tempfile.TemporaryDirectory() as tmp:
             # Dataset.open_file reads plain JSON only.
@@ -89,6 +91,65 @@ class App:
             "colors": len(colors),
         }
 
+    def rule_counts(self, deck, main_colors, splash_colors):
+        """Deck counts for the pick rules in src/advisor/engine.py.
+
+        removal, heavy and fixing count cards as _analyze_pool() does. The
+        primary colors are the main colors, or the two main colors with the
+        most pips in a deck of 3+ main colors. off_color counts the spells
+        with no face whose cost the primary colors can pay: the cards the
+        fixing-hunger rule fixes for. (The engine goes by a card's colors,
+        which for some cards include colors its cost doesn't need.)
+        """
+        spells = [c for c in deck if "Land" not in c.get("types", [])]
+        # Each face's pips: a card with a castable face isn't off-color.
+        faces = {
+            id(c): [
+                self.parse_mana_cost(face)[0]
+                for face in str(c.get("mana_cost") or "").split("//")
+            ]
+            for c in spells
+        }
+        primary = list(main_colors)
+        if len(primary) > 2:
+            pips_of = Counter()
+            for c in spells:
+                for mask in faces[id(c)][0]:
+                    for col in primary:
+                        if mask & self.color_bits[col]:
+                            pips_of[col] += c["count"]
+            primary = sorted(primary, key=lambda col: -pips_of[col])[:2]
+        primary_mask = sum(self.color_bits[col] for col in primary)
+        return {
+            "removal": sum(c["count"] for c in spells if "removal" in c.get("tags", [])),
+            "heavy": sum(
+                c["count"] for c in spells if self.get_functional_cmc(c) >= 5
+            ),
+            "fixing": sum(
+                c["count"]
+                for c in deck
+                if "fixing_ramp" in c.get("tags", [])
+                or ("Land" in c.get("types", []) and len(c.get("colors", [])) > 1)
+            ),
+            "off_color": sum(
+                c["count"]
+                for c in spells
+                if all(
+                    any(not mask & primary_mask for mask in pips)
+                    for pips in faces[id(c)]
+                )
+            ),
+            "splash": int(bool(splash_colors)),
+        }
+
+    def tag_counts(self):
+        """How many of the set's cards carry each rule's tag."""
+        cards = self.dataset.get_card_ratings().values()
+        return {
+            tag: sum(tag in c.get("tags", []) for c in cards)
+            for tag in ("removal", "fixing_ramp")
+        }
+
 
 def deck_rows(app, decks):
     """A row of features and results for each deck, and why any were skipped."""
@@ -112,6 +173,7 @@ def deck_rows(app, decks):
                 "experience": d["experience"],
                 "features": features,
                 "extra": app.extra(deck, colors),
+                "rules": app.rule_counts(deck, d["main_colors"], d["splash_colors"]),
             }
         )
     return rows, skipped
@@ -140,6 +202,7 @@ def main(argv=None):
                 "weights": app.scorer.WEIGHTS,
                 "skipped": dict(skipped),
                 "unmatched": dict(app.unmatched.most_common(10)),
+                "tags": app.tag_counts(),
                 "rows": rows,
             },
             f,

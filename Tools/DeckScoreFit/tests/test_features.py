@@ -91,3 +91,57 @@ def test_command_line(tmp_path, white_blue, app):
     assert result["set"] == "MKM" and len(result["rows"]) == 1
     assert result["weights"] == app.scorer.WEIGHTS
     assert result["base_score"] == app.scorer.BASE_SCORE
+
+
+def card(name, cost, colors, types=("Creature",), tags=(), cmc=None):
+    pips = sum(cost.split("//")[0].count(c) for c in "WUBRG")
+    digits = "".join(ch if ch.isdigit() else " " for ch in cost.split("//")[0])
+    return {
+        "name": name,
+        "mana_cost": cost,
+        "cmc": cmc if cmc is not None else pips + sum(int(n) for n in digits.split()),
+        "colors": list(colors),
+        "types": list(types),
+        "tags": list(tags),
+        "count": 1,
+    }
+
+
+def test_rule_counts(app):
+    deck = [
+        card("Bolt", "{R}", "R", ("Instant",), ("removal",)),
+        dict(card("Murder", "{1}{B}{B}", "B", ("Instant",), ("removal",)), count=2),
+        card("Giant", "{4}{G}", "G"),
+        card("Dragon", "{4}{R}{R}", "R"),
+        card("Rock", "{2}", "", ("Artifact",), ("fixing_ramp",)),
+        card("Dual", "", "BR", ("Land",)),
+        card("Forest", "", "G", ("Land", "Basic")),
+        # Off-color for a BR deck: needs G or U.
+        card("Splash", "{1}{G}", "G"),
+        card("Hybrid", "{G/U}", "GU"),
+        # On-color: its colors include G, but its cost needs only B...
+        card("Identity", "{1}{B}", "BG"),
+        # ...and an omen whose second face is castable.
+        card("Omen", "{4}{G} // {1}{R}", "G"),
+        # Hybrid payable by a primary color.
+        card("Either", "{B/G}", "BG"),
+    ]
+    counts = app.rule_counts(deck, "BR", "G")
+    assert counts == {
+        "removal": 3,
+        "heavy": 3,  # Giant, Dragon and the omen's front
+        "fixing": 2,  # the rock and the dual
+        "off_color": 3,  # Giant, Splash, Hybrid
+        "splash": 1,
+    }
+
+
+def test_rule_counts_take_the_two_main_colors_with_most_pips(app):
+    deck = [
+        card("W1", "{W}{W}", "W"),
+        card("W2", "{1}{W}", "W"),
+        card("U1", "{U}", "U"),
+        card("U2", "{1}{U}", "U"),
+        card("B1", "{2}{B}", "B"),
+    ]
+    assert app.rule_counts(deck, "WUB", "")["off_color"] == 1
