@@ -27,7 +27,10 @@ Uses:
   equivalent spell with a solid pip.
 - **Splash feasibility:** every off-color symbol must have an option the
   fixing supports. `{U/R}` can use red fixing; `{G/U}{B}` in green still
-  needs black fixing. The splash thresholds themselves are unchanged.
+  needs black fixing. The greedy builder's double-pip splash requires mana
+  value 5 or greater and at least two fixing sources for that color. Previously
+  it counted the same sources twice against a threshold of three; the new
+  check counts them once and retains the two-source minimum.
 - **Mana allocation and deck labels:** solid pips fix their colors. Hybrid
   symbols they don't cover get the fewest colors outside the declared deck
   colors, then the fewest colors; all 32 subsets of WUBRG are checked, so card
