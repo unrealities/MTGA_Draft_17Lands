@@ -37,7 +37,7 @@ def fold_of(key):
 
 def _count(text):
     # Some dumps (DMU, EOE, LTR, PIO) write counts as "1.0".
-    return int(float(text)) if text and text not in ("0", "0.0") else 0
+    return int(float(text)) if text else 0
 
 
 def read_games(lines, ids):

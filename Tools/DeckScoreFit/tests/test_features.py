@@ -93,10 +93,10 @@ def test_command_line(tmp_path, white_blue, app):
     assert result["base_score"] == app.scorer.BASE_SCORE
 
 
-def card(name, cost, colors, types=("Creature",), tags=(), cmc=None):
+def card(name, cost, colors, types=("Creature",), tags=(), cmc=None, wr=None):
     pips = sum(cost.split("//")[0].count(c) for c in "WUBRG")
     digits = "".join(ch if ch.isdigit() else " " for ch in cost.split("//")[0])
-    return {
+    out = {
         "name": name,
         "mana_cost": cost,
         "cmc": cmc if cmc is not None else pips + sum(int(n) for n in digits.split()),
@@ -105,43 +105,75 @@ def card(name, cost, colors, types=("Creature",), tags=(), cmc=None):
         "tags": list(tags),
         "count": 1,
     }
+    if wr is not None:
+        out["deck_colors"] = {"All Decks": {"gihwr": wr}}
+    return out
 
 
 def test_rule_counts(app):
+    good, bad = app.playable + 1, app.playable - 1  # rated above or below the bar
     deck = [
-        card("Bolt", "{R}", "R", ("Instant",), ("removal",)),
+        card("Bolt", "{R}", "R", ("Instant",), ("removal",), wr=good),
         dict(card("Murder", "{1}{B}{B}", "B", ("Instant",), ("removal",)), count=2),
-        card("Giant", "{4}{G}", "G"),
-        card("Dragon", "{4}{R}{R}", "R"),
-        card("Rock", "{2}", "", ("Artifact",), ("fixing_ramp",)),
-        card("Dual", "", "BR", ("Land",)),
+        card("Dragon", "{4}{R}{R}", "R", wr=good),
+        card("Rock", "{2}", "", ("Artifact",), ("fixing_ramp",), wr=good),
+        card("Dual", "", "BR", ("Land",), wr=good),
         card("Forest", "", "G", ("Land", "Basic")),
-        # Off-color for a BR deck: needs G or U.
-        card("Splash", "{1}{G}", "G"),
-        card("Hybrid", "{G/U}", "GU"),
-        # On-color: its colors include G, but its cost needs only B...
-        card("Identity", "{1}{B}", "BG"),
-        # ...and an omen whose second face is castable.
-        card("Omen", "{4}{G} // {1}{R}", "G"),
-        # Hybrid payable by a primary color.
-        card("Either", "{B/G}", "BG"),
+        # Off-color playables for a BR deck: the lane can't pay for them and
+        # they are rated above the bar...
+        card("Giant", "{4}{G}", "G", wr=good),
+        card("Hybrid", "{G/U}", "GU", wr=good),
+        # ...the engine reads the front face only, so an omen with a castable
+        # back is off-color...
+        card("Omen", "{4}{G} // {1}{R}", "G", wr=good),
+        # ...and so is a land of other colors, which has no cost to read.
+        card("Offdual", "", "GU", ("Land",), wr=good),
+        # Off-color but not playable: rated below the bar.
+        card("Splash", "{1}{G}", "G", wr=bad),
+        # On-color: its colors include G, but its cost needs only B.
+        card("Identity", "{1}{B}", "BG", wr=good),
+        # Hybrid payable by a lane color.
+        card("Either", "{B/G}", "BG", wr=good),
     ]
     counts = app.rule_counts(deck, "BR", "G")
     assert counts == {
         "removal": 3,
         "heavy": 3,  # Giant, Dragon and the omen's front
-        "fixing": 2,  # the rock and the dual
-        "off_color": 3,  # Giant, Splash, Hybrid
+        "fixing": 3,  # the rock and the two multicolor lands
+        "off_color": 4,  # Giant, Hybrid, Omen, Offdual
         "splash": 1,
     }
 
 
-def test_rule_counts_take_the_two_main_colors_with_most_pips(app):
+def test_rule_counts_follow_the_engines_castability(app):
+    """Both go through is_castable(): a card is on-color by its cost, not its colors."""
+    from src.advisor.mana_base import is_castable
+
+    good = app.playable + 1
+    for cost, colors in (("{1}{B}", "BG"), ("{G/U}", "GU"), ("{4}{G} // {1}{R}", "G")):
+        c = card("X", cost, colors, wr=good)
+        assert (app.rule_counts([c], "BR", "")["off_color"] == 1) == (
+            not is_castable(c, ["B", "R"])
+        )
+
+
+def test_rule_counts_take_up_to_three_main_colors(app):
+    good = app.playable + 1
     deck = [
-        card("W1", "{W}{W}", "W"),
-        card("W2", "{1}{W}", "W"),
-        card("U1", "{U}", "U"),
-        card("U2", "{1}{U}", "U"),
-        card("B1", "{2}{B}", "B"),
+        card("W1", "{W}{W}", "W", wr=good),
+        card("W2", "{1}{W}", "W", wr=good),
+        card("U1", "{U}", "U", wr=good),
+        card("U2", "{1}{U}", "U", wr=good),
+        card("B1", "{B}{B}", "B", wr=good),
+        card("R1", "{R}", "R", wr=good),
     ]
-    assert app.rule_counts(deck, "WUB", "")["off_color"] == 1
+    # Three main colors are all the lane, as in the engine.
+    assert app.rule_counts(deck, "WUB", "")["off_color"] == 1  # R1
+    # With four, the three with the most pips: W (3), U (2), B (2).
+    assert app.rule_counts(deck, "WUBR", "")["off_color"] == 1  # R1
+
+
+def test_playable_bar_is_the_engines(app):
+    mean, std = app.metrics.get_metrics("All Decks", "gihwr")
+    assert mean > 0 and std > 0
+    assert app.playable == mean - std
