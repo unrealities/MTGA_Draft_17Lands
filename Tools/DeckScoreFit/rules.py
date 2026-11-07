@@ -17,9 +17,13 @@ The rules, from _calculate_composition_bonus() in src/advisor/engine.py:
   scored at 0.7x. Tested: is each such spell past the fourth worth less than
   a spell of the same rating?
 - Needs fixing: from pack 2, while fixing cards are no more than the pool's
-  off-color playables, fixing is scored at 1.4x. Tested: in decks with
-  off-color spells, is a fixing card worth more while the deck has no more
-  fixing cards than off-color spells than once it has more?
+  off-color playables, every land and fixing card is scored at 1.4x. Tested:
+  in decks with off-color playables (cards the deck's lane can't cast, rated
+  above the format's mean less one SD, counted as the engine counts them), is
+  a fixing card worth more while the deck has no more fixing cards than
+  off-color playables than once it has more? The pack gate is moot for a
+  registered deck, and basics aren't tested as fixing: the engine's hunger
+  test, like this one, counts only tagged cards and multicolor lands.
 
 These are associations in observational data, not the effect of switching
 the advisor's policy; see experiments/2026-11-03-rule-targets/PROTOCOL.md.
@@ -164,12 +168,16 @@ def _float(text):
         return float("nan")
 
 
-def design(rd, rule, mask, extra=False):
-    """The model matrix for rows in mask, and the column of each named term."""
+def design(rd, rule, mask, extra=False, terms=None):
+    """The model matrix for rows in mask, and the column of each named term.
+
+    terms: {name: column over the rows in mask}, in place of the rule's own.
+    """
     d = rd.base
     names = [k for k in d.names if k not in rule.drop]
     cols = [d.X[mask][:, d.names.index(k)] for k in names]
-    terms = rule.terms({k: v[mask] for k, v in rd.counts.items()})
+    if terms is None:
+        terms = rule.terms({k: v[mask] for k, v in rd.counts.items()})
     blocks = [np.column_stack(cols + list(terms.values()))]
     index = {k: i for i, k in enumerate(names + list(terms))}
     if extra:
@@ -241,7 +249,19 @@ def usable_sets(rd, rule):
     return [s for s in rd.base.sets if region[rd.base.set == s].any()]
 
 
+def in_region(rd, rule, mask):
+    """Whether the rows in mask hold enough decks in the rule's region to fit
+    it. With none, the ridge alone would fix the term at zero."""
+    return rule.region(rd.counts)[mask].sum() >= MIN_REGION
+
+
 INSUFFICIENT = "insufficient data"
+
+
+def _result():
+    """One rule's results, every key present whatever the data allows."""
+    return {"sets": [], "estimate": None, "verdict": INSUFFICIENT, "secondary": {},
+            "with_counts": None, "strong": None, "per_set": {}, "by_count": None}
 
 
 def verdict(rule, est):
@@ -256,7 +276,7 @@ def dose(rd, rule, mask):
     """Win rate of decks at each count against decks at the knot, in points."""
     var, ref, buckets = DOSE[rule.name]
     x = rd.counts[var][mask]
-    rows = []  # (label, indicator or None for the reference)
+    rows = []  # (label, the decks at this count, whether it is the reference)
     for lo, hi in sorted(buckets + [(ref, ref)], key=lambda b: -1 if b[0] is None else b[0]):
         sel = np.ones(len(x), dtype=bool)
         if lo is not None:
@@ -265,21 +285,19 @@ def dose(rd, rule, mask):
             sel &= x <= hi
         rows.append((_bucket(lo, hi), sel, lo == ref))
     d = rd.base
-    names = [k for k in d.names if k not in rule.drop]
-    cols = [sel.astype(float) for _, sel, is_ref in rows if not is_ref]
-    X = np.column_stack([d.X[mask][:, d.names.index(k)] for k in names] + cols)
-    sets = sorted(set(d.set[mask]))
-    A = np.hstack([X, d.set_dummies(mask, sets), varying(d.C[mask])])
+    # The rule's terms give way to one indicator per count, less the reference.
+    terms = {label: sel.astype(float) for label, sel, is_ref in rows if not is_ref}
+    A, index = design(rd, rule, mask, terms=terms)
     beta, model, cluster = fit_clustered(A, d.wins[mask], d.games[mask], d.set[mask])
     per_pp = 100 * rd.win_rate * (1 - rd.win_rate)
-    out, j = [], len(names)
+    out = []
     for label, sel, is_ref in rows:
         if is_ref:
             out.append((f"{label} (reference)", int(sel.sum()), 0.0, 0.0))
             continue
+        j = index[label]
         se = math.sqrt(max(model[j, j], cluster[j, j] if cluster is not None else 0))
         out.append((label, int(sel.sum()), per_pp * beta[j], per_pp * se))
-        j += 1
     return var, out
 
 
@@ -340,10 +358,9 @@ def report(rd, out=sys.stdout):
     w("|---|---|---|---|---|---|---|---|---|")
     for rule in RULES:
         sets = usable_sets(rd, rule)
+        results[rule.name] = _result()
         if not sets:
             # No deck reaches the rule's region, as when no set is tagged.
-            results[rule.name] = {"sets": [], "estimate": None, "verdict": INSUFFICIENT,
-                                  "secondary": {}}
             w(f"| {rule.label} | {rule.claim} | 0 | 0 | – | – | – | "
               f"{rule.implied:+.2f} | {INSUFFICIENT} |")
             continue
@@ -353,12 +370,12 @@ def report(rd, out=sys.stdout):
             rd, rule, mask, estimands=[rule.estimand] + list(rule.secondary.values())
         )
         region = rule.region(rd.counts)[mask]
-        results[rule.name] = {
-            "sets": sets,
-            "estimate": est,
-            "verdict": verdict(rule, est),
-            "secondary": dict(zip(labels, others)),
-        }
+        results[rule.name].update(
+            sets=sets,
+            estimate=est,
+            verdict=verdict(rule, est),
+            secondary=dict(zip(labels, others)),
+        )
         w(
             f"| {rule.label} | {rule.claim} | {len(sets)} | "
             f"{region.sum()} ({region.mean():.1%}) | {est['pp']:+.2f} | "
@@ -378,7 +395,8 @@ def report(rd, out=sys.stdout):
     w(
         "Per card, in game win rate points (SE). *Model* and *set-clustered* SEs "
         "of the primary fit; *with counts*: lands, creatures and colors added as "
-        f"controls; *strong drafters*: skill bucket {STRONG:.0%} or more."
+        f"controls; *strong drafters*: skill bucket {STRONG:.0%} or more (– with "
+        f"fewer than {MIN_REGION} of their decks in the rule's region)."
     )
     w()
     w("| rule | primary | model SE | set-clustered SE | with counts | strong drafters |")
@@ -390,7 +408,8 @@ def report(rd, out=sys.stdout):
         mask = np.isin(d.set, sets)
         est = results[rule.name]["estimate"]
         counts = estimate(rd, rule, mask, extra=True)
-        strong = estimate(rd, rule, mask & (rd.skill >= STRONG))
+        strong_mask = mask & (rd.skill >= STRONG)
+        strong = estimate(rd, rule, strong_mask) if in_region(rd, rule, strong_mask) else None
         results[rule.name]["with_counts"] = counts
         results[rule.name]["strong"] = strong
         cl = f"{est['se_cluster']:.2f}" if est["se_cluster"] is not None else "–"
@@ -426,9 +445,7 @@ def report(rd, out=sys.stdout):
         cells = []
         for rule in RULES:
             mask = d.set == s
-            if s not in results[rule.name]["sets"] or (
-                rule.region(rd.counts)[mask].sum() < MIN_REGION
-            ):
+            if s not in results[rule.name]["sets"] or not in_region(rd, rule, mask):
                 cells.append("–")
                 continue
             est = estimate(rd, rule, mask)
