@@ -123,7 +123,7 @@ def test_mtgpile_fetch_uses_shared_client_and_never_falls_back_to_local_calendar
     assert normalized["events"][0]["set_code"] == "FRA"
     assert [call.args[0] for call in client.respectful_get.call_args_list] == [
         "https://mtgpile.com/api/v1/events/arena/all.json",
-        "https://api.17lands.com/data/filters", "https://api.scryfall.com/sets",
+        "https://www.17lands.com/data/filters", "https://api.scryfall.com/sets",
     ]
     client.respectful_get.side_effect = RuntimeError("MTGpile unavailable")
     with pytest.raises(RuntimeError, match="MTGpile unavailable"):
