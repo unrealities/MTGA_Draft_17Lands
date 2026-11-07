@@ -56,10 +56,11 @@ def read_decks(lines, n, salt=""):
                 "splash_colors": fields[col["splash_colors"]],
                 "skill": fields[col["user_game_win_rate_bucket"]],
                 "experience": fields[col["user_n_games_bucket"]],
+                # Some dumps (DMU, EOE, LTR, PIO) write counts as "1.0".
                 "cards": {
-                    name: int(fields[i])
+                    name: int(float(fields[i]))
                     for i, name in deck_cols
-                    if fields[i] not in ("", "0")
+                    if fields[i] and float(fields[i])
                 },
                 "games": 0,
                 "wins": 0,
