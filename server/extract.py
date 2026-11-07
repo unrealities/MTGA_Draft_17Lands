@@ -188,7 +188,8 @@ def extract_17lands_data(
     # and a `time_period` preset (see config.TIME_PERIOD_*). The retired
     # /card_ratings/data route still answers 200 but ignores the colors and
     # time_period filters (every archetype collapses into a stale copy of All
-    # Decks), and api.17lands.com remains a different, unsuitable host.
+    # Decks). api.17lands.com went dark (404 on every path) on 2026-11-07, so
+    # every 17Lands request must use the www.17lands.com host.
     base_url = "https://www.17lands.com/api/card_data"
 
     for i, color in enumerate(valid_archetypes):
@@ -521,7 +522,7 @@ def extract_scryfall_by_names(client, names: list) -> dict:
 
 def get_historical_start_dates(client) -> dict:
     try:
-        resp = client.respectful_get("https://api.17lands.com/data/filters")
+        resp = client.respectful_get("https://www.17lands.com/data/filters")
         return resp.json().get("start_dates", {})
     except Exception as e:
         logger.warning(f"Could not fetch historical start dates: {e}")

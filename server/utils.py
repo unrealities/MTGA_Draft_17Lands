@@ -39,13 +39,11 @@ class APIClient:
         self._last_request_time = {
             "api.scryfall.com": 0.0,
             "www.17lands.com": 0.0,
-            "api.17lands.com": 0.0,
         }
         self._domain_delays = {
             "mtgpile.com": 1.0,
             "api.scryfall.com": config.DELAY_SCRYFALL_SEC,
             "www.17lands.com": config.DELAY_17LANDS_SEC,
-            "api.17lands.com": config.DELAY_17LANDS_SEC,
         }
 
         self._cache_dir = os.path.join(os.path.dirname(config.OUTPUT_DIR), ".api_cache")
