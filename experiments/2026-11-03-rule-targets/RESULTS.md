@@ -112,5 +112,4 @@ These are the protocol's limits, plus those found in the runs:
 - Cube_-_Powered has no removal or fixing tags, so it is left out of both removal
   rules and adds only lands to fixing.
 - TDM's omen and dragonstorm cards count at their full mana value as heavy
-  drops, and aren't early plays. This follows the engine's
-  `get_functional_cmc()`.
+  drops. This follows the engine's `get_functional_cmc()`.
