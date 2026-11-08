@@ -32,9 +32,9 @@ from features import App
 from games import FOLDS, fold_of
 
 ALL = "All Decks"
-# Games in hand a rating needs: overall, and in a pair (the engine's minimum).
-MIN_OVERALL = 200
-MIN_PAIR = 10
+# Games in hand over every fold a rating needs: 17Lands shows the app no rate
+# with fewer.
+MIN_SAMPLES = 500
 # Games not drawn that IWD needs.
 MIN_NOT_DRAWN = 50
 SHRINK_SAMPLES = 1000.0
@@ -91,7 +91,7 @@ class Ratings:
 
     def overall(self, name):
         s = self.counts.get(ALL, {}).get(name)
-        return 100.0 * s[1] / s[0] if s and s[0] >= MIN_OVERALL else None
+        return 100.0 * s[1] / s[0] if s and s[2] >= MIN_SAMPLES and s[0] else None
 
     def iwd(self, name):
         s = self.counts[ALL][name]
@@ -102,7 +102,7 @@ class Ratings:
     def pair(self, name, colors):
         """(win rate, games in hand over every game), or (None, 0)."""
         s = self.counts.get(colors, {}).get(name)
-        if not s or s[0] < MIN_PAIR:
+        if not s or s[2] < MIN_SAMPLES or not s[0]:
             return None, 0
         return 100.0 * s[1] / s[0], s[2]
 
