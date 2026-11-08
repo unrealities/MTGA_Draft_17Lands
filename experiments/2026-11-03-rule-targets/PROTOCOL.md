@@ -2,8 +2,8 @@
 
 `Tools/DeckScoreFit/rules.py` uses the decks that `fit.py` fits (see
 [the tool's README](../../Tools/DeckScoreFit/README.md)) to test six of
-the advisor's pick rules (three were added later; see Amendments) (in `_calculate_composition_bonus()` in
-`src/advisor/engine.py`). Each rule
+the advisor's pick rules (in `_calculate_composition_bonus()` in
+`src/advisor/engine.py`; three were added later, see Amendments). Each rule
 reweights a card by what the pool already has. If the rule is right, that
 condition should show up in registered decks: decks where it holds should win
 more or less often than the average rating of their spells predicts.
@@ -101,9 +101,9 @@ Made on 2026-11-08, for the second batch of rules.
 
   | rule | multiplier | tested on decks | the rule is supported if |
   |---|---|---|---|
-  | Critical: Needs Creatures | 1.25x for creatures from pack 2 while the pool is on course for fewer than 13 | each creature while the deck has fewer than 13, against a creature from the 13th | it's worth more |
-  | Critical: Needs Removal | 1.3x for removal from pack 2 while the pool has fewer than 3 | each removal spell while the deck has fewer than 3, against one from the third to the sixth | it's worth more |
-  | Critical: Needs 2-Drops | up to 1.5x for creatures and removal of mana value 2 or less, from pack 2, while the pool is on course for fewer than 7 | each such card while the deck has fewer than 7, against one from the 7th | it's worth more |
+  | Critical: Needs Creatures | 1.25x for creatures from pack 2 while the pool is on course for fewer than 13 | each creature while the deck has fewer than 13, against a spell of the same rating | it's worth more |
+  | Critical: Needs Removal | 1.3x for removal from pack 2 while the pool has fewer than 3 | each removal spell while the deck has fewer than 3, against a spell of the same rating | it's worth more |
+  | Critical: Needs 2-Drops | up to 1.5x for creatures and removal of mana value 2 or less, from pack 2, while the pool is on course for fewer than 7 | each such card while the deck has fewer than 7, against a spell of the same rating | it's worth more |
 
   Each gets a slope and a change of slope at the rule's threshold. Needs
   Removal also keeps the slope change past the sixth.
@@ -117,10 +117,9 @@ Made on 2026-11-08, for the second batch of rules.
 - **A rule's size for Needs 2-Drops is taken at two short (1.3x),** since its
   multiplier grows with the shortfall. The size is descriptive; it isn't used
   for the verdict.
-- **A set needs decks both in and out of a rule's region.** The first
-  three rules are unaffected: an untagged set never had decks in their
-  regions. Under Needs Removal every deck of an untagged set would be in the
-  region, and it would say nothing about the rule.
+- **A set needs decks both in and out of a rule's region.** Under Needs
+  Removal every deck of an untagged set would be in the region, and it would
+  say nothing about the rule.
 - **The engine's thresholds apply to decks unchanged.** The engine projects a
   pool of up to 45 cards onto its targets; a deck is 23 spells picked from
   that pool. So these tests ask whether a deck short of the target gets more
