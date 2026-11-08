@@ -32,7 +32,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: ${{ fromJSON((github.event_name == 'schedule' || inputs.full_matrix) && '["ubuntu-latest", "macos-14", "windows-latest"]' || '["ubuntu-latest"]') }}
+        os: ${{ fromJSON((github.event_name == 'schedule' || inputs.full_matrix) && '["ubuntu-latest", "macos-15", "windows-latest"]' || '["ubuntu-latest"]') }}
         python-version: ${{ fromJSON((github.event_name == 'schedule' || inputs.full_matrix) && '["3.12", "3.13", "3.14"]' || '["3.12"]') }}
     steps:
       - uses: actions/checkout@v4
