@@ -98,8 +98,9 @@ class App:
     def rule_counts(self, deck, main_colors, splash_colors):
         """Deck counts for the pick rules in src/advisor/engine.py.
 
-        removal, heavy, fixing and off_color count cards as _analyze_pool()
-        does. The engine's lane is up to three main colors; here it is the
+        removal, creatures, early (creatures and non-creature removal of mana
+        value 2 or less), heavy, fixing and off_color count cards as
+        _analyze_pool() does. The engine's lane is up to three main colors; here it is the
         deck's registered main colors, or the three with the most pips in a
         deck of 4+. off_color is the engine's off_color_playables: cards with
         colors that is_castable() says the lane can't cast (by the front
@@ -122,6 +123,15 @@ class App:
             lane = sorted(lane, key=lambda col: -pips_of[col])[:3]
         return {
             "removal": sum(c["count"] for c in spells if "removal" in c.get("tags", [])),
+            "creatures": sum(
+                c["count"] for c in spells if "Creature" in c.get("types", [])
+            ),
+            "early": sum(
+                c["count"]
+                for c in spells
+                if self.get_functional_cmc(c) <= 2
+                and ("Creature" in c.get("types", []) or "removal" in c.get("tags", []))
+            ),
             "heavy": sum(
                 c["count"] for c in spells if self.get_functional_cmc(c) >= 5
             ),

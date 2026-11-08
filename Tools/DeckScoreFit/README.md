@@ -9,7 +9,7 @@ Two more scripts work on the same decks. `games.py` reads the dump again and
 keeps each sampled deck's games (on the play, mulligans, result, opening hand)
 and, in five folds by draft, how often each card was in hand or in the deck and
 won, so a deck can be rated from the other folds' games without its own.
-`rules.py` tests three of the advisor's pick rules on the decks' results; see
+`rules.py` tests six of the advisor's pick rules on the decks' results; see
 `experiments/2026-11-03-rule-targets/PROTOCOL.md`.
 
 It is separate from the app: nothing in `src/` imports it, and the app doesn't
