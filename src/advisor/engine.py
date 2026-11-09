@@ -1,7 +1,6 @@
 """
 src/advisor/engine.py
 The "Compositional Brain" (v5.5 Pro-Tour Architecture)
-Updated: Bayesian Smoothing, Top-End/Synergy Tracking, and Premium Removal Splash.
 """
 
 import statistics
@@ -23,9 +22,6 @@ class DraftAdvisor:
     TOTAL_PICKS = 45
     TARGET_EARLY_PLAYS = 7
     TARGET_HARD_REMOVAL = 3
-    CAP_COMBAT_TRICKS = 3
-    TARGET_CARD_DRAW = 2
-    TARGET_EVASION = 3
     BOMB_Z_SCORE = 1.5
     IWD_PREMIUM_THRESHOLD = 4.5
     # Score a card at its overall win rate plus a weight times how much better

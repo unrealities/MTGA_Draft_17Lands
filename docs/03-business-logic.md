@@ -63,12 +63,11 @@ Replays of 15,000 17Lands drafts showed that value over replacement, the late-si
 
 ---
 
-## 7. Semantic Role Analysis (Interaction & Tricks)
+## 7. Semantic Role Analysis (Interaction)
 
 The app parses Scryfall community tags to understand a card's functional role.
 
 - **Hard Removal Quota:** Targets 3+ removal spells. If the pool is lacking entering Pack 2, interaction cards receive a `1.3x` panic multiplier. Conversely, if you have 6+ removal spells, new ones are penalized (`0.8x`).
-- **Trick Diminishing Returns:** Combat tricks and Auras (Enhancements) are capped at 3. Beyond this, they receive a severe `0.5x` penalty.
 
 ---
 
