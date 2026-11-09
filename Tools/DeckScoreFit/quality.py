@@ -57,6 +57,11 @@ VERSIONS = {
 # The deck score's own blend (get_card_rating() in deck_scorer.py).
 DECK_SCORE = "deck-score-blend"
 NAMES = list(VERSIONS) + [DECK_SCORE]
+# A card's value split for parts.py, in score points: no-archetype's value, then
+# what the pair's rates add to it at weight 1, split into the pair's level and
+# the card's fit. fit-few and fit-many are fit by the pair's games in hand.
+PARTS = ["overall", "level", "fit", "fit-few", "fit-many"]
+FEW_GAMES = 3000
 
 
 def training(folds, left_out):
@@ -108,6 +113,41 @@ class Ratings:
 
     def score(self, wr):
         return max(0.0, 50.0 + (wr - self.mean) / max(0.1, self.std) * 15.0)
+
+    def pair_gain(self, name, colors):
+        """How far the engine's shrunk pair rate is from the card's overall rate,
+        in win rate points, or None if it lacks either rate."""
+        g = self.overall(name)
+        a, samples = self.pair(name, colors)
+        if g is None or a is None:
+            return None
+        return min(1.0, samples / SHRINK_SAMPLES) * (a - g)
+
+    def level(self, colors):
+        """The mean pair_gain of the pair's rated cards, by games in hand."""
+        key = ("level", colors)
+        if key not in self.values:
+            total = weight = 0.0
+            for name, s in self.counts.get(colors, {}).items():
+                gain = self.pair_gain(name, colors)
+                if gain is not None:
+                    total += s[0] * gain
+                    weight += s[0]
+            self.values[key] = total / weight if weight else 0.0
+        return self.values[key]
+
+    def parts(self, name, colors):
+        """A card's PARTS, or None if it has no overall rating."""
+        value = self.value(name, colors, "no-archetype")
+        if value is None:
+            return None
+        gain = self.pair_gain(name, colors)
+        if gain is None:
+            return [value, 0.0, 0.0, 0.0, 0.0]
+        points = 15.0 / max(0.1, self.std)
+        level, fit = points * self.level(colors), points * (gain - self.level(colors))
+        few = self.pair(name, colors)[1] < FEW_GAMES
+        return [value, level, fit, fit if few else 0.0, 0.0 if few else fit]
 
     def value(self, name, colors, version):
         """A card's value under a version, or None if it has no overall rating."""
@@ -162,11 +202,7 @@ def deck_quality(app, splits, decks):
         deck = app.deck(d["cards"])
         if deck is None:
             continue
-        spells = [
-            (name, count)
-            for (name, count), card in zip(d["cards"].items(), deck)
-            if "Land" not in card.get("types", [])
-        ]
+        spells = _spells(d, deck)
         fold = fold_of(d["id"])
         rows = [
             _qualities(splits.of(fold, split), spells, d["main_colors"])
@@ -174,6 +210,38 @@ def deck_quality(app, splits, decks):
         ]
         if all(rows):
             out[d["id"]] = rows
+    return out
+
+
+def _spells(d, deck):
+    return [
+        (name, count)
+        for (name, count), card in zip(d["cards"].items(), deck)
+        if "Land" not in card.get("types", [])
+    ]
+
+
+def deck_parts(app, splits, decks, keep):
+    """{deck id: for each split, the average of PARTS over its spells}, for the
+    decks in keep. It averages over the spells with an overall rating, as
+    no-archetype's quality does."""
+    out = {}
+    for d in decks:
+        if d["id"] not in keep:
+            continue
+        spells = _spells(d, app.deck(d["cards"]))
+        fold = fold_of(d["id"])
+        rows = []
+        for split in range(FOLDS):
+            ratings = splits.of(fold, split)
+            total, n = [0.0] * len(PARTS), 0
+            for name, count in spells:
+                parts = ratings.parts(name, d["main_colors"])
+                if parts is not None:
+                    n += count
+                    total = [t + count * p for t, p in zip(total, parts)]
+            rows.append([round(t / n, 3) for t in total])
+        out[d["id"]] = rows
     return out
 
 
@@ -209,10 +277,14 @@ def main(argv=None):
         decks = json.load(f)
     with gzip.open(args.games, "rt", encoding="utf-8") as f:
         folds = json.load(f)["folds"]
-    quality = deck_quality(app, Splits(folds), decks)
+    splits = Splits(folds)
+    quality = deck_quality(app, splits, decks)
+    parts = deck_parts(app, splits, decks, quality)
+    pairs = {d["id"]: d["main_colors"] for d in decks if d["id"] in quality}
     os.makedirs(os.path.dirname(args.out) or ".", exist_ok=True)
     with open(args.out, "w", encoding="utf-8") as f:
-        json.dump({"set": args.set, "versions": NAMES, "decks": quality}, f)
+        json.dump({"set": args.set, "versions": NAMES, "decks": quality,
+                   "part_names": PARTS, "parts": parts, "pairs": pairs}, f)
     print(f"{args.set}: rated {len(quality)} of {len(decks)} decks")
 
 
