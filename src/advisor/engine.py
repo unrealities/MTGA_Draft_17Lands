@@ -273,9 +273,6 @@ class DraftAdvisor:
         off_color_playables = 0
         creature_count = 0
         heavy_drops = 0
-        artifacts = 0
-        graveyard_enablers = 0
-        counters_enablers = 0
 
         for c in self.pool:
             try:
@@ -290,17 +287,6 @@ class DraftAdvisor:
 
                 if cmc >= 5 and "Land" not in types:
                     heavy_drops += 1
-
-                if (
-                    "Artifact" in types
-                    or "synergy_artifacts" in tags
-                    or "token_maker" in tags
-                ):
-                    artifacts += 1
-                if "synergy_graveyard" in tags or "card_advantage" in tags:
-                    graveyard_enablers += 1
-                if "synergy_counters" in tags:
-                    counters_enablers += 1
 
                 if "removal" in tags:
                     hard_removal_count += 1
@@ -334,9 +320,6 @@ class DraftAdvisor:
             "off_color_playables": off_color_playables,
             "creature_count": creature_count,
             "heavy_drops": heavy_drops,
-            "artifacts": artifacts,
-            "graveyard_enablers": graveyard_enablers,
-            "counters_enablers": counters_enablers,
         }
 
     def _calculate_composition_bonus(self, card: Dict, pack: int) -> Tuple[float, str]:
@@ -355,15 +338,7 @@ class DraftAdvisor:
             if projected_creatures < 13:
                 return 1.25, "Critical: Needs Creatures"
 
-        # 3. Synergy (A+B) Checks
-        if "synergy_artifacts" in tags and self.pool_metrics["artifacts"] >= 4:
-            return 1.2, "Artifact Synergy"
-        if "synergy_graveyard" in tags and self.pool_metrics["graveyard_enablers"] >= 3:
-            return 1.2, "Graveyard Synergy"
-        if "synergy_counters" in tags and self.pool_metrics["counters_enablers"] >= 3:
-            return 1.2, "Counters Synergy"
-
-        # 4. Fixing Hunger
+        # 3. Fixing Hunger
         if "Land" in types or "fixing_ramp" in tags:
             off_color_playables = self.pool_metrics.get("off_color_playables", 0)
             fixing_count = self.pool_metrics.get("fixing_count", 0)
@@ -386,7 +361,7 @@ class DraftAdvisor:
                 else (1.0, "")
             )
 
-        # 5. Removal Check
+        # 4. Removal Check
         if "removal" in tags:
             if (
                 pack >= 2
@@ -396,7 +371,7 @@ class DraftAdvisor:
             elif self.pool_metrics["hard_removal_count"] > 6:
                 return 0.8, "Removal Saturated"
 
-        # 6. Early Interaction
+        # 5. Early Interaction
         if cmc <= 2 and ("Creature" in types or "removal" in tags):
             projected = self.pool_metrics["early_plays"] * (
                 self.TOTAL_PICKS / max(1, len(self.pool))

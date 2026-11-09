@@ -101,7 +101,4 @@ O_TAGS = {
     "lifegain": "otag:lifegain OR kw:lifelink",
     "protection": "otag:hexproof-granter OR otag:indestructible-granter OR otag:blink OR otag:flicker OR otag:ward-granter",
     "hate": "otag:graveyard-hate OR otag:artifact-destruction OR otag:enchantment-destruction",
-    "synergy_artifacts": "otag:artifact-synergy OR otag:cares-about-artifacts",
-    "synergy_graveyard": "otag:graveyard-synergy OR otag:cares-about-graveyard",
-    "synergy_counters": "otag:counters-synergy OR otag:cares-about-counters",
 }
