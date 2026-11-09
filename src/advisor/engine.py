@@ -355,11 +355,7 @@ class DraftAdvisor:
             ):
                 return 1.3, "Enables Bomb Splash"
 
-            return (
-                (1.15, "Premium Fixing")
-                if pack == 1 and len(card.get("colors", [])) > 1
-                else (1.0, "")
-            )
+            return 1.0, ""
 
         # 4. Removal Check
         if "removal" in tags:
