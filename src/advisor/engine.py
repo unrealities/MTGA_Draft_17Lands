@@ -269,7 +269,7 @@ class DraftAdvisor:
         return main_colors[:3], color_counts
 
     def _analyze_pool(self) -> Dict[str, Any]:
-        early_plays, hard_removal_count, fixing_count, splash_targets = 0, 0, 0, set()
+        early_plays, hard_removal_count, fixing_count = 0, 0, 0
         off_color_playables = 0
         creature_count = 0
         heavy_drops = 0
@@ -305,18 +305,12 @@ class DraftAdvisor:
 
                 if is_off_color and wr > (self.global_mean - self.global_std):
                     off_color_playables += 1
-
-                if wr > (self.global_mean + (1.5 * self.global_std)):
-                    if self.main_colors:
-                        for options in off_color_requirements(c, self.main_colors):
-                            splash_targets.update(options)
             except:
                 continue
         return {
             "early_plays": early_plays,
             "hard_removal_count": hard_removal_count,
             "fixing_count": fixing_count,
-            "splash_targets": splash_targets,
             "off_color_playables": off_color_playables,
             "creature_count": creature_count,
             "heavy_drops": heavy_drops,
@@ -349,11 +343,6 @@ class DraftAdvisor:
                 and fixing_count <= off_color_playables
             ):
                 return 1.4, "Critical: Needs Fixing"
-
-            if any(
-                c in self.pool_metrics["splash_targets"] for c in card.get("colors", [])
-            ):
-                return 1.3, "Enables Bomb Splash"
 
             return 1.0, ""
 

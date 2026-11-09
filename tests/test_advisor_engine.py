@@ -67,7 +67,7 @@ def test_analyze_pool(mock_metrics):
         }
     )
 
-    # Add a green fixing bomb. Because we are definitively in White, this will trigger the splash logic.
+    # Add a green fixing card
     pool.append(
         {
             "colors": ["G"],
@@ -82,9 +82,6 @@ def test_analyze_pool(mock_metrics):
     assert advisor.pool_metrics["early_plays"] == 15
     assert advisor.pool_metrics["hard_removal_count"] == 1
     assert advisor.pool_metrics["fixing_count"] == 1
-
-    # 65.0 > 55.0 + (1.5 * 4.0) = 61.0, so 'G' triggers as a premium splash target
-    assert "G" in advisor.pool_metrics["splash_targets"]
 
 
 def test_calculate_castability_v5(mock_metrics):
@@ -338,7 +335,6 @@ def test_composition_bonus_heuristics(mock_metrics):
         "creature_count": 5,
         "fixing_count": 0,
         "off_color_playables": 2,
-        "splash_targets": ["U"],
         "hard_removal_count": 1,
         "early_plays": 2,
     }
@@ -378,7 +374,6 @@ def test_fixing_gets_no_bonus_without_a_need(mock_metrics, pack):
         "heavy_drops": 0,
         "fixing_count": 3,
         "off_color_playables": 1,
-        "splash_targets": [],
     }
 
     assert advisor._calculate_composition_bonus(
