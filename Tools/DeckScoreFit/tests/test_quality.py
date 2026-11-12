@@ -148,8 +148,12 @@ def test_a_two_color_deck_gets_the_score_the_advisor_gives_it():
     advisor = DraftAdvisor(Metrics(r.mean, r.std), pool)
     assert advisor.main_archetype == "WU"
     # The engine's weight at pick 7.5 is the average weight the test uses.
+    # Since #259 it matches the historical no-shrinkage variant. Filler has
+    # z=0, so the power bonus does not affect this base-score comparison.
     assert advisor._calculate_weighted_score(filler, 7.5) == pytest.approx(
-        r.value("Filler", "WU", "no-power-bonus"))
+        r.value("Filler", "WU", "no-shrinkage"))
+    assert r.value("Filler", "WU", "engine") != pytest.approx(
+        r.value("Filler", "WU", "no-shrinkage"))
 
 
 @pytest.mark.parametrize("colors", (["W"], ["W", "U", "B"]))

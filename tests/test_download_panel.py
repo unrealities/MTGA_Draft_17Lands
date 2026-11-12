@@ -514,3 +514,37 @@ class TestDownloadSetPicker:
         panel.vars["event"].set("TradDraft")
         panel._commit_set_entry()
         assert panel.vars["event"].get() == "TradDraft"
+
+    def test_popup_focus_preserves_filtered_selection(self, root, panel):
+        panel.pack(fill="both", expand=True)
+        root.deiconify()
+        root.update()
+        panel.om_set.focus_force()
+        root.update()
+        panel.vars["set"].set("Set Number 1")
+        panel._filter_set_options()
+        matches = tuple(panel.om_set.cget("values"))
+        assert len(matches) == 11
+        # Non-Aqua comboboxes focus a descendant popup listbox when posted.
+        popup = tkinter.Toplevel(panel.om_set)
+        choices = tkinter.Listbox(popup)
+        choices.pack()
+        root.update()
+        choices.focus_force()
+        root.update()
+        assert tuple(panel.om_set.cget("values")) == matches
+        panel.om_set.current(1)
+        panel.om_set.event_generate("<<ComboboxSelected>>")
+        root.update()
+        assert panel.vars["set"].get() == "Set Number 10"
+        popup.destroy()
+
+    @pytest.mark.parametrize("text", ["thunder", "unknown set", "Set Number"])
+    def test_download_commits_typed_set(self, panel, text):
+        previous = panel._committed_set
+        panel.vars["set"].set(text)
+        with patch.object(panel, "_start_download") as start:
+            panel._manual_download()
+            start.assert_called_once()
+            expected = "Outlaws of Thunder Junction" if text == "thunder" else previous
+            assert panel.vars["set"].get() == expected

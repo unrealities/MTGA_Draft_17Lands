@@ -43,6 +43,9 @@ IWD_THRESHOLD = 4.5
 # The engine's blend weight averaged over a pack's 14 picks: 0.6 + 0.7 * 7.5 / 15.
 ENGINE_WEIGHT = 0.6 + 0.7 * 7.5 / 15
 
+# Historical rating-parts/pair-parts experiments use the pre-4.32 engine as
+# their baseline. Keep these names and definitions stable for reproduction;
+# the live advisor stopped shrinking pair rates in #259 (4.32).
 # name: (blend weight, shrink, IWD premium, power bonus)
 VERSIONS = {
     "engine": (ENGINE_WEIGHT, True, True, True),

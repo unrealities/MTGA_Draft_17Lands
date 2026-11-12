@@ -168,7 +168,7 @@ class DownloadWindow(ttk.Frame):
         self.om_set.bind("<<ComboboxSelected>>", self._on_set_selected)
         self.om_set.bind("<KeyRelease>", self._filter_set_options)
         self.om_set.bind("<Return>", self._commit_set_entry)
-        self.om_set.bind("<FocusOut>", self._commit_set_entry)
+        self.om_set.bind("<FocusOut>", self._on_set_focus_out)
 
         self.om_set.grid(row=0, column=1, sticky="ew", pady=Theme.scaled_val(2))
         # --- END DYNAMIC SET SORTING ---
@@ -486,6 +486,7 @@ class DownloadWindow(ttk.Frame):
             self._start_download(args)
 
     def _manual_download(self):
+        self._commit_set_entry()
         self._start_download()
 
     def _resolve_start_date(self, set_key: str) -> str:
@@ -563,6 +564,21 @@ class DownloadWindow(ttk.Frame):
     def _on_set_selected(self, event=None):
         """A set picked from the list: like a menu pick, always applied."""
         self._commit_set_entry(force=True)
+
+    def _on_set_focus_out(self, event=None):
+        # FocusOut also fires when the non-Aqua popup listbox takes focus.
+        # Wait for focus to settle before deciding whether the picker was left.
+        self.after_idle(self._commit_set_if_unfocused)
+
+    def _commit_set_if_unfocused(self):
+        if not self.winfo_exists():
+            return
+        # The popup is created by Tcl, so focus_get() cannot always resolve it
+        # to a Python widget. Compare Tcl paths instead.
+        focus = str(self.tk.call("focus"))
+        picker = str(self.om_set)
+        if focus != picker and not focus.startswith(picker + "."):
+            self._commit_set_entry()
 
     def _commit_set_entry(self, event=None, force=False):
         """Resolve the typed text to a set; an unknown name reverts to the
