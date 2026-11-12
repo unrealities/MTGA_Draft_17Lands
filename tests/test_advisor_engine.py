@@ -287,6 +287,20 @@ def test_archetype_weight_ramps_within_the_pack(mock_metrics, pick, expected):
     )
 
 
+@pytest.mark.parametrize("samples,expected", [(1000, 69.5), (500, 69.5), (9, 50.0)])
+def test_pair_rate_counts_in_full_from_ten_games(mock_metrics, samples, expected):
+    """A pair rate isn't shrunk toward the overall one for having few games.
+    Under 10 games it isn't used at all, and the card scores its overall rate."""
+    advisor = DraftAdvisor(mock_metrics, [])
+    advisor.main_archetype = "WU"
+    card = _white_card("Glue", 59.0)
+    card["deck_colors"]["WU"]["samples"] = samples
+
+    assert advisor._calculate_weighted_score(card, 15) == pytest.approx(
+        expected, abs=0.05
+    )
+
+
 @pytest.mark.parametrize(
     "pick,cards_per_pick,points",
     [(1, 1, 9.7), (6, 1, 13.2), (1, 2, 9.7), (6, 2, 16.7), (7, 2, 18.1)],

@@ -130,7 +130,7 @@ class DraftAdvisor:
                 )
                 reasons = []
 
-                # --- STEP 1: Blended Base Score (With Bayesian Smoothing) ---
+                # --- STEP 1: Blended Base Score ---
                 base_score = self._calculate_weighted_score(card, effective_pick)
 
                 # --- STEP 2: Bomb Detection ---
@@ -481,13 +481,10 @@ class DraftAdvisor:
             arch_stats = stats.get(self.main_archetype, {})
             arch_wr = float(arch_stats.get("gihwr", global_wr))
 
-            # BAYESIAN SMOOTHING: Confidently blend global & archetype win rates based on sample size
             samples = int(arch_stats.get("samples", 0))
-            confidence = min(1.0, samples / 1000.0)
-            trusted_arch_wr = (arch_wr * confidence) + (global_wr * (1.0 - confidence))
 
             blended_wr = (
-                (global_wr * (1.0 - arch_weight)) + (trusted_arch_wr * arch_weight)
+                (global_wr * (1.0 - arch_weight)) + (arch_wr * arch_weight)
                 if (arch_wr > 0 and samples >= 10)
                 else global_wr
             )
