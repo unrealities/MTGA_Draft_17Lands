@@ -13,7 +13,9 @@ won, so a deck can be rated from the other folds' games without its own.
 `rules.py` tests three of the advisor's pick rules on the decks' results; see
 `experiments/2026-11-03-rule-targets/PROTOCOL.md`. `quality.py` and `horse.py`
 test which version of the card rating predicts the decks' results; see
-`experiments/2026-11-03-rating-parts/PROTOCOL.md`.
+`experiments/2026-11-03-rating-parts/PROTOCOL.md`. `parts.py` splits the pair's
+part of that rating into the pair's level and the card's fit; see
+`experiments/2026-11-08-pair-parts/PROTOCOL.md`.
 
 It is separate from the app: nothing in `src/` imports it, and the app doesn't
 need it to run. The weights it prints are pasted into `deck_scorer.py` by hand.
