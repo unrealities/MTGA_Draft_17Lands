@@ -2,7 +2,7 @@
 
 Magic: The Gathering Arena draft tool that utilizes 17Lands data.
 
-**Version 4.31:** The daily dataset pipeline follows 17Lands' host change and refreshes its API cache daily, and the deck score tooling gains a pre-registered test of three advisor pick rules on game results. See the [release notes](release_notes.txt) for details.
+**Version 4.32:** The Datasets tab has a searchable, scrolling set picker, and the draft advisor uses pair win rates without sample-size shrinkage and drops unused synergy and optional fixing bonuses. New research tools test six pick rules and separate color-pair strength from card fit. See the [release notes](release_notes.txt) for details.
 
 **This application will automatically support new sets as soon as the sets are released on Arena _and_ the data is available on the [17Lands card ratings](https://www.17lands.com/card_ratings) page.**
 
@@ -102,7 +102,7 @@ The application is structured into a collapsible Live Dashboard and several func
 - **Sidebar:** Contains visual "Open Lane" Signal detection, your current Mana Curve, and your Pool Balance (Creatures/Spells/Lands). You can click on the headers of these panels to collapse them.
 
 ### Application Tabs
-- **Datasets:** Manage, download, and update 17Lands card data locally. Provides detailed download summaries, including exactly how many MTGA cards were successfully matched with 17Lands telemetry data. Choose a **Time Period** (All Time, Latest Event, Last Week, etc.) to match 17Lands. Right-click an unwanted dataset and choose **Delete Dataset** to remove it and prevent automatic downloads from bringing it back. **Clear Inactive Datasets** removes all downloaded datasets except the active one and prevents them from returning on restart. Switch to another active dataset first if needed. **Restore Deleted Datasets** allows those datasets to sync again; manual downloads remain available. **Reset Dataset Cache** (formerly Clear Set History) deletes cached data and downloads fresh copies on restart while preserving deletion and cleanup exclusions.
+- **Datasets:** Manage, download, and update 17Lands card data locally. Type part of a set name in **SET** to filter the scrolling list, then select the set or press Enter to commit a unique match. Active sets appear first. Unknown or ambiguous text returns to the last valid selection. Provides detailed download summaries, including exactly how many MTGA cards were successfully matched with 17Lands telemetry data. Choose a **Time Period** (All Time, Latest Event, Last Week, etc.) to match 17Lands. Right-click an unwanted dataset and choose **Delete Dataset** to remove it and prevent automatic downloads from bringing it back. **Clear Inactive Datasets** removes all downloaded datasets except the active one and prevents them from returning on restart. Switch to another active dataset first if needed. **Restore Deleted Datasets** allows those datasets to sync again; manual downloads remain available. **Reset Dataset Cache** (formerly Clear Set History) deletes cached data and downloads fresh copies on restart while preserving deletion and cleanup exclusions.
 - **Card Pool:** View the cards you have drafted. Features a **"Switch to Visual View"** button to stack your cards into mana curve columns exactly like MTG Arena does.
 - **Deck Builder:** A fully interactive deck construction environment combining Auto-Generation and manual Custom building. Features a 1-click **Auto-Lands** button, a sleek basics toolbar, and live deck size validation.
 - **Comparisons:** Search and add multiple cards to directly compare their stats side-by-side.
@@ -206,8 +206,13 @@ For developers looking to contribute, fork, or understand the architecture of th
 
 The deck score's weights are fit to 17Lands game results with the scripts in
 [`Tools/DeckScoreFit`](Tools/DeckScoreFit/README.md), which also test the
-advisor's pick rules against those results
+advisor's six pick rules against those results
 ([protocol and results](experiments/2026-11-03-rule-targets/RESULTS.md)).
+The [card-rating experiment](experiments/2026-11-03-rating-parts/RESULTS.md)
+compares held-out deck predictions, and the
+[pair-parts experiment](experiments/2026-11-08-pair-parts/RESULTS.md)
+separates pair strength from card fit. These observational results do not
+establish the effect of changing an app user's picks.
 
 ### Environment Setup
 
@@ -224,6 +229,8 @@ This project uses `pytest` with `pytest-cov` for unit testing.
 
 ```bash
 poetry run pytest tests/
+poetry run pytest Tools/AdvisorReplay/tests
+poetry run pytest Tools/DeckScoreFit/tests
 ```
 
 To run tests with coverage reporting:

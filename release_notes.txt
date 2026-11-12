@@ -1,3 +1,13 @@
+===================== RELEASE NOTES 4.32 =====================
+* Muhtasim-Munif-Fahim: [UX/UI] The Datasets SET picker is now searchable and scrolls through long set lists. Type part of a name and select a result or press Enter for a unique match; active sets stay first, and unknown or ambiguous entries revert to the last valid set (#261, #260).
+* unrealities: [Bug] Moving focus into the set picker's popup keeps the filtered options intact, preventing a displayed result from selecting a different set. Manual downloads explicitly commit the typed selection before reading its set and event.
+* JamesYouL2: [Advisor] Removed the optional Premium Fixing (1.15x) and Enables Bomb Splash (1.3x) bonuses. Critical: Needs Fixing and the separate castability/splash rules remain (#257, #258).
+* JamesYouL2: [Advisor] Pair win rates count in full instead of being shrunk toward the overall rate below 1,000 games. A positive pair rate still needs at least 10 samples; otherwise the overall rate is used. Whole-format replay evidence does not cover the sparse first days of a new set (#259).
+* JamesYouL2: [Development] Removed unused advisor constants, stale trick-penalty documentation, and the artifact/graveyard/counters synergy rules and ETL queries absent from the checked datasets. Custom datasets carrying those synergy tags no longer receive their bonuses (#255, #256).
+* JamesYouL2: [Development] Expanded the registered-deck experiment from three to six pick rules, adding creature, removal and early-play shortfalls. The reported associations do not establish the current multipliers or a benefit from changing user picks (#252).
+* JamesYouL2: [Development] Added draft-grouped, held-out card-rating comparisons with leakage checks and draft-level uncertainty, plus a pair-parts experiment separating color-pair strength from card fit. Results concern deck prediction, not direct replacement pick weights (#253, #254).
+* unrealities: [Development] Preserved the research tools' pre-4.32 shrunk baseline for report reproduction and aligned their advisor parity test with the live no-shrinkage variant. Updated the README, scoring specification and tool documentation for 4.32.
+
 ===================== RELEASE NOTES 4.31 =====================
 * unrealities: [Bug] The daily dataset ETL reads 17Lands' format catalog from www.17lands.com. The api.17lands.com host stopped answering on 2026-11-07, which halted the scheduled run before it fetched anything; the published datasets were untouched (#249).
 * unrealities: [Development] The ETL's API cache is keyed by the run's date, as the workflow intended. The key referenced a step that did not exist, so one cache was restored indefinitely and never saved again.

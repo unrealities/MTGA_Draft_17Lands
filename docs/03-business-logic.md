@@ -23,7 +23,7 @@ The engine does not "lock in" colors based on the first few picks. It uses recen
 Instead of evaluating a card globally (e.g., its win rate across all 17Lands users), the engine identifies your leading "Color Pair" (e.g., Blue-Black/UB) and prioritizes data for that specific pairing.
 
 - **Gravity Logic:** The engine scores all 10 possible color pairs based on the weighted power of cards in your pool and the presence of "Gold" cards that reward specific pairs.
-- **Progressive Weighting:** Once your pool has a leading pair, a card's score is its Global GIHWR plus a weight times how much better (or worse) it does in that pair. The weight rises through each pack, from 0.65 at the first pick to 1.21 at the 13th, the last choice in a 14-card pack; it stops growing at the 15th, at 1.3. In Pick-Two drafts, where each pick takes two cards, pick N weighs like pick 2N − 1, when as many cards have left the pack. The pair's win rate counts in full: a replay of 60,000 17Lands drafts found no sign that shrinking it toward the global rate below 1,000 games helped, and the 19 sets checked have no pair rate under 500 games.
+- **Progressive Weighting:** Once your pool has a leading pair, a card's score is its Global GIHWR plus a weight times how much better (or worse) it does in that pair. The weight rises through each pack, from 0.65 at the first pick to 1.21 at the 13th, the last choice in a 14-card pack; it stops growing at the 15th, at 1.3. In Pick-Two drafts, where each pick takes two cards, pick N weighs like pick 2N − 1, when as many cards have left the pack. Since 4.32, a positive pair win rate with at least 10 samples counts in full; otherwise the overall rate is used. The previous shrinkage toward the overall rate below 1,000 samples is removed. The supporting replay used whole-format data, so it does not establish how this behaves during a new set's first days.
 - **Counted once:** The pair's win rate enters the score only through this weighting; there is no separate bonus for cards that do better in the pair than overall. When the weighting moves a card's score by 5 points or more (a third of a standard deviation), its reasons say so, for example **Better in UB (+6.2)** or **Worse in UB (-5.4)**.
 
 ---
@@ -48,7 +48,7 @@ Modern Limited is dictated by "Mana Velocity" and "Mana Stability."
 - **Velocity Target:** 7+ "Early Plays" (CMC <= 2 Creatures or cheap interaction).
 - **Velocity Hunger:** The engine projects your final 2-drop count based on your current pool relative to the remaining picks in the draft. If the projection is below 7 entering Pack 2, early plays receive a "Critical: Needs 2-Drops" multiplier (up to 1.5x).
 - **Top-Heavy Penalty:** If you have 4+ cards costing 5+ mana, expensive cards receive a `0.7x` dampening multiplier to prevent "clunky" hands.
-- **Dynamic Fixing Hunger:** The engine actively monitors whether you are drafting a highly synergistic 2-color deck, or moving towards a "Good Stuff" 3/4-color splash strategy. If the number of drafted off-color playables exceeds your dedicated fixing tools (dual lands, treasures, dorks) by Pack 2, fixing cards receive a massive `1.4x` "Critical: Needs Fixing" multiplier. Without that need, fixing gets no bonus: a replay of 60,000 17Lands drafts found no sign that the old `1.15x` for multicolor fixing in pack 1 or `1.3x` for fixing in an off-lane bomb's color helped.
+- **Dynamic Fixing Hunger:** The engine actively monitors whether you are drafting a highly synergistic 2-color deck, or moving towards a "Good Stuff" 3/4-color splash strategy. If the number of drafted off-color playables exceeds your dedicated fixing tools (dual lands, treasures, dorks) by Pack 2, fixing cards receive a massive `1.4x` "Critical: Needs Fixing" multiplier. The optional `1.15x` Premium Fixing and `1.3x` Enables Bomb Splash bonuses are removed in 4.32. Castability splash rules, including Greedy Bomb Splash, remain separate.
 
 ---
 
@@ -65,7 +65,7 @@ Replays of 15,000 17Lands drafts showed that value over replacement, the late-si
 
 ## 7. Semantic Role Analysis (Interaction)
 
-The app parses Scryfall community tags to understand a card's functional role.
+The app parses Scryfall community tags to understand a card's functional role. The artifact, graveyard and counters synergy multipliers and their three ETL tag queries were removed in 4.32 because those tags were absent from the checked datasets. Custom datasets carrying those tags no longer receive the corresponding bonuses.
 
 - **Hard Removal Quota:** Targets 3+ removal spells. If the pool is lacking entering Pack 2, interaction cards receive a `1.3x` panic multiplier. Conversely, if you have 6+ removal spells, new ones are penalized (`0.8x`).
 
@@ -142,3 +142,22 @@ Added in v4.15, the application includes a dedicated workspace for Sealed deckbu
   2. **Greedy Splash:** Automatically forces the best off-color Bomb into the deck, strictly allocating appropriate fixing lands/treasures.
   3. **Aggro/Tempo:** Filters the secondary best color pair through a strict CMC penalty to build a low-to-the-ground deck.
 - **Visual Deckbuilder:** A 1-to-1 recreation of the MTGA client's column-based (CMC sorted) drag-and-drop workspace, complete with real-time image caching via the `ThreadPoolExecutor`.
+
+
+## 12. Evidence and Historical Rating Models
+
+The [six-rule experiment](../experiments/2026-11-03-rule-targets/RESULTS.md)
+adds creature, removal and early-play shortfall tests to the original three
+rules. Its supported associations do not establish the advisor's multiplier
+sizes or show that the thresholds themselves improve picks.
+
+The [rating experiment](../experiments/2026-11-03-rating-parts/RESULTS.md)
+compares predictions for held-out two-color decks with folds grouped by draft.
+The [pair-parts experiment](../experiments/2026-11-08-pair-parts/RESULTS.md)
+separates a pair's overall level from a card's fit within it. Whole-deck
+prediction and within-pack ranking answer different questions; these results
+do not directly prescribe replacement pick weights.
+
+The tools retain the pre-4.32 shrunk rating under the historical name `engine`
+so committed reports remain reproducible. The current advisor's unshrunk pair
+rate corresponds to the `no-shrinkage` variant, not that historical baseline.
