@@ -66,7 +66,7 @@ Replays of 15,000 17Lands drafts showed that value over replacement, the late-si
 
 The app parses Scryfall community tags to understand a card's functional role. The artifact, graveyard and counters synergy multipliers and their three ETL tag queries were removed in 4.32 because those tags were absent from the checked datasets. Custom datasets carrying those tags no longer receive the corresponding bonuses.
 
-- **Hard Removal Quota:** Targets 3+ removal spells. If the pool is lacking entering Pack 2, interaction cards receive a `1.3x` panic multiplier. Conversely, if you have 6+ removal spells, new ones are penalized (`0.8x`).
+- **Hard Removal Quota:** Targets 3+ removal spells. If the pool is lacking entering Pack 2, interaction cards receive a `1.3x` panic multiplier.
 
 ---
 
