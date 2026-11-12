@@ -169,11 +169,20 @@ def deck_features(deck, colors, pool_size, metrics, tier_data=None):
     arch_key = normalize_color_string(
         "".join(colors) if len(colors) <= 2 else "".join(colors[:2])
     )
+
+    def rating(card):
+        # The card's overall win rate, whatever the deck's colors. A pair's
+        # rates also carry how well the pair does as a whole, and between
+        # builds of different pairs the score over-rewarded that. A card with
+        # no overall rate falls back to get_card_rating().
+        stats = card.get("deck_colors", {}).get("All Decks", {})
+        overall = float(stats.get("gihwr") or 0.0)
+        if overall > 30.0:
+            return overall
+        return get_card_rating(card, [arch_key], metrics)
+
     valid_ratings = [
-        get_card_rating(c, [arch_key], metrics)
-        for c in spells
-        for _ in range(c.get("count", 1))
-        if get_card_rating(c, [arch_key], metrics) > 0.0
+        r for c in spells for _ in range(c.get("count", 1)) if (r := rating(c)) > 0.0
     ]
     avg_gihwr = (
         sum(valid_ratings) / len(valid_ratings)
