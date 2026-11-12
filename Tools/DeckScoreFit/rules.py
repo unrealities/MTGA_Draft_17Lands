@@ -1,4 +1,4 @@
-"""Test what three of the advisor's pick rules protect against, on game results.
+"""Test what six of the advisor's pick rules steer by, on game results.
 
     python Tools/DeckScoreFit/rules.py results/*.json > rules.md
 
@@ -24,6 +24,16 @@ The rules, from _calculate_composition_bonus() in src/advisor/engine.py:
   off-color playables than once it has more? The pack gate is moot for a
   registered deck, and basics aren't tested as fixing: the engine's hunger
   test, like this one, counts only tagged cards and multicolor lands.
+- Needs creatures: from pack 2, while the pool is on course for fewer than 13
+  creatures, creatures are scored at 1.25x. Tested: is a creature worth more
+  than a spell of the same rating while the deck has fewer than 13?
+- Needs removal: from pack 2, while the pool has fewer than 3 removal spells,
+  removal is scored at 1.3x. Tested: is a removal spell worth more than a
+  spell of the same rating while the deck has fewer than 3?
+- Needs 2-drops: from pack 2, while the pool is on course for fewer than 7
+  creatures and removal spells of mana value 2 or less, those are scored at up
+  to 1.5x. Tested: is such a card worth more than a spell of the same rating
+  while the deck has fewer than 7?
 
 These are associations in observational data, not the effect of switching
 the advisor's policy; see experiments/2026-11-03-rule-targets/PROTOCOL.md.
@@ -40,8 +50,8 @@ import numpy as np
 
 from fit import QUALITY, Data, fit_clustered, varying
 
-# Two-sided 98.33% intervals: 95% familywise across the three rules.
-Z = 2.394
+# Two-sided 99.17% intervals: 95% familywise across the six rules.
+Z = 2.638
 # Decks a per-set estimate needs in the region where the rule applies.
 MIN_REGION = 100
 # Spells in a finished deck, to turn a per-card effect into rating units.
@@ -84,7 +94,8 @@ def fixing_terms(r):
 
 # The rule's own size: its multiplier applied to a card's score on the engine's
 # scale (50 at the format mean, 15 points per SD), in rating SDs. Removal and
-# heavy drops are taken at +1 SD (score 65), fixing at the mean (50).
+# heavy drops are taken at +1 SD (score 65), cards a rule boosts at the mean
+# (50). Needs 2-Drops grows with the shortfall; it is taken at two short (1.3x).
 RULES = [
     Rule(
         "removal_saturation",
@@ -135,6 +146,45 @@ RULES = [
             "fixing card in a deck with no off-color spells": {"fixing": 1},
         },
     ),
+    Rule(
+        "creature_quota",
+        "Critical: Needs Creatures (1.25x under 13)",
+        "a creature is worth more than a spell of the same rating while the deck "
+        "has fewer than 13",
+        lambda r: {"creatures": r["creatures"],
+                   "creatures_short": hinge(13, r["creatures"])},
+        {"creatures": 1, "creatures_short": -1},
+        1,
+        lambda r: r["creatures"] < 13,
+        (1.25 - 1) * 50 / 15,
+        secondary={"creature from the 13th": {"creatures": 1}},
+    ),
+    Rule(
+        "removal_need",
+        "Critical: Needs Removal (1.3x under 3)",
+        "a removal spell is worth more than a spell of the same rating while the "
+        "deck has fewer than 3",
+        lambda r: {"removal": r["removal"],
+                   "removal_short": hinge(3, r["removal"]),
+                   "removal_past_6": hinge(r["removal"], 6)},
+        {"removal": 1, "removal_short": -1},
+        1,
+        lambda r: r["removal"] < 3,
+        (1.3 - 1) * 50 / 15,
+        secondary={"removal from the third to the sixth": {"removal": 1}},
+    ),
+    Rule(
+        "early_plays",
+        "Critical: Needs 2-Drops (up to 1.5x under 7)",
+        "a creature or removal spell of mana value 2 or less is worth more than a "
+        "spell of the same rating while the deck has fewer than 7",
+        lambda r: {"early": r["early"], "early_short": hinge(7, r["early"])},
+        {"early": 1, "early_short": -1},
+        1,
+        lambda r: r["early"] < 7,
+        (1.3 - 1) * 50 / 15,
+        secondary={"early play from the 7th": {"early": 1}},
+    ),
 ]
 
 DOSE = {
@@ -142,6 +192,10 @@ DOSE = {
                                           (8, 8), (9, 9), (10, None)]),
     "curve_heavy": ("heavy", 4, [(None, 0), (1, 1), (2, 2), (3, 3), (5, 5), (6, 6),
                                  (7, None)]),
+    "creature_quota": ("creatures", 13, [(None, 10), (11, 11), (12, 12), (14, 14),
+                                         (15, 15), (16, 16), (17, None)]),
+    "early_plays": ("early", 7, [(None, 3), (4, 4), (5, 5), (6, 6), (8, 8), (9, 9),
+                                 (10, None)]),
 }
 
 
@@ -182,7 +236,7 @@ def design(rd, rule, mask, extra=False, terms=None):
     index = {k: i for i, k in enumerate(names + list(terms))}
     if extra:
         for k in ("lands", "creatures", "colors"):
-            if k in d.extra_names:
+            if k in d.extra_names and k not in terms:
                 blocks.append(d.extra[mask][:, [d.extra_names.index(k)]])
     sets = sorted(set(d.set[mask]))
     blocks.append(d.set_dummies(mask, sets))
@@ -244,9 +298,16 @@ def estimates(rd, rule, mask, extra=False, estimands=()):
 
 
 def usable_sets(rd, rule):
-    """Sets where some deck reaches the rule's region (else its tags are missing)."""
+    """Sets with decks both in and out of the rule's region.
+
+    A set with no tags has decks on one side only (no removal past the sixth,
+    every deck short of three), so it says nothing about the rule.
+    """
     region = rule.region(rd.counts)
-    return [s for s in rd.base.sets if region[rd.base.set == s].any()]
+    return [
+        s for s in rd.base.sets
+        if region[rd.base.set == s].any() and not region[rd.base.set == s].all()
+    ]
 
 
 def in_region(rd, rule, mask):
@@ -343,8 +404,8 @@ def report(rd, out=sys.stdout):
     w()
     w(
         "Per card, in game win rate points (at the overall win rate), with "
-        "98.33% intervals: 95% familywise across the "
-        "three rules. Each SE is the larger of the model's (widened for "
+        f"{1 - 0.05 / len(RULES):.2%} intervals: 95% familywise across the "
+        f"{len(RULES)} rules. Each SE is the larger of the model's (widened for "
         "overdispersion) and the set-clustered one. *Rating SDs*: the same "
         "effect as a change in that card's rating, in the format's SDs of GIH WR. "
         "*The rule's size*: what the rule's multiplier does to a card's score, "
@@ -474,7 +535,7 @@ def report(rd, out=sys.stdout):
         mask = np.isin(d.set, results[rule.name]["sets"])
         var, rows = dose(rd, rule, mask)
         results[rule.name]["by_count"] = rows
-        w(f"**{rule.label}**, {var} spells in the deck:")
+        w(f"**{rule.label}**, by the deck's `{var}` count:")
         w()
         w("| count | decks | points |")
         w("|---|---|---|")

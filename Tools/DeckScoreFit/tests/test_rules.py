@@ -25,6 +25,8 @@ def files(n=24000, sets=("AAA", "BBB", "CCC", "DDD"), seed=0, tags=True):
             heavy = int(rng.integers(0, 9))
             off = int(rng.integers(0, 6)) * int(rng.random() < 0.5)
             fixing = int(rng.integers(0, 7))
+            creatures = int(rng.integers(9, 19))
+            early = int(rng.integers(2, 12))
             short = max(0, off + 1 - fixing) if off else 0
             f = {
                 "card_quality": rng.normal(),
@@ -46,7 +48,8 @@ def files(n=24000, sets=("AAA", "BBB", "CCC", "DDD"), seed=0, tags=True):
                 "features": f,
                 "extra": {"lands": 17.0, "creatures": 15.0, "colors": 2.0 + (off > 0)},
                 "rules": {"removal": removal, "heavy": heavy, "fixing": fixing,
-                          "off_color": off, "splash": int(off > 0)},
+                          "off_color": off, "splash": int(off > 0),
+                          "creatures": creatures, "early": early},
             })
         out.append({"set": s, "base_score": 75.0, "weights": WEIGHTS, "rows": rows,
                     "tags": {"removal": 40 if tags else 0, "fixing_ramp": 10}})
@@ -102,6 +105,30 @@ def test_sets_without_tags_are_left_out_of_that_rule():
     rd = rules.RuleData(data)
     assert rules.usable_sets(rd, by_name("removal_saturation")) == ["AAA", "BBB"]
     assert rules.usable_sets(rd, by_name("curve_heavy")) == ["AAA", "BBB", "CCC"]
+    # Every deck in CCC has fewer than 3 removal spells: all in the region.
+    assert rules.usable_sets(rd, by_name("removal_need")) == ["AAA", "BBB"]
+
+
+@pytest.mark.parametrize("name,count,knot", [
+    ("creature_quota", "creatures", 13),
+    ("removal_need", "removal", 3),
+    ("early_plays", "early", 7),
+])
+def test_a_shortfall_counts_the_cards_short_of_the_target(name, count, knot):
+    rule = by_name(name)
+    x = np.array([knot - 2.0, knot - 1, knot, knot + 1])
+    terms = rule.terms({count: x})
+    short = next(v for k, v in terms.items() if k.endswith("_short"))
+    assert list(short) == [2, 1, 0, 0]
+    assert list(rule.region({count: x})) == [True, True, False, False]
+
+
+def test_a_rules_own_count_is_not_also_a_control(rd):
+    everything = np.ones(len(rd.base.set), dtype=bool)
+    rule = by_name("creature_quota")
+    plain, _ = rules.design(rd, rule, everything)
+    extra, _ = rules.design(rd, rule, everything, extra=True)
+    assert extra.shape[1] == plain.shape[1] + 2  # lands and colors, not creatures
 
 
 def test_dose_puts_the_reference_in_order(rd):
