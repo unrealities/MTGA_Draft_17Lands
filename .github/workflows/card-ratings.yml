@@ -1,0 +1,64 @@
+name: Card ratings
+
+# Tests which version of the engine's card rating best predicts registered
+# decks' results, on 17Lands Premier Draft game data.
+# See experiments/2026-11-03-rating-parts/PROTOCOL.md.
+#
+# Run by hand: Actions > Card ratings > Run workflow.
+
+on:
+  workflow_dispatch:
+    inputs:
+      sets:
+        description: 'JSON list of 17Lands set codes, e.g. ["FRA", "TDM"] (empty: every set with game data and ratings)'
+        default: ""
+      decks:
+        description: Decks per set
+        default: "50000"
+      salt:
+        description: Any text; changes which decks are sampled
+        default: ""
+
+permissions:
+  contents: read
+
+jobs:
+  features:
+    uses: ./.github/workflows/deck-score-features.yml
+    with:
+      sets: ${{ inputs.sets }}
+      decks: ${{ inputs.decks || '50000' }}
+      salt: ${{ inputs.salt }}
+      ratings: true
+
+  ratings:
+    needs: features
+    if: ${{ !cancelled() }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install poetry==2.4.1
+      - run: poetry install --no-interaction
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: features-*
+          path: results
+          merge-multiple: true
+      - name: Compare the ratings
+        shell: bash  # with pipefail, so a failed fit fails the step
+        run: |
+          {
+            echo "# Card ratings at \`${GITHUB_SHA::7}\`"
+            echo
+            poetry run python Tools/DeckScoreFit/horse.py --features results/*.json --quality results/quality/*.json --json horse.json
+          } | tee horse.md >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: card-ratings
+          path: |
+            horse.md
+            horse.json
