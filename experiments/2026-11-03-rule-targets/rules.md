@@ -1,4 +1,4 @@
-# Rule targets at `78bb48a`
+# Rule targets at `3898b37`
 
 ## Data
 
@@ -31,13 +31,16 @@ Cards tagged by the app, per set (the rules see only tagged cards):
 
 ## Primary results
 
-Per card, in game win rate points (at the overall win rate), with 98.33% intervals: 95% familywise across the three rules. Each SE is the larger of the model's (widened for overdispersion) and the set-clustered one. *Rating SDs*: the same effect as a change in that card's rating, in the format's SDs of GIH WR. *The rule's size*: what the rule's multiplier does to a card's score, in the same units.
+Per card, in game win rate points (at the overall win rate), with 99.17% intervals: 95% familywise across the 6 rules. Each SE is the larger of the model's (widened for overdispersion) and the set-clustered one. *Rating SDs*: the same effect as a change in that card's rating, in the format's SDs of GIH WR. *The rule's size*: what the rule's multiplier does to a card's score, in the same units.
 
 | rule | tested claim | sets | decks in region | per card (points) | interval | rating SDs | the rule's size | verdict |
 |---|---|---|---|---|---|---|---|---|
-| Removal Saturated (0.8x past 6) | a removal spell past the sixth is worth less than a spell of the same rating | 19 | 402956 (44.1%) | +0.09 | [-0.04, +0.23] | +0.24 ± 0.15 | -0.87 | not established |
-| Curve Too Heavy (0.7x past 4) | a 5+ mana spell past the fourth is worth less than a spell of the same rating | 20 | 209837 (22.9%) | -0.09 | [-0.26, +0.08] | -0.24 ± 0.18 | -1.30 | not established |
-| Critical: Needs Fixing (1.4x) | in decks with off-color spells, a fixing card is worth more while fixing is no more than the off-color spells | 20 | 141940 (15.5%) | -0.03 | [-0.24, +0.18] | -0.08 ± 0.23 | +1.33 | not established |
+| Removal Saturated (0.8x past 6) | a removal spell past the sixth is worth less than a spell of the same rating | 19 | 402956 (44.1%) | +0.09 | [-0.05, +0.24] | +0.24 ± 0.15 | -0.87 | not established |
+| Curve Too Heavy (0.7x past 4) | a 5+ mana spell past the fourth is worth less than a spell of the same rating | 20 | 209837 (22.9%) | -0.09 | [-0.28, +0.10] | -0.24 ± 0.18 | -1.30 | not established |
+| Critical: Needs Fixing (1.4x) | in decks with off-color spells, a fixing card is worth more while fixing is no more than the off-color spells | 20 | 142020 (15.5%) | -0.03 | [-0.27, +0.20] | -0.08 ± 0.23 | +1.33 | not established |
+| Critical: Needs Creatures (1.25x under 13) | a creature is worth more than a spell of the same rating while the deck has fewer than 13 | 20 | 251588 (27.5%) | +0.17 | [+0.02, +0.32] | +0.42 ± 0.15 | +0.83 | supported |
+| Critical: Needs Removal (1.3x under 3) | a removal spell is worth more than a spell of the same rating while the deck has fewer than 3 | 19 | 38874 (4.3%) | +0.29 | [+0.01, +0.58] | +0.76 ± 0.29 | +1.00 | supported |
+| Critical: Needs 2-Drops (up to 1.5x under 7) | a creature or removal spell of mana value 2 or less is worth more than a spell of the same rating while the deck has fewer than 7 | 20 | 176783 (19.3%) | +0.35 | [+0.15, +0.55] | +0.91 ± 0.20 | +1.00 | supported |
 
 *Supported*: the interval excludes zero in the rule's direction. *Contradicted*: it excludes zero the other way. *Not established*: it includes zero. *Insufficient data*: no set has decks in the rule's region.
 
@@ -50,6 +53,9 @@ Per card, in game win rate points (SE). *Model* and *set-clustered* SEs of the p
 | Removal Saturated (0.8x past 6) | +0.09 | 0.02 | 0.06 | +0.20 (0.05) | +0.11 (0.06) |
 | Curve Too Heavy (0.7x past 4) | -0.09 | 0.03 | 0.07 | -0.04 (0.06) | -0.03 (0.08) |
 | Critical: Needs Fixing (1.4x) | -0.03 | 0.05 | 0.09 | +0.03 (0.09) | -0.13 (0.10) |
+| Critical: Needs Creatures (1.25x under 13) | +0.17 | 0.02 | 0.06 | +0.15 (0.07) | +0.08 (0.06) |
+| Critical: Needs Removal (1.3x under 3) | +0.29 | 0.10 | 0.11 | +0.39 (0.11) | +0.38 (0.21) |
+| Critical: Needs 2-Drops (up to 1.5x under 7) | +0.35 | 0.03 | 0.08 | +0.30 (0.08) | +0.30 (0.08) |
 
 ## Other contrasts
 
@@ -59,45 +65,48 @@ Per card, in game win rate points (SE), from the primary fit.
 |---|---|---|
 | Removal Saturated (0.8x past 6) | removal up to the sixth | +0.23 (0.05) |
 | Removal Saturated (0.8x past 6) | change in slope past the sixth | -0.14 (0.06) |
-| Curve Too Heavy (0.7x past 4) | 5+ drops up to the fourth | +0.02 (0.06) |
+| Curve Too Heavy (0.7x past 4) | 5+ drops up to the fourth | +0.01 (0.06) |
 | Curve Too Heavy (0.7x past 4) | change in slope past the fourth | -0.11 (0.11) |
 | Critical: Needs Fixing (1.4x) | fixing card while short | +0.16 (0.06) |
 | Critical: Needs Fixing (1.4x) | fixing card once not short | +0.19 (0.06) |
 | Critical: Needs Fixing (1.4x) | fixing card in a deck with no off-color spells | +0.15 (0.04) |
+| Critical: Needs Creatures (1.25x under 13) | creature from the 13th | +0.19 (0.04) |
+| Critical: Needs Removal (1.3x under 3) | removal from the third to the sixth | +0.22 (0.06) |
+| Critical: Needs 2-Drops (up to 1.5x under 7) | early play from the 7th | +0.16 (0.06) |
 
 ## By set
 
 The primary estimate fit on each set alone, per card in game win rate points. Sets with fewer than 100 decks in the rule's region are marked –.
 
-| set | Removal Saturated (0.8x past 6) | Curve Too Heavy (0.7x past 4) | Critical: Needs Fixing (1.4x) |
-|---|---|---|---|
-| BLB | +0.27 (0.07) | -0.56 (0.24) | +0.02 (0.41) |
-| Cube_-_Powered | – | – | +0.01 (2.50) |
-| DFT | +0.10 (0.08) | +0.28 (0.11) | +0.20 (0.27) |
-| DMU | +0.36 (0.08) | -0.02 (0.17) | +0.47 (0.19) |
-| DSK | +0.09 (0.07) | -0.11 (0.07) | +0.10 (0.28) |
-| EOE | -0.05 (0.08) | -0.41 (0.11) | -0.65 (0.33) |
-| FDN | +0.17 (0.08) | -0.30 (0.17) | -0.27 (0.30) |
-| FIN | -0.03 (0.07) | +0.44 (0.12) | -0.54 (0.25) |
-| FRA | +0.36 (0.06) | +0.37 (0.25) | -0.03 (0.25) |
-| HOB | +0.33 (0.11) | -0.00 (0.24) | -0.54 (0.31) |
-| LTR | -0.09 (0.06) | +0.35 (0.17) | +0.34 (0.29) |
-| MH3 | -0.14 (0.08) | +0.41 (0.13) | +0.00 (0.27) |
-| MSH | +0.47 (0.08) | -0.19 (0.70) | -0.04 (0.24) |
-| NEO | +0.16 (0.10) | -0.14 (0.35) | +0.60 (0.28) |
-| OTJ | +0.24 (0.12) | +0.37 (0.16) | +0.21 (0.19) |
-| PIO | -0.01 (0.07) | -0.35 (0.11) | +0.22 (0.20) |
-| SOS | -0.09 (0.08) | -0.07 (0.11) | +0.48 (0.25) |
-| TDM | -0.08 (0.08) | -0.27 (0.07) | +0.23 (0.19) |
-| TLA | +0.01 (0.08) | +0.09 (0.19) | -0.50 (0.23) |
-| TMT | -0.11 (0.08) | +0.29 (0.18) | +1.01 (0.40) |
-| sets in the rule's direction | 8/19 | 11/19 | 13/20 |
+| set | Removal Saturated (0.8x past 6) | Curve Too Heavy (0.7x past 4) | Critical: Needs Fixing (1.4x) | Critical: Needs Creatures (1.25x under 13) | Critical: Needs Removal (1.3x under 3) | Critical: Needs 2-Drops (up to 1.5x under 7) |
+|---|---|---|---|---|---|---|
+| BLB | +0.27 (0.07) | -0.56 (0.24) | +0.02 (0.41) | -0.28 (0.15) | -0.34 (0.36) | +0.78 (0.15) |
+| Cube_-_Powered | – | – | -0.14 (2.50) | +0.24 (0.50) | – | +0.72 (0.83) |
+| DFT | +0.10 (0.08) | +0.28 (0.11) | +0.20 (0.27) | +0.10 (0.09) | +0.81 (0.42) | +0.30 (0.17) |
+| DMU | +0.36 (0.08) | -0.02 (0.17) | +0.47 (0.19) | +0.11 (0.12) | -0.20 (0.40) | +0.61 (0.17) |
+| DSK | +0.09 (0.07) | -0.11 (0.07) | +0.10 (0.28) | +0.31 (0.08) | +0.00 (0.49) | +0.59 (0.17) |
+| EOE | -0.05 (0.08) | -0.41 (0.11) | -0.65 (0.33) | +0.49 (0.12) | +0.20 (0.56) | +0.49 (0.14) |
+| FDN | +0.17 (0.08) | -0.30 (0.17) | -0.27 (0.30) | -0.13 (0.16) | +0.55 (0.43) | +0.62 (0.16) |
+| FIN | -0.03 (0.07) | +0.44 (0.12) | -0.54 (0.25) | +0.10 (0.06) | +0.65 (0.38) | -0.00 (0.11) |
+| FRA | +0.36 (0.06) | +0.38 (0.25) | -0.01 (0.25) | -0.22 (0.10) | +0.19 (0.75) | +0.31 (0.29) |
+| HOB | +0.33 (0.11) | -0.00 (0.24) | -0.54 (0.31) | +0.26 (0.14) | -0.59 (0.39) | +0.71 (0.15) |
+| LTR | -0.09 (0.06) | +0.35 (0.17) | +0.34 (0.29) | +0.26 (0.05) | +0.35 (0.45) | +0.30 (0.10) |
+| MH3 | -0.14 (0.08) | +0.41 (0.13) | +0.00 (0.27) | +0.46 (0.14) | +0.52 (0.60) | -0.32 (0.18) |
+| MSH | +0.47 (0.08) | -0.19 (0.70) | -0.04 (0.24) | +0.21 (0.20) | +1.60 (0.51) | +0.65 (0.17) |
+| NEO | +0.16 (0.10) | -0.14 (0.35) | +0.60 (0.28) | +0.41 (0.23) | +0.56 (0.33) | -0.25 (0.39) |
+| OTJ | +0.24 (0.12) | +0.37 (0.16) | +0.21 (0.19) | +0.09 (0.11) | +0.14 (0.25) | +0.30 (0.12) |
+| PIO | -0.01 (0.07) | -0.36 (0.11) | +0.21 (0.20) | +0.01 (0.12) | +0.70 (0.48) | +0.01 (0.17) |
+| SOS | -0.09 (0.08) | -0.07 (0.11) | +0.48 (0.25) | +0.03 (0.05) | +0.61 (0.36) | +0.16 (0.12) |
+| TDM | -0.08 (0.08) | -0.27 (0.07) | +0.23 (0.19) | +0.22 (0.11) | +0.38 (0.59) | +0.37 (0.12) |
+| TLA | +0.01 (0.08) | +0.09 (0.19) | -0.50 (0.23) | +0.33 (0.11) | +0.49 (0.57) | +0.43 (0.21) |
+| TMT | -0.11 (0.08) | +0.29 (0.18) | +1.01 (0.40) | +0.13 (0.17) | +0.92 (0.79) | +0.65 (0.22) |
+| sets in the rule's direction | 8/19 | 11/19 | 12/20 | 17/20 | 16/19 | 17/20 |
 
 ## By count
 
 Game win rate points of decks at each count against decks at the rule's threshold, at the same card quality (SE).
 
-**Removal Saturated (0.8x past 6)**, removal spells in the deck:
+**Removal Saturated (0.8x past 6)**, by the deck's `removal` count:
 
 | count | decks | points |
 |---|---|---|
@@ -109,18 +118,44 @@ Game win rate points of decks at each count against decks at the rule's threshol
 | 7 | 137912 | +0.17 (0.10) |
 | 8 | 105867 | +0.13 (0.12) |
 | 9 | 71376 | +0.26 (0.21) |
-| 10 or more | 87801 | +0.47 (0.27) |
+| 10 or more | 87801 | +0.46 (0.27) |
 
-**Curve Too Heavy (0.7x past 4)**, heavy spells in the deck:
+**Curve Too Heavy (0.7x past 4)**, by the deck's `heavy` count:
 
 | count | decks | points |
 |---|---|---|
-| 0 or fewer | 65875 | +0.14 (0.32) |
+| 0 or fewer | 65875 | +0.15 (0.32) |
 | 1 | 134339 | -0.09 (0.16) |
-| 2 | 181797 | -0.07 (0.12) |
+| 2 | 181797 | -0.06 (0.12) |
 | 3 | 179802 | -0.04 (0.09) |
 | 4 (reference) | 143134 | 0 |
 | 5 | 96353 | +0.05 (0.10) |
 | 6 | 56786 | -0.07 (0.20) |
 | 7 or more | 56698 | -0.31 (0.24) |
+
+**Critical: Needs Creatures (1.25x under 13)**, by the deck's `creatures` count:
+
+| count | decks | points |
+|---|---|---|
+| 10 or fewer | 95780 | -0.82 (0.29) |
+| 11 | 62779 | -0.43 (0.15) |
+| 12 | 93029 | -0.22 (0.10) |
+| 13 (reference) | 123865 | 0 |
+| 14 | 147496 | +0.19 (0.12) |
+| 15 | 144800 | +0.37 (0.13) |
+| 16 | 113662 | +0.76 (0.13) |
+| 17 or more | 133373 | +0.82 (0.21) |
+
+**Critical: Needs 2-Drops (up to 1.5x under 7)**, by the deck's `early` count:
+
+| count | decks | points |
+|---|---|---|
+| 3 or fewer | 11244 | -1.71 (0.29) |
+| 4 | 23412 | -0.97 (0.24) |
+| 5 | 51557 | -0.37 (0.16) |
+| 6 | 90570 | -0.01 (0.13) |
+| 7 (reference) | 127283 | 0 |
+| 8 | 148227 | +0.42 (0.13) |
+| 9 | 143679 | +0.59 (0.13) |
+| 10 or more | 318812 | +0.84 (0.20) |
 

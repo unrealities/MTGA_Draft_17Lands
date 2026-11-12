@@ -2,8 +2,8 @@ name: Deck score features
 
 # Samples decks from 17Lands Premier Draft game data and computes the app's
 # deck score features for them, one job per set, as features-<set> artifacts.
-# Called by deck-score-fit.yml and rule-targets.yml, which fit or test on
-# those features; it is not run on its own.
+# Called by deck-score-fit.yml, rule-targets.yml and card-ratings.yml, which
+# fit or test on those features; it is not run on its own.
 
 on:
   workflow_call:
@@ -20,6 +20,10 @@ on:
         description: Any text; changes which decks are sampled
         type: string
         default: ""
+      ratings:
+        description: Also rate the decks from the dump's other games (hours, not minutes)
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -28,7 +32,7 @@ jobs:
   features:
     name: Features ${{ matrix.set }}
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: ${{ inputs.ratings && 180 || 30 }}
     strategy:
       fail-fast: false
       matrix:
@@ -58,6 +62,12 @@ jobs:
         run: poetry run python Tools/DeckScoreFit/decks.py --games games.csv.gz --decks "$DECKS" --salt "$SALT" --out decks.json.gz
       - name: Compute features
         run: poetry run python Tools/DeckScoreFit/features.py --src . --decks decks.json.gz --dataset dataset.json.gz --set "$SET" --out "results/$SET.json"
+      - name: Read out-of-sample win rates
+        if: inputs.ratings
+        run: poetry run python Tools/DeckScoreFit/games.py --games games.csv.gz --decks decks.json.gz --out games.json.gz
+      - name: Rate decks
+        if: inputs.ratings
+        run: poetry run python Tools/DeckScoreFit/quality.py --src . --decks decks.json.gz --games games.json.gz --dataset dataset.json.gz --set "$SET" --out "results/quality/$SET.json"
       - uses: actions/upload-artifact@v4
         with:
           name: features-${{ matrix.set }}
