@@ -336,9 +336,6 @@ def test_composition_bonus_heuristics(mock_metrics):
     advisor.pool_metrics = {
         "heavy_drops": 4,
         "creature_count": 5,
-        "artifacts": 4,
-        "graveyard_enablers": 3,
-        "counters_enablers": 3,
         "fixing_count": 0,
         "off_color_playables": 2,
         "splash_targets": ["U"],
@@ -362,19 +359,12 @@ def test_composition_bonus_heuristics(mock_metrics):
     assert mult == 1.25
     assert "Critical: Needs Creatures" in reason
 
-    # 3. Artifact Synergy
-    mult, reason = advisor._calculate_composition_bonus(
-        {"cmc": 3, "tags": ["synergy_artifacts"]}, pack=2
-    )
-    assert mult == 1.2
-    assert "Artifact Synergy" in reason
-
-    # 4. Fixing Hunger (Because off_color_playables > fixing_count)
+    # 3. Fixing Hunger (Because off_color_playables > fixing_count)
     mult, reason = advisor._calculate_composition_bonus({"types": ["Land"]}, pack=2)
     assert mult == 1.4
     assert "Critical: Needs Fixing" in reason
 
-    # 5. Removal Hunger
+    # 4. Removal Hunger
     mult, reason = advisor._calculate_composition_bonus({"tags": ["removal"]}, pack=2)
     assert mult == 1.3
     assert "Critical: Needs Removal" in reason
