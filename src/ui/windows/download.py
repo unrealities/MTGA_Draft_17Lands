@@ -153,24 +153,22 @@ class DownloadWindow(ttk.Frame):
             row=0, column=0, sticky="e", padx=Theme.scaled_val(5)
         )
 
-        self.om_set = ttk.OptionMenu(form, self.vars["set"], default_val)
-        menu = self.om_set["menu"]
-        menu.delete(0, "end")
-
-        for opt in active_names:
-            menu.add_command(
-                label=opt,
-                command=tkinter._setit(self.vars["set"], opt, self._on_set_change),
-            )
-
-        if active_names and inactive_names:
-            menu.add_separator()
-
-        for opt in inactive_names:
-            menu.add_command(
-                label=opt,
-                command=tkinter._setit(self.vars["set"], opt, self._on_set_change),
-            )
+        # A searchable combobox instead of an OptionMenu: with 100+ sets the
+        # menu ran off the screen (and on Linux it closed on mouse release),
+        # while the combobox list scrolls and typing narrows it down (#260).
+        # Active sets stay first, in calendar order, followed by the rest.
+        self.set_options = active_names + inactive_names
+        self._committed_set = default_val
+        self.om_set = ttk.Combobox(
+            form,
+            textvariable=self.vars["set"],
+            values=self.set_options,
+            height=15,
+        )
+        self.om_set.bind("<<ComboboxSelected>>", self._on_set_selected)
+        self.om_set.bind("<KeyRelease>", self._filter_set_options)
+        self.om_set.bind("<Return>", self._commit_set_entry)
+        self.om_set.bind("<FocusOut>", self._commit_set_entry)
 
         self.om_set.grid(row=0, column=1, sticky="ew", pady=Theme.scaled_val(2))
         # --- END DYNAMIC SET SORTING ---
@@ -540,7 +538,46 @@ class DownloadWindow(ttk.Frame):
             "17Lands data.",
         )
 
+    def _filter_set_options(self, event=None):
+        """Narrow the set list to the names containing the typed text."""
+        if event is not None and event.keysym in (
+            "Up", "Down", "Return", "KP_Enter", "Escape", "Tab",
+        ):
+            return
+        text = self.vars["set"].get().strip().lower()
+        matches = [o for o in self.set_options if text in o.lower()]
+        self.om_set.configure(values=matches if text and matches else self.set_options)
+
+    def _match_set_entry(self, text):
+        """The set named by ``text``: an exact (case-insensitive) name, else
+        the only name containing it. None when it names no set or several."""
+        text = text.strip().lower()
+        if not text:
+            return None
+        exact = [o for o in self.set_options if o.lower() == text]
+        if exact:
+            return exact[0]
+        partial = [o for o in self.set_options if text in o.lower()]
+        return partial[0] if len(partial) == 1 else None
+
+    def _on_set_selected(self, event=None):
+        """A set picked from the list: like a menu pick, always applied."""
+        self._commit_set_entry(force=True)
+
+    def _commit_set_entry(self, event=None, force=False):
+        """Resolve the typed text to a set; an unknown name reverts to the
+        last valid set so a download never runs for a set that isn't there."""
+        match = self._match_set_entry(self.vars["set"].get())
+        if match is None:
+            match = self._committed_set
+        self.vars["set"].set(match)
+        self.om_set.configure(values=self.set_options)
+        if match and (force or match != self._committed_set):
+            self._on_set_change(match)
+
     def _on_set_change(self, val):
+        if val in getattr(self, "set_options", ()):
+            self._committed_set = val
         s_info = self.sets_data.get(val)
         if s_info:
             if s_info.start_date:

@@ -138,6 +138,8 @@ def test_rule_counts(app):
     counts = app.rule_counts(deck, "BR", "G")
     assert counts == {
         "removal": 3,
+        "creatures": 7,
+        "early": 5,  # Bolt, Hybrid, Splash, Identity, Either
         "heavy": 3,  # Giant, Dragon and the omen's front
         "fixing": 3,  # the rock and the two multicolor lands
         "off_color": 4,  # Giant, Hybrid, Omen, Offdual
