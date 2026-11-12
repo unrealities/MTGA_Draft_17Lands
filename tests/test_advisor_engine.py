@@ -368,3 +368,19 @@ def test_composition_bonus_heuristics(mock_metrics):
     mult, reason = advisor._calculate_composition_bonus({"tags": ["removal"]}, pack=2)
     assert mult == 1.3
     assert "Critical: Needs Removal" in reason
+
+
+@pytest.mark.parametrize("pack", [1, 2, 3])
+def test_fixing_gets_no_bonus_without_a_need(mock_metrics, pack):
+    """Only 'Critical: Needs Fixing' raises a fixing card's score."""
+    advisor = DraftAdvisor(mock_metrics, [])
+    advisor.pool_metrics = {
+        "heavy_drops": 0,
+        "fixing_count": 3,
+        "off_color_playables": 1,
+        "splash_targets": [],
+    }
+
+    assert advisor._calculate_composition_bonus(
+        {"types": ["Land"], "colors": ["W", "U"]}, pack=pack
+    ) == (1.0, "")
