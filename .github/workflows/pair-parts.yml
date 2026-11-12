@@ -1,0 +1,63 @@
+name: Pair parts
+
+# Tests whether deck results object to a pair's level or to a card's fit in it.
+# See experiments/2026-11-08-pair-parts/PROTOCOL.md.
+#
+# Run by hand: Actions > Pair parts > Run workflow.
+
+on:
+  workflow_dispatch:
+    inputs:
+      sets:
+        description: 'JSON list of 17Lands set codes, e.g. ["FRA", "TDM"] (empty: every set with game data and ratings)'
+        default: ""
+      decks:
+        description: Decks per set
+        default: "50000"
+      salt:
+        description: Any text; changes which decks are sampled
+        default: ""
+
+permissions:
+  contents: read
+
+jobs:
+  features:
+    uses: ./.github/workflows/deck-score-features.yml
+    with:
+      sets: ${{ inputs.sets }}
+      decks: ${{ inputs.decks || '50000' }}
+      salt: ${{ inputs.salt }}
+      ratings: true
+
+  parts:
+    needs: features
+    if: ${{ !cancelled() }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install poetry==2.4.1
+      - run: poetry install --no-interaction
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: features-*
+          path: results
+          merge-multiple: true
+      - name: Split the pair's win rates
+        shell: bash  # with pipefail, so a failed fit fails the step
+        run: |
+          {
+            echo "# Pair parts at \`${GITHUB_SHA::7}\`"
+            echo
+            poetry run python Tools/DeckScoreFit/parts.py --features results/*.json --quality results/quality/*.json --json parts.json
+          } | tee parts.md >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: pair-parts
+          path: |
+            parts.md
+            parts.json
