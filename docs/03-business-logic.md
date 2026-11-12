@@ -111,6 +111,8 @@ The deck builder ranks its candidate builds by a deck score:
 
 The weights were fit to about 480,000 17Lands Premier Draft decks over ten sets, comparing players of similar skill (`Tools/DeckScoreFit`). Curve, evasion and tribal adjustments were worth about zero once card quality was counted, so the score leaves them out. The missing-fixing weight is fit instead to which candidate builds drafters chose; see [the deck builder's suggestions before and after](logs/deck-builder-before-after.md).
 
+The Monte Carlo simulation's rates are shown with each build and don't change its score.
+
 The **estimated record** (`[Est: 3.5 wins]`) is the expected number of wins for a deck of that score: in Premier Draft, an event that ends at 7 wins or 3 losses; in Traditional Draft, three best-of-three matches.
 
 ### D. On-Demand AI Auto-Optimizer
