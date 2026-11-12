@@ -10,12 +10,19 @@ keeps each sampled deck's games (on the play, mulligans, result, opening hand)
 and, in five folds by draft, how often each card was in hand or in the deck and
 won, so a deck can be rated from the other folds' games without its own.
 
-`rules.py` tests three of the advisor's pick rules on the decks' results; see
+`rules.py` tests six of the advisor's pick rules on the decks' results; see
 `experiments/2026-11-03-rule-targets/PROTOCOL.md`. `quality.py` and `horse.py`
 test which version of the card rating predicts the decks' results; see
 `experiments/2026-11-03-rating-parts/PROTOCOL.md`. `parts.py` splits the pair's
 part of that rating into the pair's level and the card's fit; see
 `experiments/2026-11-08-pair-parts/PROTOCOL.md`.
+
+The rating and pair-parts experiments preserve their pre-4.32 baseline:
+`engine` in their output includes sample-size shrinkage, while the live advisor
+no longer does (#259). The `no-shrinkage` variant represents that change.
+Keep the historical definitions when reproducing the committed reports; new
+experiments should explicitly identify the advisor version they evaluate.
+Whole-deck prediction results do not directly establish a better pick order.
 
 It is separate from the app: nothing in `src/` imports it, and the app doesn't
 need it to run. The weights it prints are pasted into `deck_scorer.py` by hand.
