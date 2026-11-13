@@ -494,29 +494,6 @@ def suggest_deck(
                 score, breakdown = calculate_holistic_score(
                     opt_deck, active_colors, pool_size, metrics
                 )
-
-                if opt_stats:
-                    mc_penalties = []
-                    if opt_stats["color_screw_t3"] > 10.0:
-                        pen = (opt_stats["color_screw_t3"] - 10.0) * 2.5
-                        score -= pen
-                        mc_penalties.append(f"Color Screw (-{pen:.1f})")
-                    if opt_stats["screw_t3"] > 22.0:
-                        pen = (opt_stats["screw_t3"] - 22.0) * 1.5
-                        score -= pen
-                        mc_penalties.append(f"Mana Screw (-{pen:.1f})")
-                    if opt_stats["flood_t5"] > 27.0:
-                        pen = (opt_stats["flood_t5"] - 27.0) * 1.5
-                        score -= pen
-                        mc_penalties.append(f"Flood Risk (-{pen:.1f})")
-
-                    score = max(0.0, score)
-                    if mc_penalties:
-                        breakdown = (
-                            f"{breakdown} | {', '.join(mc_penalties)}"
-                            if breakdown
-                            else ", ".join(mc_penalties)
-                        )
                 simulated_cache[deck_sig] = (opt_stats, score, breakdown)
 
             sig = tuple(
