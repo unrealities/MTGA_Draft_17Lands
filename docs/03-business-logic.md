@@ -47,7 +47,6 @@ Modern Limited is dictated by "Mana Velocity" and "Mana Stability."
 
 - **Velocity Target:** 7+ "Early Plays" (CMC <= 2 Creatures or cheap interaction).
 - **Velocity Hunger:** The engine projects your final 2-drop count based on your current pool relative to the remaining picks in the draft. If the projection is below 7 entering Pack 2, early plays receive a "Critical: Needs 2-Drops" multiplier (up to 1.5x).
-- **Top-Heavy Penalty:** If you have 4+ cards costing 5+ mana, expensive cards receive a `0.7x` dampening multiplier to prevent "clunky" hands.
 - **Dynamic Fixing Hunger:** The engine actively monitors whether you are drafting a highly synergistic 2-color deck, or moving towards a "Good Stuff" 3/4-color splash strategy. If the number of drafted off-color playables exceeds your dedicated fixing tools (dual lands, treasures, dorks) by Pack 2, fixing cards receive a massive `1.4x` "Critical: Needs Fixing" multiplier. The optional `1.15x` Premium Fixing and `1.3x` Enables Bomb Splash bonuses are removed in 4.32. Castability splash rules, including Greedy Bomb Splash, remain separate.
 
 ---
@@ -67,7 +66,7 @@ Replays of 15,000 17Lands drafts showed that value over replacement, the late-si
 
 The app parses Scryfall community tags to understand a card's functional role. The artifact, graveyard and counters synergy multipliers and their three ETL tag queries were removed in 4.32 because those tags were absent from the checked datasets. Custom datasets carrying those tags no longer receive the corresponding bonuses.
 
-- **Hard Removal Quota:** Targets 3+ removal spells. If the pool is lacking entering Pack 2, interaction cards receive a `1.3x` panic multiplier. Conversely, if you have 6+ removal spells, new ones are penalized (`0.8x`).
+- **Hard Removal Quota:** Targets 3+ removal spells. If the pool is lacking entering Pack 2, interaction cards receive a `1.3x` panic multiplier.
 
 ---
 
