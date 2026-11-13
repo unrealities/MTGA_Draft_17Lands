@@ -376,6 +376,12 @@ def test_composition_bonus_heuristics(mock_metrics):
     assert mult == 1.3
     assert "Critical: Needs Removal" in reason
 
+    # 5. Removal past the need is judged like any other card, however much the pool has
+    advisor.pool_metrics["hard_removal_count"] = 7
+    assert advisor._calculate_composition_bonus(
+        {"cmc": 3, "types": ["Instant"], "tags": ["removal"]}, pack=2
+    ) == (1.0, "")
+
 
 @pytest.mark.parametrize("pack", [1, 2, 3])
 def test_fixing_gets_no_bonus_without_a_need(mock_metrics, pack):

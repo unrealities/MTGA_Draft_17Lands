@@ -338,14 +338,12 @@ class DraftAdvisor:
             return 1.0, ""
 
         # 3. Removal Check
-        if "removal" in tags:
-            if (
-                pack >= 2
-                and self.pool_metrics["hard_removal_count"] < self.TARGET_HARD_REMOVAL
-            ):
-                return 1.3, "Critical: Needs Removal"
-            elif self.pool_metrics["hard_removal_count"] > 6:
-                return 0.8, "Removal Saturated"
+        if (
+            "removal" in tags
+            and pack >= 2
+            and self.pool_metrics["hard_removal_count"] < self.TARGET_HARD_REMOVAL
+        ):
+            return 1.3, "Critical: Needs Removal"
 
         # 4. Early Interaction
         if cmc <= 2 and ("Creature" in types or "removal" in tags):
