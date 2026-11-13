@@ -112,7 +112,8 @@ def identify_top_pairs(pool, metrics, tier_data=None):
 # The weights were fit to game results: about 915,000 17Lands Premier Draft
 # decks over twenty sets, controlling for the player (Tools/DeckScoreFit). Curve,
 # evasion and tribal adjustments were fit at about zero once card quality was
-# counted, so the score leaves them out.
+# counted, so the score leaves them out. So was a bonus for a 3+ color deck with
+# domain payoffs and four fixing cards.
 BASE_SCORE = 75.0
 WEIGHTS = {
     # Mean overall rating of the deck's spells, in standard deviations from the
@@ -120,10 +121,8 @@ WEIGHTS = {
     "card_quality": 12.0,
     # 1 if the deck has two colors or fewer.
     "two_colors": 3.1,
-    # 1 if a deck of 3+ colors has 2+ domain payoffs and 4+ fixing cards.
-    "domain_supported": 3.2,
-    # For a deck of 3+ colors that isn't a supported domain deck, fixing cards
-    # short of one per color beyond the first. Players rarely build such decks,
+    # For a deck of 3+ colors, fixing cards short of one per color beyond the
+    # first. Players rarely build such decks,
     # so game results can't fit it; this is fit instead to which of the deck
     # builder's candidate builds drafters chose (see
     # docs/logs/deck-builder-before-after.md).
@@ -137,7 +136,6 @@ WEIGHTS = {
 # the base of the score, so it gets no note.
 NOTES = {
     "two_colors": "Rock-Solid Mana",
-    "domain_supported": "Supported Domain/Soup",
     "missing_fixing": "Greedy Mana Strain",
     "missing_spells": "Incomplete Deck",
 }
@@ -146,10 +144,6 @@ NOTES = {
 # above it, fit to the same games (Tools/DeckScoreFit).
 WIN_LOG_ODDS_AT_BASE = -0.0062
 WIN_LOG_ODDS_PER_POINT = 0.05099
-
-
-def _text(card):
-    return str(card.get("oracle_text", card.get("text", ""))).lower()
 
 
 def deck_features(deck, colors, pool_size, metrics, tier_data=None):
@@ -195,17 +189,8 @@ def deck_features(deck, colors, pool_size, metrics, tier_data=None):
     if len(colors) <= 2:
         features["two_colors"] = 1.0
     else:
-        domain_payoffs = sum(
-            c.get("count", 1)
-            for c in spells
-            if "colors among" in _text(c) or "basic land types" in _text(c)
-        )
         fixing_count = ManaSourceAnalyzer(deck).total_fixing_cards
-
-        if domain_payoffs >= 2 and fixing_count >= 4:
-            features["domain_supported"] = 1.0
-        else:
-            features["missing_fixing"] = max(0, len(colors) - 1 - fixing_count)
+        features["missing_fixing"] = max(0, len(colors) - 1 - fixing_count)
 
     expected_spells = int(23 * (min(42, pool_size) / 42.0))
     if spell_count < expected_spells - 1:
