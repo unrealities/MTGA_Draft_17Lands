@@ -96,6 +96,29 @@ def test_full_deck_suggestion_pipeline(sample_pool, mock_metrics):
     assert any("Splash" in label for label in labels), "Failed to build Splash variant"
 
 
+def test_deck_score_ignores_simulated_mana_rates(sample_pool, mock_metrics, monkeypatch):
+    """The simulator's rates are shown with a deck but don't change its score."""
+    from src.advisor import deck_builder
+
+    def ratings(rate):
+        stats = dict.fromkeys(
+            ("cast_t2", "cast_t3", "cast_t4", "curve_out", "screw_t3",
+             "color_screw_t3", "flood_t5"),
+            rate,
+        )
+        monkeypatch.setattr(deck_builder, "simulate_deck", lambda *a, **kw: stats)
+        deck_builder.clear_deck_cache()
+        decks = suggest_deck(sample_pool, mock_metrics, Configuration())
+        assert all(d["stats"] == stats for d in decks.values())
+        return [(d["rating"], d["breakdown"]) for d in decks.values()]
+
+    try:
+        calm, awful = ratings(0.0), ratings(90.0)
+    finally:
+        deck_builder.clear_deck_cache()
+    assert calm and calm == awful
+
+
 def test_dynamic_mana_base_math():
     """Verify the proportional land allocation guarantees minimums."""
     # Simulate a deck heavily skewed to Red, with a light Green splash
@@ -239,7 +262,7 @@ def test_safe_deck_surfaces_incomplete_two_color_when_only_option():
             "G Splash W",
             14.0,
             ["G", "W"],
-            breakdown="Incomplete Deck (-20.0) | Flood Risk (-50.7)",
+            breakdown="Incomplete Deck (-20.0)",
             identity_colors=["G"],
         ),
     ]
