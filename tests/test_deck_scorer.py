@@ -193,8 +193,8 @@ def test_identify_top_pairs(mock_metrics):
     assert set(pairs[0]) == {"W", "U"}
 
 
-def test_holistic_score_domain_bonus(mock_metrics):
-    """3+ color decks get the domain bonus with enough fixing, or a penalty without."""
+def test_holistic_score_missing_fixing(mock_metrics):
+    """3+ color decks are penalized for missing fixing, and get no bonus with it."""
 
     # Scenario A: Greedy 4-color soup (No fixing)
     greedy_deck = [
@@ -206,7 +206,6 @@ def test_holistic_score_domain_bonus(mock_metrics):
     _, notes_greedy = calculate_holistic_score(
         greedy_deck, colors=["W", "U", "B", "R"], pool_size=45, metrics=mock_metrics
     )
-    assert "Domain" not in notes_greedy
     # ...and is penalized for each fixing card short of one per extra color.
     assert f"Greedy Mana Strain (-{3 * -WEIGHTS['missing_fixing']:.1f})" in notes_greedy
 
@@ -228,10 +227,7 @@ def test_holistic_score_domain_bonus(mock_metrics):
     _, notes_supported = calculate_holistic_score(
         supported_deck, colors=["W", "U", "B", "R"], pool_size=45, metrics=mock_metrics
     )
-    assert (
-        f"Supported Domain/Soup (+{WEIGHTS['domain_supported']:.1f})" in notes_supported
-    )
-    assert "Greedy" not in notes_supported
+    assert notes_supported == ""
 
 
 def test_holistic_score_incomplete_deck(mock_metrics):
