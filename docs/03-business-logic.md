@@ -101,14 +101,16 @@ Evaluates the user's custom deck by running a **10,000-game Monte Carlo simulati
 
 The deck builder ranks its candidate builds by a deck score:
 
-`75 + 12 × card quality + 3.5 if two colors or fewer + 3.2 for a supported domain deck − 2.5 per missing fixing card − 10 per missing spell`
+`75 + 12 × card quality + 3.1 if two colors or fewer + 3.2 for a supported domain deck − 2.5 per missing fixing card − 10 per missing spell`
 
-- **Card quality** is the mean win rate of the deck's spells, in standard deviations from the format mean.
+- **Card quality** is the mean overall win rate of the deck's spells, in standard deviations from the format mean. A card's win rate in the deck's pair isn't used here: it also carries how the pair does as a whole. The builders still use it to choose cards within a pair.
 - **Supported domain:** a deck of 3+ colors with 2+ domain payoffs and 4+ fixing cards.
 - **Missing fixing:** for other decks of 3+ colors, fixing cards short of one per color beyond the first.
 - **Missing spells:** spells short of a full deck for the pool size, less one.
 
-The weights were fit to about 480,000 17Lands Premier Draft decks over ten sets, comparing players of similar skill (`Tools/DeckScoreFit`). Curve, evasion and tribal adjustments were worth about zero once card quality was counted, so the score leaves them out. The missing-fixing weight is fit instead to which candidate builds drafters chose; see [the deck builder's suggestions before and after](logs/deck-builder-before-after.md).
+The weights were fit to about 915,000 17Lands Premier Draft decks over twenty sets, comparing players of similar skill (`Tools/DeckScoreFit`). Curve, evasion and tribal adjustments were worth about zero once card quality was counted, so the score leaves them out. The missing-fixing weight is fit instead to which candidate builds drafters chose; see [the deck builder's suggestions before and after](logs/deck-builder-before-after.md).
+
+The Monte Carlo simulation's rates are shown with each build and don't change its score.
 
 The **estimated record** (`[Est: 3.5 wins]`) is the expected number of wins for a deck of that score: in Premier Draft, an event that ends at 7 wins or 3 losses; in Traditional Draft, three best-of-three matches.
 

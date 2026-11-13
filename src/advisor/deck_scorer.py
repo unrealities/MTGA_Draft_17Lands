@@ -109,16 +109,17 @@ def identify_top_pairs(pool, metrics, tier_data=None):
 # are one standard deviation of card quality, so the other weights are in the
 # same units: what the feature is worth, measured in card quality.
 #
-# The weights were fit to game results: about 480,000 17Lands Premier Draft
-# decks over ten sets, controlling for the player (Tools/DeckScoreFit). Curve,
+# The weights were fit to game results: about 915,000 17Lands Premier Draft
+# decks over twenty sets, controlling for the player (Tools/DeckScoreFit). Curve,
 # evasion and tribal adjustments were fit at about zero once card quality was
 # counted, so the score leaves them out.
 BASE_SCORE = 75.0
 WEIGHTS = {
-    # Mean rating of the deck's spells, in standard deviations from the format mean.
+    # Mean overall rating of the deck's spells, in standard deviations from the
+    # format mean.
     "card_quality": 12.0,
     # 1 if the deck has two colors or fewer.
-    "two_colors": 3.5,
+    "two_colors": 3.1,
     # 1 if a deck of 3+ colors has 2+ domain payoffs and 4+ fixing cards.
     "domain_supported": 3.2,
     # For a deck of 3+ colors that isn't a supported domain deck, fixing cards
@@ -143,8 +144,8 @@ NOTES = {
 
 # The log-odds of winning a game, for a deck of BASE_SCORE and per point
 # above it, fit to the same games (Tools/DeckScoreFit).
-WIN_LOG_ODDS_AT_BASE = 0.0364
-WIN_LOG_ODDS_PER_POINT = 0.03871
+WIN_LOG_ODDS_AT_BASE = -0.0062
+WIN_LOG_ODDS_PER_POINT = 0.05099
 
 
 def _text(card):
@@ -169,11 +170,20 @@ def deck_features(deck, colors, pool_size, metrics, tier_data=None):
     arch_key = normalize_color_string(
         "".join(colors) if len(colors) <= 2 else "".join(colors[:2])
     )
+
+    def rating(card):
+        # The card's overall win rate, whatever the deck's colors. A pair's
+        # rates also carry how well the pair does as a whole, and between
+        # builds of different pairs the score over-rewarded that. A card with
+        # no overall rate falls back to get_card_rating().
+        stats = card.get("deck_colors", {}).get("All Decks", {})
+        overall = float(stats.get("gihwr") or 0.0)
+        if overall > 30.0:
+            return overall
+        return get_card_rating(card, [arch_key], metrics)
+
     valid_ratings = [
-        get_card_rating(c, [arch_key], metrics)
-        for c in spells
-        for _ in range(c.get("count", 1))
-        if get_card_rating(c, [arch_key], metrics) > 0.0
+        r for c in spells for _ in range(c.get("count", 1)) if (r := rating(c)) > 0.0
     ]
     avg_gihwr = (
         sum(valid_ratings) / len(valid_ratings)
