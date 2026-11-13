@@ -345,7 +345,6 @@ def test_composition_bonus_heuristics(mock_metrics):
 
     # Setup pool metrics to trigger specific heuristic thresholds
     advisor.pool_metrics = {
-        "heavy_drops": 4,
         "creature_count": 5,
         "fixing_count": 0,
         "off_color_playables": 2,
@@ -355,12 +354,10 @@ def test_composition_bonus_heuristics(mock_metrics):
     advisor.TOTAL_PICKS = 45
     advisor.pool = [1] * 20  # Simulate mid-draft (Pick 20)
 
-    # 1. Heavy Drops Penalty
-    mult, reason = advisor._calculate_composition_bonus(
-        {"cmc": 6, "types": ["Creature"]}, pack=2
-    )
-    assert mult == 0.7
-    assert "Curve Too Heavy" in reason
+    # 1. An expensive card is judged like any other, however many the pool has
+    assert advisor._calculate_composition_bonus(
+        {"cmc": 6, "types": ["Sorcery"]}, pack=2
+    ) == (1.0, "")
 
     # 2. Creature Quota Bonus
     mult, reason = advisor._calculate_composition_bonus(
@@ -385,7 +382,6 @@ def test_fixing_gets_no_bonus_without_a_need(mock_metrics, pack):
     """Only 'Critical: Needs Fixing' raises a fixing card's score."""
     advisor = DraftAdvisor(mock_metrics, [])
     advisor.pool_metrics = {
-        "heavy_drops": 0,
         "fixing_count": 3,
         "off_color_playables": 1,
     }
