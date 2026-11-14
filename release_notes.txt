@@ -1,0 +1,596 @@
+===================== RELEASE NOTES 4.10 =====================
+* unrealities: [Bug] Fixed a fatal application crash because of requirements update
+* unrealities: [Bug] Fixing automated release script
+
+===================== RELEASE NOTES 4.09 =====================
+* unrealities: [Major Feature] Overhauled Post-Draft Dashboard. Replaced the legacy recap screen with a deep-dive, 3-tab layout (Draft Recap, Synergy & Roles, Mana & Curve). The dashboard now explicitly calculates your Biggest Steals and Reaches with exact Pack/Pick math, and displays Top Creature Tribes and Card Roles.
+* unrealities: [Major Feature] Unified Deck Builder. The automated "Deck Suggester" and manual "Custom Deck Builder" have been fused into a single, cohesive "Deck Builder" tab.
+* unrealities: [Feature] Recalibrated Deck & Pool Scoring. The 'Power Level' and 'Pool Quality' metrics have been normalized to a realistic 100-point scale (75 = Average, 90+ = Elite) to provide much more accurate and rewarding feedback, properly aligning with expected win-loss records.
+* unrealities: [Feature] On-Demand Optimization: Moved the intensive Monte Carlo AI Optimizer to an explicit button in the Simulation tab. Initial archetype generation is now lightning fast, and you can run the brute-force optimizer on your tweaked decks whenever you're ready.
+* unrealities: [Bug] Fixed a critical MTG Arena database mapping bug where Subtypes (e.g., 'Ninja', 'Human') were accidentally overwriting Base Types (e.g., 'Creature', 'Land'). This fixes issues where Swamps were categorized as Creatures and completely broke the mana curve simulator.
+* unrealities: [Bug] Fixed a severe state-tracking bug where starting consecutive drafts, or the app catching up on missed picks, would cause the app to fail to wipe the previous card pool and merge multiple drafts together.
+* unrealities: [Bug] Fixed a fatal application crash that could occur on startup when using the "System (Native)" theme on macOS or Windows.
+
+===================== RELEASE NOTES 4.08 =====================
+* unrealities: [Major Feature] AI Monte Carlo Auto-Optimizer. Click the "Auto-Optimize Deck" button to unleash a background simulation engine that mathematically tests different deck permutations (16 lands vs 17 lands, swapping out expensive 5-drops for efficient 2-drops) across thousands of games to find the perfect 40-card configuration.
+* unrealities: [Feature] Added an AI Advisor Summary to the simulation tab. It translates raw simulation percentages into actionable advice and actively scans your sideboard to suggest specific 1-for-1 card swaps to fix curve or consistency issues.
+* unrealities: [Feature] Added an interactive "Sample Hand" generator that dynamically downloads full artwork and displays your opening hand in a vertically-fanned stack. It automatically draws a new hand when evaluating a deck and is fully scrollable for smaller displays.
+* unrealities: [Feature] Overhauled the Frank Karsten Mana Base Engine. It now accurately detects universal fixers (including tokens and land searchers), intelligently resolves hybrid mana toward your core colors, and sets strict limits on splash basics to prevent starving your primary colors.
+* unrealities: [Feature] Added an "Auto-Switch Deck Filter to Best Colors" toggle in Preferences to explicitly control automatic lane tracking.
+* unrealities: [Feature] Overhauled the Deck Builder tab to explicitly generate and display a separate "Sideboard" tab.
+* unrealities: [UX/UI] Added a color-coded grading system (🟢 Great, 🟡 Fair, 🔴 Poor) to the simulation metrics to help instantly evaluate if a deck is statistically sound.
+* unrealities: [UX/UI] Re-designed the visual indicator for picked cards. The Live Pack table now pulses a smooth green gradient animation for 1 second upon picking a card before settling on a solid color.
+* unrealities: [UX/UI] Made the "Stats & Analysis" tab in the Deck Builder fully scrollable to accommodate decks with massive amounts of tags and synergies.
+* unrealities: [UX/UI] Completely resolved the visual readability issues in the "Visual View" Card Pool tab. Cards are now rendered using explicitly highly-legible hex combinations instead of inheriting restrictive framework styles.
+* unrealities: [UX/UI] Radically fixed tooltip flickering and persistence. Tooltips now use an intelligent singleton manager with dynamic mouse offsetting, completely eliminating the bug where tooltips would rapidly open and close or fail to disappear.
+* adverseselection: [UX/UI] Add scrollbars to all tables and overflowing panels
+* adverseselection: [UX/UI] Drag-to-reorder columns
+* adverseselection: [Bug] Fix dashboard sash resetting on every pick
+* unrealities: [Bug] Fixed a fatal crash on startup (`Duplicate element`) when using the "System (Native)" theme. Added a safe-mode recovery loop that automatically reverts to default settings and restarts the app if a theme failure occurs, preventing lockouts.
+* unrealities: [Bug] Hardened 17Lands network requests by implementing a global data sanitizer. Corrupted special characters (e.g. 'Bespoke B?' instead of 'Bespoke Bō') returned by 17Lands endpoints are now intercepted and corrected instantly to prevent application failures.
+* unrealities: [Bug] Fixed a rendering glitch where the Dashboard sidebar would slightly expand and contract its width upon every new pick due to aggressive UI resetting.
+* unrealities: [Bug] Fixed a critical state-corruption bug where playing consecutive drafts (or missing the start of a draft) would cause the app to endlessly merge new picks into your previous deck's card pool, resulting in 50+ card pools. The app now strictly detects pick progressions and enforces a clean wipe when time-travel or cross-draft pollution is detected.
+
+===================== RELEASE NOTES 4.07 =====================
+* unrealities: [Major Feature] Introduced "Value Over Replacement" (VOR) to the Advisor Engine. The app now mathematically analyzes the MTG set upon download to map its "Format Texture." It actively identifies when a card fulfills a highly scarce role (e.g., if a set only has one viable Red 2-drop at common) and applies a massive score bonus to prioritize drafting scarce resources over highly-replaceable filler.
+* unrealities: [Feature] Added "Archetype Glue" detection. The Advisor now explicitly identifies Commons and Uncommons that dramatically over-perform in your specific color lane, applying an aggressive score multiplier so they correctly outrank generic, off-color Rares.
+* unrealities: [UX/UI] Enhanced the "Auto" Deck Filter mode. The dashboard now displays a dynamic label next to the filter dropdown showing exactly which color lane the app has detected and its associated win rate (e.g., `(Auto: Selesnya 57.5%)` or `(Auto: Detecting...)`).
+* unrealities: [UX/UI] The P1P1 OCR scanner now instantly hides the application window, takes the screenshot, and reappears. This ensures your draft tool never accidentally blocks the Magic Arena cards during the screen capture.
+* unrealities: [Bug] Fixed an issue where the application would incorrectly reset the event type dropdown (e.g., reverting back to a default format) when picking your first card due to MTG Arena's transition from temporary Transaction IDs to permanent Draft IDs.
+* unrealities: [Bug] Fixed a core indentation bug that was completely preventing the "Auto-Switch Deck Filter" feature from analyzing your pool and detecting your lane.
+* unrealities: [Bug] Fixed a severe file-pathing bug that caused macOS and Linux standalone apps to crash or spawn blank, invisible windows when opening Card Tooltips due to OS write-permission restrictions.
+* unrealities: [Bug] Fixed a state-tracking issue where using the P1P1 OCR scanner would accidentally trick the app into clearing its memory at Pick 2, preventing the "Seen Cards (Wheel Tracker)" from populating at Pick 9.
+
+===================== RELEASE NOTES 4.06 =====================
+* unrealities: [Major Feature] Official Standalone Support for macOS and Linux. The application is now distributed as native, pre-compiled binaries for Mac (.app) and Linux (.tar.gz), removing the need to install Python manually. The auto-updater fully supports these new platforms.
+* unrealities: [UX/UI] Added Right-Click Context Menus to the data tables. You can now right-click any card to instantly send it to the Comparisons tab, copy its name, or look it up on Scryfall.
+* unrealities: [UX/UI] You can now click on card names directly inside the Advisor Recommendations panel to instantly view their detailed tooltips.
+* unrealities: [UX/UI] The Live Pack table now highlights the specific card you picked in green, providing instant visual confirmation of your selection.
+* unrealities: [UX/UI] The Live Pack table no longer disappears or shows a "Waiting for next pack..." banner between picks. It now cleanly displays your previous pack until the next one physically arrives.
+* unrealities: [UX/UI] Basic lands no longer trigger empty tooltips when hovered or clicked, and the Advisor Engine will accurately ignore them unless they are the literal last card in the pack.
+* unrealities: [UX/UI] Reduced the default size of welcome messages and improved text wrapping when the window is resized.
+* unrealities: [UX/UI] Added smaller UI scale options down to 40% in Preferences for users on smaller displays.
+* unrealities: [UX/UI] Adjusted default button paddings to make them less bulky on Windows.
+* unrealities: [UX/UI] Fixed a visual bug where the Pool Balance pie chart was improperly aligned.
+* unrealities: [Feature] The Dataset Download process now displays a detailed summary messagebox when completed. This summary reports the exact 17Lands Card Coverage matching percentage, making it immediately obvious if 17Lands or MTGA data is missing or out-of-sync. It also reports why Scryfall tags may be missing.
+* unrealities: [Feature] Added "Good Stuff (Soup)" to the Deck Builder as a fallback generation option for disjointed drafts with heavy fixing.
+* unrealities: [Feature] The Splash screen now explicitly notifies you if it is resuming a "Recovered Session" from a previous app closure.
+* unrealities: [Feature] Deeply integrated draft state persistence so closing the app or crashing guarantees exact draft position recovery.
+* unrealities: [Bug] Fixed a critical log parsing issue where MTGA's numeric draft IDs were causing the application to incorrectly wipe the draft memory and wheel tracker mid-draft.
+* unrealities: [Bug] Fixed a bug where MTG Arena occasionally writes broken, unescaped JSON to the log file, which was causing the app to silently miss pack data.
+* unrealities: [Bug] Fixed a UI layout bug where the main data tables would sometimes get crushed to zero width when starting a new draft.
+* unrealities: [Bug] Fixed an issue where Scryfall tags were missing for newly released sets. Scryfall delays adding the 'is:booster' attribute to new cards, which was previously filtering them out of our queries.
+* unrealities: [Bug] Fixed a crash unpacking cached Scryfall tag tuples that would break the download process if a cache hit occurred.
+* unrealities: [Bug] Fixed an issue where the application would not correctly separate and track consecutive drafts of the exact same event type.
+* adverseselection: [Bug] Suppress returnable indicator for user-picked cards.
+
+===================== RELEASE NOTES 4.05 =====================
+This is a major performance and stability update focused on speed, responsiveness, and smarter draft advice.
+
+## Performance & Concurrency Improvements
+
+- Application now launches instantly with a new background loading system
+- Eliminated UI freezes, spinning wheels, and startup hangs
+- Offloaded Card Tooltip image downloading to a dedicated thread pool to prevent CPU bogging and stuttering during rapid mouse movements
+- Implemented Atomic File Writes and thread-safe locks for configuration and dataset caching, preventing file corruption if the app closes unexpectedly
+- Dramatically reduced CPU usage during drafts
+- Faster dataset validation and near-instant archetype switching
+
+## Advisor Engine v5.1 — “Archetype Gravity”
+
+- Evaluates all 10 color pairs simultaneously
+- Dynamically shifts from global stats to archetype-specific data as the draft progresses
+- Stronger synergy detection within your selected colors
+- Encourages lane commitment beginning late Pack 1
+
+## UI & Quality Improvements
+
+- Fixed a text clipping issue on Windows where the bottom tails of letters (like g, p, y) were cut off by dynamically calculating and scaling table row heights based on native OS font metrics
+- Redesigned the "Waiting for Draft" and "No Datasets" dashboard screens to perfectly center and include helpful tips for customizing Themes, Columns, and Preferences
+- Restored the "Win Rate Format" feature: the new data tables now correctly display Letter Grades (A+ to F) or 5-point Ratings if selected in Preferences
+- The Preferences window is now fully accessible directly from the Mini Mode gear menu
+- Higher-resolution card images in tooltips
+- Tooltips intelligently reposition to avoid screen clipping
+- Real-time status updates during P1P1 OCR scanning
+- Window size and layout now reliably restore
+
+## New Features
+
+- Automatic update checker
+- Proactive dataset download when starting a new draft format
+
+## Stability & Log Parsing Fixes
+
+- Completely rebuilt the core log parsing engine to be thread-safe and highly resilient to malformed JSON data, fixing multiple issues where the app would silently ignore draft events
+- Fixed an issue in Pick-Two Drafts where the Wheel Tracker (Seen Cards) would not appear. It now correctly triggers at Pick 5 (accounting for 4-player pods) instead of Pick 9
+- Fixed a critical log parsing bug where missing MTGA `Draft.Notify` lines (frequently occurring on P1P2) would cause the app to permanently fall "one pick behind" the active draft. The app now safely rescues missed packs using backup telemetry data
+- Fixed an internal list-referencing bug that was corrupting the Wheel Tracker (Seen Cards) across all draft formats
+- Fixed rare OCR scanning crash
+- Fixed consecutive draft data carryover issue
+- Resolved reload blank-screen issue
+- Multiple threading, UI event-loop (re-entrancy), and race-condition fixes
+- Resolved a failure where the "Reload" button would leave the dashboard in an "Idle" state
+- Fixed an issue where the "Download" button would not download the dataset for the selected set
+- Fixed an issue where the table sorting was not being preserved across application restarts
+
+===================== RELEASE NOTES 4.04 =====================
+* unrealities: [Major Feature] Overhauled "Compact Overlay" into a significantly more powerful "Mini Mode." It now includes a built-in Advisor panel, Signal Meter, Mana Curve, and Deck Balance charts, allowing for a fully functional drafting experience in a small, always-on-top window.
+* unrealities: [Feature] Added a dedicated "Card Pool" tab to the Mini Mode, making it easier to track your current draft picks and collection progress without switching back to the main window.
+* unrealities: [UX/UI] Improved column management in Mini Mode; the window now automatically expands its width when adding new data columns to ensure they remain readable.
+* unrealities: [UX/UI] Standardized table font sizes and column widths across all views for a more consistent and professional aesthetic.
+* unrealities: [UX/UI] Enhanced Card Tooltips to prevent multiple overlapping popups; opening a new tooltip now automatically closes the previous one.
+* unrealities: [Bug] Fixed a layout bug where the sidebar would sometimes fail to reclaim space when panels were collapsed or hidden.
+
+===================== RELEASE NOTES 4.03 =====================
+* unrealities: [Bug] Fixed an issue where the Mana Curve chart displayed two separate "6+" columns on the X-axis. All high-cost cards are now correctly combined into a single 6+ bucket.
+* unrealities: [UX/UI] Moved the Advisor Recommendations panel into the top of the right sidebar, drastically freeing up vertical space for the main draft tables. Added a solid-colored, pill-shaped score badge next to the card names for a much cleaner, modern look.
+* unrealities: [UX/UI] The "Open Lanes" bar chart now strictly uses standard MTG color codes (White, Blue, Black, Red, Green) instead of inheriting arbitrary UI theme colors, making it much easier to read at a glance.
+* unrealities: [UX/UI] Implemented persistent application layout saving. The app now remembers your exact window size, where you dragged the divider line between the dashboard and the bottom tabs, and which sidebar panels you left collapsed.
+* unrealities: [UX/UI] Fixed a font rendering issue on Windows where the bottom of letters like "g" and "p" were being clipped in the data tables.
+* unrealities: [UX/UI] Added a resize grip to the bottom right of the Compact Overlay, allowing you to freely drag and adjust its width/height. Its dimensions are now saved to your preferences.
+
+===================== RELEASE NOTES 4.02 =====================
+* unrealities: [Bug] Fixed a fatal crash on startup (`locale.Error: unsupported locale setting`) affecting Windows users with specific regional/language formats by safely patching the UI library's calendar initialization.
+* unrealities: [Bug] Fixed an issue where changing the archetype filter dropdown did not update the win rates displayed in the Card Pool and Comparisons tabs.
+* unrealities: [Feature] Expanded the Deck Builder's search algorithm to analyze the top 4 colors in a pool (up from 2), generating a much wider variety of distinct archetype suggestions (highly beneficial for Sealed pools).
+* unrealities: [UX/UI] Streamlined the Card Tooltip UI
+* unrealities: [UX/UI] Adjusted the row highlight background color for Black cards in the data tables from a harsh dark gray to a pastel silver to improve text readability and match the aesthetic of the other colors.
+
+===================== RELEASE NOTES 4.01 =====================
+* unrealities: [Bug] Fixed an issue where "Cube - Powered" events would fail to load dataset data due to legacy cache artifacts and strict string spacing mismatches (#125).
+* unrealities: [Bug] Fixed an issue where the Card Pool and Comparisons tables would turn completely blank when the "Tags" column was added to the view.
+* unrealities: [Bug] Fixed an issue where clicking a card to view its tooltip would stop working after right-clicking to add or remove table columns.
+* unrealities: [Performance] Disabled Scryfall community tag harvesting for Cube events to prevent severe API timeouts and application freezes during dataset downloads.
+* unrealities: [UX/UI] Added live progress tracking to the Dataset Download screen during the tag harvesting phase, ensuring the app no longer appears frozen when building a new set.
+* unrealities: [UX/UI] Added visual card role tags (e.g., 🎯 Removal) to the Advisor Recommendations panel.
+* unrealities: [Documentation] Cleaned up legacy v4 architecture artifacts in the business logic documentation to reflect the new v5 Compositional Brain.
+
+===================== RELEASE NOTES 4.0 =====================
+* unrealities: [Major Redesign] Completely overhauled the UI using a modern, tabbed interface powered by ttkbootstrap. Introduced a persistent Live Dashboard alongside dedicated tabs for Datasets, Card Pool, Deck Builder, Comparisons, and Tier Lists.
+* unrealities: [Major Feature] Introduced "The Compositional Brain" tactical advisor. Replaced static win-rate thresholds with dynamic Z-scores, compositional math, and relative wheel probability.
+* unrealities: [Major Feature] Added a draggable, always-on-top Compact Overlay mode featuring a translucent glass effect for seamless single-monitor drafting.
+* unrealities: [Performance] Implemented a "Zero-Idle" Fast Path in the log scanner. The application now checks log file growth before parsing, drastically reducing idle CPU usage and disk I/O thrashing.
+* unrealities: [Performance] Offloaded Card Tooltip image downloading to a background thread and added local disk caching, completely eliminating UI freezes when clicking cards.
+* unrealities: [Performance] Moved P1P1 OCR image scanning to an asynchronous background thread with a visual "Scanning..." indicator, preventing the application from locking up during API calls.
+* unrealities: [Feature] Completely rewrote the Deck Suggester to generate distinct archetypes (Consistent, Greedy/Splash, Tempo) utilizing Frank Karsten's mana base math to auto-generate perfect mana bases.
+* unrealities: [Feature] Upgraded Signal Detection to track wheel signals by comparing P1P9 contents against P1P1 contents to determine the true "Retention Rate" of color quality.
+* unrealities: [UX/UI] Consolidated all configuration options into a modernized Preferences window with real-time UI updates.
+* unrealities: [UX/UI] Expanded Dataset Update notifications to display highly verbose details, including Full Set Name, Event Type, User Group, and formatted local vs. remote game counts.
+* unrealities: [UX/UI] Replaced the redundant "Logs" button with a "Reload" button. Clicking this performs a complete reset and re-parse of the current log file to instantly fix desync issues.
+* unrealities: [UX/UI] Added visual sort indicators (▲ / ▼) to the column headers of all data tables.* unrealities: [UX/UI] Added momentary "Copied! ✔" visual feedback to buttons when exporting decks or card pools to the clipboard.
+* unrealities: [UX/UI] Added exact numeric labels floating above the Mana Curve chart bars in the sidebar.
+* unrealities: [UX/UI] The application header now displays the full, human-readable Set Name (e.g., "Outlaws of Thunder Junction") instead of just the 3-letter set code.
+* unrealities: [UX/UI] Added support for custom .tcl themes and introduced several built-in Magic-themed color palettes ("Mana Flairs").
+* unrealities: [Architecture] Refactored the entire codebase into a clean `src/` directory structure, separating UI components, core logic, and the new advisor engine.
+* unrealities: [Architecture] Added comprehensive Markdown documentation in a new `docs/` directory covering system architecture, domain models, and external integrations.
+* unrealities: [Bug]: confirmation window hidden #117
+* unrealities: [Bug]: local_data_folder not found when Arena is installed in additional Steam library on second disk #118
+* unrealities: [Bug]: Taken Cards window persists in Sealed play #83
+* unrealities: Handle Arena Limited Qualifier Draft
+* unrealities: Added bump_version script
+
+===================== RELEASE NOTES 3.38 =====================
+* ebertin42: Fixed Scryfall API 400 Bad Request error by adding User-Agent headers to set retrieval requests
+
+===================== RELEASE NOTES 3.37 =====================
+* jsherin & unrealities: [Bug]: Color pair win percentages missing #108
+* unrealities: Dynamic User Game Count: dynamic threshold for card color ratings. The default is 5000
+* unrealities: Allow User to Export Draft Data via JSON or CSV
+* unrealities: Beta Setup for Signals and Persist Settings
+* dhannum: add support for path when installed via steam
+
+===================== RELEASE NOTES 3.36 =====================
+* FiYir: Address missing dependencies in v3.35
+
+===================== RELEASE NOTES 3.35 =====================
+* FiYir: Moved the Seventeenlands code to a separate seventeenlands.py file.
+* FiYir: Moved the dataset download code to a separate download_dataset.py file.
+* FiYir: Moved the existing notifications to a separate notifications.py file.
+* FiYir: Added dataset notifications to notifications.py.
+* FiYir: Added a section label to the card tooltip.
+* FiYir: Added ui_progress.py
+* FiYir: Moved APPLICATION_VERSION to constants.py
+
+===================== RELEASE NOTES 3.34 =====================
+* FiYir: Handle Powered Cube Draft (BUG-95)
+* Unrealities: File extractor test
+
+===================== RELEASE NOTES 3.33 =====================
+* FiYir: Pick-Two Support for Omenpath
+* p3p3fr0g: Linux Pathfix
+
+===================== RELEASE NOTES 3.32 =====================
+* FiYir: Fix: Add logic to support card database path extraction from the Arena log for Linux users ([Bug]: error in file_extractor: card missing #78)
+* FiYir: Fix: Update query to support card database changes from the recent Arena patch ([Bug]: database changes after recent patch #80)
+* FiYir: Feature: Replaces the broken Chrome extension (see [Bug]: 17Lands Tier List Scraper Extension is no longer working #62) with an integrated API-based solution. Continues to support old tier lists.
+
+===================== RELEASE NOTES 3.31 =====================
+* FiYir: Fix issue [Bug]: Application not detecting quick draft #71
+* FiYir: Sort the colors of multi-colored cards by WUBRG
+* FiYir: Enable color identity will no longer change the row color of mana fixing cards to gold
+* FiYir: Add "# Games" to the Download Dataset window to help players assess when datasets are large enough for use
+* FiYir: Move all Alchemy sets to the bottom of the set list
+* FiYir: Adjust a few deck suggester parameters to reduce the preference for control decks
+* FiYir: Replace File>Open with File>Read Draft Log, and add File>Read Player.log and File>Open Player.log
+
+===================== RELEASE NOTES 3.30 =====================
+* Fix issue [Bug]: Application does not track taken cards, but can see offered cards in drafts #70
+* Fix issue [Bug]: Application not detecting quick draft #71
+* Fix issue [Bug]: Application stuck at P3 Pick 14 #72
+
+===================== RELEASE NOTES 3.29 =====================
+* BachenbergS added Default Linux Log-File Path #61
+* Fix issue [Bug]: not recognizing quick draft #66 (Log formatting updated)
+
+===================== RELEASE NOTES 3.28 =====================
+* FiYir removed the obsolete Bayesian Average setting
+* FiYir ensured that fields are blank (instead of showing 0.0 or NA) in the main window, taken cards window, and card popup when 17Lands data is unavailable
+
+===================== RELEASE NOTES 3.27 =====================
+* FiYir addressed issue around sealed deck pools
+
+===================== RELEASE NOTES 3.26 =====================
+* FiYir Fixed issue [Bug]: OTJ ArenaDirect is detected as MH3 ArenaDirect and no picks are detected #42
+
+===================== RELEASE NOTES 3.25 =====================
+* FiYir released feature: Dataset Pre-Download Check #38
+
+===================== RELEASE NOTES 3.24 =====================
+* FiYir released feature: Card Popup Archetype Stats #32: Add archetype stats to card popup window
+
+===================== RELEASE NOTES 3.23 =====================
+* FiYir Fixed issue [Bug]: Incorrect Arena Cube Start Date #30: The app now sets the correct start date for the Arena Cube.
+* FiYir Fixed issue [Bug]: App Uses Obsolete Datasets #29: Old datasets no longer block new datasets.
+
+===================== RELEASE NOTES 3.22 =====================
+* Update Arena Direct event
+
+===================== RELEASE NOTES 3.21 =====================
+* FiYir added support for the Arena Open, Qualifier, and Arena Direct events
+
+===================== RELEASE NOTES 3.20 =====================
+* Update README with more information on how P1P1 solution is implemented
+* Add P1P1 OCR setting to allow users to disable sending information to third parties
+* Add Save P1P1 Screenshots to allow users to see what data is being sent to third parties
+
+===================== RELEASE NOTES 3.19 =====================
+* FiYir & unrealities implemented a fix for P1P1 pack cards not being displayed. If you press the Refresh button, a screenshot will be sent to a third-party tool to determine the cards in the pack.
+* This experimental feature may be unstable or removed without notice.
+
+===================== RELEASE NOTES 3.18 =====================
+* FiYir added Windows executable build to help avoid flagged windows builds
+* leCoq42 added a user group drop-down and column to the 'Add Sets' window
+* leCoq42 modified the FileExtractor code so that it includes the user group in the 17Lands card data and deck color data endpoint calls
+* leCoq42 modified the dataset file name so that you can simultaneously store datasets for multiple user groups without overwriting the dataset
+* FiYir modified the dataset search code so that the old datasets are still supported. The old datasets have a user group of 'All'
+* FiYir modified the 'Data Source' options so that you can switch between the different user groups
+
+===================== RELEASE NOTES 3.17 =====================
+* Fix Taken Cards not displaying
+* FiYir added overlay.py test to avoid similar error in the future
+* FiYir replaced some module imports with function-level imports to simplify mocking
+* FiYir updated the metrics calculation functions to use built-in functions from the Statistics library, relocating the previous code to a new 'set_metrics' module.
+* FiYir fixed a bug where duplicate cards were mistakenly included in the metrics computation; now, only unique cards are considered.
+* FiYir added a method in the new 'SetMetrics' class to compute card percentiles using a normal distribution
+
+===================== RELEASE NOTES 3.16 =====================
+* Fix broken Windows build
+
+===================== RELEASE NOTES 3.15 =====================
+* Improve autocomplete on Card Compare
+* Add Git issues
+* Re-Added Wheel Display Option
+
+===================== RELEASE NOTES 3.14 =====================
+* Huge Improvements by FiYir && Truth-
+* FiYir added support for the new log events from the recent Arena update. My approach to this issue was a bit different from yours, and I decided to try to make the change backward compatible and potentially future-proof. WOTC has reverted changes in the past, so it's possible that they might revert these ones. I verified my changes for premier, quick, and traditional drafts (see tests/test_card_logic.py), but not sealed.
+* FiYir fixed the Chrome plugin, which had stopped working a while ago. I also modified the UI change a bit to make it clearer that this is not part of the 17Lands site.
+* FiYir fixed some broken application code related to tier comments and split cards.
+* FiYir changed the limited_sets code so that when you download a set, you also download the bonus sheet, special guest, list, etc. This was an existing feature in the original project that I believe was used for downloading cube datasets. I just made the change for all of the sets. If you delete your old Temp/temp_set_list file, the app will create a new one with the modified set codes.
+* FiYir refactored the code so that the latest versions of PIL and Pydantic are supported.
+* FiYir added GitHub workflows for running the pytest test cases whenever a pull request is created. It includes workflows for Windows, macOS, and Ubuntu.
+* Truth- addressed an issue with the original tool where it wouldn't download card data if the ALSA or ATA values were null (below the confidence threshold).
+* Truth- Replaced the old card compare autocomplete with a custom version. You now use the up and down arrow keys to cycle through matches.
+
+===================== RELEASE NOTES 3.13 =====================
+* Add recent bonus sheet sets (WOE, OTJ)
+
+===================== RELEASE NOTES 3.12 =====================
+* Re-added code for QuickDraft that was unnecessarily modified
+
+===================== RELEASE NOTES 3.11 =====================
+* Forked as previous owner has archived the repo
+* Updated to Python 3.12
+* OTJ Alchemy release on May 7, 2024 moved "Payload" to top-level
+
+===================== RELEASE NOTES 3.10 =====================
+* Application updates will no longer reset the settings
+* The visibility of the Current Draft display, Deck Source options, Deck filter options, and Refresh button can now be toggled in the settings menu
+* Columns 2-7 are now fully configurable
+* Table columns can no longer be resized manually
+* Opening duplicate windows is no longer possible
+* Colorless cards now have their own row color
+* Fixed a bug that caused incorrect row colors with the color identity setting
+* Fixed a seald card pool duplication bug
+* Added an About window (Help->About) that has links to Github and 17Lands
+* The Taken Cards window will automatically open when a sealed event is detected
+* Replaced the "Powered by 17Lands" label with a label displaying the Github project name
+* Modified the debug log entries
+* Adjusting the grades so that the mean is now a weak C+ instead of a C
+
+===================== RELEASE NOTES 3.09 =====================
+* Bug Fix: Fixed a Scryfall data parsing affected double-sided cards (Issue #30)
+
+* Modifications: 
+** Linked the MOM and MUL sets to the MAT set (Issue #31)
+** Updated the sort order of identifiable sets in the set list to match 17Lands (MAT will be listed after MOM)
+** Improved troubleshooting by displaying the Arena ID for unidentified cards
+
+* New Feature: Added the ability to create a temporary set list file at ./Temp/temp_set_list.json for filling in missing sets
+
+===================== RELEASE NOTES 3.08 =====================
+* Bug Fix: Fixed a Chrome extension issue that was preventing users from downloading their own tier lists while logged in to 17Lands (Issue #28)
+
+* Modifications:
+** Added retries to the set list download process
+** Users can now set the Arena log path through File->Open instead of using the -f CLI argument
+** The application will now store the Arena log path in the config.json file
+** Renamed the Chrome extension to "17Lands Tier Scraper"
+
+* New Feature: The Chrome extension will now download the tier list comments
+** The comments are listed at the bottom of the card tooltip
+** An asterisk next to the tier list grade will denote a card comment (*C+)
+
+===================== RELEASE NOTES 3.07 =====================
+* Bug Fix: Fixing an Arena database parsing issue
+* Modified Feature: Linking the Shadows of the Past set to the Shadows over Innistrad Remastered set
+* Modified Feature: Making some adjustments to the UI elements
+
+===================== RELEASE NOTES 3.06 =====================
+* Bug Fixes:
+** Some of the meld cards were missing from the BRO set
+** Opening the Deck Suggester would freeze the application if the user had a diverse card pool
+** The CMC was calculated incorrectly for some of the BRO artifact creatures
+
+* Modified Feature: Modified the auto filter logic
+
+===================== RELEASE NOTES 3.05 =====================
+* Bug Fix: Removing problematic sections from the TierScraper17Lands manifest
+
+* Modified Feature: For all of the tables, the application will now retain the table sort order between picks and UI changes (enhancement #19)
+
+* Modified Feature: The application will now synchronize the Scryfall set list with the 17Lands set list
+
+* Modified Feature: Changed Games Not Drawn Win Rate to Games Not Seen Win Rate
+===================== RELEASE NOTES 3.04 =====================
+* Bug Fixes:
+** Fixing the application auto-update feature - users will need to re-download the executable
+** Fixing the DMU/Y23DMU set download issues by adding support for the local Arena files that were modified in a recent Arena update
+** Modifying the Scryfall API processing logic (backup)
+** Fixing an image display issue with the card tooltips
+
+* New Feature: Added a UI Size setting in the settings menu
+
+===================== RELEASE NOTES 3.03 =====================
+* Bug Fix: The application will use the UTF-8 codec when reading the Arena player.log file (Issue #17)
+
+* Bug Fix: Made some changes to address some text color and scaling issues (Issue #15)
+** The dark mode theme is disabled for Mac users
+** The config.json file has a scale_factor field that can be used to scale the application
+
+* Data Update: Added Games Drawn Win Rate and Number of Games Drawn data
+
+* Modified Feature: The application will now set the row colors based on a card's mana cost, ignoring kicker and ability costs (Issue #16)
+
+* Modified Feature: The Auto filter is now capable of identifying decks with 3-colors
+
+* New Feature: The new Enable Color Identity setting can be used to toggle a card's listed colors
+** Enabling the setting will display a card's mana cost AND ability/kicker costs
+
+* New Feature: The Taken Cards window now has card-type filters (i.e., Creature, Lands, Instants/Sorceries, and Other)
+
+===================== RELEASE NOTES 3.02 =====================
+* Data Update: Added support for the Arena Cube
+** The set option is located at the bottom of the set list
+
+* New Feature: Added card grades (see the Win Rate Grades section of the README)
+
+* New Feature: Chrome extension now adds a label text box to the tier list page
+
+* Modified Feature: Modified the card rating calculation (see the Win Rate Ratings section of the README)
+
+* Modified Feature: The set list will no longer contain unreleased sets
+** The application will automatically list a set once it's released
+
+* Modified Feature: Tier list data will now be displayed as grades
+
+* Modified Features: Removed/disabled the curve and color bonuses
+** These features will be readded once they are modified to function with the new ratings/grades/win rate options
+
+* UI Updates:
+** The tooltips will no longer appear outside of the bounds of the screen
+** The Set Data window will now display the status during the build process
+** Fixed various table formatting issues
+
+===================== RELEASE NOTES 3.01 =====================
+* Bug Fix: The application can now re-detect an active draft if Arena is closed mid-draft (Issue #13)
+
+* Bug Fix: The Copy to Clipboard buttons will now work with Arena and Sealeddeck.tech
+
+* Data Update: The application now supports the remastered Amonkhet and Kaladesh sets
+
+* Data Update: The application will now collect all of the fields listed on the www.17lands.com/card_ratings page (excluding rarity,# Seen, and #Picked)
+
+* UI Updates: 
+** The application is now using a dark mode theme
+** The tooltip has been reworked to better display the card data
+** The row colors can now be toggled using the Enable Card Colors setting (default: disabled)
+** The Taken table layout has been reworked
+** The ratings feature can now be toggled using the Win Rate Format setting (default: percentage)
+** Three configurable columns have been added (default: disabled)
+** The Deck Filter drop-down has been detached from the column drop-downs and now sets the filter value for all of the fields in a table (no more All GIHWR or All ALSA)
+** Tables can be sorted by clicking on the column header
+
+===================== RELEASE NOTES 2.96 =====================
+* Bug Fix: The application will now support back-to-back drafts
+
+* Modified Feature: The application can now parse the reformatted card files that were modified in a recent Arena update
+** The application can now build data sets using local files instead of Scryfall data
+
+===================== RELEASE NOTES 2.95 =====================
+* Bug Fix: The application can now read tier list files created using the Chrome extension (Issue #12)
+** The downloaded tier lists need to be placed in the new Tier folder
+
+* Bug Fix: The deck suggester will now correctly calculate the deck ratings
+
+* New Feature: Added support for multiple tier lists per set (Issue #12)
+** Tier lists will appear as Tier# (<Label>) in the drop-downs (i.e., Tier0 (Test), Tier1 (HBG), etc.).
+
+* Modified Feature: The tier scraper extension will now automatically populate the Set and Label fields with data collected from the tier list page
+** Follow the revised steps in ./Tools/TierScraper17Lands/README.txt
+
+* Documentation Change: Added a Tier List Ratings note to the Card Logic section of the README
+
+===================== RELEASE NOTES 2.91 =====================
+* New Feature: For the filter drop-downs, users can use the Deck Filter Format setting to switch between the color combinations (i.e., UB, BG, WUG, etc.) and the guild/shard/clan names (i.e., Dimir, Golgari, Bant, etc.)
+
+* Modified Feature: The application will store the card localization data in a temp file to speed up the set download process
+
+* Modified Feature: The card tooltips will no longer list the names of the other card sides
+** The tooltip will display all of the images for double-sided cards, but not for Specialize cards 
+
+* Bug Fix: The application will no longer list the Crimson Vow set as Double Feature
+
+* Documentation Change: Added a Card Ratings note to the Card Logic section of the README. This note summarizes how the card ratings are calculated
+
+===================== RELEASE NOTES 2.87 =====================
+* New Feature: Added support for Alchemy drafts
+** Alchemy sets added to the set drop-down in the Set Data window.
+** The Alchemy drafts will be listed as Y##<base set> (e.g. Y22SNC).
+** For Alchemy drafts, the application will list the Alchemy data sets, denoted by a [Y##] prefix, and the base data sets.
+
+===================== RELEASE NOTES 2.86 =====================
+* Modified Feature: The application will now build data sets that include alternate card art, Alchemy cards, and cards with Alchemy revisions.
+** The tooltips for the alternate art cards will display the original card art.
+
+* Modified Feature: Added support for non-standard drafts (draft events, competitions, etc.)
+** The application will parse all non-standard drafts as premier drafts, excluding the MWM bot draft.
+
+* Modified Feature: The application will primarily build data sets using local files instead of Scryfall.
+** Scryfall will be used as a backup in case there is an issue with the local files.
+
+* UI Change: Added a window to remind users that 17Lands only updates their card data once a day.
+
+===================== RELEASE NOTES 2.85 =====================
+* Bug Fix: The downloaded sets will now be visible in the Set Data window
+
+* Bug Fix: The Bayesian average feature will now work with the "ALL GIHWR" filter
+
+* Modified Feature: Debug logs will now use UTC timestamps
+
+* Modified Feature: Disabling the Draft Log by default
+
+===================== RELEASE NOTES 2.84 =====================
+* New Feature: Data Source drop-down for selecting data set (i.e. Premier, Quick, Sealed, etc.)
+
+* New Feature: Enable/Disable draft log (Settings menu option)
+
+* New Feature: Enable/Disable Bayesian average (Settings menu option)
+
+* New Feature: Data set now includes Number of Games In Hand (GIH) * visible in card tooltip
+
+* Modified Feature: The file search logic will now search multiple drives (Issue #7)
+
+* UI Changes:
+** Settings menu option taken out of Data drop-down
+** Application is no longer resizable 
+
+* File Changes: 
+** Sets will now be stored in the Sets folder
+** Debug logs will be stored in the Debug folder
+
+===================== RELEASE NOTES 2.83 =====================
+* New Feature: If Scryfall doesn't have the card Arena IDs, then the tool will retrieve the IDs from local Arena files
+
+* Modified Feature: The tool will fill out incomplete data sets from 17Lands (Issue #6)
+
+* Modified Feature: Scrollbar added to Set Data window
+
+===================== RELEASE NOTES 2.82 =====================
+* New Feature: Using Bayesian average for small data sets
+
+* New Feature: Added support for sealed (BO1) and traditional sealed (BO3)
+
+* Modified Feature: Disabling the color bonus and curve bonus by default
+
+* Note: When downloading the Streets of New Capenna set, use ID 80152 for the first couple of weeks
+
+===================== RELEASE NOTES 2.81 =====================
+* Modified Feature: Auto Highest Rated * the auto filter will now display the highest rated pick rating of the two leading color pairs
+** Replaces the questionably useful Auto Averaging feature that averaged the ratings of the two leading color pairs
+** Addresses an issue where highly rated cards that matched one color pair were listed below mediocre cards that matched the pivot color
+    
+* New UI Feature: Data Source Field * there is now a data source field on the main window that lists the source of the card data (i.e. QuickDraft, PremierDraft, TradDraft data files)
+** If the user is playing a NEO premier draft, then the application will pull data from NEO_PremierDraft_Data.json and list "PremierDraft" as the data source
+
+* New Feature: Data file verification * the application will check to see if the data file (e.g. NEO_PremierDraft_Data.json) is structuraly valid.
+** If a file isn't valid, then it won't be listed in the Set Data window
+
+===================== RELEASE NOTES 2.80 =====================
+* New Feature: Auto Averaging * see the card logic and settings sections of the README
+
+* New Feature: Color Bonus * see the card logic and settings sections of the README
+
+* New Feature: Curve Bonus * see the card logic and settings sections of the README
+
+* Modified Feature: Moved the 17Lands notice information to the main window
+
+* Modified Feature: Changed the minimize/maximize hotkey from Ctrl+F to Ctrl+G and added a note to the main window
+
+* Bug Fixes:
+** The auto filter logic has been reworked (Issue #3) * see the card logic section of the README
+** The tool will no longer fail to calculate pick ratings due to incomplete 17Lands data (Issue#2 a continuation of Issue#1)
+** The tool will not generate an extra log file while drafting
+
+===================== RELEASE NOTES 2.73 =====================
+* New Feature: Added settings options for hiding the missing cards and deck stats tables
+
+* New Feature: Settings will be saved between restarts
+
+* Modified Feature: After pick 15, the auto filter will now remain at "All Decks" until there's a clear leading color pair
+
+* Bug Fixes:
+** Clicking on the reset config drop-down option will no longer prevent the deck suggester from working
+** * Reset config has been replaced with a default settings button in the settings window
+** Picking basic lands will no longer prevent the deck suggester from suggesting decks with non-basic lands
+** Picking basic lands will no longer prevent the taken cards window from listing all of the taken cards
+** Incomplete 17Lands data will no longer result in inaccurate pick ratings (Issue #1) 
+
+===================== RELEASE NOTES 2.72 =====================
+
+* Modified Feature: Added input checks and retry logic to the download set process
+
+* Bug Fix: The application now supports the Kamigawa traditional draft
+
+* Note: When downloading the Kamigawa set, ID 79418 is no longer required (use the default 0)
+
+===================== RELEASE NOTES 2.71 =====================
+
+* New Feature: Added support for MWM bot draft
+
+* Bug Fix: Restarting is no longer required when playing consecutive drafts
+
+===================== RELEASE NOTES 2.70 =====================
+
+* New Feature: Tier List 
+** Follow the instructions in Tools/TierScraper17Lands/README.txt
+** Added a Tier drop-down option to the filters
+** Downloading the set is still required
+
+* UI Change: Added 17Lands startup and embargo notices so that the application is compliant with the 17Lands usage guidelines (https://www.17lands.com/usage_guidelines)
+
+* Feature Note: Use ID 79418 when downloading the Kamigawa: Neon Dynasty set
+
+* Bug Fix: The application will no longer generate excessive log entries after a quick draft has ended
+
+* Bug Fix: The application will no longer get stuck if the draft includes basic lands

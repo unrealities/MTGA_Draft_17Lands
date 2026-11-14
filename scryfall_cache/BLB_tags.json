@@ -1,0 +1,631 @@
+{
+  "Agate Assault": [
+    "removal"
+  ],
+  "A-Heartfire Hero": [
+    "removal"
+  ],
+  "Banishing Light": [
+    "removal"
+  ],
+  "Blooming Blast": [
+    "removal"
+  ],
+  "Bumbleflower's Sharepot": [
+    "removal",
+    "lifegain"
+  ],
+  "Calamitous Tide": [
+    "removal"
+  ],
+  "Charmed Sleep": [
+    "removal"
+  ],
+  "Conduct Electricity": [
+    "removal"
+  ],
+  "Consumed by Greed": [
+    "removal",
+    "card_advantage"
+  ],
+  "Coruscation Mage": [
+    "removal"
+  ],
+  "Dazzling Denial": [
+    "removal"
+  ],
+  "Dire Downdraft": [
+    "removal"
+  ],
+  "Downwind Ambusher": [
+    "removal",
+    "combat_trick"
+  ],
+  "Dragonhawk, Fate's Tempest": [
+    "removal",
+    "evasion"
+  ],
+  "Driftgloom Coyote": [
+    "removal"
+  ],
+  "Early Winter": [
+    "removal"
+  ],
+  "Feed the Cycle": [
+    "removal"
+  ],
+  "Fell": [
+    "removal"
+  ],
+  "Flame Lash": [
+    "removal"
+  ],
+  "Gev, Scaled Scorch": [
+    "removal"
+  ],
+  "Heartfire Hero": [
+    "removal"
+  ],
+  "Hearthborn Battler": [
+    "removal"
+  ],
+  "Hired Claw": [
+    "removal"
+  ],
+  "Hivespine Wolverine": [
+    "removal"
+  ],
+  "Hunter's Talent": [
+    "removal"
+  ],
+  "Into the Flood Maw": [
+    "removal"
+  ],
+  "Iridescent Vinelasher": [
+    "removal"
+  ],
+  "Kindlespark Duo": [
+    "removal"
+  ],
+  "Long River's Pull": [
+    "removal"
+  ],
+  "Longstalk Brawl": [
+    "removal"
+  ],
+  "Nettle Guard": [
+    "removal"
+  ],
+  "Nocturnal Hunger": [
+    "removal"
+  ],
+  "Parting Gust": [
+    "removal",
+    "protection"
+  ],
+  "Pawpatch Formation": [
+    "removal",
+    "card_advantage",
+    "lifegain"
+  ],
+  "Playful Shove": [
+    "removal",
+    "card_advantage"
+  ],
+  "Polliwallop": [
+    "removal"
+  ],
+  "Rabid Bite": [
+    "removal"
+  ],
+  "Rabid Gnaw": [
+    "removal",
+    "combat_trick"
+  ],
+  "Repel Calamity": [
+    "removal"
+  ],
+  "Rottenmouth Viper": [
+    "removal"
+  ],
+  "Run Away Together": [
+    "removal"
+  ],
+  "Savor": [
+    "removal",
+    "combat_trick",
+    "lifegain"
+  ],
+  "Scrapshooter": [
+    "removal"
+  ],
+  "Season of Gathering": [
+    "removal"
+  ],
+  "Season of Loss": [
+    "removal"
+  ],
+  "Season of the Bold": [
+    "removal",
+    "fixing_ramp"
+  ],
+  "Season of the Burrow": [
+    "removal",
+    "card_advantage"
+  ],
+  "Season of Weaving": [
+    "removal"
+  ],
+  "Sonar Strike": [
+    "removal",
+    "lifegain"
+  ],
+  "Spellgyre": [
+    "removal",
+    "card_advantage"
+  ],
+  "Starfall Invocation": [
+    "removal",
+    "card_advantage"
+  ],
+  "Starseer Mentor": [
+    "removal",
+    "evasion"
+  ],
+  "Steampath Charger": [
+    "removal"
+  ],
+  "Sugar Coat": [
+    "removal"
+  ],
+  "Sunspine Lynx": [
+    "removal"
+  ],
+  "Take Out the Trash": [
+    "removal"
+  ],
+  "Teapot Slinger": [
+    "removal",
+    "evasion"
+  ],
+  "Thornplate Intimidator": [
+    "removal"
+  ],
+  "Tidecaller Mentor": [
+    "removal",
+    "evasion"
+  ],
+  "Wear Down": [
+    "removal"
+  ],
+  "Wick's Patrol": [
+    "removal"
+  ],
+  "Wick, the Whorled Mind": [
+    "removal"
+  ],
+  "Wildfire Howl": [
+    "removal"
+  ],
+  "Baylen, the Haymaker": [
+    "fixing_ramp"
+  ],
+  "Beza, the Bounding Spring": [
+    "fixing_ramp",
+    "lifegain"
+  ],
+  "Brazen Collector": [
+    "fixing_ramp"
+  ],
+  "Clement, the Worrywort": [
+    "fixing_ramp"
+  ],
+  "Clifftop Lookout": [
+    "fixing_ramp"
+  ],
+  "Fabled Passage": [
+    "fixing_ramp",
+    "card_advantage"
+  ],
+  "Fecund Greenshell": [
+    "fixing_ramp"
+  ],
+  "Fountainport": [
+    "fixing_ramp",
+    "mana_sink"
+  ],
+  "Heaped Harvest": [
+    "fixing_ramp",
+    "card_advantage",
+    "lifegain"
+  ],
+  "Helga, Skittish Seer": [
+    "fixing_ramp",
+    "lifegain"
+  ],
+  "Hugs, Grisly Guardian": [
+    "fixing_ramp",
+    "evasion"
+  ],
+  "Lumra, Bellow of the Woods": [
+    "fixing_ramp",
+    "card_advantage"
+  ],
+  "Muerra, Trash Tactician": [
+    "fixing_ramp",
+    "lifegain"
+  ],
+  "Patchwork Banner": [
+    "fixing_ramp"
+  ],
+  "Tender Wildguide": [
+    "fixing_ramp"
+  ],
+  "Thornvault Forager": [
+    "fixing_ramp",
+    "card_advantage"
+  ],
+  "Three Tree City": [
+    "fixing_ramp"
+  ],
+  "Three Tree Rootweaver": [
+    "fixing_ramp"
+  ],
+  "Wandertale Mentor": [
+    "fixing_ramp"
+  ],
+  "Barkform Harvester": [
+    "card_advantage"
+  ],
+  "Bonebind Orator": [
+    "card_advantage"
+  ],
+  "Builder's Talent": [
+    "card_advantage"
+  ],
+  "Coiling Rebirth": [
+    "card_advantage"
+  ],
+  "Curious Forager": [
+    "card_advantage"
+  ],
+  "Daring Waverider": [
+    "card_advantage"
+  ],
+  "Dewdrop Cure": [
+    "card_advantage"
+  ],
+  "Diresight": [
+    "card_advantage"
+  ],
+  "Feather of Flight": [
+    "card_advantage",
+    "combat_trick"
+  ],
+  "Festival of Embers": [
+    "card_advantage",
+    "hate"
+  ],
+  "Fountainport Bell": [
+    "card_advantage"
+  ],
+  "Glarb, Calamity's Augur": [
+    "card_advantage"
+  ],
+  "Gossip's Talent": [
+    "card_advantage",
+    "protection"
+  ],
+  "Hazel's Nocturne": [
+    "card_advantage",
+    "lifegain"
+  ],
+  "Hidden Grotto": [
+    "card_advantage"
+  ],
+  "Jackdaw Savior": [
+    "card_advantage",
+    "evasion"
+  ],
+  "Kastral, the Windcrested": [
+    "card_advantage",
+    "evasion"
+  ],
+  "Lightshell Duo": [
+    "card_advantage"
+  ],
+  "Lilypad Village": [
+    "card_advantage"
+  ],
+  "Might of the Meek": [
+    "card_advantage",
+    "combat_trick"
+  ],
+  "Mind Drill Assailant": [
+    "card_advantage",
+    "mana_sink"
+  ],
+  "Mindwhisker": [
+    "card_advantage"
+  ],
+  "Mudflat Village": [
+    "card_advantage"
+  ],
+  "Osteomancer Adept": [
+    "card_advantage"
+  ],
+  "Peerless Recycling": [
+    "card_advantage"
+  ],
+  "Persistent Marshstalker": [
+    "card_advantage"
+  ],
+  "Pond Prophet": [
+    "card_advantage"
+  ],
+  "Psychic Whorl": [
+    "card_advantage"
+  ],
+  "Ruthless Negotiation": [
+    "card_advantage"
+  ],
+  "Scavenger's Talent": [
+    "card_advantage",
+    "lifegain"
+  ],
+  "Splash Portal": [
+    "card_advantage",
+    "protection"
+  ],
+  "Starlit Soothsayer": [
+    "card_advantage",
+    "evasion"
+  ],
+  "Stormchaser's Talent": [
+    "card_advantage"
+  ],
+  "Treetop Sentries": [
+    "card_advantage"
+  ],
+  "Wishing Well": [
+    "card_advantage"
+  ],
+  "Zoraline, Cosmos Caller": [
+    "card_advantage",
+    "evasion",
+    "lifegain"
+  ],
+  "Azure Beastbinder": [
+    "evasion"
+  ],
+  "Burrowguard Mentor": [
+    "evasion"
+  ],
+  "Byway Barterer": [
+    "evasion"
+  ],
+  "Camellia, the Seedmiser": [
+    "evasion"
+  ],
+  "Cindering Cutthroat": [
+    "evasion"
+  ],
+  "Darkstar Augur": [
+    "evasion"
+  ],
+  "Essence Channeler": [
+    "evasion"
+  ],
+  "Finch Formation": [
+    "evasion"
+  ],
+  "Frilled Sparkshooter": [
+    "evasion"
+  ],
+  "Galewind Moose": [
+    "evasion",
+    "combat_trick"
+  ],
+  "Glidedive Duo": [
+    "evasion",
+    "lifegain"
+  ],
+  "Honored Dreyleader": [
+    "evasion"
+  ],
+  "Huskburster Swarm": [
+    "evasion"
+  ],
+  "Junkblade Bruiser": [
+    "evasion"
+  ],
+  "Knightfisher": [
+    "evasion"
+  ],
+  "Lifecreed Duo": [
+    "evasion",
+    "lifegain"
+  ],
+  "Maha, Its Feathers Night": [
+    "evasion"
+  ],
+  "Mockingbird": [
+    "evasion"
+  ],
+  "Moonrise Cleric": [
+    "evasion",
+    "lifegain"
+  ],
+  "Moonstone Harbinger": [
+    "evasion"
+  ],
+  "Nightwhorl Hermit": [
+    "evasion"
+  ],
+  "Pawpatch Recruit": [
+    "evasion"
+  ],
+  "Pileated Provisioner": [
+    "evasion"
+  ],
+  "Plumecreed Escort": [
+    "evasion"
+  ],
+  "Plumecreed Mentor": [
+    "evasion"
+  ],
+  "Quaketusk Boar": [
+    "evasion"
+  ],
+  "Ravine Raider": [
+    "evasion",
+    "mana_sink"
+  ],
+  "Reptilian Recruiter": [
+    "evasion"
+  ],
+  "Roughshod Duo": [
+    "evasion"
+  ],
+  "Rust-Shield Rampager": [
+    "evasion"
+  ],
+  "Salvation Swan": [
+    "evasion",
+    "protection"
+  ],
+  "Seedpod Squire": [
+    "evasion"
+  ],
+  "Serra Redeemer": [
+    "evasion"
+  ],
+  "Shoreline Looter": [
+    "evasion"
+  ],
+  "Shrike Force": [
+    "evasion"
+  ],
+  "Skyskipper Duo": [
+    "evasion",
+    "protection"
+  ],
+  "Star Charter": [
+    "evasion"
+  ],
+  "Starscape Cleric": [
+    "evasion"
+  ],
+  "The Infamous Cruelclaw": [
+    "evasion"
+  ],
+  "Thought-Stalker Warlock": [
+    "evasion"
+  ],
+  "Valley Mightcaller": [
+    "evasion"
+  ],
+  "Valley Rotcaller": [
+    "evasion",
+    "lifegain"
+  ],
+  "Waterspout Warden": [
+    "evasion"
+  ],
+  "Wax-Wane Witness": [
+    "evasion"
+  ],
+  "Crumb and Get It": [
+    "combat_trick"
+  ],
+  "Dawn's Truce": [
+    "combat_trick"
+  ],
+  "Giant Growth": [
+    "combat_trick"
+  ],
+  "High Stride": [
+    "combat_trick"
+  ],
+  "Mabel's Mettle": [
+    "combat_trick"
+  ],
+  "Overprotect": [
+    "combat_trick"
+  ],
+  "Rabbit Response": [
+    "combat_trick"
+  ],
+  "Sazacap's Brew": [
+    "combat_trick"
+  ],
+  "Scales of Shale": [
+    "combat_trick",
+    "lifegain"
+  ],
+  "Shore Up": [
+    "combat_trick"
+  ],
+  "Valley Rally": [
+    "combat_trick"
+  ],
+  "Flamecache Gecko": [
+    "mana_sink"
+  ],
+  "Keen-Eyed Curator": [
+    "mana_sink",
+    "hate"
+  ],
+  "Lilysplash Mentor": [
+    "mana_sink",
+    "protection"
+  ],
+  "Lunar Convocation": [
+    "mana_sink"
+  ],
+  "Warren Elder": [
+    "mana_sink"
+  ],
+  "Agate-Blade Assassin": [
+    "lifegain"
+  ],
+  "Bakersbane Duo": [
+    "lifegain"
+  ],
+  "Blossoming Sands": [
+    "lifegain"
+  ],
+  "Brightblade Stoat": [
+    "lifegain"
+  ],
+  "Cache Grab": [
+    "lifegain"
+  ],
+  "Carrot Cake": [
+    "lifegain"
+  ],
+  "For the Common Good": [
+    "lifegain"
+  ],
+  "Sinister Monolith": [
+    "lifegain"
+  ],
+  "Sunshower Druid": [
+    "lifegain"
+  ],
+  "Swiftwater Cliffs": [
+    "lifegain"
+  ],
+  "Vinereap Mentor": [
+    "lifegain"
+  ],
+  "Ygra, Eater of All": [
+    "lifegain"
+  ],
+  "Long River Lurker": [
+    "protection"
+  ],
+  "Vren, the Relentless": [
+    "hate"
+  ]
+}
