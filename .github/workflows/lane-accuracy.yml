@@ -17,8 +17,6 @@ on:
       salt:
         description: Any text; changes which drafts are sampled
         default: ""
-  push:
-    branches: [run/lane-accuracy]
 
 permissions:
   contents: read
