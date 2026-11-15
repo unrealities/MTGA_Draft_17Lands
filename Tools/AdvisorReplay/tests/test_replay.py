@@ -48,6 +48,25 @@ def test_ranks_and_regret_of_each_pick(app, names):
     assert result["deck_score"] is None
 
 
+def test_pool_is_in_pick_order():
+    pool = replay.in_pick_order([], ["B"])
+    pool = replay.in_pick_order(pool, ["A", "B"])
+    # No row for the next pick: both new cards go after the known ones.
+    assert replay.in_pick_order(pool, ["A", "A", "B", "C"]) == ["B", "A", "A", "C"]
+
+
+def test_advisor_sees_the_pool_in_pick_order(app, names, monkeypatch):
+    seen = []
+    monkeypatch.setattr(
+        app, "advise", lambda pack, pool, *a: seen.append([c["name"] for c in pool]) or {}
+    )
+    d = draft(names[::-1], 4)
+    for pick in d["picks"]:
+        pick[4] = sorted(pick[4])  # as the dump lists it
+    replay.replay_draft(app, d, replay.Counter())
+    assert seen[-1] == [p[2] for p in d["picks"][:3]]
+
+
 def test_scores_a_full_pool(app, names):
     result = replay.replay_draft(app, draft(names, 30), replay.Counter())
     assert result["deck_score"] > 0

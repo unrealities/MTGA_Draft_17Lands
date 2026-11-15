@@ -137,10 +137,27 @@ def regret(scores, name):
     return (max(scores.values()) - scores[name]) / sd
 
 
+def in_pick_order(earlier, pool_names):
+    """pool_names with the cards of earlier first, in that order, then the rest.
+
+    The dump lists a pool by card, not by pick. The app holds it in pick order,
+    and the advisor weights later picks more. Passing each pick's result as the
+    next pick's earlier keeps the order, with no need for a row for every pick.
+    """
+    left = Counter(pool_names)
+    kept = []
+    for name in earlier:
+        if left[name] > 0:
+            left[name] -= 1
+            kept.append(name)
+    return kept + list(left.elements())
+
+
 def replay_draft(app, draft, skipped):
     """The draft's scored picks and final pool scores."""
-    picks = []
-    for pack_no, pick_no, taken, pack_names, pool_names in draft["picks"]:
+    picks, pool_names = [], []
+    for pack_no, pick_no, taken, pack_names, by_card in draft["picks"]:
+        pool_names = in_pick_order(pool_names, by_card)
         pack, pool = app.cards(pack_names), app.cards(pool_names)
         taken = app.cards([taken])
         if not taken:
@@ -167,7 +184,7 @@ def replay_draft(app, draft, skipped):
 
     deck_score = pool_gihwr = None
     if draft["picks"]:
-        _, _, taken, _, pool_names = draft["picks"][-1]
+        taken = draft["picks"][-1][2]
         final_pool = app.cards(pool_names + [taken])
         if len(final_pool) >= DECK_SIZE:
             deck_score = round(app.deck_score(final_pool), 4)
