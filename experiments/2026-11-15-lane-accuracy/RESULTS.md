@@ -73,8 +73,8 @@ against the sign in one set of ten (FRA, +0.23).
   artifacts with the fixed script.
 - Its "Left out" line lists 12 picks where two cards joined the pool at once. They are
   counted, with the order of those two guessed.
-- The eight sets in both runs changed by at most 0.01 between them, from one more FRA
-  and one more MSH draft.
+- The eight sets in both runs moved by under 0.1 between them, from the few picks the
+  first run skipped and two more drafts.
 
 ## What it can't show
 
