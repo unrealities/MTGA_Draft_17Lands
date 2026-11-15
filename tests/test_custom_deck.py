@@ -30,7 +30,7 @@ def test_auto_lands_counts_stacked_copies(nonbasic_count, expected_basics):
         return [{"name": "Forest", "types": ["Land", "Basic"], "count": 1}
                 for _ in range(forced_count)]
 
-    with patch("src.advisor.mana_base.brute_force_mana_base", side_effect=make_basics) as optimize:
+    with patch("src.ui.windows.custom_deck.calculate_dynamic_mana_base", side_effect=make_basics) as optimize:
         CustomDeckPanel._run_auto_lands_task(panel)
 
     panel._show_sim_error.assert_not_called()
