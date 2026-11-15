@@ -33,7 +33,6 @@ GLOBAL_DECK_CACHE = {}
 # is still shown (the user always wants a non-soupy option) but left in place so
 # it doesn't masquerade as the best deck.
 SAFE_DECK_PROMOTE_TO_TOP_GAP = 6.0
-SAFE_DECK_PROMOTE_TO_SECOND_GAP = 20.0
 
 
 def deck_identity_colors(data):
@@ -674,8 +673,6 @@ def suggest_deck(
                 gap = final_list[0][1]["rating"] - updated_safe[1]["rating"]
                 if gap <= SAFE_DECK_PROMOTE_TO_TOP_GAP:
                     final_list.insert(0, final_list.pop(best_safe_idx))
-                elif gap <= SAFE_DECK_PROMOTE_TO_SECOND_GAP and best_safe_idx > 1:
-                    final_list.insert(1, final_list.pop(best_safe_idx))
                 # Otherwise leave it in its natural position: still shown and
                 # labeled, but not masquerading as a top pick.
 
