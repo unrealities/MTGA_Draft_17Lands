@@ -42,6 +42,8 @@ def tally(runs):
     for j, (_, draft) in enumerate(drafts):
         last = {}
         for _, _, size, lanes in draft["picks"]:
+            if not size:  # none of the pool's cards are in the dataset
+                continue
             b = next(i for i, (lo, hi) in enumerate(BANDS) if lo <= size <= hi)
             out["n"][b, j] += 1
             for arm, lane in zip(arms, lanes):
