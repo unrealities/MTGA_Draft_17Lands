@@ -22,7 +22,7 @@ It has two parts that could go:
 One thing came up while writing the tool. The 17Lands dump lists the pool by card, not
 by pick, and `Tools/AdvisorReplay/replay.py` hands it to the advisor in that order. So
 in every advisor replay so far, recency has weighted cards by their column in the dump.
-This tool rebuilds the pool in pick order from the earlier picks.
+This tool rebuilds the pool in pick order from one pick's pool to the next.
 
 ## What runs
 
@@ -93,3 +93,11 @@ Drafters' played colors aren't the best colors for their pool. Many of these dra
 used no advisor, so the lane didn't steer them; for a user who follows the app, a lane
 partly makes itself true. And the measure treats every pick alike, though a wrong lane
 at pick 5 costs less than one at pick 30.
+
+## Amendment, after the first run
+
+The first run left out TLA and TMT whole: their dumps have no row for the first pick, so
+the tool's check of each pool against the cards taken so far failed at every pick. The
+other eight sets lost no picks. The tool now takes the order from the pools themselves,
+which needs no row for any pick, and the run is repeated on all ten sets. The first
+run's report had been read by then; the rules, measures and predictions are unchanged.

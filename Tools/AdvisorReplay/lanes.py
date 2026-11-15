@@ -108,16 +108,24 @@ def played_colors(lines, draft_ids):
 def lanes_of_draft(app, draft, skipped):
     """[pack, pick, cards in the pool, [each arm's lane]] for every pick with a pool."""
     DraftAdvisor = app.DraftAdvisor
-    rows, taken_so_far = [], []
-    for pack_no, pick_no, taken, _, pool_names in draft["picks"]:
-        in_order, taken_so_far = list(taken_so_far), taken_so_far + [taken]
+    rows, in_order = [], []
+    for pack_no, pick_no, _, _, pool_names in draft["picks"]:
         if not pool_names:
             continue
         # The dump lists the pool by card, not by pick; the app holds it in
-        # pick order, which recency needs.
-        if Counter(in_order) != Counter(pool_names):
-            skipped["pool doesn't match the earlier picks"] += 1
-            continue
+        # pick order, which recency needs. Each row's new cards go on the end.
+        # Some dumps (TLA, TMT) have no row for the first pick, so the order
+        # comes from the pools, not from the cards taken.
+        left = Counter(pool_names)
+        kept = []
+        for name in in_order:
+            if left[name] > 0:
+                left[name] -= 1
+                kept.append(name)
+        new = list(left.elements())
+        if len(new) > 1:
+            skipped["picks where 2+ cards joined the pool at once (order guessed)"] += 1
+        in_order = kept + new
         pool, by_column = app.cards(in_order), app.cards(pool_names)
         advisor = DraftAdvisor(app.metrics, pool)
         mean, std = advisor.global_mean, advisor.global_std

@@ -20,12 +20,13 @@ def test_app_arm_matches_the_advisor_at_every_pick(app, names):
     assert any(found[0] for *_, found in rows)
 
 
-def test_pool_out_of_step_with_the_picks_is_skipped(app, names):
-    d = draft(names, 3)
-    d["picks"][2][4] = [names[0], names[5]]
+def test_pool_order_comes_from_the_pools_when_a_pick_has_no_row(app, names):
+    d = draft(names, 4)
+    del d["picks"][1]  # the row after it shows two new cards at once
     skipped = lanes.Counter()
-    assert len(lanes.lanes_of_draft(app, d, skipped)) == 1
-    assert skipped == {"pool doesn't match the earlier picks": 1}
+    rows = lanes.lanes_of_draft(app, d, skipped)
+    assert [size for _, _, size, _ in rows] == [2, 3]
+    assert sum(skipped.values()) == 1
 
 
 def test_played_colors_come_from_the_build_with_most_games():
