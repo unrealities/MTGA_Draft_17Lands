@@ -1190,7 +1190,8 @@ class CustomDeckPanel(ttk.Frame):
 
             total_lands_needed = max(0, 40 - sum(c.get("count", 1) for c in spells))
 
-            # Trim excess non-basics if needed
+            # Trim excess non-basics if needed; the cut copies go to the sideboard
+            cut_lands = []
             if sum(c.get("count", 1) for c in non_basic_lands) > total_lands_needed:
                 non_basic_lands.sort(
                     key=lambda x: float(
@@ -1205,6 +1206,8 @@ class CustomDeckPanel(ttk.Frame):
                     if count > 0:
                         trimmed_lands.append(dict(card, count=count))
                         remaining -= count
+                    if card.get("count", 1) > count:
+                        cut_lands.append(dict(card, count=card.get("count", 1) - count))
                 non_basic_lands = trimmed_lands
 
             needed_basics = max(
@@ -1218,6 +1221,15 @@ class CustomDeckPanel(ttk.Frame):
             def _finalize():
                 # Wipe old basics
                 self.deck_list = spells + non_basic_lands
+
+                for card in cut_lands:
+                    sb_card = next(
+                        (c for c in self.sb_list if c["name"] == card["name"]), None
+                    )
+                    if sb_card:
+                        sb_card["count"] = sb_card.get("count", 1) + card["count"]
+                    else:
+                        self.sb_list.append(card)
 
                 # Append the new ones
                 for basic in basics_to_add:

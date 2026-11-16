@@ -20,6 +20,7 @@ def test_auto_lands_counts_stacked_copies(nonbasic_count, expected_basics):
              if nonbasic_count else [])
     panel = SimpleNamespace(
         deck_list=spells + lands,
+        sb_list=[],
         after=lambda delay, callback: callback(),
         _show_sim_loading=MagicMock(), _show_sim_error=MagicMock(),
         _update_tables=MagicMock(), _render_deck_stats=MagicMock(),
@@ -36,6 +37,34 @@ def test_auto_lands_counts_stacked_copies(nonbasic_count, expected_basics):
     panel._show_sim_error.assert_not_called()
     assert optimize.call_args.kwargs["forced_count"] == expected_basics
     assert sum(c.get("count", 1) for c in panel.deck_list) == 40
+    assert sum(c["count"] for c in panel.sb_list) == max(0, nonbasic_count - 17)
+
+
+def test_auto_lands_moves_trimmed_nonbasics_to_sideboard():
+    from types import SimpleNamespace
+
+    spells = [{"name": f"Spell {i}", "count": 1, "types": ["Creature"],
+               "colors": ["G"], "mana_cost": "{1}{G}", "cmc": 2} for i in range(38)]
+
+    def land(name, wr, count):
+        return {"name": name, "types": ["Land"], "count": count,
+                "deck_colors": {"All Decks": {"gihwr": wr}}}
+
+    panel = SimpleNamespace(
+        deck_list=spells + [land("Dual A", 58.0, 2), land("Dual B", 50.0, 2)],
+        sb_list=[land("Dual B", 50.0, 1)],
+        after=lambda delay, callback: callback(),
+        _show_sim_loading=MagicMock(), _show_sim_error=MagicMock(),
+        _update_tables=MagicMock(), _render_deck_stats=MagicMock(),
+        _update_basics_toolbar=MagicMock(), _run_monte_carlo_task=MagicMock(),
+    )
+
+    with patch("src.ui.windows.custom_deck.calculate_dynamic_mana_base", return_value=[]):
+        CustomDeckPanel._run_auto_lands_task(panel)
+
+    lands = [(c["name"], c["count"]) for c in panel.deck_list if "Land" in c["types"]]
+    assert lands == [("Dual A", 2)]
+    assert [(c["name"], c["count"]) for c in panel.sb_list] == [("Dual B", 3)]
 
 
 class TestCustomDeckPanel:
