@@ -117,6 +117,23 @@ def test_simulator_invalid_deck_size():
     assert result is None
 
 
+def test_simulator_uses_every_card_of_a_larger_deck():
+    """A 45-card deck is simulated whole, so list order can't hide cards."""
+    spells = make_card("Bear", count=28, cmc=2, mana_cost="{1}{G}",
+                       types=["Creature"], colors=["G"])
+    forests = make_card("Forest", count=17, types=["Land"], colors=["G"])
+
+    lands_last = simulate_deck([spells, forests], iterations=4000)
+    lands_first = simulate_deck([forests, spells], iterations=4000)
+    first_forty = simulate_deck(
+        [spells, dict(forests, count=12)], iterations=4000
+    )
+
+    assert lands_last == lands_first
+    # 17 of 45 is 37.8% lands, far more than the 30% of the first 40 cards.
+    assert lands_last["screw_t3"] < first_forty["screw_t3"] - 5
+
+
 def test_parsing_bitmasks_and_flags():
     """Verify that Python dictionaries are correctly translated to Numba-safe NumPy bitmasks."""
     deck = [

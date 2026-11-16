@@ -14,7 +14,8 @@ from numba import njit
 COLOR_BITS = {"W": 1, "U": 2, "B": 4, "R": 8, "G": 16}
 ANY_COLOR = 31  # W|U|B|R|G
 
-# Fixed widths so the arrays can be consumed by the numba kernel.
+# A deck needs at least DECK_SIZE cards; a larger one is simulated whole.
+# The other two are fixed widths so the arrays fit the numba kernel.
 DECK_SIZE = 40
 MAX_PIPS = 8  # colored pips tracked per card (more only occurs on 8+ drops)
 MAX_SOURCES = 16  # lands + ramp seen by turn 4 is at most 7 + 3 = 10
@@ -23,15 +24,15 @@ PIP_PATTERN = re.compile(r"\{(.*?)\}")
 
 
 class DeckArrays(NamedTuple):
-    is_land: np.ndarray  # bool[40]
-    is_ramp: np.ndarray  # bool[40] non-land mana sources (rocks, dorks, treasure)
-    is_filter: np.ndarray  # bool[40] mana filters: fix colors, add no mana
-    is_removal: np.ndarray  # bool[40]
-    costs: np.ndarray  # int8[40] printed mana value used for castability
-    mana_produced: np.ndarray  # int32[40] color mask produced by lands/ramp/filters
-    pips: np.ndarray  # int32[40, MAX_PIPS] colored pips, each a mask of options
-    pip_count: np.ndarray  # int8[40] number of colored pips used in `pips`
-    generic: np.ndarray  # int8[40] generic portion of the cost
+    is_land: np.ndarray  # bool[n]
+    is_ramp: np.ndarray  # bool[n] non-land mana sources (rocks, dorks, treasure)
+    is_filter: np.ndarray  # bool[n] mana filters: fix colors, add no mana
+    is_removal: np.ndarray  # bool[n]
+    costs: np.ndarray  # int8[n] printed mana value used for castability
+    mana_produced: np.ndarray  # int32[n] color mask produced by lands/ramp/filters
+    pips: np.ndarray  # int32[n, MAX_PIPS] colored pips, each a mask of options
+    pip_count: np.ndarray  # int8[n] number of colored pips used in `pips`
+    generic: np.ndarray  # int8[n] generic portion of the cost
 
 
 def parse_mana_cost(mana_cost, fallback_cmc=0):
@@ -126,17 +127,18 @@ def _parse_deck_to_arrays(deck_list):
     if len(flat_deck) < DECK_SIZE:
         return None
 
-    is_land = np.zeros(DECK_SIZE, dtype=np.bool_)
-    is_ramp = np.zeros(DECK_SIZE, dtype=np.bool_)
-    is_filter = np.zeros(DECK_SIZE, dtype=np.bool_)
-    is_removal = np.zeros(DECK_SIZE, dtype=np.bool_)
-    costs = np.zeros(DECK_SIZE, dtype=np.int8)
-    mana_produced = np.zeros(DECK_SIZE, dtype=np.int32)
-    pips = np.zeros((DECK_SIZE, MAX_PIPS), dtype=np.int32)
-    pip_count = np.zeros(DECK_SIZE, dtype=np.int8)
-    generic = np.zeros(DECK_SIZE, dtype=np.int8)
+    n = len(flat_deck)
+    is_land = np.zeros(n, dtype=np.bool_)
+    is_ramp = np.zeros(n, dtype=np.bool_)
+    is_filter = np.zeros(n, dtype=np.bool_)
+    is_removal = np.zeros(n, dtype=np.bool_)
+    costs = np.zeros(n, dtype=np.int8)
+    mana_produced = np.zeros(n, dtype=np.int32)
+    pips = np.zeros((n, MAX_PIPS), dtype=np.int32)
+    pip_count = np.zeros(n, dtype=np.int8)
+    generic = np.zeros(n, dtype=np.int8)
 
-    for i, c in enumerate(flat_deck[:DECK_SIZE]):
+    for i, c in enumerate(flat_deck):
         types = c.get("types", [])
         tags = c.get("tags", [])
         text = str(c.get("oracle_text", c.get("text", ""))).lower()
@@ -399,7 +401,7 @@ def _run_fast_monte_carlo(
     color_screw_t3 = 0
     total_kept_cards = 0
 
-    deck_indices = np.arange(DECK_SIZE)
+    deck_indices = np.arange(is_land.shape[0])
     src_masks = np.zeros(MAX_SOURCES, dtype=np.int32)
     land_masks = np.zeros(MAX_SOURCES, dtype=np.int32)
     cover = np.zeros(32, dtype=np.int32)
