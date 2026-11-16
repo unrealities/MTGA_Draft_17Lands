@@ -115,11 +115,11 @@ The **estimated record** (`[Est: 3.5 wins]`) is the expected number of wins for 
 
 ### D. On-Demand AI Auto-Optimizer
 
-Users can actively "brute-force" permutations of their current deck configuration via a dedicated background task.
+The Auto-Optimize button tries one-card changes to the current deck in a background task.
 
-- It generates variations: **Play 18 Lands**, **Play 16 Lands**, **Curve Lower**, **Power Up**, and **Fix Mana Base** (swapping colorless utility lands for core colored basics).
-- It simulates thousands of games for each variation simultaneously.
-- Selects the deck configuration that maximizes `cast_t2/t3/t4` + `curve_out` while heavily penalizing `color_screw`, `mana_screw`, and `flood`.
+- It generates variations: **Play 18 Lands** (one more land), **Play 16 Lands** (one land fewer), **Curve Lower**, **Power Up**, **Fix Mana Base** (swapping a colorless utility land for a basic) and **Optimize Mana** (one basic swapped for another).
+- It simulates 500 games for each variation, one after another, then 10,000 for the one it picks.
+- It picks the variation that maximizes `cast_t2/t3/t4` + `curve_out`, less penalties for `mulligans`, `color_screw`, `mana_screw` and `flood`.
 
 ---
 
@@ -138,8 +138,8 @@ Transitions into a Post-Draft Recap tracking:
 Added in v4.15, the application includes a dedicated workspace for Sealed deckbuilding.
 
 - **AI Shell Generator:** Because Sealed pools contain 90+ cards, it's difficult to find the correct lane manually. The AI evaluates the pool and generates the Top 3 mathematically optimal 40-card shells on demand:
-  1. **Best 2-Color:** The most consistent 2-color pair based on raw power and curve.
-  2. **Greedy Splash:** Automatically forces the best off-color Bomb into the deck, strictly allocating appropriate fixing lands/treasures.
+  1. **Safe 2-Color:** The best 2-color pair, built from its strongest playables.
+  2. **Greedy Splash:** Automatically forces the best off-color Bomb into the deck, adding the pool's useful fixing lands.
   3. **Aggro/Tempo:** Filters the secondary best color pair through a strict CMC penalty to build a low-to-the-ground deck.
 - **Visual Deckbuilder:** A 1-to-1 recreation of the MTGA client's column-based (CMC sorted) drag-and-drop workspace, complete with real-time image caching via the `ThreadPoolExecutor`.
 
