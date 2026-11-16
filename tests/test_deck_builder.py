@@ -43,7 +43,7 @@ def sample_pool():
             "deck_colors": {"All Decks": {"gihwr": 65.0}},  # Very high win rate
         }
     )
-    # 3. Add 15 low-CMC Aggro cards for the Tempo builder
+    # 3. Add 15 low-CMC Aggro cards
     for i in range(15):
         pool.append(
             {
@@ -72,7 +72,7 @@ def sample_pool():
 def test_full_deck_suggestion_pipeline(sample_pool, mock_metrics):
     """
     Passes a simulated draft pool into the engine to trigger the creation of
-    Consistency, Greedy, and Tempo deck variants.
+    Consistency and Greedy deck variants.
     """
     config = Configuration()
 
@@ -89,9 +89,9 @@ def test_full_deck_suggestion_pipeline(sample_pool, mock_metrics):
         "Consistent" in label for label in labels
     ), "Failed to build Safe Core/Consistency variant"
 
-    assert any("Safe Tempo" in label for label in labels) or any(
+    assert not any(
         "Tempo" in label for label in labels
-    ), "Failed to build Safe Tempo/Tempo variant"
+    ), "The Tempo variant is no longer suggested"
 
     assert any("Splash" in label for label in labels), "Failed to build Splash variant"
 
