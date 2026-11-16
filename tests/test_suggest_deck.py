@@ -71,7 +71,6 @@ class TestSuggestDeckPanel:
                 ],
                 "sideboard_cards": [],
                 "stats": stats_dict,
-                "optimization_note": "",
             },
             "BG Splash R": {
                 "type": "Bomb Splash",
@@ -89,7 +88,6 @@ class TestSuggestDeckPanel:
                 ],
                 "sideboard_cards": [],
                 "stats": stats_dict,
-                "optimization_note": "",
             },
         }
 

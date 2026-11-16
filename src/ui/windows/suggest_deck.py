@@ -360,38 +360,6 @@ class SuggestDeckPanel(ttk.Frame):
             # Automatically draw a fresh hand when viewing the tab to ensure it's always responsive
             self._draw_sample_hand()
 
-    def _run_monte_carlo_task(self, deck_list):
-        self.after(0, lambda: self._show_sim_loading())
-        try:
-            from src.card_logic import simulate_deck
-
-            stats = simulate_deck(deck_list, iterations=10000)
-            self.after(0, lambda: self._show_sim_results(stats))
-        except Exception as e:
-            self.after(0, lambda e=e: self._show_sim_error(str(e)))
-
-    def _show_sim_loading(self, msg="Running 10,000 Monte Carlo Simulations..."):
-        sim_frame = getattr(self, "sim_frame", None)
-        if not sim_frame or not sim_frame.winfo_exists():
-            return
-
-        for widget in sim_frame.winfo_children():
-            widget.destroy()
-
-        lbl = ttk.Label(
-            sim_frame,
-            text=msg,
-            font=Theme.scaled_font(10, "italic"),
-            bootstyle="secondary",
-            justify="center",
-        )
-        lbl.is_dynamic_wrap = True
-        lbl.pack(pady=Theme.scaled_val(20))
-
-        progress = ttk.Progressbar(sim_frame, mode="indeterminate")
-        progress.pack(fill="x", padx=Theme.scaled_val(20))
-        progress.start(15)
-
     def _show_sim_error(self, error):
         sim_frame = getattr(self, "sim_frame", None)
         if not sim_frame or not sim_frame.winfo_exists():
@@ -406,7 +374,7 @@ class SuggestDeckPanel(ttk.Frame):
             wraplength=Theme.scaled_val(300),
         ).pack(pady=Theme.scaled_val(20))
 
-    def _show_sim_results(self, stats, optimization_note=None):
+    def _show_sim_results(self, stats):
         sim_frame = getattr(self, "sim_frame", None)
         if not sim_frame or not sim_frame.winfo_exists():
             return
@@ -508,16 +476,6 @@ class SuggestDeckPanel(ttk.Frame):
             font=Theme.scaled_font(10, "bold"),
         ).pack(anchor="w", pady=Theme.scaled_val((0, 5)))
 
-        if optimization_note:
-            lbl_opt = ttk.Label(
-                sim_frame,
-                text=optimization_note,
-                font=Theme.scaled_font(9, "bold"),
-                bootstyle="success",
-            )
-            lbl_opt.is_dynamic_wrap = True
-            lbl_opt.pack(anchor="w", pady=Theme.scaled_val(2))
-
         advice = []
         if stats["cast_t2"] < 50:
             advice.append("• Add more 2-drops to improve early board presence.")
@@ -543,15 +501,11 @@ class SuggestDeckPanel(ttk.Frame):
                     "• High color screw risk. Consider cutting a splash card or adding more fixing."
                 )
 
-        # Ensure static advice does not contradict the AI Optimizer's recent actions
-        is_18_lands = optimization_note and "18 Lands" in optimization_note
-        is_16_lands = optimization_note and "16 Lands" in optimization_note
-
-        if stats["screw_t3"] > 22.0 and not is_16_lands:
+        if stats["screw_t3"] > 22.0:
             advice.append(
                 "• Frequently missing land drops. Consider running an extra land."
             )
-        if stats["flood_t5"] > 28.0 and not is_18_lands:
+        if stats["flood_t5"] > 28.0:
             advice.append(
                 "• High flood risk. Consider cutting a land or adding mana sinks."
             )
@@ -570,53 +524,52 @@ class SuggestDeckPanel(ttk.Frame):
             )
 
         # Swap Suggestions
-        if not optimization_note:
-            if stats["cast_t2"] < 50 or stats["flood_t5"] > 25:
-                expensive_cards = [
+        if stats["cast_t2"] < 50 or stats["flood_t5"] > 25:
+            expensive_cards = [
+                c
+                for c in self.current_deck_list
+                if int(c.get("cmc", 0)) >= 5 and "Land" not in c.get("types", [])
+            ]
+            if expensive_cards:
+                deck_spells = [
                     c
                     for c in self.current_deck_list
-                    if int(c.get("cmc", 0)) >= 5 and "Land" not in c.get("types", [])
+                    if "Land" not in c.get("types", [])
                 ]
-                if expensive_cards:
-                    deck_spells = [
-                        c
-                        for c in self.current_deck_list
-                        if "Land" not in c.get("types", [])
-                    ]
-                    deck_colors_strict = (
-                        get_strict_colors(deck_spells)
-                        if deck_spells
-                        else ["W", "U", "B", "R", "G"]
-                    )
+                deck_colors_strict = (
+                    get_strict_colors(deck_spells)
+                    if deck_spells
+                    else ["W", "U", "B", "R", "G"]
+                )
 
-                    worst_expensive = min(
-                        expensive_cards,
+                worst_expensive = min(
+                    expensive_cards,
+                    key=lambda x: float(
+                        x.get("deck_colors", {})
+                        .get("All Decks", {})
+                        .get("gihwr", 0)
+                    ),
+                )
+                cheap_sb = [
+                    c
+                    for c in self.current_sb_list
+                    if int(c.get("cmc", 0)) <= 3
+                    and "Land" not in c.get("types", [])
+                    and "Creature" in c.get("types", [])
+                    and is_castable(c, deck_colors_strict, strict=True)
+                ]
+                if cheap_sb:
+                    best_cheap = max(
+                        cheap_sb,
                         key=lambda x: float(
                             x.get("deck_colors", {})
                             .get("All Decks", {})
                             .get("gihwr", 0)
                         ),
                     )
-                    cheap_sb = [
-                        c
-                        for c in self.current_sb_list
-                        if int(c.get("cmc", 0)) <= 3
-                        and "Land" not in c.get("types", [])
-                        and "Creature" in c.get("types", [])
-                        and is_castable(c, deck_colors_strict, strict=True)
-                    ]
-                    if cheap_sb:
-                        best_cheap = max(
-                            cheap_sb,
-                            key=lambda x: float(
-                                x.get("deck_colors", {})
-                                .get("All Decks", {})
-                                .get("gihwr", 0)
-                            ),
-                        )
-                        advice.append(
-                            f"• Swap: Cut [{worst_expensive['name']}] for [{best_cheap['name']}] to lower curve."
-                        )
+                    advice.append(
+                        f"• Swap: Cut [{worst_expensive['name']}] for [{best_cheap['name']}] to lower curve."
+                    )
 
         for tip in advice:
             lbl_tip = ttk.Label(sim_frame, text=tip, font=Theme.scaled_font(9))
@@ -1031,7 +984,7 @@ class SuggestDeckPanel(ttk.Frame):
             self._render_deck(label)
 
     def _update_tables(self):
-        """Helper to redraw tables after the Auto-Optimizer modifies the deck lists."""
+        """Redraws the main deck and sideboard tables."""
         total_main_cards = sum(
             c.get(constants.DATA_FIELD_COUNT, 1) for c in self.current_deck_list
         )
@@ -1071,7 +1024,6 @@ class SuggestDeckPanel(ttk.Frame):
                 name = card.get(constants.DATA_FIELD_NAME, "Unknown")
                 count = card.get(constants.DATA_FIELD_COUNT, 1)
                 cmc = card.get(constants.DATA_FIELD_CMC, 0)
-                types = " ".join(card.get(constants.DATA_FIELD_TYPES, []))
                 card_colors = "".join(card.get(constants.DATA_FIELD_COLORS, []))
 
                 row_values = []
@@ -1310,9 +1262,8 @@ class SuggestDeckPanel(ttk.Frame):
         self._update_tables()
 
         stats = data.get("stats")
-        opt_note = data.get("optimization_note")
         if stats:
-            self._show_sim_results(stats, opt_note)
+            self._show_sim_results(stats)
         else:
             self._show_sim_error("Simulation data missing.")
 
