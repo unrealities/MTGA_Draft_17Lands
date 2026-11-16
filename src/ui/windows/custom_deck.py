@@ -1161,12 +1161,12 @@ class CustomDeckPanel(ttk.Frame):
         self.after(
             0,
             lambda: self._show_sim_loading(
-                "Simulating perfect mana base permutations..."
+                "Choosing basic lands..."
             ),
         )
 
         try:
-            from src.advisor.mana_base import brute_force_mana_base, get_strict_colors
+            from src.advisor.mana_base import get_strict_colors
 
             # Extract non-basics
             spells = [c for c in self.deck_list if "Land" not in c.get("types", [])]
@@ -1211,8 +1211,7 @@ class CustomDeckPanel(ttk.Frame):
                 0, total_lands_needed - sum(c.get("count", 1) for c in non_basic_lands)
             )
 
-            # Trigger the AI brute force
-            basics_to_add = brute_force_mana_base(
+            basics_to_add = calculate_dynamic_mana_base(
                 spells, non_basic_lands, deck_colors, forced_count=needed_basics
             )
 
@@ -1220,7 +1219,7 @@ class CustomDeckPanel(ttk.Frame):
                 # Wipe old basics
                 self.deck_list = spells + non_basic_lands
 
-                # Append the optimal ones
+                # Append the new ones
                 for basic in basics_to_add:
                     dest_card = next(
                         (c for c in self.deck_list if c["name"] == basic["name"]), None
