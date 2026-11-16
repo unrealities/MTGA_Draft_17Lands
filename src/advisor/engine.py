@@ -12,7 +12,7 @@ from src.advisor.schema import Recommendation
 from src import constants
 from src.card_utils import get_functional_cmc
 from src.advisor.mana_base import count_fixing, is_castable
-from src.mana_cost import assign_mana_colors, off_color_requirements
+from src.mana_cost import off_color_requirements
 from src.utils import normalize_color_string
 
 logger = logging.getLogger(__name__)
@@ -371,15 +371,9 @@ class DraftAdvisor:
         # Without a printed cost the pip count is unknown; keep the one-pip guess.
         off_color_pips = len(off_color) if card.get("mana_cost") else min(1, len(off_color))
 
+        # Pack 1 has no off-color penalty: the lane is still forming.
         if pack == 1:
-            if is_on_lane:
-                return 1.0, ""
-            pressure = 1.0 - (max(0, ((pack - 1) * 15 + (pick - 1)) - 7) * 0.05)
-            return (
-                (max(0.2, pressure - 0.2), "Off-Color Gold")
-                if len(set(assign_mana_colors([card])[0])) > 1 and off_color_pips > 0
-                else (max(0.4, pressure), "Off-Color")
-            )
+            return 1.0, ""
 
         if not is_on_lane:
             if (
