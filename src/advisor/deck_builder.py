@@ -378,9 +378,7 @@ def suggest_deck(
                                 key=lambda x: constants.CARD_COLORS.index(x),
                             )
                         )
-                        true_variant_name = (
-                            "Tempo" if "Tempo" in variant_name else "Consistent"
-                        )
+                        true_variant_name = "Consistent"
                 else:
                     true_arch_key = "".join(
                         sorted(
@@ -466,15 +464,6 @@ def suggest_deck(
                     main_colors + [splash_color],
                     arch_key,
                 )
-
-            tempo_deck = build_variant_curve(taken_cards, main_colors, metrics)
-            process_variant(
-                "Tempo",
-                tempo_deck,
-                get_sideboard(taken_cards, tempo_deck),
-                main_colors,
-                arch_key,
-            )
 
         if progress_callback:
             progress_callback({"status": "Analyzing Domain / Soup..."})
@@ -565,9 +554,7 @@ def suggest_deck(
             actual_best_safe = final_list[best_safe_idx]
 
             old_label = actual_best_safe[0]
-            new_label = old_label.replace("Consistent", "🛡️ Safe Core").replace(
-                "Tempo", "🛡️ Safe Tempo"
-            )
+            new_label = old_label.replace("Consistent", "🛡️ Safe Core")
             if "🛡️" not in new_label:
                 parts = new_label.split(" ", 1)
                 new_label = (
@@ -576,11 +563,9 @@ def suggest_deck(
                     else f"🛡️ Safe Core {new_label}"
                 )
 
-            actual_best_safe[1]["label_prefix"] = (
-                actual_best_safe[1]["label_prefix"]
-                .replace("Consistent", "Safe Core")
-                .replace("Tempo", "Safe Tempo")
-            )
+            actual_best_safe[1]["label_prefix"] = actual_best_safe[1][
+                "label_prefix"
+            ].replace("Consistent", "Safe Core")
             updated_safe = (new_label, actual_best_safe[1])
             final_list[best_safe_idx] = updated_safe
 
