@@ -37,7 +37,11 @@ scorer that breaks the tool fails there.
 
 The deck score is `75 + sum of weight × feature`. Card quality (the deck's
 average rating, in standard deviations) is the main feature, and its weight of
-12 points sets the scale.
+12 points sets the scale. Since 4.33, live deck quality uses overall card
+win rates (with the scorer's fallback for missing overall data), the two-color
+weight is +3.1, and the supported-domain feature is removed. The weights and
+score-to-record calibration were refitted on about 915,000 decks across twenty
+sets. Historical experiment rating definitions above remain unchanged.
 
 The fit is a logistic regression of each deck's game wins on its features.
 Each feature's weight comes out in score points: a weight of +3 means the
