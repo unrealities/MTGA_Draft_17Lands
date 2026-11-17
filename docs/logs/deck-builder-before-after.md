@@ -2,6 +2,8 @@
 
 The deck builder's top suggestion for 3,000 real pools: 300 17Lands Premier Draft decks from each of ten sets (DFT, FDN, FIN, FRA, HOB, MSH, SOS, TDM, TLA, TMT), each pool being the drafter's deck plus sideboard. Ratings below are the builder's, after its mana simulation adjustments.
 
+> Note, 2026-11-16: those adjustments were removed in #263, and the two-color weight is now 3.1. The fixing penalty of -2.5 chosen here is still the one in use.
+
 | scorer | top build is 3+ colors short of fixing | same main colors as the drafter's deck | cards in common with the drafter's deck |
 |---|---|---|---|
 | old (main) | 3.6% | 59.6% | 19.5 |
