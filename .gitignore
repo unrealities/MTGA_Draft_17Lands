@@ -185,5 +185,9 @@ repomix-output.*
 # Personal todo list
 todo.md
 
+# Local Superpowers plans, specs, and working files
+superpowers/
+.superpowers/
+
 # Node (Tools/TierScraper17Lands)
 node_modules/
