@@ -7,14 +7,13 @@ Monte Carlo simulations on their custom creations.
 
 import tkinter
 from tkinter import ttk
-from typing import Dict, Any, List
+from typing import Dict, List
 import random
 import requests
 import urllib.parse
 import hashlib
 import os
 import io
-import re
 from concurrent.futures import ThreadPoolExecutor
 from PIL import Image, ImageTk
 
@@ -458,7 +457,7 @@ class CustomDeckPanel(ttk.Frame):
         self.sim_executor.submit(self._run_auto_optimize_task)
 
     def _run_auto_optimize_task(self):
-        """Background task that brute-forces deck permutations to find the mathematically optimal build."""
+        """Background task that simulates each candidate swap and keeps the best."""
         self.after(
             0,
             lambda: self._show_sim_loading(
@@ -1153,7 +1152,7 @@ class CustomDeckPanel(ttk.Frame):
 
     # --- MANA BASE LOGIC ---
     def _apply_auto_lands(self):
-        """Dispatches the brute-force mana optimization to a background thread."""
+        """Fills the land slots with basics chosen by the mana base rule."""
         self.notebook.select(self.hand_tab)
         self.sim_executor.submit(self._run_auto_lands_task)
 

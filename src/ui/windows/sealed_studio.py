@@ -9,7 +9,6 @@ import tkinter
 from tkinter import ttk, messagebox, simpledialog
 import ttkbootstrap as tb
 import requests
-import json
 import io
 import os
 import hashlib
