@@ -30,6 +30,15 @@ to the app that breaks the harness fails there.
 Card ratings come from the whole format, including the replayed drafts, so the
 numbers compare advisors with each other; they aren't out-of-sample accuracy.
 
+Since 4.33, replay pools preserve the order cards were picked, reconstructed
+from successive pool snapshots. Older reports used card-column order, which
+changes recency-weighted lane detection; lane-sensitive historical results
+are approximate to that extent.
+
+The deck-score measure uses quick builds, including the curve build still
+used by Sealed shells. Draft suggestions no longer offer Tempo in 4.33, so
+this measure does not reproduce the live suggestion candidate set or ordering.
+
 ## On GitHub
 
 The **Advisor replay** workflow runs on pull requests that change
@@ -70,8 +79,34 @@ one copy of the advisor takes about 20 seconds.
 | `sample.py` | Picks drafts from a dump by a hash of their ID, so a sample is repeatable. Standard library only. |
 | `replay.py` | Runs one copy of the app (`--src`) over the sampled drafts: the advisor at every pick, the deck score on the final pool. |
 | `report.py` | Pairs the base and head results by draft and writes the Markdown report. Needs only NumPy. |
-| `tests/` | Tests for the three scripts: `poetry run pytest Tools/AdvisorReplay/tests`. |
+| `lanes.py` | Compares lane rules with the colors drafters played, preserving pick order and checking parity with the app. |
+| `lanes_report.py` | Summarizes lane agreement by pool size, with draft-level bootstrap uncertainty. |
+| `tests/` | Tests for the replay and lane scripts: `poetry run pytest Tools/AdvisorReplay/tests`. |
 
 `replay.py` uses only the app's public entry points: `DraftAdvisor`,
 `SetMetrics`, `Dataset` and the quick deck builders in `src.card_logic`. If one
 of those changes, `replay.py` needs to change with it.
+
+
+## Lane accuracy
+
+Actions → **Lane accuracy** → **Run workflow** runs the separate lane study
+manually; it does not run automatically on pull requests. Inputs are `sets`
+(a JSON list, empty for the replay's ten sets), `drafts` (3000 per set by
+default), and `salt` (changes the sampled drafts). Each set downloads draft
+and game data plus the app dataset. The report appears in the run summary
+and the `lanes-report` artifact.
+
+For local use, first sample drafts as above and download the matching game
+data, then run:
+
+```sh
+poetry run python Tools/AdvisorReplay/lanes.py --src . --drafts drafts.json.gz --games games.csv.gz --dataset dataset.json.gz --set FRA --out results/FRA.lanes.json
+poetry run python Tools/AdvisorReplay/lanes_report.py results/*.lanes.json
+```
+
+The study compares the app with no-recency, no-switch, neither, column-order
+and most-cards variants. Agreement is with the drafter's played colors,
+which need not be the best colors; it does not measure a benefit from
+following the lane. See the [protocol and results](../../experiments/2026-11-15-lane-accuracy/RESULTS.md)
+and the [joint-removal replay](../../experiments/2026-11-15-joint-removals/RESULTS.md).

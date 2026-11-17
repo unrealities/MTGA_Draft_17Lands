@@ -28,16 +28,19 @@ Instead of evaluating a card globally (e.g., its win rate across all 17Lands use
 
 ---
 
-## 4. Sliding Commitment Curve (Lane Pressure)
+## 4. Color Commitment and Castability
 
-To prevent the engine from suggesting off-color cards too late in the draft, it applies a sliding scale of pressure based on the pick number.
+Since 4.33, Pack 1 has no off-color castability penalty, including late picks
+and gold cards. Pair-performance weighting and a flat `1.1x` bonus for cards
+castable in the detected lane still influence scores. The larger `1.3x`
+on-lane bonus for a short Pack 3 pool is removed.
 
-| Phase             | Picks         | Logic Name   | Behavior                                                                                                                  |
-| :---------------- | :------------ | :----------- | :------------------------------------------------------------------------------------------------------------------------ |
-| **P1 Picks 1-7**  | Stay Open     | Neutral      | No penalties for off-color cards. Encourages taking the best card regardless of color.                                    |
-| **P1 Picks 8-15** | Lane Pressure | Linear Decay | Applies a `-0.05` penalty multiplier per pick to off-color cards. By P1P15, off-color cards are significantly suppressed. |
-| **Pack 2**        | Soft Lock     | Disciplined  | Severe penalties (up to 85% reduction) for cards outside your top 2-3 colors unless they are massive bombs.               |
-| **Pack 3**        | Hard Lock     | Committed    | Total exclusion of off-color cards (95% penalty) to ensure the final pool is playable.                                    |
+From Pack 2 onward, the top two lane colors define off-color requirements.
+Unsupported off-color cards receive `0.05x` in Pack 2 and `0.01x` in Pack 3.
+Double off-color pips with fewer than two fixing cards receive `0.01x`.
+Supported single-pip splashes receive `0.3x`; qualifying bombs and premium
+removal have separate splash allowances. Hybrid requirements are checked per
+symbol, as described in [hybrid-mana.md](hybrid-mana.md).
 
 ---
 
@@ -45,6 +48,8 @@ To prevent the engine from suggesting off-color cards too late in the draft, it 
 
 Modern Limited is dictated by "Mana Velocity" and "Mana Stability."
 
+- **Removed penalties (4.33):** Curve Too Heavy (`0.7x` after four 5+ mana cards) and Removal Saturated (`0.8x` after six removal spells) no longer affect scores.
+- **Creature Quota:** From Pack 2, creatures receive `1.25x` when the projected creature count is below 13.
 - **Velocity Target:** 7+ "Early Plays" (CMC <= 2 Creatures or cheap interaction).
 - **Velocity Hunger:** The engine projects your final 2-drop count based on your current pool relative to the remaining picks in the draft. If the projection is below 7 entering Pack 2, early plays receive a "Critical: Needs 2-Drops" multiplier (up to 1.5x).
 - **Dynamic Fixing Hunger:** The engine actively monitors whether you are drafting a highly synergistic 2-color deck, or moving towards a "Good Stuff" 3/4-color splash strategy. If the number of drafted off-color playables exceeds your dedicated fixing tools (dual lands, treasures, dorks) by Pack 2, fixing cards receive a massive `1.4x` "Critical: Needs Fixing" multiplier. The optional `1.15x` Premium Fixing and `1.3x` Enables Bomb Splash bonuses are removed in 4.32. Castability splash rules, including Greedy Bomb Splash, remain separate.
@@ -55,8 +60,8 @@ Modern Limited is dictated by "Mana Velocity" and "Mana Stability."
 
 The engine estimates each card's chance of coming back from its ALSA and its rank in the pack, and shows it in the Wheel column. It doesn't change the card's score. Packs with fewer than 9 cards, and picks 9 and later, show no chance. The existing curves assume eight-player, one-card picks: Pick-Two and other pod sizes show no percentage until a suitable model exists. This does not disable the scanner's pack-return tracker.
 
-In Pick-Two, archetype weighting and first-pack off-color pressure both use
-pick `2N - 1` for passing round `N`, so commitment advances with cards removed.
+In Pick-Two, archetype weighting uses pick `2N - 1` for passing round `N`,
+so weighting advances with cards removed. Pack 1 has no off-color penalty.
 
 Replays of 15,000 17Lands drafts showed that value over replacement, the late-signal bonus, the wheel multiplier, the signal tie-breaker and the pack 3 deck-improvement bonus didn't change the advisor's picks or how following it related to winning, so the engine no longer uses them (v4.28). The Open Lanes panel still shows lane signals.
 
@@ -86,12 +91,14 @@ Users can click a single button to perfectly balance their lands using Pro-Tour 
 - **Pip Volume Calculation:** Counts the exact number of specific colored mana symbols.
 - **Universal Fixer Detection:** Explicitly identifies Treasure-makers, Fetchlands, and "Any Color" dorks.
 - **Hybrid Mana Resolution:** Pays hybrid mana (e.g., `{W/U}`) with a color the deck already plays; `{2/U}` and `{U/P}` never force a color. Castability, splash checks, mana allocation and deck labels share these rules; see [hybrid-mana.md](hybrid-mana.md).
+- **Allocation (4.33):** Auto Lands uses the pip-based mana allocation rule directly, without simulating land permutations. It fills `max(0, 40 − spell copies)` land slots, retains nonbasics that fit, moves trimmed nonbasic copies to the sideboard, and replaces the basics. Auto-Optimize is a separate simulation-based action.
 - **Splash Starvation Protection:** Strictly caps basic land allocations for splash colors to prevent main-color starvation.
 
 ### B. Monte Carlo Simulation
 
 Evaluates the user's custom deck by running a **10,000-game Monte Carlo simulation**.
 
+- Simulates every card copy for decks of 40 cards or more; larger decks are no longer truncated to 40 (4.33). Decks smaller than 40 are not simulated.
 - Applies pro-level London mulligan heuristics.
 - Calculates probabilities for `cast_t2/t3/t4`, Mana Screw, Mana Flood, and Color Screw.
 - **Mana filters** (Prophetic Prism, Chromatic Star), whose mana abilities cost as much mana as they make, count toward the colors a deck can cast but not toward its mana. Signets, Sol Ring, mana dorks and Treasure makers stay ramp.
@@ -107,9 +114,11 @@ The deck builder ranks its candidate builds by a deck score:
 - **Missing fixing:** for decks of 3+ colors, fixing cards short of one per color beyond the first.
 - **Missing spells:** spells short of a full deck for the pool size, less one.
 
-The weights were fit to about 915,000 17Lands Premier Draft decks over twenty sets, comparing players of similar skill (`Tools/DeckScoreFit`). Curve, evasion and tribal adjustments were worth about zero once card quality was counted, so the score leaves them out. The missing-fixing weight is fit instead to which candidate builds drafters chose; see [the deck builder's suggestions before and after](logs/deck-builder-before-after.md).
+The weights were fit to about 915,000 17Lands Premier Draft decks over twenty sets, comparing players of similar skill (`Tools/DeckScoreFit`). Curve, evasion, tribal and supported-domain adjustments were worth about zero once card quality was counted, so the score leaves them out. In 4.33, the two-color weight changes from +3.5 to +3.1, the +3.2 supported-domain bonus is removed, and the score-to-record calibration is refitted with overall ratings. The missing-fixing weight is fit instead to which candidate builds drafters chose; see [the deck builder's suggestions before and after](logs/deck-builder-before-after.md).
 
-The Monte Carlo simulation's rates are shown with each build and don't change its score.
+Since 4.33, the Monte Carlo simulation's rates are shown with each build and don't change its score; color screw, mana screw and flood penalties are removed.
+
+Draft suggestions generate Consistent, splash and Domain / Soup candidates; the Tempo candidate is removed in 4.33. The best Safe Core is promoted to first place only when within six score points of the leader; otherwise it stays in score order. There is no longer a separate promotion to second place. Sealed Studio still generates its Aggro/Tempo shell using the quick curve builder.
 
 The **estimated record** (`[Est: 3.5 wins]`) is the expected number of wins for a deck of that score: in Premier Draft, an event that ends at 7 wins or 3 losses; in Traditional Draft, three best-of-three matches.
 
@@ -161,3 +170,13 @@ do not directly prescribe replacement pick weights.
 The tools retain the pre-4.32 shrunk rating under the historical name `engine`
 so committed reports remain reproducible. The current advisor's unshrunk pair
 rate corresponds to the `no-shrinkage` variant, not that historical baseline.
+
+
+The [joint-removal replay](../experiments/2026-11-15-joint-removals/RESULTS.md)
+compares the combined simplifications with an earlier engine. Its pools used
+card-column order, and whole-format ratings include the replayed drafts.
+The [lane-accuracy experiment](../experiments/2026-11-15-lane-accuracy/RESULTS.md)
+measures agreement with the colors drafters played, not the best possible colors.
+It identified the pool-order discrepancy fixed in AdvisorReplay for 4.33.
+The live lane rule is unchanged; a stronger card-count yardstick in this
+experiment is not a shipped replacement.

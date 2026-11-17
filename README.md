@@ -2,7 +2,7 @@
 
 Magic: The Gathering Arena draft tool that utilizes 17Lands data.
 
-**Version 4.32:** The Datasets tab has a searchable, scrolling set picker, and the draft advisor uses pair win rates without sample-size shrinkage and drops unused synergy and optional fixing bonuses. New research tools test six pick rules and separate color-pair strength from card fit. See the [release notes](release_notes.txt) for details.
+**Version 4.33:** The advisor stays open to off-color cards throughout Pack 1 and removes curve-heavy and removal-saturation penalties. Deck suggestions use overall card ratings and refitted scores. Auto Lands preserves trimmed nonbasic lands in the sideboard, and mana simulation includes decks larger than 40 cards. See the [release notes](release_notes.txt) for details.
 
 **This application will automatically support new sets as soon as the sets are released on Arena _and_ the data is available on the [17Lands card ratings](https://www.17lands.com/card_ratings) page.**
 
@@ -81,7 +81,7 @@ macOS actively quarantines unsigned apps downloaded from the internet. To run th
 - **Compositional Brain (v5.5):** A custom tactical engine that calculates a 0-100 `VALUE` score for cards in your pack. It dynamically weights raw Z-Score power, archetype win rates, color lane commitment, castability, and curve needs to suggest optimal picks. Look for the ⭐ symbol for elite "Bomb" picks. You can turn it off under `File -> Preferences...`.
 - **AI Monte Carlo Auto-Optimizer:** Click the "Auto-Optimize Deck" button to unleash a background simulation engine that tests one-card changes to your deck (one land more or fewer, swapping a clunky 5-drop for an efficient 2-drop, a stronger sideboard card, a different basic) over 500 simulated games each, then shows the best one over 10,000 games.
 - **Sealed Studio:** A fully interactive drag-and-drop workspace specifically tailored for Sealed deckbuilding. Features an AI Shell Generator that automatically builds the top 3 mathematically optimal deck variants for your specific pool (e.g., Safe 2-Color, Greedy Splash, Aggro Curve). Saved sessions are isolated by Arena entry, restored decks respect the current pool, and clipboard imports keep sideboard cards out of the main deck.
-- **Mana Base Tools:** Auto Lands counts every card copy when filling a 40-card deck and allocating colors. Hybrid costs use a color the deck can pay rather than requiring both halves; generic and Phyrexian alternatives do not force an extra color. The advisor, splash checks and deck labels share these payment rules. Mana simulation uses the colors a source actually produces, one land drop per turn, and a shared mana budget for deploying ramp cards; its separate payment model and limitations are described in [Hybrid Mana](docs/hybrid-mana.md).
+- **Mana Base Tools:** Auto Lands uses the pip-based mana allocation rule to fill the land slots of a 40-card deck, counting every card copy. Nonbasic lands trimmed to make room move to the sideboard. It no longer searches simulated land permutations; Auto-Optimize remains a separate simulation-based action. Hybrid costs use a color the deck can pay rather than requiring both halves; generic and Phyrexian alternatives do not force an extra color. The advisor, splash checks and deck labels share these payment rules. Mana simulation uses the colors a source actually produces, one land drop per turn, and a shared mana budget for deploying ramp cards; its separate payment model and limitations are described in [Hybrid Mana](docs/hybrid-mana.md).
 - **Automated Cloud Datasets:** The Cloud ETL Pipeline compiles and distributes the latest 17Lands telemetry every day, using [MTGpile's Arena schedule](https://mtgpile.com/api/v1/events/arena/all.json), compiled from Wizards of the Coast's published schedules, to select active supported sets and formats. When you open the app, it syncs the data for active Arena events in the background. View the [live dataset calendar](https://unrealities.github.io/MTGA_Draft_17Lands/calendar.html), including the source update date, or read the [ETL documentation](docs/05-server-etl-pipeline.md).
 - **Event-Matched Statistics:** Startup and live scanning select statistics for the detected set and event format, including Pick-Two Traditional/Quick Draft and Traditional Sealed. A matching dataset you previously selected is retained; otherwise All users is preferred, followed by an available group for the same event. Resolved card IDs cache metadata only, so switching datasets cannot carry over old win rates. If no dataset matches the event, prior statistics are cleared; download the missing event from Datasets or select a dataset manually.
 - **Zero-Day Card Recognition:** Missing card metadata is resolved from your local MTG Arena SQLite database, with Scryfall as a fallback, in a background worker. The draft window stays responsive, and failed lookups retry automatically instead of permanently hiding cards.
@@ -211,8 +211,12 @@ advisor's six pick rules against those results
 The [card-rating experiment](experiments/2026-11-03-rating-parts/RESULTS.md)
 compares held-out deck predictions, and the
 [pair-parts experiment](experiments/2026-11-08-pair-parts/RESULTS.md)
-separates pair strength from card fit. These observational results do not
-establish the effect of changing an app user's picks.
+separates pair strength from card fit. The [AdvisorReplay tools](Tools/AdvisorReplay/README.md)
+also measure lane accuracy and preserve pick order when reconstructing pools.
+See the [lane-accuracy results](experiments/2026-11-15-lane-accuracy/RESULTS.md)
+and [joint-removal replay](experiments/2026-11-15-joint-removals/RESULTS.md)
+for evidence and limitations. These observational results do not establish the
+effect of changing an app user's picks.
 
 ### Environment Setup
 
