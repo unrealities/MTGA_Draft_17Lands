@@ -84,13 +84,6 @@ class DraftAdvisor:
         # pick 5 has removed eight cards, just like pick 9 in a normal draft.
         effective_pick = (safe_pick - 1) * max(1, cards_per_pick) + 1
 
-        on_color_pool = [
-            c
-            for c in self.pool
-            if is_castable(c, self.main_colors)
-        ]
-        needs_playables = len(on_color_pool) < 20 and pack_number == 3
-
         pack_wrs = []
         for c in pack_cards:
             try:
@@ -154,7 +147,7 @@ class DraftAdvisor:
                     )
                 is_on_lane = is_castable(card, self.main_colors)
                 if len(self.main_colors) >= 2 and is_on_lane:
-                    base_score *= 1.3 if needs_playables else 1.1
+                    base_score *= 1.1
 
                 # --- STEP 4: Castability (Pip-Sensitive Discipline & Premium Splashing) ---
                 cast_mult, cast_reason = self._calculate_castability_v5(
