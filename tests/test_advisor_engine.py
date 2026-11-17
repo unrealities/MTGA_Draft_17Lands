@@ -395,3 +395,15 @@ def test_fixing_gets_no_bonus_without_a_need(mock_metrics, pack):
     assert advisor._calculate_composition_bonus(
         {"types": ["Land"], "colors": ["W", "U"]}, pack=pack
     ) == (1.0, "")
+
+
+def test_pack_one_has_no_off_color_penalty(mock_metrics):
+    advisor = DraftAdvisor(mock_metrics, [])
+    advisor.main_colors = ["W", "U"]
+    for pick in (1, 9, 14):
+        for cost in ("{1}{B}", "{B}{R}", "{B}{B}"):
+            card = {"colors": ["B"], "mana_cost": cost}
+            assert advisor._calculate_castability_v5(card, 1, pick, 0.0) == (1.0, "")
+    # From pack 2 it applies as before.
+    card = {"colors": ["B"], "mana_cost": "{1}{B}"}
+    assert advisor._calculate_castability_v5(card, 2, 1, 0.0) == (0.05, "Off-Color")
