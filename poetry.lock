@@ -600,14 +600,14 @@ files = [
 
 [[package]]
 name = "filelock"
-version = "4.2.9"
+version = "4.2.11"
 description = "A platform independent file lock."
 optional = false
 python-versions = ">=3.11"
 groups = ["dev"]
 files = [
-    {file = "filelock-4.2.9-py3-none-any.whl", hash = "sha256:a379c50a729e5b68c8519a4d26489f755d9769960a236ecd838190e2a78db2e9"},
-    {file = "filelock-4.2.9.tar.gz", hash = "sha256:96530b7c538d4ea08493ab067247aab7948c54d8cd622cce711c97cccc5d9896"},
+    {file = "filelock-4.2.11-py3-none-any.whl", hash = "sha256:020e229e4bb9d410fc799c07ddf45fa217cba970278f40b30751d94f309b69e2"},
+    {file = "filelock-4.2.11.tar.gz", hash = "sha256:0cb84119fb8dce17898e1f69c974d5019daa59c4d7656be390a5fa59ccced912"},
 ]
 
 [[package]]
@@ -825,14 +825,14 @@ altgraph = ">=0.17"
 
 [[package]]
 name = "markdown-it-py"
-version = "4.2.0"
+version = "4.3.0"
 description = "Python port of markdown-it. Markdown parsing, done right!"
 optional = false
 python-versions = ">=3.10"
 groups = ["dev"]
 files = [
-    {file = "markdown_it_py-4.2.0-py3-none-any.whl", hash = "sha256:9f7ebbcd14fe59494226453aed97c1070d83f8d24b6fc3a3bcf9a38092641c4a"},
-    {file = "markdown_it_py-4.2.0.tar.gz", hash = "sha256:04a21681d6fbb623de53f6f364d352309d4094dd4194040a10fd51833e418d49"},
+    {file = "markdown_it_py-4.3.0-py3-none-any.whl", hash = "sha256:7aa1511a46c39138de78d9eba92ce47e63124d8003fc98b3a351909e04239efa"},
+    {file = "markdown_it_py-4.3.0.tar.gz", hash = "sha256:91a58fa5b72c71a40cf7177250fd767480d7a2bb3ac426ccfb76fb90305fdaaa"},
 ]
 
 [package.dependencies]
@@ -840,12 +840,13 @@ mdurl = ">=0.1,<1.0"
 
 [package.extras]
 benchmarking = ["psutil", "pytest", "pytest-benchmark"]
-compare = ["commonmark (>=0.9,<1.0)", "markdown (>=3.4,<4.0)", "markdown-it-pyrs", "mistletoe (>=1.0,<2.0)", "mistune (>=3.0,<4.0)", "panflute (>=2.3,<3.0)"]
+compare = ["markdown (>=3.4,<4.0)", "markdown-it-pyrs", "mistletoe (>=1.0,<2.0)", "mistune (>=3.0,<4.0)", "panflute (>=2.3,<3.0)"]
+coverage = ["coverage", "pytest-cov"]
 linkify = ["linkify-it-py (>=1,<3)"]
 plugins = ["mdit-py-plugins (>=0.5.0)"]
 profiling = ["gprof2dot"]
 rtd = ["ipykernel", "jupyter_sphinx", "mdit-py-plugins (>=0.5.0)", "myst-parser", "pyyaml", "sphinx", "sphinx-book-theme (>=1.0,<2.0)", "sphinx-copybutton", "sphinx-design"]
-testing = ["coverage", "pytest", "pytest-cov", "pytest-regressions", "pytest-timeout", "requests"]
+testing = ["flit_core (>=3.4,<5)", "pytest", "pytest-regressions", "pytest-timeout", "requests"]
 
 [[package]]
 name = "markupsafe"
@@ -1259,14 +1260,14 @@ testing = ["pytest (<5.0) ; python_version < \"3.0\"", "pytest (>=5.0) ; python_
 
 [[package]]
 name = "pdbp"
-version = "1.8.3"
+version = "1.9.0"
 description = "pdbp (Pdb+): A drop-in replacement for pdb and pdbpp."
 optional = false
 python-versions = ">=3.8"
 groups = ["dev"]
 files = [
-    {file = "pdbp-1.8.3-py3-none-any.whl", hash = "sha256:a190833a4a049a0499b84f68616e363415d13d9e89e73191decf878f25ce1272"},
-    {file = "pdbp-1.8.3.tar.gz", hash = "sha256:a6da18c2e95c318a22635c30d55dd0fc03ee9397f89c87d5400abab3cba9bcd4"},
+    {file = "pdbp-1.9.0-py3-none-any.whl", hash = "sha256:f119ac192ee4d4a1194a8bebac366b1e5fd0e8cdb08ccc225e03a5ee8867fb0d"},
+    {file = "pdbp-1.9.0.tar.gz", hash = "sha256:08e61b785d501a7b71e8af5e19020c8361da4e26ad026794db3b0f3434b6bb65"},
 ]
 
 [package.dependencies]
@@ -1768,21 +1769,6 @@ files = [
     {file = "pynose-1.5.5-py3-none-any.whl", hash = "sha256:673751d53fcfc79b1e48c14f36c7a24779ad43676eeb85736934de6a2b3d8ec8"},
     {file = "pynose-1.5.5.tar.gz", hash = "sha256:81da4e26473f98dd37497248eef4352d3221d1d56edf874a00c6bdda6daf7f49"},
 ]
-
-[[package]]
-name = "pyotp"
-version = "2.10.0"
-description = "Python One Time Password Library"
-optional = false
-python-versions = ">=3.8"
-groups = ["dev"]
-files = [
-    {file = "pyotp-2.10.0-py3-none-any.whl", hash = "sha256:1df2f6a1bcc3bb0716172a5215ddc2f8c7c7fd26a13df9927d52e1746934836c"},
-    {file = "pyotp-2.10.0.tar.gz", hash = "sha256:d01e9703443616b03c57c700b5cbffd56a1f929c1b0f8f03131bc78c1fca9d3f"},
-]
-
-[package.extras]
-test = ["coverage", "mypy", "ruff", "wheel"]
 
 [[package]]
 name = "pyperclip"
@@ -2310,18 +2296,18 @@ test = ["Cython", "array-api-strict (>=2.3.1)", "asv", "gmpy2", "hypothesis (>=6
 
 [[package]]
 name = "selenium"
-version = "4.51.0"
+version = "4.52.0"
 description = "Official Python bindings for Selenium WebDriver"
 optional = false
 python-versions = ">=3.10"
 groups = ["dev"]
 files = [
-    {file = "selenium-4.51.0-py3-none-any.whl", hash = "sha256:5531e99df3c60a298c4bef38de825aec4aa8ca238438ac21511d650b58dbdd87"},
-    {file = "selenium-4.51.0.tar.gz", hash = "sha256:6bec9bd8d9b6599f850b0f6e9fb06d44d2e4245adccd11ae02c9d5cde7596276"},
+    {file = "selenium-4.52.0-py3-none-any.whl", hash = "sha256:caa2860d486f71cdeb21fee3248c2f604bba590120dfb4d3d18c4d7cf97c6f1f"},
+    {file = "selenium-4.52.0.tar.gz", hash = "sha256:40f423c598cc85390c403ef626c9d3457c1ae834d4cf1f38637ebba3cb6f0d7a"},
 ]
 
 [package.dependencies]
-certifi = ">=2026.2.25"
+certifi = ">=2026.10.23"
 trio = ">=0.31.0,<1.0"
 trio-websocket = ">=0.12.2,<1.0"
 typing_extensions = ">=4.15.0,<5.0"
@@ -2330,14 +2316,14 @@ websocket-client = ">=1.8.0,<2.0"
 
 [[package]]
 name = "seleniumbase"
-version = "4.56.4"
+version = "4.58.1"
 description = "SeleniumBase is a framework for web crawling, scraping, and testing. Supports pytest. CDP Mode adds stealth. Includes many tools."
 optional = false
 python-versions = ">=3.10"
 groups = ["dev"]
 files = [
-    {file = "seleniumbase-4.56.4-py3-none-any.whl", hash = "sha256:5be2779fa3608417d7569607e4d531f269a0a4157de2a69f3400395ea4644519"},
-    {file = "seleniumbase-4.56.4.tar.gz", hash = "sha256:bbc20a469349a6aa439f022d5aa61f9543ce58c43d486302e4f313930b5862e4"},
+    {file = "seleniumbase-4.58.1-py3-none-any.whl", hash = "sha256:a8767607f3dd023556c8cf08c0725a65b36ecc492f5f788a8750c4634ac0c26b"},
+    {file = "seleniumbase-4.58.1.tar.gz", hash = "sha256:539b56546a83e7bafd4e491a70efe46370d84f952ba2b7ac70504ae0a1b9c4cf"},
 ]
 
 [package.dependencies]
@@ -2351,12 +2337,12 @@ cssselect = {version = ">=1.6.0,<2", markers = "python_version >= \"3.11\""}
 exceptiongroup = ">=1.3.1"
 execnet = "2.1.2"
 fasteners = ">=0.20"
-filelock = {version = ">=4.2.4", markers = "python_version >= \"3.11\""}
+filelock = {version = ">=4.2.10", markers = "python_version >= \"3.11\""}
 h11 = "0.16.0"
 idna = ">=3.20"
 iniconfig = ">=2.3.1,<2.4.0"
 Jinja2 = ">=3.1.6"
-markdown-it-py = "4.2.0"
+markdown-it-py = "4.3.0"
 MarkupSafe = ">=3.0.4"
 mdurl = "0.1.2"
 mycdp = ">=1.4.0"
@@ -2365,14 +2351,13 @@ packaging = ">=26.3"
 parameterized = "0.9.0"
 parse = ">=1.22.4"
 parse-type = ">=0.6.6"
-pdbp = ">=1.8.3"
-pip = ">=26.2.2"
+pdbp = ">=1.9.0"
+pip = ">=26.3"
 pluggy = {version = ">=1.6.0,<1.8", markers = "python_version >= \"3.11\""}
 psutil = ">=7.2.2"
 PyAutoGUI = {version = ">=0.9.54", markers = "platform_system == \"Linux\""}
 pygments = ">=2.20.1"
 pynose = ">=1.5.5"
-pyotp = ">=2.10.0,<2.11.0"
 pyreadline3 = {version = ">=3.5.4", markers = "platform_system == \"Windows\""}
 pytest = {version = "9.1.1", markers = "python_version >= \"3.11\""}
 pytest-html = "4.0.2"
@@ -2385,35 +2370,35 @@ pyyaml = ">=6.0.3"
 requests = ">=2.34.2,<2.35.0"
 rich = ">=15.0.0,<16"
 sbvirtualdisplay = ">=1.4.0"
-selenium = "4.51.0"
+selenium = "4.52.0"
 setuptools = ">=84.2.1"
 six = ">=1.17.0"
 sniffio = "1.3.1"
 sortedcontainers = "2.4.0"
-soupsieve = {version = ">=3.0.4,<3.1.0", markers = "python_version >= \"3.11.5\""}
+soupsieve = {version = ">=4.1.1,<4.2.0", markers = "python_version >= \"3.11.5\""}
 tabcompleter = ">=1.4.1"
-trio = ">=0.34.0,<1"
+trio = ">=0.35.0,<1"
 trio-websocket = ">=0.12.2,<0.13.0"
 typing-extensions = ">=4.16.0"
 urllib3 = ">=2.8.0,<3"
 websocket-client = ">=1.9.2,<1.10.0"
-websockets = {version = ">=17.3", markers = "python_version >= \"3.11\""}
+websockets = {version = ">=17.4", markers = "python_version >= \"3.11\""}
 wheel = ">=0.48.0"
 wsproto = ">=1.3.2,<1.4.0"
 
 [package.extras]
 allure = ["allure-behave (>=2.16.0)", "allure-pytest (>=2.16.0)", "allure-python-commons (>=2.16.0)"]
-coverage = ["coverage (>=7.16.2) ; python_version == \"3.10\"", "coverage (>=7.17.0) ; python_version >= \"3.11\"", "pytest-cov (>=7.1.0)"]
-flake8 = ["flake8 (==7.4.1)", "mccabe (==0.7.0)", "pycodestyle (==2.15.0)", "pyflakes (==4.0.3)"]
+coverage = ["coverage (>=7.16.2) ; python_version == \"3.10\"", "coverage (>=7.17.3) ; python_version >= \"3.11\"", "pytest-cov (>=7.1.0)"]
+flake8 = ["flake8 (==7.4.1) ; python_version == \"3.10\"", "flake8 (==7.5.0) ; python_version >= \"3.11\"", "mccabe (==0.7.0)", "pycodestyle (==2.15.0)", "pyflakes (==4.0.3) ; python_version == \"3.10\"", "pyflakes (==4.1.0) ; python_version >= \"3.11\""]
 mcp = ["mcp[cli] (>=2.3.0,<3.0.0)"]
 mss = ["mss (==10.2.0)"]
 pdfminer = ["cffi (>=2.1.1,<2.2.0)", "cryptography (>=50.0.2,<50.1.0)", "pdfminer.six (==20260107)", "pycparser (==3.11) ; python_version == \"3.10\"", "pycparser (>=3.12,<4.0) ; python_version >= \"3.11\""]
 pillow = ["Pillow (>=12.3.0) ; python_version == \"3.10\"", "Pillow (>=13.0.0) ; python_version >= \"3.11\""]
 pip-system-certs = ["pip-system-certs (>=4.0) ; platform_system == \"Windows\""]
-playwright = ["greenlet (>=3.5.6)", "playwright (>=1.64.1)", "pyee (>=13.0.1) ; python_version < \"3.12\"", "pyee (>=14.0.0) ; python_version >= \"3.12\""]
+playwright = ["greenlet (>=3.5.6)", "playwright (>=1.65.2)"]
 proxy = ["proxy.py (==2.4.3)"]
 pyautogui = ["PyAutoGUI (>=0.9.54) ; platform_system != \"Linux\""]
-uv = ["uv (>=0.13.5)"]
+uv = ["uv (>=0.13.8)"]
 
 [[package]]
 name = "setuptools"
@@ -2486,14 +2471,14 @@ files = [
 
 [[package]]
 name = "soupsieve"
-version = "3.0.4"
+version = "4.1.1"
 description = "A modern CSS selector implementation for Beautiful Soup."
 optional = false
 python-versions = ">=3.11.5"
 groups = ["dev"]
 files = [
-    {file = "soupsieve-3.0.4-py3-none-any.whl", hash = "sha256:8412826614f9c632227067d0985aeb9f584bd15efc852955430e097a9fe7afbf"},
-    {file = "soupsieve-3.0.4.tar.gz", hash = "sha256:924fab84ae21604c19e175e1f39815eb6fa83ba23836e09e9de180925e5bc4c0"},
+    {file = "soupsieve-4.1.1-py3-none-any.whl", hash = "sha256:8ff3422dab0b720fb667ee79864d80531a0e57994a13eb701697719ffcb751f6"},
+    {file = "soupsieve-4.1.1.tar.gz", hash = "sha256:b296bd2d2f65b1a78149f3d7bf6736a147d2c9e2dfbde0e4404639d748a02e03"},
 ]
 
 [[package]]
@@ -2878,4 +2863,4 @@ type = ["pytest-mypy (>=1.0.1) ; platform_python_implementation != \"PyPy\""]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.12,<3.15"
-content-hash = "177387c8975f79dfb6e7e383e21b745cc3c79df8ae9e895168fa843f424a3e15"
+content-hash = "a4ed4843037950da16ee1731b8e57190357b26a7f7f9a35face1c47d7d67813b"
