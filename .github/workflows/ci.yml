@@ -48,7 +48,10 @@ jobs:
         run: |
           python_bin="$RUNNER_TOOL_CACHE/Python/$PYTHON_VERSION/arm64/bin"
           test -x "$python_bin/python3"
-          echo "$python_bin" >> "$GITHUB_PATH"
+          python_env="$RUNNER_TEMP/release-python"
+          "$python_bin/python3" -m venv "$python_env"
+          echo "$python_env/bin" >> "$GITHUB_PATH"
+          echo "VIRTUAL_ENV=$python_env" >> "$GITHUB_ENV"
       - uses: actions/setup-python@v5
         if: runner.os != 'macOS' || runner.environment != 'self-hosted'
         with:
