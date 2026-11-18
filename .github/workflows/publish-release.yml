@@ -31,7 +31,17 @@ jobs:
     runs-on: ${{ fromJSON(inputs.local_macos && '["self-hosted", "macOS", "ARM64", "mtga-release"]' || '["macos-15"]') }}
     steps:
       - uses: actions/checkout@v4
+      - name: Select preinstalled Python on local macOS runner
+        if: runner.os == 'macOS' && runner.environment == 'self-hosted'
+        shell: bash
+        env:
+          PYTHON_VERSION: "3.12"
+        run: |
+          python_bin="$RUNNER_TOOL_CACHE/Python/$PYTHON_VERSION/arm64/bin"
+          test -x "$python_bin/python3"
+          echo "$python_bin" >> "$GITHUB_PATH"
       - uses: actions/setup-python@v5
+        if: runner.environment != 'self-hosted'
         with:
           python-version: "3.12"
       - name: Install Poetry

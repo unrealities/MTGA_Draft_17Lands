@@ -40,7 +40,17 @@ jobs:
         python-version: ${{ fromJSON((github.event_name == 'schedule' || inputs.full_matrix) && '["3.12", "3.13", "3.14"]' || '["3.12"]') }}
     steps:
       - uses: actions/checkout@v4
+      - name: Select preinstalled Python on local macOS runner
+        if: runner.os == 'macOS' && runner.environment == 'self-hosted'
+        shell: bash
+        env:
+          PYTHON_VERSION: "${{ matrix.python-version }}"
+        run: |
+          python_bin="$RUNNER_TOOL_CACHE/Python/$PYTHON_VERSION/arm64/bin"
+          test -x "$python_bin/python3"
+          echo "$python_bin" >> "$GITHUB_PATH"
       - uses: actions/setup-python@v5
+        if: runner.os != 'macOS' || runner.environment != 'self-hosted'
         with:
           python-version: ${{ matrix.python-version }}
       - name: Install Poetry
