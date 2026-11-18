@@ -13,6 +13,10 @@ on:
         default: false
   workflow_call:
     inputs:
+      macos_runner:
+        description: JSON runner labels for macOS jobs
+        type: string
+        default: '["macos-15"]'
       full_matrix:
         type: boolean
         default: false
@@ -27,7 +31,7 @@ concurrency:
 jobs:
   python:
     name: Python / ${{ matrix.os }} / ${{ matrix.python-version }}
-    runs-on: ${{ matrix.os }}
+    runs-on: ${{ matrix.os == 'macos-15' && fromJSON(inputs.macos_runner || '["macos-15"]') || matrix.os }}
     timeout-minutes: 15
     strategy:
       fail-fast: false
