@@ -119,8 +119,16 @@ WEIGHTS = {
     # Mean overall rating of the deck's spells, in standard deviations from the
     # format mean.
     "card_quality": 12.0,
-    # 1 if the deck has two colors or fewer.
-    "two_colors": 3.1,
+    # The cost of colors beyond two, against a deck of two colors or fewer.
+    # Two main colors (or one) and a splash: a base, and more for each spell
+    # (copies counted) that needs a splash color. A small splash costs less
+    # than three main colors (experiments/2026-11-16-splash-price).
+    "splash": -1.4,
+    "splash_spells": -0.43,
+    # Three main colors, no splash.
+    "three_colors": -3.28,
+    # Three main colors and a splash, or four main colors or more.
+    "four_colors": -4.94,
     # For a deck of 3+ colors, fixing cards short of one per color beyond the
     # first. Players rarely build such decks,
     # so game results can't fit it; this is fit instead to which of the deck
@@ -135,7 +143,10 @@ WEIGHTS = {
 # How each feature's adjustment is named in the deck's notes. Card quality is
 # the base of the score, so it gets no note.
 NOTES = {
-    "two_colors": "Rock-Solid Mana",
+    "splash": "Splash",
+    "splash_spells": "Splash",
+    "three_colors": "Three Colors",
+    "four_colors": "Four+ Colors",
     "missing_fixing": "Greedy Mana Strain",
     "missing_spells": "Incomplete Deck",
 }
@@ -146,8 +157,14 @@ WIN_LOG_ODDS_AT_BASE = -0.0062
 WIN_LOG_ODDS_PER_POINT = 0.05099
 
 
-def deck_features(deck, colors, pool_size, metrics, tier_data=None):
-    """The deck's value for each feature in WEIGHTS, or None if it has no spells."""
+def deck_features(
+    deck, colors, pool_size, metrics, tier_data=None, splash_colors=()
+):
+    """The deck's value for each feature in WEIGHTS, or None if it has no spells.
+
+    colors are all the deck's colors, and splash_colors the ones among them
+    that are a splash. The rest are its main colors.
+    """
     global_mean, global_std = metrics.get_metrics("All Decks", "gihwr")
     if global_mean == 0.0:
         global_mean = 54.0
@@ -186,9 +203,19 @@ def deck_features(deck, colors, pool_size, metrics, tier_data=None):
     )
     features["card_quality"] = (avg_gihwr - global_mean) / global_std
 
-    if len(colors) <= 2:
-        features["two_colors"] = 1.0
-    else:
+    splash = set(splash_colors)
+    main = [c for c in colors if c not in splash]
+    if splash and len(main) <= 2:
+        features["splash"] = 1.0
+        features["splash_spells"] = sum(
+            c.get("count", 1) for c in spells if set(c.get("colors", [])) & splash
+        )
+    elif len(main) == 3 and not splash:
+        features["three_colors"] = 1.0
+    elif len(main) >= 3:
+        features["four_colors"] = 1.0
+
+    if len(colors) > 2:
         fixing_count = ManaSourceAnalyzer(deck).total_fixing_cards
         features["missing_fixing"] = max(0, len(colors) - 1 - fixing_count)
 
@@ -199,22 +226,28 @@ def deck_features(deck, colors, pool_size, metrics, tier_data=None):
     return features
 
 
-def calculate_holistic_score(deck, colors, pool_size, metrics, tier_data=None):
+def calculate_holistic_score(
+    deck, colors, pool_size, metrics, tier_data=None, splash_colors=()
+):
     if not deck:
         return 0.0, ""
-    features = deck_features(deck, colors, pool_size, metrics, tier_data)
+    features = deck_features(
+        deck, colors, pool_size, metrics, tier_data, splash_colors
+    )
     if features is None:
         return 0.0, ""
 
     power_level = BASE_SCORE
-    breakdown_notes = []
+    noted = {}  # points by note; a splash's two parts share one note
     for name, weight in WEIGHTS.items():
         points = weight * features[name]
         power_level += points
         if points and name in NOTES:
-            breakdown_notes.append(
-                f"{NOTES[name]} ({'+' if points > 0 else '-'}{abs(points):.1f})"
-            )
+            noted[NOTES[name]] = noted.get(NOTES[name], 0.0) + points
+    breakdown_notes = [
+        f"{note} ({'+' if points > 0 else '-'}{abs(points):.1f})"
+        for note, points in noted.items()
+    ]
 
     return max(0.0, power_level), ", ".join(breakdown_notes)
 

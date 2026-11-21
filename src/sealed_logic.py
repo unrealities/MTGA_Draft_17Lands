@@ -375,7 +375,12 @@ def generate_sealed_shells(session: SealedSession, metrics, tier_data=None) -> N
     if greedy_deck and splash_color:
         target_colors = primary_pair + [splash_color]
         score, _ = calculate_holistic_score(
-            greedy_deck, target_colors, len(pool), metrics, tier_data
+            greedy_deck,
+            target_colors,
+            len(pool),
+            metrics,
+            tier_data,
+            splash_colors=[splash_color],
         )
         variant = SealedVariant(f"Greedy Splash (+{splash_color}) [{score:.0f}]")
         for c in greedy_deck:

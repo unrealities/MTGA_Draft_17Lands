@@ -227,7 +227,7 @@ def test_holistic_score_missing_fixing(mock_metrics):
     _, notes_supported = calculate_holistic_score(
         supported_deck, colors=["W", "U", "B", "R"], pool_size=45, metrics=mock_metrics
     )
-    assert notes_supported == ""
+    assert notes_supported == f"Four+ Colors (-{-WEIGHTS['four_colors']:.1f})"
 
 
 def test_holistic_score_incomplete_deck(mock_metrics):
@@ -259,11 +259,63 @@ def test_holistic_score_is_the_weighted_sum_of_deck_features(mock_metrics):
     assert features["card_quality"] == pytest.approx(
         (59.0 * 13 + 55.0 * 10) / 23 / 4.0 - 55.0 / 4.0
     )
-    assert features["two_colors"] == 1.0
+    assert not any(
+        features[k] for k in ("splash", "splash_spells", "three_colors", "four_colors")
+    )
     assert score == pytest.approx(
         BASE_SCORE + sum(WEIGHTS[k] * v for k, v in features.items())
     )
-    assert notes == f"Rock-Solid Mana (+{WEIGHTS['two_colors']:.1f})"
+    assert notes == ""
+
+
+def color_test_deck():
+    return [
+        make_card("Land", count=17, types=["Land"]),
+        make_card("Blue", count=11, colors=["U"]),
+        make_card("Black", count=9, colors=["B"]),
+        make_card("Red", count=2, colors=["R"]),
+        make_card("Rakdos", count=1, colors=["B", "R"]),
+    ]
+
+
+def test_a_splash_is_priced_by_its_spells(mock_metrics):
+    """A splash costs a base plus a weight for each spell that needs it, gold
+    cards included, and both parts share one note."""
+    deck = color_test_deck()
+    features = deck_features(
+        deck, ["U", "B", "R"], 45, mock_metrics, splash_colors=["R"]
+    )
+    assert (features["splash"], features["splash_spells"]) == (1.0, 3)
+    assert features["three_colors"] == features["four_colors"] == 0.0
+
+    score, notes = calculate_holistic_score(
+        deck, ["U", "B", "R"], 45, mock_metrics, splash_colors=["R"]
+    )
+    cost = WEIGHTS["splash"] + 3 * WEIGHTS["splash_spells"]
+    assert notes.startswith(f"Splash (-{-cost:.1f})")
+
+
+def test_main_colors_beyond_two(mock_metrics):
+    """With no splash, three colors are three main colors; a splash on top of
+    three main colors, or four main colors, is priced as four or more."""
+    deck = color_test_deck()
+    three = deck_features(deck, ["U", "B", "R"], 45, mock_metrics)
+    assert three["three_colors"] == 1.0 and not three["splash"]
+    more = deck_features(
+        deck, ["U", "B", "R", "G"], 45, mock_metrics, splash_colors=["G"]
+    )
+    assert more["four_colors"] == 1.0 and not more["three_colors"]
+    assert deck_features(deck, ["U", "B", "R", "G"], 45, mock_metrics)["four_colors"]
+
+
+def test_a_splash_costs_less_than_a_third_main_color(mock_metrics):
+    deck = color_test_deck()
+    splash, _ = calculate_holistic_score(
+        deck, ["U", "B", "R"], 45, mock_metrics, splash_colors=["R"]
+    )
+    three, _ = calculate_holistic_score(deck, ["U", "B", "R"], 45, mock_metrics)
+    two, _ = calculate_holistic_score(deck, ["U", "B"], 45, mock_metrics)
+    assert two > splash > three
 
 
 def test_expected_wins_by_recursion():
