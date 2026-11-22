@@ -16,6 +16,8 @@ from src.advisor.deck_scorer import (
     TIER_TO_GIHWR,
     BASE_SCORE,
     WEIGHTS,
+    WIN_LOG_ODDS_AT_BASE,
+    WIN_LOG_ODDS_PER_POINT,
     deck_features,
     expected_wins,
 )
@@ -332,11 +334,13 @@ def test_expected_wins_by_recursion():
 
 def test_estimate_record():
     """Expected wins rise with the score, up to each event's cap."""
-    bo1 = [float(estimate_record(s).split()[0]) for s in (50, 75, 90, 200)]
+    # The score at which a deck wins half its games.
+    even = BASE_SCORE - WIN_LOG_ODDS_AT_BASE / WIN_LOG_ODDS_PER_POINT
+    bo1 = [float(estimate_record(s).split()[0]) for s in (50, even, 90, 200)]
     assert bo1 == sorted(bo1) and bo1[-1] == 7.0
-    # A deck of the base score wins about half its games: about 3 wins in Bo1.
+    # A coin-flip deck wins about 3 games in Bo1.
     assert 2.8 <= bo1[1] <= 3.2
-    bo3 = [float(estimate_record(s, is_bo3=True).split()[0]) for s in (50, 75, 200)]
+    bo3 = [float(estimate_record(s, is_bo3=True).split()[0]) for s in (50, even, 200)]
     assert bo3 == sorted(bo3) and bo3[-1] == 3.0
     # Bo3 always plays three matches, so a coin-flip deck averages 1.5 wins.
     assert 1.4 <= bo3[1] <= 1.6

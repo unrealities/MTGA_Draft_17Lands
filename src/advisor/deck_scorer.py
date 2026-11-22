@@ -123,12 +123,12 @@ WEIGHTS = {
     # Two main colors (or one) and a splash: a base, and more for each spell
     # (copies counted) that needs a splash color. A small splash costs less
     # than three main colors (experiments/2026-11-16-splash-price).
-    "splash": -1.4,
-    "splash_spells": -0.43,
+    "splash": -1.5,
+    "splash_spells": -0.4,
     # Three main colors, no splash.
-    "three_colors": -3.28,
+    "three_colors": -3.3,
     # Three main colors and a splash, or four main colors or more.
-    "four_colors": -4.94,
+    "four_colors": -5.0,
     # For a deck of 3+ colors, fixing cards short of one per color beyond the
     # first. Players rarely build such decks,
     # so game results can't fit it; this is fit instead to which of the deck
@@ -152,9 +152,11 @@ NOTES = {
 }
 
 # The log-odds of winning a game, for a deck of BASE_SCORE and per point
-# above it, fit to the same games (Tools/DeckScoreFit).
-WIN_LOG_ODDS_AT_BASE = -0.0062
-WIN_LOG_ODDS_PER_POINT = 0.05099
+# above it, fit to the same games (Tools/DeckScoreFit). Two colors carry no
+# term, so an average two-color deck scores BASE_SCORE and wins a little more
+# than half its games.
+WIN_LOG_ODDS_AT_BASE = 0.1503
+WIN_LOG_ODDS_PER_POINT = 0.05048
 
 
 def deck_features(
