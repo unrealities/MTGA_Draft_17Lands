@@ -89,7 +89,9 @@ def test_builder_does_not_label_or_penalize_a_hybrid_as_a_third_color(metrics, m
     assert set(data["colors"]) == {"G", "R"}
     assert set(data["identity_colors"]) == {"G", "R"}
     assert "Greedy Mana Strain" not in data["breakdown"]
-    assert "Rock-Solid Mana" in data["breakdown"]
+    # Priced as a two-color deck: no color term at all.
+    for note in ("Splash", "Three Colors", "Four+ Colors"):
+        assert note not in data["breakdown"]
 
 
 def test_greedy_builder_accepts_one_supported_hybrid_splash(metrics):
