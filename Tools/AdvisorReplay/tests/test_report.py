@@ -73,3 +73,18 @@ def test_load_pairs_drafts(tmp_path):
         == ["d1", "d2", "d3", "d4"]
     )
     assert report.report(loaded).startswith("## Picks")
+
+
+def test_skill_bins_are_two_buckets_wide():
+    # Every 17Lands win rate bucket from 0.30 to 0.74, as the dump writes them.
+    buckets = {
+        0.30: 0, 0.32: 0, 0.34: 1, 0.36: 1, 0.38: 2, 0.40: 2, 0.42: 3, 0.44: 3,
+        0.46: 4, 0.48: 4, 0.50: 5, 0.52: 5, 0.54: 6, 0.56: 6, 0.58: 7, 0.60: 7,
+        0.62: 8, 0.64: 8, 0.66: 9, 0.68: 9, 0.70: 10, 0.72: 10, 0.74: 11,
+    }
+    assert {s: report.skill_bin(s) for s in buckets} == buckets
+    # Float noise in the dump, and the clamps at both ends.
+    assert report.skill_bin(0.7000000000000001) == 10
+    assert report.skill_bin(0.0) == report.skill_bin(0.24) == 0
+    assert report.skill_bin(0.76) == report.skill_bin(0.82) == 11
+    assert report.skill_bin(None) is None

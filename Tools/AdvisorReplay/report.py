@@ -95,16 +95,22 @@ def _dummies(values):
     return [np.array([float(v == level) for v in values]) for level in levels]
 
 
+def skill_bin(skill):
+    """The drafter's win rate bucket in a bin 0.04 wide from 0.30: 0.30 and 0.32
+    are bin 0, 0.34 and 0.36 bin 1, and so on to bin 11 for 0.74 and above.
+
+    17Lands gives the win rate in steps of 0.02. This counts in whole percentage
+    points, because float division doesn't: (0.42 - 0.30) // 0.04 is 2.0, not 3.
+    """
+    if skill is None:
+        return None
+    points = min(max(round(skill * 100), 30), 74)
+    return (points - 30) // 4
+
+
 def controls(drafts, sets):
     """Intercept plus set, skill bucket and games bucket indicators."""
-    skill = [
-        (
-            None
-            if d["skill"] is None
-            else int((min(max(d["skill"], 0.30), 0.74) - 0.30) // 0.04)
-        )
-        for d in drafts
-    ]
+    skill = [skill_bin(d["skill"]) for d in drafts]
     columns = _dummies(sets) + _dummies(skill) + _dummies([d["games"] for d in drafts])
     return np.column_stack([np.ones(len(drafts)), *columns])
 
