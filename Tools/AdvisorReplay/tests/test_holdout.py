@@ -6,7 +6,7 @@ import json
 import holdout
 
 HEADER = ["draft_id", "build_index", "main_colors", "on_play", "num_mulligans", "won",
-          "deck_Bolt", "opening_hand_Bolt", "drawn_Bolt"]
+          "deck_Bolt", "opening_hand_Bolt", "drawn_Bolt", "tutored_Bolt"]
 
 
 def lines(rows):
@@ -17,8 +17,9 @@ def lines(rows):
     return out.getvalue().splitlines(keepends=True)
 
 
-def game(draft, won, in_hand=True, colors="UR"):
-    return [draft, "0", colors, "True", "0", str(won), "1", "1" if in_hand else "0", "0"]
+def game(draft, won, in_hand=True, colors="UR", deck=1, drawn=0, tutored=0):
+    return [draft, "0", colors, "True", "0", str(won), str(deck),
+            "1" if in_hand else "0", str(drawn), str(tutored)]
 
 
 def dataset(name="Bolt"):
@@ -39,6 +40,21 @@ def test_read_counts_splits_games_by_draft():
     )
     assert held["All Decks"]["Bolt"] == [1, 1, 0, 0]
     assert rest["UR"]["Bolt"] == [1, 0, 1, 1]
+
+
+def test_read_counts_counts_copies_as_17lands_does():
+    # Two copies in hand in a win and one in a loss: 2 of 3, not 1 of 2.
+    _, rest = holdout.read_counts(
+        lines([game("b", True, deck=3, drawn=1), game("b", False, deck=3)]), set()
+    )
+    assert rest["All Decks"]["Bolt"] == [3, 2, 3, 1]
+
+
+def test_read_counts_leaves_tutored_copies_out_of_both_counts():
+    _, rest = holdout.read_counts(
+        lines([game("b", True, in_hand=False, deck=2, tutored=1)]), set()
+    )
+    assert rest["All Decks"]["Bolt"] == [0, 0, 1, 1]
 
 
 def test_merged_adds_counts():

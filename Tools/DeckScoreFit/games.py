@@ -40,24 +40,26 @@ def _count(text):
     return int(float(text)) if text else 0
 
 
-def read_games(lines, ids, fold_of=fold_of):
+def read_games(lines, ids, fold_of=fold_of, copies=False):
     """(hands, folds) from the dump's lines, header first.
 
     hands: [deck id, on play, mulligans, won, {card: count in opening hand}]
     for each game of a deck in ids. folds: for each fold, {colors: {card:
     [games in hand, won, games not drawn, won]}} over its decks' games. fold_of
-    says which of FOLDS folds a deck's ID falls in.
+    says which of FOLDS folds a deck's ID falls in. With copies, the four counts
+    are of copies and not games, as 17Lands counts them: each copy in hand, and
+    each copy left in the deck that was neither in hand nor tutored.
     """
     lines = iter(lines)
     header = next(csv.reader([next(lines)]))
     col = {name: i for i, name in enumerate(header)}
     cards = [
         (name[len("deck_") :], i, col.get(f"opening_hand_{name[5:]}"),
-         col.get(f"drawn_{name[5:]}"))
+         col.get(f"drawn_{name[5:]}"), col.get(f"tutored_{name[5:]}"))
         for i, name in enumerate(header)
         if name.startswith("deck_")
     ]
-    hand_cols = [(c, oh) for c, _, oh, _ in cards if oh is not None]
+    hand_cols = [(c, oh) for c, _, oh, _, _ in cards if oh is not None]
     folds = [{} for _ in range(FOLDS)]
     fold = {}
     hands = []
@@ -77,22 +79,27 @@ def read_games(lines, ids, fold_of=fold_of):
         colors = fields[col["main_colors"]]
         if colors:
             groups.append(ratings.setdefault(colors, {}))
-        for name, d, oh, dr in cards:
-            if not _count(fields[d]):
+        for name, d, oh, dr, tu in cards:
+            in_deck = _count(fields[d])
+            if not in_deck:
                 continue
-            seen = (oh is not None and _count(fields[oh])) or (
-                dr is not None and _count(fields[dr])
+            seen = (_count(fields[oh]) if oh is not None else 0) + (
+                _count(fields[dr]) if dr is not None else 0
             )
+            if copies:
+                tutored = _count(fields[tu]) if tu is not None else 0
+                unseen = max(in_deck - seen - tutored, 0)
+            else:
+                seen, unseen = (1, 0) if seen else (0, 1)
             for group in groups:
                 s = group.get(name)
                 if s is None:
                     s = group[name] = [0, 0, 0, 0]
-                if seen:
-                    s[0] += 1
-                    s[1] += won
-                else:
-                    s[2] += 1
-                    s[3] += won
+                s[0] += seen
+                s[2] += unseen
+                if won:
+                    s[1] += seen
+                    s[3] += unseen
         if sampled:
             hands.append([
                 key,
