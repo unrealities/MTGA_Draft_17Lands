@@ -22,6 +22,8 @@ import tempfile
 import time
 from collections import Counter
 
+import simulate
+
 DECK_SIZE = 23
 
 
@@ -50,6 +52,14 @@ class App:
         if not self.dataset.get_card_ratings():
             raise SystemExit(f"Could not load dataset {dataset_path}")
         self.metrics = SetMetrics(self.dataset)
+        from src.advisor import deck_builder, deck_scorer
+
+        # Suggest Deck's simulator stats and sideboards are only shown in the
+        # app; they don't rank its decks. Skipping them leaves the decks and their
+        # order as they were and makes Suggest Deck about twenty times faster.
+        deck_builder.simulate_deck = lambda *args, **kwargs: {}
+        deck_builder.get_sideboard = lambda *args, **kwargs: []
+        self.deck_builder, self.scorer = deck_builder, deck_scorer
 
         # The dump names double-faced cards by their front face only.
         self.full_names = {}
@@ -109,6 +119,11 @@ class App:
             default=0.0,
         )
 
+    def suggest(self, pool):
+        """Suggest Deck's decks for the pool, best first, as the app shows them."""
+        self.deck_builder.clear_deck_cache()
+        return self.deck_builder.suggest_deck(pool, self.metrics, None, "PremierDraft")
+
     def pool_gihwr(self, pool):
         """Mean GIH WR of the best 23 cards castable in one color pair (a yardstick)."""
         c = self.constants
@@ -153,8 +168,11 @@ def in_pick_order(earlier, pool_names):
     return kept + list(left.elements())
 
 
-def replay_draft(app, draft, skipped):
-    """The draft's scored picks and final pool scores."""
+def replay_draft(app, draft, skipped, sim=None, drafter_deck=False):
+    """The draft's scored picks and final pool scores.
+
+    sim, a Counter, also has the advisor draft the packs itself (simulate.py);
+    drafter_deck also scores the drafter's own pool the same way."""
     picks, pool_names = [], []
     for pack_no, pick_no, taken, pack_names, by_card in draft["picks"]:
         pool_names = in_pick_order(pool_names, by_card)
@@ -190,11 +208,19 @@ def replay_draft(app, draft, skipped):
             deck_score = round(app.deck_score(final_pool), 4)
             pool_gihwr = round(app.pool_gihwr(final_pool), 4)
 
-    return {k: draft[k] for k in ("id", "skill", "games", "wins", "losses")} | {
+    out = {k: draft[k] for k in ("id", "skill", "games", "wins", "losses")} | {
         "picks": picks,
         "deck_score": deck_score,
         "pool_gihwr": pool_gihwr,
     }
+    if sim is not None:
+        out["sim"] = simulate.simulate_draft(app, draft, sim)
+        if out["sim"] and drafter_deck:
+            # The drafter's own pool through the same Suggest Deck, for comparison.
+            final_pool = app.cards(pool_names + [draft["picks"][-1][2]])
+            score, _ = simulate.deck_rating(app, final_pool)
+            out["sim"]["drafter_win"] = round(simulate.win_rate(score, app.scorer), 4)
+    return out
 
 
 def main(argv=None):
@@ -213,6 +239,11 @@ def main(argv=None):
     parser.add_argument(
         "--out", required=True, help="Where to write the results (.json)"
     )
+    parser.add_argument(
+        "--simulate",
+        action="store_true",
+        help="Also let the advisor draft each draft's packs itself (simulate.py)",
+    )
     args = parser.parse_args(argv)
 
     sys.path.insert(0, os.path.abspath(args.src))
@@ -221,7 +252,10 @@ def main(argv=None):
         drafts = json.load(f)
 
     start, skipped = time.time(), Counter()
-    results = [replay_draft(app, d, skipped) for d in drafts]
+    sim = Counter() if args.simulate else None
+    # Every copy replays the same drafters' pools; the base alone scores them.
+    drafter_deck = args.simulate and args.label == "base"
+    results = [replay_draft(app, d, skipped, sim, drafter_deck) for d in drafts]
     seconds = time.time() - start
     os.makedirs(os.path.dirname(args.out) or ".", exist_ok=True)
     with open(args.out, "w", encoding="utf-8") as f:
@@ -231,6 +265,7 @@ def main(argv=None):
                 "label": args.label,
                 "seconds": round(seconds),
                 "skipped": dict(skipped),
+                "simulation": dict(sim) if sim is not None else None,
                 "unmatched": dict(app.unmatched.most_common(10)),
                 "drafts": results,
             },

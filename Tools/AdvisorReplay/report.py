@@ -239,17 +239,56 @@ def per_set_table(runs):
     return "\n".join(lines)
 
 
-def report(runs):
-    return "\n\n".join(
-        [
-            "## Picks",
-            pick_table(runs),
-            "## Event wins",
-            wins_table(runs),
-            "## Top-1 by set (all drafters)",
-            per_set_table(runs),
+def sim_table(runs):
+    """Simulated drafts (replay.py --simulate): the deck win rate each advisor
+    reaches drafting the packs itself, or None if the replays didn't simulate."""
+    lines = [
+        "| set | drafts | base | head | head minus base (SE) |",
+        "|---|---|---|---|---|",
+    ]
+    means, ses = [], []
+    for code in sorted(runs["base"]):
+        pairs = [
+            (b["sim"]["win"], runs["head"][code][i]["sim"]["win"])
+            for i, b in runs["base"][code].items()
+            if b.get("sim") and runs["head"][code][i].get("sim")
         ]
-    )
+        if len(pairs) < 2:
+            continue
+        base, head = np.array(pairs).T
+        diff = head - base
+        se = diff.std(ddof=1) / np.sqrt(len(diff))
+        means.append(diff.mean())
+        ses.append(se)
+        lines.append(
+            f"| {code} | {len(diff)} | {base.mean():.2f} | {head.mean():.2f} | {diff.mean():+.3f} ({se:.3f}) |"
+        )
+    if not means:
+        return None
+    # Each set counts equally.
+    mean, se = np.mean(means), np.sqrt(np.sum(np.square(ses))) / len(ses)
+    lines.append(f"| **all sets, equal weight** | | | | **{mean:+.3f} ({se:.3f})** |")
+    return "\n".join(lines)
+
+
+def report(runs):
+    parts = [
+        "## Picks",
+        pick_table(runs),
+        "## Event wins",
+        wins_table(runs),
+        "## Top-1 by set (all drafters)",
+        per_set_table(runs),
+    ]
+    sims = sim_table(runs)
+    if sims:
+        parts += [
+            "## Simulated drafts: Suggest Deck's deck as a win rate (%)",
+            "Each advisor drafts the drafter's packs itself (simulate.py), then the "
+            "deck score of Suggest Deck's first deck becomes an expected game win rate.",
+            sims,
+        ]
+    return "\n\n".join(parts)
 
 
 def main(argv=None):
