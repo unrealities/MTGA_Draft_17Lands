@@ -88,3 +88,10 @@ def test_sim_table_only_with_simulated_drafts():
     assert "| FRA | 400 |" in table
     assert "+0.500 (0.000)" in table
     assert "Simulated drafts" in report.report(data)
+    assert "own deck score grades its deck" in report.report(data)
+
+    # Where the base graded the head's decks, its grade is the one compared.
+    for draft in data["base"]["FRA"].values():
+        draft["sim"]["head_win"] = draft["sim"]["win"] + 0.2
+    assert "+0.200 (0.000)" in report.sim_table(data)
+    assert "The base's deck score grades both" in report.report(data)

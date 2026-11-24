@@ -73,6 +73,13 @@ assumed to pick as they did. Then Suggest Deck builds the pool, and the deck sco
 its first deck becomes an expected game win rate. The report adds that win
 rate per set, head minus base.
 
+Each advisor builds with its own Suggest Deck, but one deck score grades both
+decks: the base's, with the base's win-rate constants. The head replays first,
+and the base's replay takes `--judge` with the head's results. So a head that
+only changes the deck score's calibration reads zero here, and a head that
+changes the deck score itself is judged by the old one. With `holdout`, the
+rebuilt and held-out sections get this table too.
+
 The deck score both builds the deck and grades it. A change that alters how
 the advisor values cards relative to the deck score can therefore look better
 or worse here for that reason alone. Read this section as a screen next to the
@@ -87,10 +94,13 @@ curl -fsSLo dataset.json.gz "https://unrealities.github.io/MTGA_Draft_17Lands/${
 git worktree add ../base main
 
 poetry run python Tools/AdvisorReplay/sample.py --dump dump.csv.gz --drafts 300 --out drafts.json.gz
-poetry run python Tools/AdvisorReplay/replay.py --src ../base --drafts drafts.json.gz --dataset dataset.json.gz --set $SET --label base --out results/$SET.base.json
 poetry run python Tools/AdvisorReplay/replay.py --src . --drafts drafts.json.gz --dataset dataset.json.gz --set $SET --label head --out results/$SET.head.json
+poetry run python Tools/AdvisorReplay/replay.py --src ../base --drafts drafts.json.gz --dataset dataset.json.gz --set $SET --label base --out results/$SET.base.json
 poetry run python Tools/AdvisorReplay/report.py results/*.json
 ```
+
+For simulated drafts, add `--simulate` to both replays and
+`--judge results/$SET.head.json` to the base's.
 
 Sampling reads the whole dump (about a minute); replaying 300 drafts through
 one copy of the advisor takes about 20 seconds.

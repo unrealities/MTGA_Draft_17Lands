@@ -5,7 +5,13 @@ own first choice at every pick, from the packs the drafter saw, and the app's
 Suggest Deck builds its pool. The first suggested deck's score, as an expected
 game win rate, is the draft's simulated deck win rate. A head and its base
 draft the same packs, so the paired difference measures how much better a deck
-the head's advice drafts, by the deck score's own lights.
+the head's advice drafts, by the deck score's lights.
+
+One grader. Each copy builds its deck with its own Suggest Deck, but a head that
+changes the deck score or its win-rate constants would grade its own decks by a
+different yardstick. So each result keeps the deck's cards, and replay.py
+--judge has the base grade the head's decks too (grade): the report compares
+both advisors' decks by the base's deck score.
 
 The packs. In an eight-player pod, the pack at pick p of a round was last seen
 at pick p - 8: picks 1 to 8 see packs the drafter's own picks never touched,
@@ -128,7 +134,8 @@ def simulate_draft(app, draft, counts):
             if mine != theirs:
                 pending[slot].append((mine, theirs))
             counts["picks"] += 1
-    score, how = deck_rating(app, app.cards(pool))
+    pool = app.cards(pool)
+    score, how, deck, colors = deck_rating(app, pool)
     counts[f"decks: {how}"] += 1
     return {
         "score": round(score, 4),
@@ -137,15 +144,47 @@ def simulate_draft(app, draft, counts):
         "decided": decided,
         "wheel_swaps": swaps_fired,
         "deck": how,
+        "cards": [packed(c) for c in deck],
+        "colors": list(colors),
+        "pool_size": len(pool),
     }
 
 
 def deck_rating(app, pool):
-    """(score, how) of the first deck the app's Suggest Deck offers for this pool.
+    """(score, how, deck, colors) of the first deck the app's Suggest Deck offers
+    for this pool.
 
     Suggest Deck needs 15 spells; a pool short of them falls back to the best
     quick build, whose score charges for the missing spells."""
     decks = app.suggest(pool)
     if decks:
-        return next(iter(decks.values()))["rating"], "suggest deck"
-    return app.deck_score(pool), "quick build (no suggested deck)"
+        first = next(iter(decks.values()))
+        return first["rating"], "suggest deck", first["deck_cards"], first["colors"]
+    score, deck, colors = app.quick_build(pool)
+    return score, "quick build (no suggested deck)", deck, colors
+
+
+def packed(card):
+    """A deck card for the results file: [name, count] for a card of the dataset,
+    and the card itself for one the deck builder made up (a basic land)."""
+    if "deck_colors" in card:
+        return [card["name"], card.get("count", 1)]
+    return card
+
+
+def grade(app, sim):
+    """The win rate app's deck score gives another copy's simulated deck."""
+    deck = []
+    for entry in sim["cards"]:
+        if isinstance(entry, dict):
+            deck.append(entry)
+            continue
+        name, count = entry
+        found = app.dataset.get_data_by_name([name])
+        if not found:
+            raise SystemExit(f"--judge: {name} is not in this dataset; was the deck drafted on another?")
+        deck.append(dict(found[0], count=count))
+    score, _ = app.scorer.calculate_holistic_score(
+        deck, sim["colors"], sim["pool_size"], app.metrics
+    )
+    return round(win_rate(score, app.scorer), 4)

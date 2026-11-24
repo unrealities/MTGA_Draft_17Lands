@@ -1,3 +1,4 @@
+import json
 import os
 from collections import Counter
 from types import SimpleNamespace
@@ -40,10 +41,10 @@ class FakeApp:
         return {c["name"]: -i for i, c in enumerate(sorted(pack, key=lambda c: c["name"]))}
 
     def suggest(self, pool):
-        return {"deck": {"rating": 75.0 + len(pool)}}
+        return {"deck": {"rating": 75.0 + len(pool), "deck_cards": pool, "colors": ["W"]}}
 
-    def deck_score(self, pool):
-        return 0.0
+    def quick_build(self, pool):
+        return 0.0, [], []
 
 
 def test_returning_pack_swaps_the_advisors_card_for_the_drafters():
@@ -136,3 +137,26 @@ def test_simulates_a_real_draft(app):
     result = replay.replay_draft(app, d, Counter(), Counter(), drafter_deck=True)
     assert result["sim"]["win"] == out["win"]
     assert 30 < result["sim"]["drafter_win"] < 80
+
+    # The deck survives the results file: the same scorer grades it the same.
+    saved = json.loads(json.dumps(out))
+    assert any(isinstance(c, dict) for c in saved["cards"])  # basic lands
+    assert simulate.grade(app, saved) == out["win"]
+
+
+def test_grade_uses_the_judges_scorer_not_the_decks(app, monkeypatch):
+    out = {
+        "cards": [[c["name"], 1] for c in list(app.dataset.get_card_ratings().values())[:23]],
+        "colors": ["W", "U"],
+        "pool_size": 42,
+        "win": 99.0,  # what another copy's deck score made of it
+    }
+    before = simulate.grade(app, out)
+    assert before != 99.0
+    monkeypatch.setattr(app.scorer, "WIN_LOG_ODDS_AT_BASE", app.scorer.WIN_LOG_ODDS_AT_BASE + 0.1)
+    assert simulate.grade(app, out) > before
+
+
+def test_grade_refuses_a_deck_from_another_dataset(app):
+    with pytest.raises(SystemExit, match="not in this dataset"):
+        simulate.grade(app, {"cards": [["No Such Card", 1]], "colors": [], "pool_size": 1})

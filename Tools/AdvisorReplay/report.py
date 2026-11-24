@@ -241,7 +241,10 @@ def per_set_table(runs):
 
 def sim_table(runs):
     """Simulated drafts (replay.py --simulate): the deck win rate each advisor
-    reaches drafting the packs itself, or None if the replays didn't simulate."""
+    reaches drafting the packs itself, or None if the replays didn't simulate.
+
+    The head's deck is graded by the base's deck score where the base judged it
+    (replay.py --judge), and by the head's own otherwise; see judged."""
     lines = [
         "| set | drafts | base | head | head minus base (SE) |",
         "|---|---|---|---|---|",
@@ -249,7 +252,7 @@ def sim_table(runs):
     means, ses = [], []
     for code in sorted(runs["base"]):
         pairs = [
-            (b["sim"]["win"], runs["head"][code][i]["sim"]["win"])
+            (b["sim"]["win"], b["sim"].get("head_win", runs["head"][code][i]["sim"]["win"]))
             for i, b in runs["base"][code].items()
             if b.get("sim") and runs["head"][code][i].get("sim")
         ]
@@ -271,6 +274,17 @@ def sim_table(runs):
     return "\n".join(lines)
 
 
+def judged(runs):
+    """Whether the base graded every simulated deck of the head."""
+    sims = [
+        b["sim"]
+        for code, drafts in runs["base"].items()
+        for i, b in drafts.items()
+        if b.get("sim") and runs["head"][code][i].get("sim")
+    ]
+    return all("head_win" in s for s in sims)
+
+
 def report(runs):
     parts = [
         "## Picks",
@@ -285,7 +299,14 @@ def report(runs):
         parts += [
             "## Simulated drafts: Suggest Deck's deck as a win rate (%)",
             "Each advisor drafts the drafter's packs itself (simulate.py), then the "
-            "deck score of Suggest Deck's first deck becomes an expected game win rate.",
+            "deck score of Suggest Deck's first deck becomes an expected game win rate. "
+            + (
+                "The base's deck score grades both advisors' decks."
+                if judged(runs)
+                else "**Each advisor's own deck score grades its deck** (the base "
+                "replay had no `--judge`), so a head that changes the deck score or "
+                "its win-rate constants isn't comparable here."
+            ),
             sims,
         ]
     return "\n\n".join(parts)
