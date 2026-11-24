@@ -45,7 +45,7 @@ jobs:
       - run: poetry install --no-interaction
       - name: Download the dumps and the app's dataset
         run: |
-          base=https://17lands-public.s3.amazonaws.com/analysis_data
+          base=https://data.17landscapes.com/analysis_data
           curl -fsSL --retry 3 -o dump.csv.gz "$base/draft_data/draft_data_public.$SET.PremierDraft.csv.gz"
           curl -fsSL --retry 3 -o games.csv.gz "$base/game_data/game_data_public.$SET.PremierDraft.csv.gz"
           curl -fsSL --retry 3 -o dataset.json.gz \
