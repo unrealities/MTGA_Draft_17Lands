@@ -59,7 +59,7 @@ test, and set:
 
 ```sh
 SET=FRA
-curl -fsSLo dump.csv.gz "https://17lands-public.s3.amazonaws.com/analysis_data/draft_data/draft_data_public.$SET.PremierDraft.csv.gz"
+curl -fsSLo dump.csv.gz "https://data.17landscapes.com/analysis_data/draft_data/draft_data_public.$SET.PremierDraft.csv.gz"
 curl -fsSLo dataset.json.gz "https://unrealities.github.io/MTGA_Draft_17Lands/${SET}_PremierDraft_All_Data.json.gz"
 git worktree add ../base main
 

@@ -67,7 +67,7 @@ jobs:
       - name: Download the draft dump and the app's dataset
         run: |
           curl -fsSL --retry 3 -o dump.csv.gz \
-            "https://17lands-public.s3.amazonaws.com/analysis_data/draft_data/draft_data_public.$SET.PremierDraft.csv.gz"
+            "https://data.17landscapes.com/analysis_data/draft_data/draft_data_public.$SET.PremierDraft.csv.gz"
           curl -fsSL --retry 3 -o dataset.json.gz \
             "https://unrealities.github.io/MTGA_Draft_17Lands/${SET}_PremierDraft_All_Data.json.gz"
       - name: Sample drafts

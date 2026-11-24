@@ -55,7 +55,7 @@ jobs:
           # 17Lands names the cube Cube_-_Powered; the app, "Cube - Powered".
           NAME="${SET//_-_/%20-%20}"
           curl -fsSL --retry 3 -o games.csv.gz \
-            "https://17lands-public.s3.amazonaws.com/analysis_data/game_data/game_data_public.$SET.PremierDraft.csv.gz"
+            "https://data.17landscapes.com/analysis_data/game_data/game_data_public.$SET.PremierDraft.csv.gz"
           curl -fsSL --retry 3 -o dataset.json.gz \
             "https://unrealities.github.io/MTGA_Draft_17Lands/${NAME}_PremierDraft_All_Data.json.gz"
       - name: Sample decks

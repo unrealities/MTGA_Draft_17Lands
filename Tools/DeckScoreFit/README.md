@@ -92,7 +92,7 @@ The run takes about 10 minutes. The report is on the run's summary page.
 
 ```sh
 SET=FRA
-curl -fsSLo games.csv.gz "https://17lands-public.s3.amazonaws.com/analysis_data/game_data/game_data_public.$SET.PremierDraft.csv.gz"
+curl -fsSLo games.csv.gz "https://data.17landscapes.com/analysis_data/game_data/game_data_public.$SET.PremierDraft.csv.gz"
 curl -fsSLo dataset.json.gz "https://unrealities.github.io/MTGA_Draft_17Lands/${SET}_PremierDraft_All_Data.json.gz"
 
 poetry run python Tools/DeckScoreFit/decks.py --games games.csv.gz --decks 5000 --out decks.json.gz
