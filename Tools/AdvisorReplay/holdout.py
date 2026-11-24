@@ -5,10 +5,12 @@
         --rebuilt rebuilt.json.gz --heldout heldout.json.gz
 
 The two datasets differ only in their win rates: --rebuilt counts every game in
-the dump, and --heldout leaves out the games of the drafts in --drafts. A rate
-exists where the card has MIN_SAMPLES games in hand in the whole dump, as 17Lands
-hides thinner ones from the app, and samples is that whole-dump count, which
-reads no results. So both datasets have the same cards rated and the same
+the dump, and --heldout leaves out the games of the drafts in --drafts. Both
+count copies as 17Lands does: two copies drawn in a game count twice for GIH WR,
+and for GNS WR each copy left in the deck that was neither in hand nor tutored
+counts once. A rate exists where the card has MIN_SAMPLES copies in hand in the
+whole dump, as 17Lands hides thinner ones from the app, and samples is that
+whole-dump count, which reads no results. So both datasets have the same cards rated and the same
 shrinkage. Cards the app has no data for, such as basic lands, stay unrated. GIH WR, GNS WR and IWD are replaced; the other fields stay the app's,
 which the advisor doesn't read for scoring, except ALSA, which reads no results.
 --also names more drafts whose games --heldout leaves out too, without replaying
@@ -37,7 +39,10 @@ def read_counts(lines, held):
     """(held, rest): read_games' {colors: {card: counts}} for games of drafts in
     held and for all the others."""
     _, folds = read_games(
-        lines, set(), fold_of=lambda key: 0 if key.rsplit(":", 1)[0] in held else 1
+        lines,
+        set(),
+        fold_of=lambda key: 0 if key.rsplit(":", 1)[0] in held else 1,
+        copies=True,
     )
     return folds[0], folds[1]
 
