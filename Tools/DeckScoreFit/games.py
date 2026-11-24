@@ -40,12 +40,13 @@ def _count(text):
     return int(float(text)) if text else 0
 
 
-def read_games(lines, ids):
+def read_games(lines, ids, fold_of=fold_of):
     """(hands, folds) from the dump's lines, header first.
 
     hands: [deck id, on play, mulligans, won, {card: count in opening hand}]
     for each game of a deck in ids. folds: for each fold, {colors: {card:
-    [games in hand, won, games not drawn, won]}} over its decks' games.
+    [games in hand, won, games not drawn, won]}} over its decks' games. fold_of
+    says which of FOLDS folds a deck's ID falls in.
     """
     lines = iter(lines)
     header = next(csv.reader([next(lines)]))
