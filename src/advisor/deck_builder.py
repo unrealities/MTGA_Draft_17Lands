@@ -336,7 +336,7 @@ def suggest_deck(
         seen_signatures = set()
         simulated_cache = {}  # Cache to prevent random variance on identical decks
 
-        def process_variant(variant_name, deck, sb, colors, arch_key):
+        def process_variant(variant_name, deck, sb, colors, arch_key, splash=()):
             if not deck:
                 return
             spells = [c for c in deck if "Land" not in c.get("types", [])]
@@ -403,8 +403,15 @@ def suggest_deck(
                 opt_stats, score, breakdown = simulated_cache[deck_sig]
             else:
                 opt_stats = simulate_deck(opt_deck, iterations=10000)
+                # The colors the build was made in are its main colors; any
+                # other color its spells need is a splash.
+                main = [c for c in colors if c not in splash]
                 score, breakdown = calculate_holistic_score(
-                    opt_deck, active_colors, pool_size, metrics
+                    opt_deck,
+                    active_colors,
+                    pool_size,
+                    metrics,
+                    splash_colors=[c for c in active_colors if c not in main],
                 )
                 simulated_cache[deck_sig] = (opt_stats, score, breakdown)
 
@@ -463,6 +470,7 @@ def suggest_deck(
                     get_sideboard(taken_cards, greedy_deck),
                     main_colors + [splash_color],
                     arch_key,
+                    splash=[splash_color],
                 )
 
         if progress_callback:

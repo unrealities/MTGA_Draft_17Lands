@@ -51,7 +51,10 @@ def test_features_are_the_apps(app, white_blue):
         built, ["W", "U"], features.POOL_SIZE, app.metrics
     )
     assert row["features"] == expected
-    assert row["features"]["two_colors"] == 1 and not row["features"]["missing_spells"]
+    assert not any(
+        row["features"][k]
+        for k in ("splash", "three_colors", "four_colors", "missing_spells")
+    )
     assert (row["wins"], row["games"], row["skill"]) == (2, 3, "0.56")
     assert row["extra"]["lands"] == 17 and row["extra"]["spells"] == 23
 

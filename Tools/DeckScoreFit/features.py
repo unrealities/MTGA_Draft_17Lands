@@ -9,6 +9,7 @@ that copy's card data, so the fit uses the same features as the app.
 
 import argparse
 import gzip
+import inspect
 import json
 import os
 import shutil
@@ -57,6 +58,15 @@ class App:
             name = card.get("name", "")
             self.full_names.setdefault(name.split(" // ")[0], name)
         self.unmatched = Counter()
+
+    def deck_features(self, deck, colors, splash_colors):
+        """The app's deck_features(), told which colors are a splash if that
+        copy of the app takes them (older copies don't)."""
+        params = inspect.signature(self.scorer.deck_features).parameters
+        kwargs = {"splash_colors": splash_colors} if "splash_colors" in params else {}
+        return self.scorer.deck_features(
+            deck, colors, POOL_SIZE, self.metrics, **kwargs
+        )
 
     def deck(self, cards):
         """Card dicts with counts for {name: count}, or None if a card is missing."""
@@ -174,7 +184,7 @@ def deck_rows(app, decks):
             skipped["card not in dataset"] += 1
             continue
         colors = list(d["main_colors"] + d["splash_colors"])
-        features = app.scorer.deck_features(deck, colors, POOL_SIZE, app.metrics)
+        features = app.deck_features(deck, colors, list(d["splash_colors"]))
         if features is None:
             skipped["no spells"] += 1
             continue
