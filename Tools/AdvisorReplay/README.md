@@ -57,7 +57,40 @@ test, and set:
   result on drafts it wasn't tuned on;
 - `holdout`: also replay on ratings rebuilt from the set's game data, once with
   the replayed drafts' games in them and once without. Rebuilding changes the
-  ratings in its own right, so the leak is the difference between those two.
+  ratings in its own right, so the leak is the difference between those two;
+- `simulate`: also let each advisor draft the packs itself and report the
+  deck win rate it reaches (see below). It takes several times longer.
+
+## Simulated drafts
+
+Replaying the drafter's picks shows how often an advisor agrees with them, not
+what the advisor would end up with. With `--simulate`, `simulate.py` also has
+each advisor draft the same packs itself. It takes its own top card at every
+pick. From pick 9 the packs that come back around reflect its choices: where
+it took A and the drafter took H, the returning pack holds H in place of A
+(if another drafter took A, the pack stays as it was). Other drafters are
+assumed to pick as they did. Then Suggest Deck builds the pool, and the deck score of
+its first deck becomes an expected game win rate. The report adds that win
+rate per set, head minus base.
+
+Only whole drafts are simulated. The dumps hold some drafts with no rows at
+all for one of the three packs, and those are left out; a draft that only
+lacks a few picks' rows still counts when its pools show what was taken.
+
+Each advisor builds with its own Suggest Deck, but one deck score grades both
+decks: the base's, with the base's win-rate constants. The head replays first,
+and the base's replay takes `--judge` with the head's results. So a head that
+only changes the deck score's calibration reads zero here, and a head that
+changes the deck score itself is judged by the old one. A grade uses only the
+deck's cards and the pool's size: the base reads each deck's colors from its
+cards, its own decks and the head's alike, so a head that changes how Suggest
+Deck reports a deck's colors reads zero too. With `holdout`, the rebuilt and
+held-out sections get this table too.
+
+The deck score both builds the deck and grades it. A change that alters how
+the advisor values cards relative to the deck score can therefore look better
+or worse here for that reason alone. Read this section as a screen next to the
+pick and event-win tables, not as a verdict on its own.
 
 ## Locally
 
@@ -68,10 +101,13 @@ curl -fsSLo dataset.json.gz "https://unrealities.github.io/MTGA_Draft_17Lands/${
 git worktree add ../base main
 
 poetry run python Tools/AdvisorReplay/sample.py --dump dump.csv.gz --drafts 300 --out drafts.json.gz
-poetry run python Tools/AdvisorReplay/replay.py --src ../base --drafts drafts.json.gz --dataset dataset.json.gz --set $SET --label base --out results/$SET.base.json
 poetry run python Tools/AdvisorReplay/replay.py --src . --drafts drafts.json.gz --dataset dataset.json.gz --set $SET --label head --out results/$SET.head.json
+poetry run python Tools/AdvisorReplay/replay.py --src ../base --drafts drafts.json.gz --dataset dataset.json.gz --set $SET --label base --out results/$SET.base.json
 poetry run python Tools/AdvisorReplay/report.py results/*.json
 ```
+
+For simulated drafts, add `--simulate` to both replays and
+`--judge results/$SET.head.json` to the base's.
 
 Sampling reads the whole dump (about a minute); replaying 300 drafts through
 one copy of the advisor takes about 20 seconds.
@@ -82,6 +118,7 @@ one copy of the advisor takes about 20 seconds.
 |---|---|
 | `sample.py` | Picks drafts from a dump by a hash of their ID, so a sample is repeatable. Standard library only. |
 | `replay.py` | Runs one copy of the app (`--src`) over the sampled drafts: the advisor at every pick, the deck score on the final pool. |
+| `simulate.py` | Lets the advisor draft a draft's packs itself, with wheel swaps, and scores Suggest Deck's deck (`replay.py --simulate`). |
 | `holdout.py` | Rebuilds the dataset's win rates from a game dump, with and without the sampled drafts. Standard library only. |
 | `report.py` | Pairs the base and head results by draft and writes the Markdown report. Needs only NumPy. |
 | `lanes.py` | Compares lane rules with the colors drafters played, preserving pick order and checking parity with the app. |

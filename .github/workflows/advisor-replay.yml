@@ -31,6 +31,10 @@ on:
         description: Also replay on ratings rebuilt from game data, with and without the replayed drafts
         type: boolean
         default: false
+      simulate:
+        description: Also let each advisor draft the packs itself and score the deck it builds (slower)
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -44,12 +48,13 @@ env:
   HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
   DRAFTS: ${{ inputs.drafts || '3000' }}
   SALT: ${{ inputs.salt }}
+  SIMULATE: ${{ inputs.simulate && '--simulate' || '' }}
 
 jobs:
   replay:
     name: Replay ${{ matrix.set }}
     runs-on: ubuntu-latest
-    timeout-minutes: ${{ inputs.holdout && 180 || 60 }}
+    timeout-minutes: ${{ (inputs.holdout || inputs.simulate) && 180 || 60 }}
     strategy:
       fail-fast: false
       matrix:
@@ -76,10 +81,12 @@ jobs:
             "https://unrealities.github.io/MTGA_Draft_17Lands/${SET}_PremierDraft_All_Data.json.gz"
       - name: Sample drafts
         run: poetry run python Tools/AdvisorReplay/sample.py --dump dump.csv.gz --drafts "$DRAFTS" --salt "$SALT" --out drafts.json.gz
-      - name: Replay the base
-        run: poetry run python Tools/AdvisorReplay/replay.py --src base --drafts drafts.json.gz --dataset dataset.json.gz --set "$SET" --label base --out "results/$SET.base.json"
+      # The base goes second: with simulate, it also grades the decks this branch
+      # drafted (--judge), so one deck score grades both.
       - name: Replay this branch
-        run: poetry run python Tools/AdvisorReplay/replay.py --src . --drafts drafts.json.gz --dataset dataset.json.gz --set "$SET" --label head --out "results/$SET.head.json"
+        run: poetry run python Tools/AdvisorReplay/replay.py --src . --drafts drafts.json.gz --dataset dataset.json.gz --set "$SET" --label head --out "results/$SET.head.json" $SIMULATE
+      - name: Replay the base
+        run: poetry run python Tools/AdvisorReplay/replay.py --src base --drafts drafts.json.gz --dataset dataset.json.gz --set "$SET" --label base --out "results/$SET.base.json" $SIMULATE ${SIMULATE:+--judge "results/$SET.head.json"}
       - name: Rebuild the ratings from the game data
         if: inputs.holdout
         run: |
@@ -90,8 +97,8 @@ jobs:
         if: inputs.holdout
         run: |
           for ratings in rebuilt heldout; do
-            poetry run python Tools/AdvisorReplay/replay.py --src base --drafts drafts.json.gz --dataset "$ratings.json.gz" --set "$SET" --label base --out "results/$ratings/$SET.base.json"
-            poetry run python Tools/AdvisorReplay/replay.py --src . --drafts drafts.json.gz --dataset "$ratings.json.gz" --set "$SET" --label head --out "results/$ratings/$SET.head.json"
+            poetry run python Tools/AdvisorReplay/replay.py --src . --drafts drafts.json.gz --dataset "$ratings.json.gz" --set "$SET" --label head --out "results/$ratings/$SET.head.json" $SIMULATE
+            poetry run python Tools/AdvisorReplay/replay.py --src base --drafts drafts.json.gz --dataset "$ratings.json.gz" --set "$SET" --label base --out "results/$ratings/$SET.base.json" $SIMULATE ${SIMULATE:+--judge "results/$ratings/$SET.head.json"}
           done
       - uses: actions/upload-artifact@v4
         with:

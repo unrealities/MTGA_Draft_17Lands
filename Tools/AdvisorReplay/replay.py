@@ -8,6 +8,8 @@ At every pick, the advisor sees the pack and the cards taken so far, as it
 would in the app, and the harness records where it ranked the card the drafter
 took. Each final pool also gets the app's deck score. --src picks which copy of
 the app to import, so a pull request and its base can replay the same drafts.
+With --simulate, replay the head first and give the base --judge with the head's
+results, so one deck score grades both copies' simulated decks.
 """
 
 import argparse
@@ -21,6 +23,8 @@ import sys
 import tempfile
 import time
 from collections import Counter
+
+import simulate
 
 DECK_SIZE = 23
 
@@ -50,6 +54,14 @@ class App:
         if not self.dataset.get_card_ratings():
             raise SystemExit(f"Could not load dataset {dataset_path}")
         self.metrics = SetMetrics(self.dataset)
+        from src.advisor import deck_builder, deck_scorer
+
+        # Suggest Deck's simulator stats and sideboards are only shown in the
+        # app; they don't rank its decks. Skipping them leaves the decks and their
+        # order as they were and makes Suggest Deck about twenty times faster.
+        deck_builder.simulate_deck = lambda *args, **kwargs: {}
+        deck_builder.get_sideboard = lambda *args, **kwargs: []
+        self.deck_builder, self.scorer = deck_builder, deck_scorer
 
         # The dump names double-faced cards by their front face only.
         self.full_names = {}
@@ -89,6 +101,10 @@ class App:
 
     def deck_score(self, pool):
         """The best score among the app's quick deck builds for this pool."""
+        return self.quick_build(pool)[0]
+
+    def quick_build(self, pool):
+        """(score, deck, colors) of the best of the app's quick deck builds."""
         cl = self.card_logic
         builds = []
         for pair in cl.identify_top_pairs(pool, self.metrics):
@@ -102,12 +118,42 @@ class App:
         builds.append((deck, colors[:3] if colors else ["All Decks"]))
         return max(
             (
-                cl.calculate_holistic_score(deck, colors, len(pool), self.metrics)[0]
+                (
+                    cl.calculate_holistic_score(deck, colors, len(pool), self.metrics)[0],
+                    deck,
+                    colors,
+                )
                 for deck, colors in builds
                 if deck
             ),
-            default=0.0,
+            key=lambda build: build[0],
+            default=(0.0, [], []),
         )
+
+    def score_deck(self, deck, pool_size):
+        """The deck score of a finished deck, with its colors read from its cards.
+
+        The colors are those the spells' costs ask for, most pips first, as
+        Suggest Deck reads them. A builder's own account of its colors isn't
+        used, so the same cards always get the same score, whichever copy of
+        the app built the deck (simulate.grade)."""
+        # Imported here: copies of the app from before November 2026 have no
+        # src.mana_cost, and can still be replayed without --simulate.
+        from src.mana_cost import mana_color_demand
+
+        spells = [
+            c for c in deck if self.constants.CARD_TYPE_LAND not in c.get("types", [])
+        ]
+        pips = mana_color_demand(spells)
+        colors = sorted((c for c in pips if pips[c] > 0), key=lambda c: -pips[c])
+        return self.scorer.calculate_holistic_score(
+            deck, colors, pool_size, self.metrics
+        )[0]
+
+    def suggest(self, pool):
+        """Suggest Deck's decks for the pool, best first, as the app shows them."""
+        self.deck_builder.clear_deck_cache()
+        return self.deck_builder.suggest_deck(pool, self.metrics, None, "PremierDraft")
 
     def pool_gihwr(self, pool):
         """Mean GIH WR of the best 23 cards castable in one color pair (a yardstick)."""
@@ -153,8 +199,11 @@ def in_pick_order(earlier, pool_names):
     return kept + list(left.elements())
 
 
-def replay_draft(app, draft, skipped):
-    """The draft's scored picks and final pool scores."""
+def replay_draft(app, draft, skipped, sim=None, drafter_deck=False):
+    """The draft's scored picks and final pool scores.
+
+    sim, a Counter, also has the advisor draft the packs itself (simulate.py);
+    drafter_deck also scores the drafter's own pool the same way."""
     picks, pool_names = [], []
     for pack_no, pick_no, taken, pack_names, by_card in draft["picks"]:
         pool_names = in_pick_order(pool_names, by_card)
@@ -190,11 +239,19 @@ def replay_draft(app, draft, skipped):
             deck_score = round(app.deck_score(final_pool), 4)
             pool_gihwr = round(app.pool_gihwr(final_pool), 4)
 
-    return {k: draft[k] for k in ("id", "skill", "games", "wins", "losses")} | {
+    out = {k: draft[k] for k in ("id", "skill", "games", "wins", "losses")} | {
         "picks": picks,
         "deck_score": deck_score,
         "pool_gihwr": pool_gihwr,
     }
+    if sim is not None:
+        out["sim"] = simulate.simulate_draft(app, draft, sim)
+        if out["sim"] and drafter_deck:
+            # The drafter's own pool through the same Suggest Deck, for comparison.
+            final_pool = app.cards(pool_names + [draft["picks"][-1][2]])
+            deck = simulate.first_deck(app, final_pool)[1]
+            out["sim"]["drafter_win"] = simulate.deck_win(app, deck, len(final_pool))
+    return out
 
 
 def main(argv=None):
@@ -213,7 +270,19 @@ def main(argv=None):
     parser.add_argument(
         "--out", required=True, help="Where to write the results (.json)"
     )
+    parser.add_argument(
+        "--simulate",
+        action="store_true",
+        help="Also let the advisor draft each draft's packs itself (simulate.py)",
+    )
+    parser.add_argument(
+        "--judge",
+        help="Another copy's --simulate results: also grade its decks with this "
+        "copy's deck score (the base judges the head)",
+    )
     args = parser.parse_args(argv)
+    if args.judge and not args.simulate:
+        parser.error("--judge needs --simulate")
 
     sys.path.insert(0, os.path.abspath(args.src))
     app = App(args.dataset)
@@ -221,7 +290,17 @@ def main(argv=None):
         drafts = json.load(f)
 
     start, skipped = time.time(), Counter()
-    results = [replay_draft(app, d, skipped) for d in drafts]
+    sim = Counter() if args.simulate else None
+    # Every copy replays the same drafters' pools; the base alone scores them.
+    drafter_deck = args.simulate and args.label == "base"
+    results = [replay_draft(app, d, skipped, sim, drafter_deck) for d in drafts]
+    if args.judge:
+        with open(args.judge, encoding="utf-8") as f:
+            theirs = {d["id"]: d.get("sim") for d in json.load(f)["drafts"]}
+        for result in results:
+            if result["sim"] and theirs.get(result["id"]):
+                result["sim"]["head_win"] = simulate.grade(app, theirs[result["id"]])
+                sim["decks graded for the other copy"] += 1
     seconds = time.time() - start
     os.makedirs(os.path.dirname(args.out) or ".", exist_ok=True)
     with open(args.out, "w", encoding="utf-8") as f:
@@ -231,6 +310,7 @@ def main(argv=None):
                 "label": args.label,
                 "seconds": round(seconds),
                 "skipped": dict(skipped),
+                "simulation": dict(sim) if sim is not None else None,
                 "unmatched": dict(app.unmatched.most_common(10)),
                 "drafts": results,
             },

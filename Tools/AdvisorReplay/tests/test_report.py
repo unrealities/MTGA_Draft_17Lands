@@ -73,3 +73,25 @@ def test_load_pairs_drafts(tmp_path):
         == ["d1", "d2", "d3", "d4"]
     )
     assert report.report(loaded).startswith("## Picks")
+
+
+def test_sim_table_only_with_simulated_drafts():
+    data = runs()
+    assert report.sim_table(data) is None
+    assert "Simulated drafts" not in report.report(data)
+    rng = np.random.default_rng(1)
+    for i, draft in data["base"]["FRA"].items():
+        win = 55 + rng.normal()
+        draft["sim"] = {"win": win}
+        data["head"]["FRA"][i]["sim"] = {"win": win + 0.5}
+    table = report.sim_table(data)
+    assert "| FRA | 400 |" in table
+    assert "+0.500 (0.000)" in table
+    assert "Simulated drafts" in report.report(data)
+    assert "own deck score grades its deck" in report.report(data)
+
+    # Where the base graded the head's decks, its grade is the one compared.
+    for draft in data["base"]["FRA"].values():
+        draft["sim"]["head_win"] = draft["sim"]["win"] + 0.2
+    assert "+0.200 (0.000)" in report.sim_table(data)
+    assert "The base's deck score grades both" in report.report(data)
