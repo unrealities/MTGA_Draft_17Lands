@@ -41,10 +41,19 @@ class FakeApp:
         return {c["name"]: -i for i, c in enumerate(sorted(pack, key=lambda c: c["name"]))}
 
     def suggest(self, pool):
-        return {"deck": {"rating": 75.0 + len(pool), "deck_cards": pool, "colors": ["W"]}}
+        return {"deck": {"rating": 0.0, "deck_cards": pool, "colors": ["W"]}}
 
     def quick_build(self, pool):
         return 0.0, [], []
+
+    def score_deck(self, deck, pool_size):
+        return 75.0 + len(deck)
+
+
+@pytest.fixture
+def one_round(monkeypatch):
+    """Toy drafts of a single pack."""
+    monkeypatch.setattr(simulate, "ROUNDS", 1)
 
 
 def test_returning_pack_swaps_the_advisors_card_for_the_drafters():
@@ -55,7 +64,7 @@ def test_returning_pack_swaps_the_advisors_card_for_the_drafters():
     assert counts == {"wheel swap applied": 1, "wheel swap dropped (taken by another drafter)": 1}
 
 
-def test_wheel_pick_sees_the_drafters_card_back():
+def test_wheel_pick_sees_the_drafters_card_back(one_round):
     # 10-card packs, one round: pick 9 sees pick 1's pack again.
     first = ["b", "a"] + [f"c{i}" for i in range(8)]
     packs = [[first] + [[f"p{p}a", f"p{p}b"] for p in range(2, 9)] + [["c6", "c7"], ["c7"]]]
@@ -79,7 +88,7 @@ def test_wheel_pick_sees_the_drafters_card_back():
     assert app.packs[-1] == ["b", "c7"]
 
 
-def test_missing_rows_are_forced_from_the_pools():
+def test_missing_rows_are_forced_from_the_pools(one_round):
     packs = [[["a", "b", "c"], ["d", "e"], ["f"]]]
     takes = [["c", "e", "f"]]
     d = full_draft(packs, takes)
@@ -89,15 +98,33 @@ def test_missing_rows_are_forced_from_the_pools():
     out = simulate.simulate_draft(app, d, counts)
     assert counts["picks forced (no row in the dump)"] == 1
     assert app.pools[0] == ["c"]  # the forced card is in the advisor's pool
-    assert out["score"] == 78.0
+    assert out["win"] == pytest.approx(simulate.win_rate(78.0, app.scorer), abs=1e-4)
 
 
-def test_unaccountable_gap_skips_the_draft():
+def test_unaccountable_gap_skips_the_draft(one_round):
     d = full_draft([[["a", "b"], ["c", "d"], ["e"]]], [["a", "c", "e"]])
     del d["picks"][0]
     d["picks"][0][4] = []  # the pool no longer shows pick 1's card
     counts = Counter()
     assert simulate.simulate_draft(FakeApp(), d, counts) is None
+    assert counts == {"drafts: pools don't account for missing picks": 1}
+
+
+def test_a_draft_missing_a_whole_pack_is_left_out():
+    # Three packs of three picks; the dump has drafts that stop after pack two.
+    packs = [[[f"r{r}a", f"r{r}b", f"r{r}c"], [f"r{r}d", f"r{r}e"], [f"r{r}f"]] for r in range(3)]
+    takes = [[f"r{r}c", f"r{r}e", f"r{r}f"] for r in range(3)]
+    whole = full_draft(packs, takes, rounds=3)
+    counts = Counter()
+    assert simulate.simulate_draft(FakeApp(), whole, counts)["pool_size"] == 9
+    for missing in (1, 2, 3):
+        d = dict(whole, picks=[p for p in whole["picks"] if p[0] != missing])
+        counts = Counter()
+        assert simulate.simulate_draft(FakeApp(), d, counts) is None
+        assert counts == {"drafts: a whole pack missing from the dump": 1}
+    # A draft that stops partway through the last pack isn't whole either.
+    counts = Counter()
+    assert simulate.simulate_draft(FakeApp(), dict(whole, picks=whole["picks"][:-1]), counts) is None
     assert counts == {"drafts: pools don't account for missing picks": 1}
 
 
@@ -147,7 +174,6 @@ def test_simulates_a_real_draft(app):
 def test_grade_uses_the_judges_scorer_not_the_decks(app, monkeypatch):
     out = {
         "cards": [[c["name"], 1] for c in list(app.dataset.get_card_ratings().values())[:23]],
-        "colors": ["W", "U"],
         "pool_size": 42,
         "win": 99.0,  # what another copy's deck score made of it
     }
@@ -159,4 +185,30 @@ def test_grade_uses_the_judges_scorer_not_the_decks(app, monkeypatch):
 
 def test_grade_refuses_a_deck_from_another_dataset(app):
     with pytest.raises(SystemExit, match="not in this dataset"):
-        simulate.grade(app, {"cards": [["No Such Card", 1]], "colors": [], "pool_size": 1})
+        simulate.grade(app, {"cards": [["No Such Card", 1]], "pool_size": 1})
+
+
+def test_grade_reads_the_colors_from_the_cards(app):
+    """Two colors of spells score as two colors, a third color's card makes it
+    three, and what the deck's builder called its colors changes nothing."""
+    cards = list(app.dataset.get_card_ratings().values())
+
+    def spells(color, n):
+        found = [
+            c for c in cards
+            if c.get("colors") == [color] and "Land" not in c.get("types", [])
+            and set(c.get("mana_cost", "")) & set("WUBRG") == {color}
+        ]
+        return found[:n]
+
+    two = spells("G", 12) + spells("W", 11)
+    assert len(two) == 23
+    score = lambda colors: app.scorer.calculate_holistic_score(two, colors, 42, app.metrics)[0]
+    assert app.score_deck(two, 42) == score(["G", "W"])
+    assert score(["W", "U", "B"]) < score(["G", "W"])  # reported colors would move the score
+
+    deck = {"cards": [[c["name"], 1] for c in two], "pool_size": 42}
+    graded = simulate.grade(app, deck)
+    assert simulate.grade(app, dict(deck, colors=["W", "U", "B"])) == graded
+    # A third color among the cards does move it.
+    assert simulate.deck_win(app, two[:-1] + spells("U", 1), 42) < graded

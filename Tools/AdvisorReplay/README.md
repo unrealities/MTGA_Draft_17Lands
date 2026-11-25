@@ -73,12 +73,19 @@ assumed to pick as they did. Then Suggest Deck builds the pool, and the deck sco
 its first deck becomes an expected game win rate. The report adds that win
 rate per set, head minus base.
 
+Only whole drafts are simulated. The dumps hold some drafts with no rows at
+all for one of the three packs, and those are left out; a draft that only
+lacks a few picks' rows still counts when its pools show what was taken.
+
 Each advisor builds with its own Suggest Deck, but one deck score grades both
 decks: the base's, with the base's win-rate constants. The head replays first,
 and the base's replay takes `--judge` with the head's results. So a head that
 only changes the deck score's calibration reads zero here, and a head that
-changes the deck score itself is judged by the old one. With `holdout`, the
-rebuilt and held-out sections get this table too.
+changes the deck score itself is judged by the old one. A grade uses only the
+deck's cards and the pool's size: the base reads each deck's colors from its
+cards, its own decks and the head's alike, so a head that changes how Suggest
+Deck reports a deck's colors reads zero too. With `holdout`, the rebuilt and
+held-out sections get this table too.
 
 The deck score both builds the deck and grades it. A change that alters how
 the advisor values cards relative to the deck score can therefore look better

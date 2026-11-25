@@ -11,7 +11,16 @@ One grader. Each copy builds its deck with its own Suggest Deck, but a head that
 changes the deck score or its win-rate constants would grade its own decks by a
 different yardstick. So each result keeps the deck's cards, and replay.py
 --judge has the base grade the head's decks too (grade): the report compares
-both advisors' decks by the base's deck score.
+both advisors' decks by the base's deck score. Only the cards and the pool's
+size go into a grade. The deck's colors, which the score also needs, are read
+from the cards by the grading copy (replay.App.score_deck), for its own decks
+and the other copy's alike, so what a builder reports as its colors can't move
+the result.
+
+Whole drafts only. A Premier Draft has three packs. A draft with no rows at all
+for one of them (the dump has some that stop after pack two) is left out: its
+pool would still be large enough to build a deck from, but not a deck to
+compare.
 
 The packs. In an eight-player pod, the pack at pick p of a round was last seen
 at pick p - 8: picks 1 to 8 see packs the drafter's own picks never touched,
@@ -31,6 +40,7 @@ import math
 from collections import Counter
 
 PLAYERS = 8
+ROUNDS = 3  # packs in a Premier Draft
 
 
 def card_names(draft):
@@ -45,9 +55,8 @@ def forced_picks(draft):
     rows = card_names(draft)
     if not rows:
         return None
-    packs = sorted({k[0] for k in rows})
     picks_per_round = max(k[1] for k in rows)
-    slots = [(r, p) for r in range(1, max(packs) + 1) for p in range(1, picks_per_round + 1)]
+    slots = [(r, p) for r in range(1, ROUNDS + 1) for p in range(1, picks_per_round + 1)]
     out, gap, before = {}, [], Counter()
     for slot in slots:
         if slot not in rows:
@@ -92,16 +101,18 @@ def simulate_draft(app, draft, counts):
     """The advisor's own draft from these packs and its deck, or None.
 
     app is replay.App; counts a Counter of what the simulation did."""
+    rows = card_names(draft)
+    if {k[0] for k in rows} != set(range(1, ROUNDS + 1)):
+        counts["drafts: a whole pack missing from the dump"] += 1
+        return None
     forced = forced_picks(draft)
     if forced is None:
         counts["drafts: pools don't account for missing picks"] += 1
         return None
-    rows = card_names(draft)
     name = lambda n: app.full_names.get(n, n)  # dump names to dataset names
     picks_per_round = max(k[1] for k in rows)
-    rounds = max(k[0] for k in rows)
     pool, agree, decided, swaps_fired = [], 0, 0, 0
-    for r in range(1, rounds + 1):
+    for r in range(1, ROUNDS + 1):
         pending = {}  # pack slot (pick - 1) % PLAYERS -> swaps
         for p in range(1, picks_per_round + 1):
             if (r, p) in forced:
@@ -135,33 +146,35 @@ def simulate_draft(app, draft, counts):
                 pending[slot].append((mine, theirs))
             counts["picks"] += 1
     pool = app.cards(pool)
-    score, how, deck, colors = deck_rating(app, pool)
+    how, deck = first_deck(app, pool)
     counts[f"decks: {how}"] += 1
     return {
-        "score": round(score, 4),
-        "win": round(win_rate(score, app.scorer), 4),
+        "win": deck_win(app, deck, len(pool)),
         "agree": agree,
         "decided": decided,
         "wheel_swaps": swaps_fired,
         "deck": how,
         "cards": [packed(c) for c in deck],
-        "colors": list(colors),
         "pool_size": len(pool),
     }
 
 
-def deck_rating(app, pool):
-    """(score, how, deck, colors) of the first deck the app's Suggest Deck offers
-    for this pool.
+def first_deck(app, pool):
+    """(how, deck): the first deck the app's Suggest Deck offers for this pool.
 
     Suggest Deck needs 15 spells; a pool short of them falls back to the best
-    quick build, whose score charges for the missing spells."""
+    quick build."""
     decks = app.suggest(pool)
     if decks:
-        first = next(iter(decks.values()))
-        return first["rating"], "suggest deck", first["deck_cards"], first["colors"]
-    score, deck, colors = app.quick_build(pool)
-    return score, "quick build (no suggested deck)", deck, colors
+        return "suggest deck", next(iter(decks.values()))["deck_cards"]
+    return "quick build (no suggested deck)", app.quick_build(pool)[1]
+
+
+def deck_win(app, deck, pool_size):
+    """The win rate app's deck score gives a finished deck, from its cards alone.
+
+    A deck short of spells for its pool is charged for them by the score."""
+    return round(win_rate(app.score_deck(deck, pool_size), app.scorer), 4)
 
 
 def packed(card):
@@ -184,7 +197,4 @@ def grade(app, sim):
         if not found:
             raise SystemExit(f"--judge: {name} is not in this dataset; was the deck drafted on another?")
         deck.append(dict(found[0], count=count))
-    score, _ = app.scorer.calculate_holistic_score(
-        deck, sim["colors"], sim["pool_size"], app.metrics
-    )
-    return round(win_rate(score, app.scorer), 4)
+    return deck_win(app, deck, sim["pool_size"])

@@ -130,6 +130,26 @@ class App:
             default=(0.0, [], []),
         )
 
+    def score_deck(self, deck, pool_size):
+        """The deck score of a finished deck, with its colors read from its cards.
+
+        The colors are those the spells' costs ask for, most pips first, as
+        Suggest Deck reads them. A builder's own account of its colors isn't
+        used, so the same cards always get the same score, whichever copy of
+        the app built the deck (simulate.grade)."""
+        # Imported here: copies of the app from before November 2026 have no
+        # src.mana_cost, and can still be replayed without --simulate.
+        from src.mana_cost import mana_color_demand
+
+        spells = [
+            c for c in deck if self.constants.CARD_TYPE_LAND not in c.get("types", [])
+        ]
+        pips = mana_color_demand(spells)
+        colors = sorted((c for c in pips if pips[c] > 0), key=lambda c: -pips[c])
+        return self.scorer.calculate_holistic_score(
+            deck, colors, pool_size, self.metrics
+        )[0]
+
     def suggest(self, pool):
         """Suggest Deck's decks for the pool, best first, as the app shows them."""
         self.deck_builder.clear_deck_cache()
@@ -229,8 +249,8 @@ def replay_draft(app, draft, skipped, sim=None, drafter_deck=False):
         if out["sim"] and drafter_deck:
             # The drafter's own pool through the same Suggest Deck, for comparison.
             final_pool = app.cards(pool_names + [draft["picks"][-1][2]])
-            score = simulate.deck_rating(app, final_pool)[0]
-            out["sim"]["drafter_win"] = round(simulate.win_rate(score, app.scorer), 4)
+            deck = simulate.first_deck(app, final_pool)[1]
+            out["sim"]["drafter_win"] = simulate.deck_win(app, deck, len(final_pool))
     return out
 
 
