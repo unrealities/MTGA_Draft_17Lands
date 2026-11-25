@@ -27,6 +27,10 @@ on:
       salt:
         description: Any text; changes which drafts are sampled
         default: ""
+      holdout:
+        description: Also replay on ratings rebuilt from game data, with and without the replayed drafts
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -45,7 +49,7 @@ jobs:
   replay:
     name: Replay ${{ matrix.set }}
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: ${{ inputs.holdout && 180 || 60 }}
     strategy:
       fail-fast: false
       matrix:
@@ -76,6 +80,19 @@ jobs:
         run: poetry run python Tools/AdvisorReplay/replay.py --src base --drafts drafts.json.gz --dataset dataset.json.gz --set "$SET" --label base --out "results/$SET.base.json"
       - name: Replay this branch
         run: poetry run python Tools/AdvisorReplay/replay.py --src . --drafts drafts.json.gz --dataset dataset.json.gz --set "$SET" --label head --out "results/$SET.head.json"
+      - name: Rebuild the ratings from the game data
+        if: inputs.holdout
+        run: |
+          curl -fsSL --retry 3 -o games.csv.gz \
+            "https://data.17landscapes.com/analysis_data/game_data/game_data_public.$SET.PremierDraft.csv.gz"
+          poetry run python Tools/AdvisorReplay/holdout.py --games games.csv.gz --drafts drafts.json.gz --dataset dataset.json.gz --rebuilt rebuilt.json.gz --heldout heldout.json.gz
+      - name: Replay on the rebuilt and held-out ratings
+        if: inputs.holdout
+        run: |
+          for ratings in rebuilt heldout; do
+            poetry run python Tools/AdvisorReplay/replay.py --src base --drafts drafts.json.gz --dataset "$ratings.json.gz" --set "$SET" --label base --out "results/$ratings/$SET.base.json"
+            poetry run python Tools/AdvisorReplay/replay.py --src . --drafts drafts.json.gz --dataset "$ratings.json.gz" --set "$SET" --label head --out "results/$ratings/$SET.head.json"
+          done
       - uses: actions/upload-artifact@v4
         with:
           name: replay-${{ matrix.set }}
@@ -104,6 +121,14 @@ jobs:
             echo "# Advisor replay: base \`${BASE::7}\`, head \`${HEAD::7}\`"
             echo
             poetry run python Tools/AdvisorReplay/report.py results/*.json
+            for ratings in rebuilt heldout; do
+              if [ -d "results/$ratings" ]; then
+                echo
+                echo "# On the $ratings ratings"
+                echo
+                poetry run python Tools/AdvisorReplay/report.py results/$ratings/*.json
+              fi
+            done
           } | tee report.md >> "$GITHUB_STEP_SUMMARY"
       - uses: actions/upload-artifact@v4
         with:
